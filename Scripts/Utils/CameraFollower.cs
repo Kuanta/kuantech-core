@@ -1,0 +1,98 @@
+﻿using System;
+using UnityEngine;
+using Kuantech.Utils;
+
+namespace Kuantech.Core
+{
+    [Serializable]
+    public struct CameraParameters
+    {
+        public SphericalCoordinate Spherical;
+        public Vector3 PositionOffset;
+        public Vector3 LookatOffset;
+    }
+    
+    public class CameraFollower : MonoBehaviour
+    {
+        public CameraParameters CameraParameters;
+        [SerializeField] public Transform Target;
+        [SerializeField] public float FollowDistance = 5.0f;
+        [SerializeField] public float horizontalSensitivity = 1.0f;
+        [SerializeField] public float verticalSensitivity = 1.0f;
+        [SerializeField] public float Speed = 10.0f;
+
+        [Header("Lerp Factors")] 
+        [SerializeField] private float PositionLerpFactor = 1f;
+        [SerializeField] private float RotationSlerpFactor = 1f;
+
+        private Vector3 _targetPosition;
+        private Vector3 _targetLookAt;
+
+        private float _yawAccel = 0f;
+        private float _pitchAccel = 0f;
+        private float _yawSpeed = 0f;
+        private float _pitchSpeed = 0f;
+
+        private float _deltaX = 0f;
+        private float _deltaY = 0f;
+        private void Start()
+        {
+        }
+
+        private void Update()
+        {
+            // if (Cursor.lockState == CursorLockMode.Locked)
+            // {
+            //     float deltaX = Mathf.Clamp((Input.GetAxis("Mouse X")), -20f, 20f);
+            //     float deltaY = Mathf.Clamp((Input.GetAxis("Mouse Y")), -20f, 20f);
+            //     _deltaX = Mathf.Lerp(_deltaX, deltaX, Time.deltaTime*20f);
+            //     _deltaY = Mathf.Lerp(_deltaY, deltaY, Time.deltaTime*20f);
+            // }
+            // else
+            // {
+            //     _deltaX = 0f;
+            //     _deltaY = 0f;
+            // }
+        }
+        private void LateUpdate()
+        {
+            if (Target == null) return;
+            
+            _yawAccel = horizontalSensitivity * _deltaX;
+            _pitchAccel = verticalSensitivity * _deltaY;
+            
+            _yawSpeed += 0.5f*Time.deltaTime * _yawAccel;
+            _pitchSpeed += 0.5f * Time.deltaTime * _pitchAccel;
+
+            CameraParameters.Spherical.Yaw -= _yawSpeed * Time.deltaTime ;
+            CameraParameters.Spherical.Pitch += _pitchSpeed * Time.deltaTime;
+            
+            CameraParameters.Spherical.Pitch = Mathf.Clamp(CameraParameters.Spherical.Pitch, Mathf.Deg2Rad * 5.0f, Mathf.Deg2Rad*175.0f);
+            CameraParameters.Spherical.Radius = FollowDistance;
+
+            _yawSpeed *= 0.9f;
+            _pitchSpeed *= 0.9f;
+            
+            //Get cam forward
+            Vector3 camForward = CameraParameters.Spherical.GetForward().normalized;
+            Vector3 camRight = -1 * Vector3.Cross(camForward.normalized, Vector3.up).normalized;
+            Vector3 targetPos = Target.position + CameraParameters.PositionOffset;
+            Vector3 lookTarget = camRight* CameraParameters.LookatOffset.x + camForward * CameraParameters.LookatOffset.z 
+                                                                           + Vector3.up * CameraParameters.LookatOffset.y + targetPos;
+            float angleDiff = Mathf.Asin(CameraParameters.LookatOffset.x / CameraParameters.Spherical.Radius);
+            Vector3 sphericalPos = SphericalCoordinate.ToWorld(CameraParameters.Spherical.Radius, 
+                CameraParameters.Spherical.Yaw + angleDiff, 
+                CameraParameters.Spherical.Pitch) + targetPos;
+            
+            Transform targetTransform = transform;
+            transform.position = sphericalPos;
+            targetTransform.LookAt(lookTarget);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetTransform.rotation, Time.deltaTime * RotationSlerpFactor);
+        }
+
+        public void SetTargetParameters(CameraParameters cameraParameters)
+        {
+            CameraParameters = cameraParameters;
+        }
+    }
+}

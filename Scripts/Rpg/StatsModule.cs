@@ -1,0 +1,347 @@
+﻿using System;
+using System.Collections.Generic;
+using DTT.Utils.Extensions;
+using Sirenix.OdinInspector;
+using UnityEngine;
+
+namespace Kuantech.Core
+{
+    [Serializable]
+    public enum StatTypes
+    {
+        MaxHealth,
+        HealthRegeneration,
+        MaxEnergy,
+        EnergyRegeneration,
+        Strength,
+        Dexterity,
+        Intelligence,
+        MovementSpeed,
+        Armor,
+        None,
+    }
+
+    public enum ModifierTypes
+    {
+        Addition,
+        Multiplication,
+    }
+
+    [Serializable]
+    public struct StatModifierData
+    {
+        public StatTypes StatType;
+        public float BaseValue;
+        public ModifierTypes ModifierType;
+    }
+    
+    [Serializable]
+    public class StatModifier
+    {
+        public int Level = 0; //Required for items
+        public StatTypes StatType;
+        public float BaseValue;
+        public float LevelToValueFactor = 1;
+        public float GetValue()
+        {
+            return BaseValue + LevelToValueFactor * Level;
+        }
+        public ModifierTypes ModifierType;
+    }
+
+    [Serializable]
+    public struct Stat
+    {
+        public float BaseValue;
+        public float LevelMultiplier;
+        public float MultiplicationModifier;
+        public float AdditionModifier;
+    }
+    
+    [Serializable]
+    public class StatDictionary : SerializableDictionary<StatTypes, Stat> { }
+    
+    [Serializable]
+    public class ModifierDataDictionary : SerializableDictionary<StatTypes, StatModifierData> { }
+    
+    [Serializable]
+    public class StatsModule : Module
+    {
+        public int Level = 0;
+        public int OverflowExperience = 0; //Overflow experience is TotalExperience - ExperienceToCurrentLevel
+        public int RequiredExperienceToNextLevel = 0;
+        
+        public EventHandler LevelUpEvent;
+        
+        public StatDictionary Stats = new StatDictionary()
+        {
+            [StatTypes.Strength] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
+            [StatTypes.Intelligence] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
+            [StatTypes.Dexterity] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
+            [StatTypes.EnergyRegeneration] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
+            [StatTypes.HealthRegeneration] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
+            [StatTypes.EnergyRegeneration] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
+            [StatTypes.MaxEnergy] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
+            [StatTypes.MaxHealth] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
+        };
+        
+        private Dictionary<StatTypes, HashSet<StatModifier>> Modifiers;
+        private Queue<StatTypes> DirtiedStats = new Queue<StatTypes>();
+
+        private void Update()
+        {
+            UpdateStatModifiers();
+        }
+        
+        public void AddModifiers(List<StatModifier> modifiers)
+        {
+            foreach (var modifier in modifiers)
+            {
+                AddModifier(modifier);
+            }    
+        }
+        
+        public void AddModifier(StatModifier modifier)
+        {
+            Modifiers ??= new Dictionary<StatTypes, HashSet<StatModifier>>();
+
+            if (!Modifiers.ContainsKey(modifier.StatType))
+            {
+                Modifiers.Add(modifier.StatType, new HashSet<StatModifier>());
+            }
+
+            Modifiers[modifier.StatType].Add(modifier);
+            DirtyStat(modifier.StatType);
+
+        }
+        
+        public void RemoveModifiers(List<StatModifier> modifiers)
+        {
+            foreach (var modifier in modifiers)
+            {
+                RemoveModifier(modifier);
+            }    
+        }
+        
+        public void RemoveModifier(StatModifier modifier)
+        {
+            if(Modifiers == null) return;
+            if (Modifiers[modifier.StatType].Contains(modifier))
+            {
+                Modifiers[modifier.StatType].Remove(modifier);
+                DirtyStat(modifier.StatType);
+            }
+        }
+
+        private void DirtyStat(StatTypes statType)
+        {
+            DirtiedStats.Enqueue(statType);
+        }
+        
+        /// <summary>
+        /// Updates the modifier value of dirtied stats
+        /// </summary>
+        public void UpdateStatModifiers()
+        {
+            if (DirtiedStats == null || DirtiedStats.Count == 0) return;
+            StatTypes statType = DirtiedStats.Dequeue();
+            while (statType != null)
+            {
+                float additionMultipliersSum = 0;
+                float multiplicationModifiersSum = 0;
+                //Handle Stat type
+                foreach (var statModifier in Modifiers[statType])
+                {
+                    if (statModifier.ModifierType == ModifierTypes.Addition)
+                    {
+                        additionMultipliersSum += statModifier.GetValue();
+                    }
+                    else if(statModifier.ModifierType == ModifierTypes.Multiplication)
+                    {
+                        multiplicationModifiersSum += statModifier.GetValue();
+                    }
+                    
+                }
+
+                try
+                {
+                    if (!Stats.ContainsKey(statType))
+                    {
+                        Debug.LogWarning($"Trying to set value of {statType.ToString()} while {name} doesn't have a field for it");
+                    }
+                    else
+                    {
+                        Stat currStat = Stats[statType];
+                        currStat.AdditionModifier = additionMultipliersSum;
+                        currStat.MultiplicationModifier = multiplicationModifiersSum;
+                        Stats[statType] = currStat;
+                    }
+
+                    if (DirtiedStats.IsNullOrEmpty())
+                    {
+                        break;
+                    }
+                    statType = DirtiedStats.Dequeue();
+
+                }
+                catch (KeyNotFoundException e)
+                {
+                    Debug.LogError($"Key {statType} somehow not in stats");
+                    statType = DirtiedStats.Dequeue();
+                }
+            }
+        }
+
+        
+        #region Getters
+        
+        /// <summary>
+        /// Returns the final value for a stat
+        /// </summary>
+        /// <param name="statType"></param>
+        /// <returns></returns>
+        public float GetStat(StatTypes statType)
+        {
+            if (statType == StatTypes.None) return -1;
+            Stat desiredStat = Stats[statType];
+            float baseValue = GetBaseStat(statType);
+            return baseValue * (1+desiredStat.MultiplicationModifier) + desiredStat.AdditionModifier;
+        }
+        
+        /// <summary>
+        /// Returns the non-modified value of the stat (still considering the level)
+        /// </summary>
+        /// <param name="statType"></param>
+        /// <returns></returns>
+        public float GetBaseStat(StatTypes statType)
+        {
+            if (statType == StatTypes.None) return -1;
+            Stat desiredStat = Stats[statType]; 
+            return desiredStat.BaseValue + desiredStat.LevelMultiplier * Level;
+        }
+        #endregion
+
+        #region Level
+        /// <summary>
+        /// Increase the experience
+        /// </summary>
+        /// <param name="experience"></param>
+        public void EarnExperience(int experience)
+        {
+            OverflowExperience += experience;
+            while (OverflowExperience >= RequiredExperienceToNextLevel)
+            {
+                LevelUpEvent?.Invoke(this, EventArgs.Empty);
+                OverflowExperience = OverflowExperience - RequiredExperienceToNextLevel;
+                Level++;
+                RequiredExperienceToNextLevel = GetRequiredExperience(Level);
+            }
+        }
+
+        public int GetLevel()
+        {
+            return Level;
+        }
+
+        public int GetOverflowExperience()
+        {
+            return OverflowExperience;
+        }
+        
+        /// <summary>
+        /// Sets the level and adjust the experience accordingly
+        /// </summary>
+        /// <param name="level"></param>
+        public void SetLevel(int level)
+        {
+            level = Mathf.Max(1, level);
+            Level = level;
+            OverflowExperience = 0; //This formula starts from level 0
+            RequiredExperienceToNextLevel = GetRequiredExperience(level + 1);
+        }
+        
+        /// <summary>
+        /// Returns the percentage of exp that is required for next level
+        /// </summary>
+        /// <returns></returns>
+        public float GetPercentageExperience()
+        {
+            float lowerLimit = GetExperienceForLevel(Level - 1);
+            float upperLimit = GetExperienceForLevel(Level);
+
+            return (OverflowExperience - lowerLimit) / (upperLimit - lowerLimit);
+        }
+        
+        /// <summary>
+        /// Returns the normalized value of the given overflow experience
+        /// </summary>
+        /// <param name="currentLevel"></param>
+        /// <param name="overflowExperience"></param>
+        /// <returns></returns>
+        public static float GetNormalizedOverflowExperience(int currentLevel, int overflowExperience)
+        {
+            int currLevelValue = GetRequiredExperience(currentLevel);
+            int nextLevelValue = GetRequiredExperience(currentLevel + 1);
+            return overflowExperience / (float)(nextLevelValue - currLevelValue);
+        }
+        
+        /// <summary>
+        /// Returns required amount of experience to reach next level.
+        /// </summary>
+        /// <param name="currentLevel"></param>
+        /// <returns></returns>
+        public static int GetRequiredExperience(int currentLevel)
+        {
+            if (currentLevel == 0) return 0;
+            return GetExperienceForLevel(currentLevel) - (int)Mathf.Max(GetExperienceForLevel(currentLevel-1), 0);
+        }
+        
+        public static int GetExperienceForLevel(int level)
+        {
+            return (int)Mathf.Floor(Mathf.Pow((level) / Config.LEVEL_FORMULA_X, 2));
+        }
+
+        public static void GetExperienceEarnResults(int currentLevel, int currentOverflowExperience, int earnedExperience, out int resultingLevel,
+            out int resultingOverflowExperience)
+        {
+            resultingOverflowExperience = 0;
+            resultingLevel = currentLevel;
+
+            int experienceToNextLevel = GetRequiredExperience(currentLevel + 1);
+
+            int newOverflowExperience = currentOverflowExperience + earnedExperience;
+            
+            if (currentOverflowExperience  + earnedExperience < experienceToNextLevel)
+            {
+                resultingOverflowExperience = currentOverflowExperience + earnedExperience;
+                return;
+            }
+
+            while (newOverflowExperience >= experienceToNextLevel)
+            {
+                resultingLevel++;
+                newOverflowExperience -= experienceToNextLevel;
+                experienceToNextLevel = GetRequiredExperience(resultingLevel + 1);
+                resultingOverflowExperience = newOverflowExperience;
+            }
+                
+        }
+        #endregion
+        [Button("Set Default Stats")]
+        public void SetDefaultStats()
+        {
+            Stats = new StatDictionary()
+            {
+                [StatTypes.Strength] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
+                [StatTypes.Intelligence] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
+                [StatTypes.Dexterity] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
+                [StatTypes.EnergyRegeneration] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
+                [StatTypes.HealthRegeneration] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
+                [StatTypes.EnergyRegeneration] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
+                [StatTypes.MaxEnergy] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
+                [StatTypes.MaxHealth] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
+                [StatTypes.MovementSpeed] = new Stat(){BaseValue = 0, LevelMultiplier = 0},
+            };
+        }
+    }
+}
