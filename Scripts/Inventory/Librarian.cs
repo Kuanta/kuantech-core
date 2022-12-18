@@ -50,7 +50,6 @@ namespace Kuantech.Core
 
         [Header("Skills")] 
         public DamageDealer DamageDealerPrefab;
-        public List<AttackSkillData> AttackSkillDataList = new List<AttackSkillData>();
 
         [Header("Modifiers List")] 
         public ModifierDataDictionary ModifierDataDictionary;
@@ -60,7 +59,6 @@ namespace Kuantech.Core
         public const string armorsDataPath = "/armors.yaml";
         public Dictionary<int, ItemTemplate> itemTemplates = new Dictionary<int, ItemTemplate>();
         public Dictionary<int, ItemData> ItemDatas = new Dictionary<int, ItemData>();
-        public Dictionary<int, AttackSkillData> AttackSkillDatas = new Dictionary<int, AttackSkillData>();
         
         public void Awake()
         {
@@ -112,12 +110,6 @@ namespace Kuantech.Core
             {
                 data.ItemType = Enums.ItemType.Armor;
                 ItemDatas.Add(data.id, data);
-            }
-            
-            //Read Skills
-            foreach (var data in AttackSkillDataList)
-            {
-                AttackSkillDatas[data.Id] = data;
             }
         }
 
@@ -200,42 +192,6 @@ namespace Kuantech.Core
             int tempalteId = ItemDatas[itemId].templateId;
             return TemplatePrefabs[itemTemplates[tempalteId].prefabId];
         }
-        #endregion
-        
-
-        #region Skills
-        /// <summary>
-        /// Instantiates the corresponding skill given the id
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        public AttackSkill GetAttackSkill(int id)
-        {
-            switch (id)
-            {
-                case 0:
-                    return new Slam(AttackSkillDatas[id]);
-                case 1:
-                    return new QuickStrike(AttackSkillDatas[id]);
-                case 2:
-                    return new ArcaneBlast(AttackSkillDatas[id]);
-                case 3:
-                    return new ArrowBarrage(AttackSkillDatas[id]);
-                case 4:
-                    return new ArcaneArrow(AttackSkillDatas[id]);
-                case 5:
-                    return new PowerShot(AttackSkillDatas[id]);
-                case 6:
-                    return new GhostWeapon(AttackSkillDatas[id]);
-                case 7:
-                    return new MagicOrb(AttackSkillDatas[id]);
-                case 8:
-                    return new ArcaneEchoe(AttackSkillDatas[id]);
-                default:
-                    return null;
-            }
-        }
-
         #endregion
     }
 }

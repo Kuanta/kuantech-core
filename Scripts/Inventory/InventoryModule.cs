@@ -80,7 +80,7 @@ namespace Kuantech.Inventory
                 EquipItem(item, item.slotType);
             }
             //Add the item data
-            GameManager.Instance.AddItem(item);
+            LooterGameManager.Instance.AddItem(item);
             item.Owner = Actor;
         }
         
@@ -163,7 +163,7 @@ namespace Kuantech.Inventory
         {
             Item itemToRemove = items[InventoryId];
             if (itemToRemove == null) return;
-            GameManager.Instance.RemoveItem(itemToRemove);
+            LooterGameManager.Instance.RemoveItem(itemToRemove);
             if (itemToRemove.stackable)
             {
                 int newAmount = itemToRemove.amount - amount;

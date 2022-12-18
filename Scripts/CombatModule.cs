@@ -6,6 +6,7 @@ using Kuantech.Data;
 using Kuantech.Inventory;
 using Kuantech.Inventory.Items;
 using Kuantech.Core.UI;
+using Kuantech.Scripts.Managers;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Events;
@@ -493,7 +494,7 @@ namespace Kuantech.Core
         [Button("Add Skill")]
         public void AddAttackSkill(int skillId)
         {
-            AttackSkill skill = Librarian.Instance.GetAttackSkill(skillId);
+            AttackSkill skill = Spellbook.Instance.GetAttackSkill(skillId);
             if (skill == null) return;
             AddAttackSkill(skill);
         }

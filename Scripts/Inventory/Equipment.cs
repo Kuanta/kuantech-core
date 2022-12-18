@@ -89,7 +89,7 @@ namespace Kuantech.Inventory
             Item existingItem = slotTable[itemSlotType].item;
             if (existingItem != null && existingItem != item)
             {
-                GameManager.Instance.UnequipItem(existingItem);
+                LooterGameManager.Instance.UnequipItem(existingItem);
             }
             slotTable[itemSlotType].item = item;
             if (Actor == null) return;
