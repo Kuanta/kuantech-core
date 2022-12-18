@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using Kuantech.Utils.Enums;
+using Kuantech.Data;
 using UnityEngine;
 
 namespace Kuantech.SurroundSystem
@@ -65,16 +65,16 @@ namespace Kuantech.SurroundSystem
         }
         private void FindAvailableSlot(SurroundAgent agent)
         {
-            Utils.Enums.Directions direction;
+            Enums.Directions direction;
             Vector3 diffVector = agent.transform.position - Target.position;
             float angle = Vector3.Angle(Target.forward, diffVector);
             if (angle <= 0)
             {
-                direction = Directions.RIGHT;
+                direction = Enums.Directions.RIGHT;
             }
             else
             {
-                direction = Directions.LEFT;
+                direction = Enums.Directions.LEFT;
             }
             agent.Available = true;
             for(int i=0;i<SurroundSlots.Count; ++i)

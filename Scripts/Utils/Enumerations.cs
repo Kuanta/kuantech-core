@@ -65,5 +65,13 @@ namespace Kuantech.Data
             Running,
             Sprinting,
         }
+
+        public enum Directions
+        {
+            UP,
+            DOWN,
+            LEFT,
+            RIGHT,
+        }
     }
 }

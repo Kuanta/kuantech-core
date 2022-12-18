@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using Kuantech.Utils.Enums;
+using Kuantech.Data;
 using UnityEngine;
 
 namespace Kuantech.SurroundSystem
@@ -108,12 +108,12 @@ namespace Kuantech.SurroundSystem
             }
         }
         
-        public SurroundSlot FindSuitableSlot(Directions direction)
+        public SurroundSlot FindSuitableSlot(Enums.Directions direction)
         {
             List<SurroundSlot> primaryCandidates;
             List<SurroundSlot> secondaryCandidates;
     
-            if (direction == Directions.LEFT)
+            if (direction == Enums.Directions.LEFT)
             {
                 primaryCandidates = LeftSlots;
                 secondaryCandidates = RightSlots;
