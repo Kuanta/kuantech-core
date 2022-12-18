@@ -19,7 +19,11 @@ namespace Kuantech.UI
         {
             if (FrameButton != null)
             {
-                FrameButton.onClick.AddListener(UnequipItem);
+                FrameButton.onClick.AddListener(() =>
+                { 
+                    //Once the process is initiated, game manager will call the proper functions in ui
+                    AssignedItem.Unequip(); 
+                });
             }
         }
 
@@ -27,13 +31,16 @@ namespace Kuantech.UI
         {
             ItemIcon.sprite = Librarian.Instance.GetIconFromItemId(item.Id);
             AssignedItem = item;
+            ItemIcon.enabled = true;
+            ItemIcon.gameObject.SetActive(true);
         }
 
         public void UnequipItem()
         {
             if (AssignedItem == null) return;
-            AssignedItem.Unequip();
             AssignedItem = null;
+            ItemIcon.enabled = false;
+            ItemIcon.gameObject.SetActive(false);
         }
         
         public void SetSlot(Enums.EquipmentSlotType slotType)

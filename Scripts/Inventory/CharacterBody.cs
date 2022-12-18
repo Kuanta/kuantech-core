@@ -169,7 +169,11 @@ namespace Kuantech.Character
 
             GameObject instantiated = GameManager.Instance.Pool.GetObject(prefab);
             EquipmentModel model = instantiated.GetComponent<EquipmentModel>();
-            Transform bone = BoneTable[model.CurrentSlot]; 
+            if (model != null)
+            {
+                boneType = model.CurrentSlot;
+            }
+            Transform bone = BoneTable[boneType]; 
             //A weapon (like a bow) can be slotted to main hand but prefer to be parented to the off-hand bone for visuals
             
             SlottedObjects[boneType] = instantiated;

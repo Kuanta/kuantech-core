@@ -149,7 +149,6 @@ namespace Kuantech.UI
             //Todo: Optimize here
             SetLevel(itemStateData.ItemLevel);
             SetRarity(itemStateData.ItemRarity);
-            SetBaseStat(StatTypes.Strength); //Todo: Add base stat field to items
 
             if (itemStateData.StatModifiers == null) return;
             foreach (var statType in itemStateData.StatModifiers.Keys)

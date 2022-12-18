@@ -17,7 +17,6 @@ namespace Kuantech.UI
         }
 
         [Header("Equipments")]
-        [SerializeField] private EquipmentsPanel EquipmentsPanel;
         
         [Header("Item Frame Prefab")] 
         [SerializeField] private ItemFrame ItemFramePrefab;
@@ -77,7 +76,13 @@ namespace Kuantech.UI
             base.Show();
             GameManager.Instance.CameraFollower.SetTargetParameters(GameManager.Instance.ItemsCoordinates);
         }
-        
+
+        public override void Close()
+        {
+            base.Close();
+            UIManager.Instance.MainMenuUI.EquipmentsPanel.Close();
+        }
+
         public void SetupItems(List<Item> items)
         {
             foreach (var item in items)
@@ -112,14 +117,14 @@ namespace Kuantech.UI
 
         public void EquipItem(Item item)
         {
-            EquipmentsPanel.EquipItem(item, item.slotType);
+            UIManager.Instance.MainMenuUI.EquipmentsPanel.EquipItem(item, item.slotType);
             GetCorrespondingItemPanel(item).EquipItem(item);
             
         }
 
         public void UnequipItem(Item item)
         {
-            EquipmentsPanel.UnequipItem(item.slotType);
+            UIManager.Instance.MainMenuUI.EquipmentsPanel.UnequipItem(item.slotType);
             GetCorrespondingItemPanel(item).UnequipItem(item);
         }
         

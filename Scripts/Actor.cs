@@ -87,6 +87,7 @@ namespace Kuantech.Core
         
         public virtual void ReceiveDamage(Actor from, float damage)
         {
+            damage -= Mathf.Max(0f, Stats.GetStat(StatTypes.Armor)); //todo: A better armor calculation
             Health -= Mathf.Abs(damage);
             if (Health <= 0f)
             {

@@ -1,5 +1,4 @@
-﻿using Kuantech.Core;
-
+﻿
 namespace Kuantech.Inventory.Items
 {
     public class Armor : Item

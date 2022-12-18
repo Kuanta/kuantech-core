@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using DTT.Utils.Extensions;
+using Kuantech.Inventory;
+using Kuantech.Inventory.Items;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -83,11 +86,40 @@ namespace Kuantech.Core
             [StatTypes.EnergyRegeneration] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
             [StatTypes.MaxEnergy] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
             [StatTypes.MaxHealth] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
+            [StatTypes.MovementSpeed] = new Stat(){BaseValue = 0, LevelMultiplier = 0},
+            [StatTypes.Armor] = new Stat(){BaseValue = 0, LevelMultiplier = 0},
         };
         
         private Dictionary<StatTypes, HashSet<StatModifier>> Modifiers;
         private Queue<StatTypes> DirtiedStats = new Queue<StatTypes>();
 
+        public override void OnModulesInitialized(object sender, EventArgs args)
+        {
+            InventoryModule invMod = (InventoryModule)Actor.GetModuleByType(typeof(InventoryModule));
+            if (invMod == null) return;
+            invMod.ItemEquipEvent += ItemEquippedHandler;
+            invMod.ItemUnequipEvent += ItemUnequippedHandler;
+        }
+
+        public void ItemEquippedHandler(object sender, Item item)
+        {
+            AddModifiers(item.StateData.StatModifiers.Values.ToList());
+            if (!(item is Armor armor)) return;
+            Stat armorStat = Stats[StatTypes.Armor];
+            armorStat.AdditionModifier +=  armor.armorRating;
+            Stats[StatTypes.Armor] = armorStat;
+        }
+
+        public void ItemUnequippedHandler(object sender, Item item)
+        {
+            RemoveModifiers(item.StateData.StatModifiers.Values.ToList());
+
+            if (!(item is Armor armor)) return;
+            Stat armorStat = Stats[StatTypes.Armor];
+            armorStat.AdditionModifier -=  armor.armorRating;
+            Stats[StatTypes.Armor] = armorStat;
+        }
+        
         private void Update()
         {
             UpdateStatModifiers();
@@ -203,9 +235,32 @@ namespace Kuantech.Core
         public float GetStat(StatTypes statType)
         {
             if (statType == StatTypes.None) return -1;
+            
+      
             Stat desiredStat = Stats[statType];
             float baseValue = GetBaseStat(statType);
-            return baseValue * (1+desiredStat.MultiplicationModifier) + desiredStat.AdditionModifier;
+            float finalValue = baseValue * (1 + desiredStat.MultiplicationModifier) + desiredStat.AdditionModifier;
+            //Exceptions
+            if (statType == StatTypes.MovementSpeed)
+            {
+               finalValue *= GetWeightFactor(0.5f); //todo: A better way can be found for movement speed
+            }
+
+            return finalValue;
+        }
+
+        public float GetEncumbrance()
+        {
+            InventoryModule invMod = (InventoryModule)Actor.GetModuleByType(typeof(InventoryModule));
+            if (invMod == null) return 0f;
+            return invMod.equipment.Encumbrance;
+        }
+
+        public float GetWeightFactor(float minValue = 0f)
+        {
+            float value = 1f - GetEncumbrance() / Config.MAX_ENCUMBRANCE;
+            value = Mathf.Clamp(value, minValue, 1f);
+            return value;
         }
         
         /// <summary>
@@ -327,6 +382,7 @@ namespace Kuantech.Core
                 
         }
         #endregion
+        
         [Button("Set Default Stats")]
         public void SetDefaultStats()
         {
@@ -341,6 +397,7 @@ namespace Kuantech.Core
                 [StatTypes.MaxEnergy] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
                 [StatTypes.MaxHealth] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
                 [StatTypes.MovementSpeed] = new Stat(){BaseValue = 0, LevelMultiplier = 0},
+                [StatTypes.Armor] = new Stat(){BaseValue = 0, LevelMultiplier = 0},
             };
         }
     }

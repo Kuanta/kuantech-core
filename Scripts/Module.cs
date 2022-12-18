@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace Kuantech.Core
 {   
@@ -10,6 +11,7 @@ namespace Kuantech.Core
         protected virtual void Awake()
         {
             if (Actor == null) Actor = GetComponent<Actor>();
+            Actor.OnModulesInitialized += OnModulesInitialized;
         }
 
         public virtual void Initialize()
@@ -17,6 +19,11 @@ namespace Kuantech.Core
             
         }
         public virtual void Reset()
+        {
+            
+        }
+
+        public virtual void OnModulesInitialized(object sender, EventArgs args)
         {
             
         }

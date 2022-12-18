@@ -19,11 +19,12 @@ namespace Kuantech.UI
         public void SetMultiplier(StatTypes statType)
         {
             StatIcon.sprite = UIManager.Instance.IconLibrary.GetStatIcon(statType);
+            StatIcon.color = UIManager.Instance.ColorPalette.StatColors[statType];
         }
         
         public void SetMultiplier(float multiplier)
         {
-            MultiplierText.text = multiplier.ToString("F");
+            MultiplierText.text = "+ " + multiplier.ToString("F1");
         }
     }
 }

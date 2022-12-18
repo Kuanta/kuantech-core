@@ -31,18 +31,21 @@ namespace Kuantech.Core
     {
         public GameObject ItemPrefab;
         public GameObject ItemDropPrefab;
+        public Sprite ItemIcon;
     }
-    
+
+    [Serializable]
+    public class TemplatePrefabDictionary : SerializableDictionary<int, ItemTemplatePrefab>{}
+
     public class Librarian : Singleton<Librarian>
     {
         [Header("Item Prefabs")]
-        public List<ItemTemplatePrefab> templatePrefabs = new List<ItemTemplatePrefab>();
+        //public List<ItemTemplatePrefab> templatePrefabs = new List<ItemTemplatePrefab>();
+        public TemplatePrefabDictionary TemplatePrefabs = new TemplatePrefabDictionary();
         public GameObject DefaultDropModel;
         
         [Header("Projectile Prefabs")]
         public List<GameObject> projectilePrefabs = new List<GameObject>();
-        [Header("Icons")] 
-        public List<Sprite> Icons = new List<Sprite>();
 
         [Header("Skills")] 
         public DamageDealer DamageDealerPrefab;
@@ -121,24 +124,23 @@ namespace Kuantech.Core
         /// <summary>
         /// Returns item model prefab from template id
         /// </summary>
-        /// <param name="index"></param>
+        /// <param name="templateId"></param>
         /// <returns></returns>
-        public GameObject GetItemPrefab(int index)
+        public GameObject GetItemPrefab(int templateId)
         {
-            return index == -1 ? null : templatePrefabs[itemTemplates[index].prefabId].ItemPrefab;
+            return TemplatePrefabs[itemTemplates[templateId].prefabId].ItemPrefab;
         }
         
         /// <summary>
         /// Returns item drop model prefab from template id
         /// </summary>
-        /// <param name="index"></param>
+        /// <param name="templateId"></param>
         /// <returns></returns>
-        public GameObject GetItemDropPrefab(int index)
+        public GameObject GetItemDropPrefab(int templateId)
         {
             try
             {
-                return index == -1 ? null : templatePrefabs[itemTemplates[index].prefabId].ItemDropPrefab;
-
+                return TemplatePrefabs[itemTemplates[templateId].prefabId].ItemDropPrefab;
             }
             catch (Exception e)
             {
@@ -184,12 +186,18 @@ namespace Kuantech.Core
 
         public Sprite GetIconFromItemId(int itemId)
         {
-            return GetIcon(ItemDatas[itemId].iconId);
+            return GetItemTemplatePrefab(itemId).ItemIcon;
         }
-        public Sprite GetIcon(int index)
+        
+        /// <summary>
+        /// Returns item template visuals from item id
+        /// </summary>
+        /// <param name="itemId"></param>
+        /// <returns></returns>
+        public ItemTemplatePrefab GetItemTemplatePrefab(int itemId)
         {
-            if (index >= Icons.Count || index < 0) return null;
-            return Icons[index];
+            int tempalteId = ItemDatas[itemId].templateId;
+            return TemplatePrefabs[itemTemplates[tempalteId].prefabId];
         }
         #endregion
         

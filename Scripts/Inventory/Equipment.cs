@@ -12,7 +12,7 @@ namespace Kuantech.Inventory
     public class EquipmentSlot
     {
         public Enums.EquipmentSlotType type;
-        public Item item = null;
+        [SerializeReference] public Item item = null;
     }
 
     public class Equipment :MonoBehaviour
@@ -21,6 +21,8 @@ namespace Kuantech.Inventory
         public List<EquipmentSlot> slotTypes;
         public Dictionary<Enums.EquipmentSlotType, EquipmentSlot> slotTable;
 
+        public float Encumbrance = 0f;
+        
         private void Awake()
         {
             Actor = GetComponent<Actor>();
@@ -80,13 +82,14 @@ namespace Kuantech.Inventory
             }
        
             if (!slotTable.ContainsKey(itemSlotType)) return;
+            Encumbrance += item.Weight; //Add to encumberance
             item.StateData.Equipped = true;
             item.slotType = itemSlotType; //For weapons. While saving, we need to know where we have equipped it
             
             Item existingItem = slotTable[itemSlotType].item;
             if (existingItem != null && existingItem != item)
             {
-                UnequipItem(existingItem);
+                GameManager.Instance.UnequipItem(existingItem);
             }
             slotTable[itemSlotType].item = item;
             if (Actor == null) return;
@@ -98,7 +101,7 @@ namespace Kuantech.Inventory
                 }
                 else
                 {
-                    GameObject modelPrefab = Librarian.Instance.GetItemPrefab(item.modelPrefabId);
+                    GameObject modelPrefab = Librarian.Instance.GetItemPrefab(item.data.templateId);
                     if (modelPrefab == null) return;
                     cb.SlotObject(itemSlotType, modelPrefab);
                 }
@@ -124,6 +127,8 @@ namespace Kuantech.Inventory
                 slot.item = null;
             }
             item.StateData.Equipped = false;
+            Encumbrance -= item.Weight;
+            Encumbrance = Mathf.Max(Encumbrance, 0f);
             if (Actor == null ) return;
             if (item.templateData != null && Actor.TryGetComponent(out CharacterBody cb))
             {

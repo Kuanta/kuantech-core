@@ -17,15 +17,17 @@ namespace Kuantech.Core.FX
         public override void Initialize()
         {
             base.Initialize();
-            Actor.OnModulesInitialized += (sender, args) =>
-            {
-                CombatModule cm = (CombatModule)Actor.GetModuleByType(typeof(CombatModule));
-                cm.AttackStartEvent+= OnAttack;
-            };
             Actor.OnDamageReceived += OnReceiveDamage;
             Actor.OnDeath += OnDeath;
         }
-        
+
+        public override void OnModulesInitialized(object sender, EventArgs args)
+        {
+            base.OnModulesInitialized(sender, args);
+            CombatModule cm = (CombatModule)Actor.GetModuleByType(typeof(CombatModule));
+            cm.AttackStartEvent+= OnAttack;
+        }
+
         public void SetAttackEffects(List<EffectTypes> effectTypes)
         {
             RemoveCurrentAttackEffects();

@@ -43,6 +43,7 @@ namespace Kuantech.Inventory.Items
         public int templateId;
         public string slotType = "None";
         public string baseStat = "None";
+        public float weight;
         public bool stackable = false;
         public Enums.ItemType ItemType;
 
@@ -85,6 +86,7 @@ namespace Kuantech.Inventory.Items
         public float durability;
         public Actor Owner;
         public int amount = 1;
+        public int Weight = 1;
         public ItemData data;
         public ItemTemplate templateData = null;
         

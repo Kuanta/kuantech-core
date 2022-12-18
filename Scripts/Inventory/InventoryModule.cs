@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System;
+using System.Collections.Generic;
 using Kuantech.Core;
 using Kuantech.Data;
 using Kuantech.Inventory.Items;
@@ -15,7 +15,10 @@ namespace Kuantech.Inventory
         public int Size = 30;
         private bool _initialized = false;
 
-
+        //Events
+        public EventHandler<Item> ItemEquipEvent;
+        public EventHandler<Item> ItemUnequipEvent;
+        
         public override void Initialize()
         {
             if (_initialized) return;
@@ -118,20 +121,8 @@ namespace Kuantech.Inventory
                 {
                     AddItem(item, 1, false, updateActorData);
                 }
-        
                 equipment.EquipItem(item, slotType);
-                
-                //Update Modifier
-                if (Actor == null)
-                {
-                    Debug.LogError("Actor is null for inventoryModule");
-                    return;
-                }
-
-                if (item.StateData != null && item.StateData.StatModifiers != null)
-                {
-                    Actor.Stats.AddModifiers(item.StateData.StatModifiers.Values.ToList());
-                }
+                ItemEquipEvent?.Invoke(this, item);
             }
             else
             {
@@ -151,10 +142,7 @@ namespace Kuantech.Inventory
                 return;
             }
             equipment.UnequipItem(item);
-            if (item.StateData != null && item.StateData.StatModifiers != null)
-            {
-                Actor.Stats.RemoveModifiers(item.StateData.StatModifiers.Values.ToList());
-            }
+            ItemUnequipEvent?.Invoke(this, item);
         }
         
         public bool ContainsItem(Item item)
