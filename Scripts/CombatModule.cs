@@ -7,6 +7,7 @@ using Kuantech.Inventory;
 using Kuantech.Inventory.Items;
 using Kuantech.Core.UI;
 using Kuantech.Scripts.Managers;
+using Kuantech.Utils;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Events;
@@ -38,6 +39,8 @@ namespace Kuantech.Core
     
     public class CombatModule : Module
     {
+        public static readonly float QueueTimeFactor = 0.5f;
+        
         //Components
         public LineTelemetry LineAttackTelemetry;
         public CircleTelemetry CircleAttackTelemetry;
@@ -76,7 +79,8 @@ namespace Kuantech.Core
         [Header("Flow")]
         [SerializeField] private int _flowIndex = 0;
         [SerializeField] private float _flowBreakTime = 0.5f;
-        private float _lastAttackTime = 0f;
+        private float _lastAttackEndTime = 0f;
+        private bool _attackQueued = false;
         
         //AttackSkill
         [SerializeReference] private Dictionary<int, AttackSkill> AttackSkills = new Dictionary<int, AttackSkill>();
@@ -102,6 +106,7 @@ namespace Kuantech.Core
             RangedImpactEvent = null;
             ProjectileEndRangeEvent = null;
             ProjectileShotEvent = null;
+            ApplyAttackPattern(DefaultAttackPattern);
         }
         
         public override void Reset()
@@ -110,6 +115,7 @@ namespace Kuantech.Core
             AttackStartTime = 0;
             _flowIndex = 0;
             _damageDone = false;
+            _attackQueued = false;
             ResetActiveTelemetry();
             CalculateManaCosts();
         }
@@ -122,6 +128,7 @@ namespace Kuantech.Core
         }
         private void Update()
         {
+            if (GameManager.Instance.GameIsPaused) return;
             if (!IsAttacking) return;
             float timePassedAttacking = Time.time - AttackStartTime;
             
@@ -129,6 +136,10 @@ namespace Kuantech.Core
             if (timePassedAttacking >= AnimationTime)
             {
                 IsAttacking = false; //Ends the attack
+
+                if (!_attackQueued) return;
+                _attackQueued = false;
+                Attack();
                 return;
             }
 
@@ -138,7 +149,7 @@ namespace Kuantech.Core
             if(ActiveTelemetry != null) ActiveTelemetry.SetFill(normalizedTime);
             if (normalizedTime > 1f)
             {
-                _lastAttackTime = Time.time;
+                _lastAttackEndTime = Time.time;
                 ResetActiveTelemetry();
                 AttackEvent?.Invoke(this, _flowIndex);
                 switch (CurrentAttackType)
@@ -178,7 +189,17 @@ namespace Kuantech.Core
         
         public bool Attack(UnityAction attackCompleteHandler = null)
         {
-            if (IsAttacking) return false;
+            if (IsAttacking)
+            {
+                float queueTime = (Time.time - AttackStartTime) / AnimationTime;
+                //Check current frame
+                if (queueTime >= AnimationTime * QueueTimeFactor)
+                {
+                    //Queue next attack
+                    _attackQueued = true;
+                }
+                return false;
+            }
             //Check weapon
             if (_actorInventory != null )
             {
@@ -192,7 +213,7 @@ namespace Kuantech.Core
 
             if (EquippedWeapon != null)
             {
-                if (Time.time - _lastAttackTime <= _flowBreakTime)
+                if (Time.time - _lastAttackEndTime <= _flowBreakTime)
                 {
                     _flowIndex++;
                 }
@@ -223,12 +244,18 @@ namespace Kuantech.Core
             }
              
             AttackStartEvent?.Invoke(this, _flowIndex);
+            AnimatorModule animMod = (AnimatorModule)Actor.GetModuleByType(typeof(AnimatorModule));
+            if (animMod != null)
+            {
+                animMod.LightAttackTrigger(attackIndex:GetFlowIndex(), handIndex:0); //todo: Consider supporting off hand weapons
+            }
+
             return true;
         }
 
         public int GetFlowIndex()
         {
-            if (Time.time - _lastAttackTime <= _flowBreakTime)
+            if (Time.time - _lastAttackEndTime <= _flowBreakTime)
             {
                 return _flowIndex;
             }
@@ -240,6 +267,7 @@ namespace Kuantech.Core
         public void Cancel()
         {
             IsAttacking = false;
+            _attackQueued = false;
             ResetActiveTelemetry();
         }
         public void SetAttackType(AttackTypes attackType)
@@ -275,7 +303,39 @@ namespace Kuantech.Core
         }
         
         #region AttackMethods
+        
+        /// <summary>
+        /// Checks whether a target is in the attack range. Current attack pattern will be used
+        /// </summary>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        public bool IsInAttackRange(Transform target)
+        {
+            Vector3 diffVector = target.position - transform.position;
+            diffVector.y = 0;
+            float sqrDist = diffVector.sqrMagnitude;
+            Vector3 relativeForward = transform.GetRelativeForwardVector(target);
+            Vector3 relativeRight = transform.GetRelativeRightVector(target);
 
+            float forwardDistrSqr = relativeForward.sqrMagnitude;
+            float widthSqr = relativeRight.sqrMagnitude;
+
+            switch (CurrentAttackType)
+            {
+                case AttackTypes.Linear:
+                    return forwardDistrSqr <= Range * Range && widthSqr <= (Width * Width * 0.5f * 0.5f) && Vector3.Dot(transform.forward, diffVector) >= 0;
+                case AttackTypes.Arc:
+                    bool pointInAngle = transform.PointIsInAngleRange(target, Angle);
+                    bool isInRange = sqrDist <= Range * Range;
+                    return pointInAngle && isInRange;
+                case AttackTypes.Ranged:
+                case AttackTypes.Circle:
+                    return sqrDist <= Range * Range;
+                default:
+                    return false;
+            }
+        }
+        
         public float GetDamage()
         {
             if (EquippedWeapon != null) return EquippedWeapon.GetDamage(_flowIndex);
@@ -347,6 +407,7 @@ namespace Kuantech.Core
                 from.DamageActorMelee(target, damage, knockback);   
             }
         }
+        
         private void LinearMeleeAttack()
         {
             Vector3 center = transform.position + transform.forward * Range*0.5f;
@@ -419,6 +480,8 @@ namespace Kuantech.Core
             if (projectileObj.TryGetComponent(out Projectile projectile))
             {
                 projectile.Initialize(this, weapon);
+                projectile.Targets = Targets;
+                projectile.Range = Range;
                 if (CanUseSkill && castSkill)
                 {
                     ProjectileShotEvent?.Invoke(this, new ProjecitleShotInfo()
@@ -462,10 +525,20 @@ namespace Kuantech.Core
         }
         #endregion
 
-        public void DamageActorMelee(Actor actor, float damage, float knockback)
+        public void DamageActorMelee(Actor target, float damage, float knockback)
         {
-            actor.ReceiveDamage(Actor, damage);
-            KnockbackActor(actor, knockback);
+            if (target.Health <= 0f) return;
+            target.ReceiveDamage(Actor, damage);
+            
+            //Get currentSpeed
+            float momentum = 0f;
+            if (target.MovementModule != null)
+            {
+                momentum = Actor.MovementModule.GetForwardMovement() * Actor.MovementModule.GetForwardSpeed();
+                momentum = Mathf.Max(0f, momentum); //Backward movement shouldn't contribute
+            }
+            
+            KnockbackActor(target, knockback + momentum);
         }
 
         /// <summary>
@@ -483,9 +556,10 @@ namespace Kuantech.Core
         {
             Vector3 diff = target.transform.position - transform.position;
             diff.y = 0f;
+            diff.Normalize();
             diff *= knockback;
             target.ForceMoveVector += diff;
-            yield return new WaitForSeconds(0.15f);
+            yield return new WaitForSeconds(0.25f);
             target.ForceMoveVector -= diff;
         }
 
@@ -522,7 +596,16 @@ namespace Kuantech.Core
         {
             RemoveAttackSkill(skill.Id);
         }
-        
+
+        public void RemoveAllAttackSkills()
+        {
+            foreach (var key in AttackSkills.Keys)
+            {
+                AttackSkills[key].Remove();
+            }
+            AttackSkills.Clear();
+            CalculateManaCosts();
+        }
         /// <summary>
         /// Returns the rank of the skill given by id. If player doesn't have that skill, it will return 0
         /// </summary>
@@ -538,8 +621,8 @@ namespace Kuantech.Core
         public void RemoveAttackSkill(int skillId)
         {
             if (!AttackSkills.ContainsKey(skillId)) return;
-            AttackSkills.Remove(skillId); //Unsubscribe from events
-            AttackSkills[skillId].Remove();
+            AttackSkills[skillId].Remove();//Unsubscribe from events
+            AttackSkills.Remove(skillId); 
             CalculateManaCosts();
         }
         
@@ -564,5 +647,10 @@ namespace Kuantech.Core
             animMod.SetAnimationTime(AnimationTime);
         }
         #endregion
+
+        public override void OnDeath(object sender, EventArgs empty)
+        {
+            Cancel();
+        }
     }
 }

@@ -12,6 +12,8 @@ namespace Kuantech.Core
 
         private void Update()
         {
+            if (GameManager.Instance.GameIsPaused) return;
+            
             //todo(Remove pc controls)
             if (Input.GetKey(KeyCode.A))
             {
@@ -39,7 +41,7 @@ namespace Kuantech.Core
                 ForwardInput = 0f;
             }
             
-            if (Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0))
+            if (Input.GetKeyDown(KeyCode.Space))
             {
                 AttackEvent?.Invoke(0);
             }

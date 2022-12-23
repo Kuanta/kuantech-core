@@ -142,6 +142,12 @@ namespace Kuantech.Inventory
                     
                 }
                 cb.ToggleDefaultInplaceEquipment(item.slotType, true);
+
+                if (item.slotType == Enums.EquipmentSlotType.MainHand && Actor.AnimatorModule != null)
+                {
+                    //Weapon animations are decided by main hand
+                    Actor.AnimatorModule.ApplyDefaultAnimationSet();
+                }
             }
             
             //UI handler

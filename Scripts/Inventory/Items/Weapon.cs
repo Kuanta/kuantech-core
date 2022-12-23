@@ -24,11 +24,20 @@ namespace Kuantech.Inventory.Items
             IsOffHand = data.isOffHand;
             ProjectilePrefab = Librarian.Instance.GetProjectilePrefab(data.projectilePrefabId);
             SupportedSkills = data.skills;
+            Type = Enums.ItemType.Weapon;
         }
 
         public float GetDamage(int comboIndex)
         {
-            float baseStat = Owner.Stats.GetStat(BaseStat);
+            float baseStat;
+            if (Owner != null)
+            {
+                baseStat = Owner.Stats.GetStat(BaseStat);
+            }
+            else
+            {
+                baseStat = Damage;
+            }
             return Damage + StateData.ItemLevel + baseStat; //todo(Design): Re-design the final damages
         }
     }

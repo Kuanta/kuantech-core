@@ -7,12 +7,17 @@ namespace Kuantech.Core
 {
     public class Actor : MonoBehaviour
     {
+        [Header("Visuals")] 
+        public GameObject VisualModel;
+        
         //public float stats
+        [Header("Components")]
         public Rigidbody Rigidbody;
         public StatsModule Stats;
         public StatusEffectHandler StatusEffectHandler;
         public CombatModule CombatModule;
         public MovementModule MovementModule;
+        public AnimatorModule AnimatorModule;
 
         public float Health; //Current value for health
         public float Energy; //Current value for energy
@@ -24,6 +29,7 @@ namespace Kuantech.Core
         public EventHandler OnModulesInitialized;
         public EventHandler<float> OnDamageReceived;
         public EventHandler OnDeath;
+        public EventHandler OnRespawn;
         
         public virtual void Initialize()
         {
@@ -33,8 +39,14 @@ namespace Kuantech.Core
             foreach (Module module in modules)
             {
                 _modules[module.GetType()] = module;
+                OnDeath += module.OnDeath;
+                OnRespawn += module.OnRespawn;
                 module.Initialize();
             }
+            //Quick references
+            AnimatorModule = (AnimatorModule) GetModuleByType(typeof(AnimatorModule));
+            MovementModule = (MovementModule) GetModuleByType(typeof(MovementModule));
+            CombatModule = (CombatModule) GetModuleByType(typeof(CombatModule));
             OnModulesInitialized?.Invoke(this, EventArgs.Empty);
             Reset();
         }
@@ -47,6 +59,7 @@ namespace Kuantech.Core
         
         protected virtual void Update()
         {
+            if (GameManager.Instance.GameIsPaused || Health <= 0f) return;
             //todo: Implement health and mana regeneration
             StatusEffectHandler?.Update();
             
@@ -63,6 +76,11 @@ namespace Kuantech.Core
             Health = Stats.GetStat(StatTypes.MaxHealth) * normalizedValue;
         }
 
+        public virtual void SetEnergy(float normalizedValue)
+        {
+            normalizedValue = Mathf.Clamp(normalizedValue, 0f, 1f);
+            Energy = Stats.GetStat(StatTypes.MaxEnergy) * normalizedValue;
+        }
         public virtual void ReceiveHeal(float heal)
         {
             Health += Mathf.Abs(heal);
@@ -87,10 +105,12 @@ namespace Kuantech.Core
         
         public virtual void ReceiveDamage(Actor from, float damage)
         {
+            if (Health <= 0) return; //Don't hit the dead no more
             damage -= Mathf.Max(0f, Stats.GetStat(StatTypes.Armor)); //todo: A better armor calculation
             Health -= Mathf.Abs(damage);
             if (Health <= 0f)
             {
+                Health = 0f;
                 Death();
                 return;
             }
@@ -102,9 +122,16 @@ namespace Kuantech.Core
             OnDeath?.Invoke(this, EventArgs.Empty);
         }
 
+        public virtual void Respawn()
+        {
+            OnRespawn?.Invoke(this, EventArgs.Empty);
+            Reset();
+        }
+        
         public virtual void Reset()
         {
             Health = Stats.GetStat(StatTypes.MaxHealth);
+            Energy = Stats.GetStat(StatTypes.MaxEnergy);
             ForceMoveVector = Vector3.zero;
             foreach (var key in _modules.Keys)
             {

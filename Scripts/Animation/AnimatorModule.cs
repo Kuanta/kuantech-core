@@ -1,16 +1,19 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityEngine.Events;
 
 namespace Kuantech.Core
 {
     public class AnimatorModule : Module
     {
-        [SerializeField] private Animator Animator;
+        public Animator Animator;
+        public AnimatorOverrideController DefaultAnimationSet;
         private static readonly int X = Animator.StringToHash("Forward");
         private static readonly int Y = Animator.StringToHash("Right");
 
         private Vector2 _targetMovementParameters = Vector2.zero;
         private Vector2 _movementParameters = Vector2.zero;
+        private Vector2 _movementParametersScale = Vector2.one;
 
         public float LerpFactor = 10f;
         
@@ -22,20 +25,53 @@ namespace Kuantech.Core
         private static readonly int HandIndex = Animator.StringToHash("HandIndex");
         public static readonly int AttackSpeed = Animator.StringToHash("AttackSpeed");
         public static readonly int TargetTime = Animator.StringToHash("TargetTime");
+        private static readonly int Death = Animator.StringToHash("Death");
+        private static readonly int DamageReceived = Animator.StringToHash("DamageReceived");
+        private static readonly int DamageReceivedIndex = Animator.StringToHash("DamageReceivedIndex");
 
+        public override void Initialize()
+        {
+            base.Initialize();
+            ApplyDefaultAnimationSet();
+            Actor.OnDamageReceived += OnDamageReceive;
+        }
+        
         private void Update()
         {
+            if (GameManager.Instance.GameIsPaused || Animator == null) return;
             _movementParameters =
                 Vector2.Lerp(_movementParameters, _targetMovementParameters, Time.deltaTime * LerpFactor);
             Animator.SetFloat(X, _movementParameters.x);
             Animator.SetFloat(Y,_movementParameters.y);
         }
 
-        public void SetMovementParameters(Vector2 movement)
+        public void ApplyDefaultAnimationSet()
         {
-            _targetMovementParameters = movement;
+            Animator.runtimeAnimatorController = DefaultAnimationSet;
+            // if (DefaultAnimationSet != null && AnimatorOverrideController != null)
+            // {
+            //     DefaultAnimationSet.ApplyAnimationSet(AnimatorOverrideController);
+            // } 
         }
 
+        public void SetMovementParameters(Vector2 movement, bool forced = false)
+        {
+            _targetMovementParameters = movement;
+            if (!forced) return;
+            _movementParameters.x = movement.x *  _movementParametersScale.x;
+            _movementParameters.y = movement.y * _movementParametersScale.y;
+
+        }
+        
+        public void SetMovementParameters(float side, float forward,  bool forced = false)
+        {
+            SetMovementParameters(new Vector2(side, forward), forced);
+        }
+        
+        public void SetMovementParametersScale(Vector2 scale)
+        {
+            _movementParametersScale = scale;
+        }
        
         public void SetTrigger(int hash)
         {
@@ -45,10 +81,10 @@ namespace Kuantech.Core
         public override void Reset()
         {
             base.Reset();
-            Animator.Rebind();
             Animator.SetFloat(X, 0);
             Animator.SetFloat(Y, 0);
             _targetMovementParameters = Vector2.zero;
+            _movementParametersScale = Vector2.one;
         }
         
         #region Combat
@@ -84,5 +120,21 @@ namespace Kuantech.Core
             Animator.SetFloat(TargetTime, animationTime);
         }
         #endregion
+
+        public void OnDamageReceive(object sender, float damage)
+        {
+            Animator.SetInteger(DamageReceivedIndex, UnityEngine.Random.Range(0,3));
+            Animator.SetTrigger(DamageReceived);
+        }
+        public override void OnDeath(object sender, EventArgs empty)
+        {
+            Animator.SetTrigger(Death);
+        }
+
+        public override void OnRespawn(object sender, EventArgs empty)
+        {
+            Reset();
+            Animator.Rebind();
+        }
     }
 }

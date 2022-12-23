@@ -119,6 +119,28 @@ namespace Kuantech.Inventory.Items
             };
         }
 
+        public string GetName()
+        {
+            string name = data.name;
+            switch (StateData.ItemRarity)
+            {
+  
+                case ItemRarities.Uncommon:
+                    name = "Uncommon "+name;
+                    break;
+                case ItemRarities.Rare:
+                    name = "Rare "+name;
+                    break;
+                case ItemRarities.Epic:
+                    name = "Epic "+name;
+                    break;
+                case ItemRarities.Legendary:
+                    name = "Legendary "+name;
+                    break;
+            }
+
+            return name;
+        }
         public static Item GetItemFromData(ItemData data)
         {
             return data.ItemType switch
@@ -170,7 +192,26 @@ namespace Kuantech.Inventory.Items
             return StateData.ItemRarity;
         }
 
-        
+        public float GetSellValue()
+        {
+            float rarityMultiplier = 1;
+            switch (StateData.ItemRarity)
+            {
+                case ItemRarities.Uncommon:
+                    rarityMultiplier = 1.5f;
+                    break;
+                case ItemRarities.Rare:
+                    rarityMultiplier = 2f;
+                    break;
+                case ItemRarities.Epic:
+                    rarityMultiplier = 2.5f;
+                    break;
+                case ItemRarities.Legendary:
+                    rarityMultiplier = 3f;
+                    break;
+            }
+            return StateData.ItemLevel * rarityMultiplier; 
+        }
      
         #endregion
         #region Modifiers

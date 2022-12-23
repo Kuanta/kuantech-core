@@ -31,6 +31,22 @@ namespace Kuantech.Inventory
             _initialized = true;
         }
 
+        public int GetItemCountByType(Enums.ItemType itemType)
+        {
+            int count = 0;
+            foreach (var item in items)
+            {
+                if (item == null) continue;
+                if (item.Type == itemType) count++;
+            }
+            return count;
+        }
+        
+        /// <summary>
+        /// Returns an item by id. Intended for stackable items.
+        /// </summary>
+        /// <param name="itemId"></param>
+        /// <returns></returns>
         public Item GetItemById(int itemId)
         {
             for (int i = 0; i < items.Count; i++)
@@ -42,10 +58,9 @@ namespace Kuantech.Inventory
         }
 
         [Button("Add Item")]
-        public void AddItem(int itemId, ItemStateData stateData, int amount = 1, bool equip = false, bool updateActorData = true)
+        public void AddItem(ItemStateData stateData, int amount = 1, bool equip = false, bool updateActorData = true)
         {
-            
-            Item item = Item.GetItemFromData(Librarian.Instance.ItemDatas[itemId]);
+            Item item = Librarian.Instance.GetItemFromStateData(stateData);
             item.StateData = stateData;
             AddItem(item, amount, stateData.Equipped, updateActorData);
         }
@@ -80,7 +95,6 @@ namespace Kuantech.Inventory
                 EquipItem(item, item.slotType);
             }
             //Add the item data
-            LooterGameManager.Instance.AddItem(item);
             item.Owner = Actor;
         }
         
@@ -156,6 +170,7 @@ namespace Kuantech.Inventory
 
         public void RemoveItem(Item item)
         {
+            if (item == null) return;
             if (item.Owner != Actor) return;
             RemoveItem(item.StateData.InventoryId);
         }
@@ -163,7 +178,6 @@ namespace Kuantech.Inventory
         {
             Item itemToRemove = items[InventoryId];
             if (itemToRemove == null) return;
-            LooterGameManager.Instance.RemoveItem(itemToRemove);
             if (itemToRemove.stackable)
             {
                 int newAmount = itemToRemove.amount - amount;

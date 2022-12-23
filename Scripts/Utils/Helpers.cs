@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -58,5 +59,61 @@ namespace Kuantech.Utils
                 handler(child.gameObject);
             }
         }
+
+        public static string Stringfy(this float number, bool roundToInteger = false)
+        {
+            float abs = Mathf.Abs(number);
+            string signString = number < 0 ? "- " : "";
+            string numberString = "";
+            string quantitySuffix = "";
+            if (abs > 10E9)
+            {
+                abs /= 10E9f;
+                quantitySuffix = " b";
+            }else if (abs > 10E6)
+            {
+                abs /= 10E6f;
+                quantitySuffix = " m";
+            }else if (abs > 10E3)
+            {
+                abs /= 10E3f;
+                quantitySuffix = " k";
+            }
+
+            if (roundToInteger)
+            {
+                abs = (int) abs;
+            }
+            numberString = abs.ToString("F1");
+            return signString + numberString + quantitySuffix;
+        }
+        
+        #region Geometry
+
+        public static Vector3 GetRelativeRightVector(this Transform parent, Transform target)
+        {
+            Vector3 diff = target.position - parent.position;
+            Vector3 right = parent.right;
+            diff.y = 0;
+            return Vector3.Dot(diff, right) * right;
+        }
+
+        public static Vector3 GetRelativeForwardVector(this Transform parent, Transform target)
+        {
+            Vector3 diff = target.position - parent.position;
+            Vector3 forward = parent.forward;
+            diff.y = 0;
+            return Vector3.Dot(diff, forward) * forward;
+        }
+
+        public static bool PointIsInAngleRange(this Transform parent, Transform target, float angle)
+        {
+            float halfAngle = angle * 0.5f;
+            Vector3 forward = parent.forward;
+            Vector3 diff = target.position - parent.position;
+            float angleToPoint = Vector3.SignedAngle(diff, forward, Vector3.up);
+            return Mathf.Abs(angleToPoint) <= halfAngle && Vector3.Dot(forward, diff) >= 0f;
+        }
+        #endregion
     }
 }

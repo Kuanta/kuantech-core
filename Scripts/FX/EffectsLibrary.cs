@@ -29,11 +29,17 @@ namespace Kuantech.Core.FX
         public EffectsDictionary EffectsDictionary;
         public PrefabPool EffectsPool;
 
-        private void Awake()
+        private void Start()
         {
-            EffectsPool = new PrefabPool(transform, 1000);
+            Initialize();
         }
 
+        private void Initialize()
+        {
+            EffectsPool = new PrefabPool(transform, 1000);
+            AudioLibrary.Initialize();
+        }
+        
         public Effect GetEffect(EffectTypes effectType)
         {
             if (EffectsDictionary == null || !EffectsDictionary.ContainsKey(effectType)) return null;

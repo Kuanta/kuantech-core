@@ -55,7 +55,7 @@ namespace Kuantech.Character
 
         [Header("Bones and Slots")] 
         public Animator Animator;
-        public AnimatorOverrideController AnimatorOverrideController;
+        public AnimatorModule AnimatorModule;
         public Transform RootBone;
         public Enums.Genders Gender;
         public Enums.Races Race;
@@ -169,11 +169,12 @@ namespace Kuantech.Character
 
             GameObject instantiated = GameManager.Instance.Pool.GetObject(prefab);
             EquipmentModel model = instantiated.GetComponent<EquipmentModel>();
+            Enums.BoneTypes visualBone = boneType; //Equipment is assigned to boneType but will be visualized at visualBone
             if (model != null)
             {
-                boneType = model.CurrentSlot;
+                visualBone = model.CurrentSlot;
             }
-            Transform bone = BoneTable[boneType]; 
+            Transform bone = BoneTable[visualBone]; 
             //A weapon (like a bow) can be slotted to main hand but prefer to be parented to the off-hand bone for visuals
             
             SlottedObjects[boneType] = instantiated;
@@ -212,7 +213,7 @@ namespace Kuantech.Character
             
             //Weapons change animation set
             if (model == null) return;
-            model.SwapWeaponAnimations(AnimatorOverrideController, boneType);
+            model.SwapWeaponAnimations(AnimatorModule.Animator, boneType);
 
             if (boneType == Enums.BoneTypes.MainHandBone) //todo: This here needs heavy refactoring
             {

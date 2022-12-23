@@ -1,4 +1,5 @@
-﻿using TMPro;
+﻿using Kuantech.Utils;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -12,12 +13,13 @@ namespace Kuantech.Core.UI
 
         public float MinAnchoredPos = 0;
         public float MaxAnchoredPos = 1;
-        private Slider _slider;
+        [SerializeField] private Slider _slider;
 
         public bool ShowMaxValue;
         
         private void Awake()
         {
+            if (_slider != null) return;
             _slider = GetComponent<Slider>();
         }
 
@@ -35,7 +37,19 @@ namespace Kuantech.Core.UI
             SetValue(value);
         }
         
+        public void SetFill(float fillAmount, string value)
+        {
+            SetFill(fillAmount);
+            SetValue(value);
+        }
+        
         public void SetFill(float fillAmount, float value, float maxValue)
+        {
+            SetFill(fillAmount);
+            SetValue(value, maxValue);
+        }
+        
+        public void SetFill(float fillAmount, string value, string maxValue)
         {
             SetFill(fillAmount);
             SetValue(value, maxValue);
@@ -57,11 +71,27 @@ namespace Kuantech.Core.UI
         {
             if (ValueText != null)
             {
-                ValueText.text = value.ToString();
+                ValueText.text = value.Stringfy();
             }
         }
 
         public void SetValue(float value, float maxValue)
+        {
+            if (ValueText != null)
+            {
+                ValueText.text = $"{value.Stringfy()} / {maxValue.Stringfy()}";
+            }
+        }
+
+        public void SetValue(string value)
+        {
+            if (ValueText != null)
+            {
+                ValueText.text = value;
+            }
+        }
+
+        public void SetValue(string value, string maxValue)
         {
             if (ValueText != null)
             {

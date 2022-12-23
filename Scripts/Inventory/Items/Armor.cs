@@ -1,4 +1,5 @@
-﻿
+﻿using Kuantech.Data;
+
 namespace Kuantech.Inventory.Items
 {
     public class Armor : Item
@@ -7,6 +8,7 @@ namespace Kuantech.Inventory.Items
         public Armor(ArmorData data) : base(data)
         {
             armorRating = data.armorValue;
+            Type = Enums.ItemType.Armor;
         }
         private float GetDefenseRating()
         {

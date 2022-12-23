@@ -27,5 +27,15 @@ namespace Kuantech.Core
         {
             
         }
+
+        public virtual void OnDeath(object sender, EventArgs empty)
+        {
+            
+        }
+
+        public virtual void OnRespawn(object sender, EventArgs empty)
+        {
+            
+        }
     }
 }

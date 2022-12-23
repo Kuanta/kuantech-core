@@ -9,11 +9,11 @@ namespace Kuantech.SurroundSystem
     public class SurroundSystem
     {
         //Parameters
-        public int RowSlotCount = 3; //How many agents on a single row
+        public int RowSlotCount; //How many agents on a single row
         public float VerticalDistance = 1f; //Distance to player (or between rows)
         public float HorizontalDistance = 1f;
         
-        public List<SurroundRow> SurroundSlots = new List<SurroundRow>();
+        [SerializeReference] public List<SurroundRow> SurroundSlots = new List<SurroundRow>();
         public List<SurroundAgent> RegisteredSurrounders = new List<SurroundAgent>();
 
         public Transform Target;
@@ -36,11 +36,10 @@ namespace Kuantech.SurroundSystem
             }
             RegisteredSurrounders = newRegistry;
         }
-
+        
         public void RegisterAgent(SurroundAgent agent)
         {
             QueuedAgents.Enqueue(agent);
-
         }
         
         public void HandleAgentQueue()
@@ -65,6 +64,7 @@ namespace Kuantech.SurroundSystem
         }
         private void FindAvailableSlot(SurroundAgent agent)
         {
+            if (agent == null) return;
             Enums.Directions direction;
             Vector3 diffVector = agent.transform.position - Target.position;
             float angle = Vector3.Angle(Target.forward, diffVector);
@@ -86,7 +86,7 @@ namespace Kuantech.SurroundSystem
                 if(agent.AssignedSlot != null && candidateSlot == agent.AssignedSlot) continue;
        
                 //If agent is at an currently optimal position...
-                if (agent.AssignedSlot != null && candidateSlot != null)
+                if (agent.AssignedSlot is {Occupied: true} && candidateSlot != null)
                 {
                     bool rowCondition = candidateSlot.Row > agent.AssignedSlot.Row;
                     bool colCondition = candidateSlot.Row == agent.AssignedSlot.Row && Mathf.Abs(candidateSlot.Column) >=

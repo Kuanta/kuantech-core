@@ -114,6 +114,15 @@ namespace Kuantech.Core
         }
 
         #region Items
+
+        public Item GetItemFromStateData(ItemStateData stateData)
+        {
+            ItemData itemData = ItemDatas[stateData.ItemId];
+            Item item = Item.GetItemFromData(itemData);
+            item.StateData = stateData;
+            return item;
+        }
+        
         /// <summary>
         /// Returns item model prefab from template id
         /// </summary>

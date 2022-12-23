@@ -90,9 +90,16 @@ namespace Kuantech.Core
             [StatTypes.Armor] = new Stat(){BaseValue = 0, LevelMultiplier = 0},
         };
         
-        private Dictionary<StatTypes, HashSet<StatModifier>> Modifiers;
-        private Queue<StatTypes> DirtiedStats = new Queue<StatTypes>();
+        [NonSerialized] private Dictionary<StatTypes, HashSet<StatModifier>> Modifiers;
+        [NonSerialized] private Queue<StatTypes> DirtiedStats = new Queue<StatTypes>();
 
+        public void CopyFrom(StatsModule statsModule)
+        {
+            Level = statsModule.Level;
+            OverflowExperience = statsModule.OverflowExperience;
+            RequiredExperienceToNextLevel = statsModule.RequiredExperienceToNextLevel;
+            Stats = statsModule.Stats;
+        }
         public override void OnModulesInitialized(object sender, EventArgs args)
         {
             InventoryModule invMod = (InventoryModule)Actor.GetModuleByType(typeof(InventoryModule));
@@ -103,7 +110,12 @@ namespace Kuantech.Core
 
         public void ItemEquippedHandler(object sender, Item item)
         {
-            AddModifiers(item.StateData.StatModifiers.Values.ToList());
+            if (item.StateData.StatModifiers != null)
+            {
+                AddModifiers(item.StateData.StatModifiers.Values.ToList());
+            }
+            
+            //Apply armor value
             if (!(item is Armor armor)) return;
             Stat armorStat = Stats[StatTypes.Armor];
             armorStat.AdditionModifier +=  armor.armorRating;
@@ -112,7 +124,10 @@ namespace Kuantech.Core
 
         public void ItemUnequippedHandler(object sender, Item item)
         {
-            RemoveModifiers(item.StateData.StatModifiers.Values.ToList());
+            if (item.StateData.StatModifiers != null)
+            {
+                RemoveModifiers(item.StateData.StatModifiers.Values.ToList());
+            }
 
             if (!(item is Armor armor)) return;
             Stat armorStat = Stats[StatTypes.Armor];
@@ -290,7 +305,13 @@ namespace Kuantech.Core
                 OverflowExperience = OverflowExperience - RequiredExperienceToNextLevel;
                 Level++;
                 RequiredExperienceToNextLevel = GetRequiredExperience(Level);
+                
+                //Refresh
+                Actor.SetHealth(1f);
+                Actor.SetEnergy(1f);
             }
+            
+            UpdateStatsState();
         }
 
         public int GetLevel()
@@ -307,12 +328,15 @@ namespace Kuantech.Core
         /// Sets the level and adjust the experience accordingly
         /// </summary>
         /// <param name="level"></param>
-        public void SetLevel(int level)
+        public void SetLevel(int level, int overflowExperience = 0)
         {
             level = Mathf.Max(1, level);
             Level = level;
-            OverflowExperience = 0; //This formula starts from level 0
+            OverflowExperience = overflowExperience;
             RequiredExperienceToNextLevel = GetRequiredExperience(level + 1);
+            UpdateStatsState();
+            Actor.SetHealth(1f);
+            Actor.SetEnergy(1f);
         }
         
         /// <summary>
@@ -399,6 +423,13 @@ namespace Kuantech.Core
                 [StatTypes.MovementSpeed] = new Stat(){BaseValue = 0, LevelMultiplier = 0},
                 [StatTypes.Armor] = new Stat(){BaseValue = 0, LevelMultiplier = 0},
             };
+            LooterGameManager.Instance.UserModel.DirtyStatsState();
+        }
+
+        [Button("Update Stats")]
+        public void UpdateStatsState()
+        {
+            LooterGameManager.Instance.UserModel.DirtyStatsState();
         }
     }
 }

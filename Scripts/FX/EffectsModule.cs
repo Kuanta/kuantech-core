@@ -56,7 +56,6 @@ namespace Kuantech.Core.FX
         {
             if (AttackEffects.IsNullOrEmpty()) return;
             int effectIndex = attackIndex % AttackEffects.Count;
-            Debug.LogError($"Attack Index {attackIndex}%{AttackEffects.Count} = {effectIndex}");
             AttackEffects[effectIndex].Play();
         }
 

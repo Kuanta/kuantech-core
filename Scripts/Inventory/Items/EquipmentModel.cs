@@ -17,9 +17,8 @@ namespace Kuantech.Inventory.Items
     }
     public class EquipmentModel : MonoBehaviour
     {
-        
         public Enums.BoneTypes CurrentSlot;
-        public AnimationSet AnimationSet;
+        public AnimatorOverrideController AnimationSet;
         public List<EquipmentPlace> PlacementsList;
         public Dictionary<Enums.BoneTypes, TransformStruct> Placements = new Dictionary<Enums.BoneTypes, TransformStruct>();
 
@@ -47,19 +46,10 @@ namespace Kuantech.Inventory.Items
             transform.localScale = Vector3.one;
         }
 
-        public void SwapWeaponAnimations(AnimatorOverrideController animator, Enums.BoneTypes boneType)
+        public void SwapWeaponAnimations(Animator animator, Enums.BoneTypes boneType)
         {
-            if (animator == null || animator.runtimeAnimatorController == null || AnimationSet == null) return;
-            AnimationSet.ApplyMovementSet(animator);
-            switch (boneType)
-            {
-                case Enums.BoneTypes.MainHandBone:
-                    AnimationSet.ApplyMainHandClips(animator);
-                    break;
-                case Enums.BoneTypes.OffHandBone:
-                    AnimationSet.ApplyOffHandClips(animator);
-                    break;
-            }
+            if (animator == null || AnimationSet == null) return;
+            animator.runtimeAnimatorController = AnimationSet;
         }
 
         public void SavePlacement(Enums.BoneTypes slotType)

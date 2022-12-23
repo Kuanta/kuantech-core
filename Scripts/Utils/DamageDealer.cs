@@ -45,5 +45,6 @@ namespace Kuantech.Core.Utils
                 actor.ReceiveDamage(_combatModule.Actor, _damage);
             }
         }
+        
     }
 }

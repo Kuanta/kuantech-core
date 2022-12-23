@@ -1,6 +1,9 @@
 ﻿using System.Collections.Generic;
+using System.Data.SqlTypes;
 using System.Linq;
 using Kuantech.Core;
+using Kuantech.Core.AI.ActionSequencer;
+using Kuantech.Core.Utils;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -11,6 +14,7 @@ namespace Kuantech.ActionSequencer
         None=0,
         Move,
         Attack,
+        Delay,
     }
     
     public class ActionSequencer : MonoBehaviour
@@ -23,10 +27,15 @@ namespace Kuantech.ActionSequencer
         
         private int _currentSequenceIndex = 0;
         private bool _sequenceStarted = false;
-        
+
+        public VariableTable VariableTable = new VariableTable();
         private void Start()
         {
             _currentSequenceIndex = 0;
+            foreach (var action in Sequence)
+            {
+                action.Sequencer = this;
+            }
         }
 
         private void Update()
@@ -55,6 +64,11 @@ namespace Kuantech.ActionSequencer
         {
             _sequenceStarted = false;
         }
+
+        public bool IsSequenceStarted()
+        {
+            return _sequenceStarted;
+        }
         
         private void SetNextSequence()
         {
@@ -77,12 +91,20 @@ namespace Kuantech.ActionSequencer
                     MoveAction ma = new MoveAction();
                     ma.Parent = gameObject;
                     Sequence.Add(ma);
+                    ma.Sequencer = this;
                     break;
                 case ActionTypes.Attack:
                     AttackAction aa = new AttackAction();
                     aa.Parent = gameObject;
                     aa.CombatModule = GetComponent<CombatModule>();
                     Sequence.Add(aa);
+                    aa.Sequencer = this;
+                    break;
+                case ActionTypes.Delay:
+                    DelayAction da = new DelayAction();
+                    da.Parent = gameObject;
+                    Sequence.Add(da);
+                    da.Sequencer = this;
                     break;
             }
         }

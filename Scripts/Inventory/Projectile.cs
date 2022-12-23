@@ -12,7 +12,7 @@ namespace Kuantech.Combat
         public CombatModule CastBy;
         public Weapon ShotFrom = null;
         public bool DestroyOnImpact = true;
-
+        public LayerMask Targets;
         public delegate void ImpactOverrideDelegate(Projectile proj, Actor target);
 
         public ImpactOverrideDelegate ImpactOverride;
@@ -43,6 +43,7 @@ namespace Kuantech.Combat
 
         private void Update()
         {
+            if(Speed == 0) Despawn();
             transform.position = transform.position + transform.forward * Time.deltaTime * Speed;
             _age += Time.deltaTime;
             if (_age > Range/Speed)
@@ -62,6 +63,13 @@ namespace Kuantech.Combat
         {
             //todo: Apply knockback
             if (CastBy == null || other.gameObject == CastBy.gameObject) return;
+            
+            //If in filtered targets...
+            if (!((Targets.value & (1 << other.gameObject.layer)) > 0)) return;
+
+            Actor targetActor = other.GetComponent<Actor>();
+            if (targetActor != null && targetActor.Health <= 0f) return;
+            
             if (ImpactSound != null)
             {
                 ImpactSound.Play();
@@ -69,7 +77,7 @@ namespace Kuantech.Combat
             
             if (ImpactOverride != null)
             {
-                ImpactOverride(this, other.gameObject.GetComponent<Actor>());
+                ImpactOverride(this, targetActor);
                 return;
             }
             

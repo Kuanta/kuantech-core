@@ -13,13 +13,20 @@ namespace Kuantech.ActionSequencer
     [Serializable]
     public class SequenceAction
     {
+        [NonSerialized] public ActionSequencer Sequencer;
         public GameObject Parent;
         public UnityAction OnExecute;
         public UnityAction OnTerminate;
         public bool IsComplete;
+        public bool Disabled = false;
         
         public virtual void Execute()
         {
+            if (Disabled)
+            {
+                IsComplete = true;
+                return;
+            }
             IsComplete = false;
             OnExecute?.Invoke();
         }

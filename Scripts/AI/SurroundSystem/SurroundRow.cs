@@ -124,14 +124,10 @@ namespace Kuantech.SurroundSystem
                 secondaryCandidates = LeftSlots;
             }
 
-            foreach (var slot in primaryCandidates)
+            for (int i = 0; i < primaryCandidates.Count; ++i)
             {
-                if (!slot.Occupied) return slot;
-            }
-
-            foreach (var slot in secondaryCandidates)
-            {
-                if (!slot.Occupied) return slot;
+                if (!primaryCandidates[i].Occupied) return primaryCandidates[i];
+                if (!secondaryCandidates[i].Occupied) return secondaryCandidates[i];
             }
 
             return null;
