@@ -6,9 +6,7 @@ using Kuantech.Data;
 using Kuantech.Inventory;
 using Kuantech.Inventory.Items;
 using Kuantech.Core.UI;
-using Kuantech.Scripts.Managers;
 using Kuantech.Utils;
-using RPGCharacterAnims.Actions;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Events;
@@ -567,14 +565,10 @@ namespace Kuantech.Core
         #region AttackSkills
         
         [Button("Add Skill")]
-        public void AddAttackSkill(Attack skill)
-        {
-            if (skill == null) return;
-            AddAttackSkill(skill);
-        }
-        
         public void AddAttackSkill(AttackSkill skill)
         {
+            if (skill == null) return;
+
             AttackSkills ??= new Dictionary<int, AttackSkill>();
             if (AttackSkills.ContainsKey(skill.Id))
             {
