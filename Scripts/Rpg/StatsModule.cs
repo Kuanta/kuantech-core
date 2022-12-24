@@ -310,8 +310,7 @@ namespace Kuantech.Core
                 Actor.SetHealth(1f);
                 Actor.SetEnergy(1f);
             }
-            
-            UpdateStatsState();
+
         }
 
         public int GetLevel()
@@ -334,7 +333,6 @@ namespace Kuantech.Core
             Level = level;
             OverflowExperience = overflowExperience;
             RequiredExperienceToNextLevel = GetRequiredExperience(level + 1);
-            UpdateStatsState();
             Actor.SetHealth(1f);
             Actor.SetEnergy(1f);
         }
@@ -423,13 +421,6 @@ namespace Kuantech.Core
                 [StatTypes.MovementSpeed] = new Stat(){BaseValue = 0, LevelMultiplier = 0},
                 [StatTypes.Armor] = new Stat(){BaseValue = 0, LevelMultiplier = 0},
             };
-            LooterGameManager.Instance.UserModel.DirtyStatsState();
-        }
-
-        [Button("Update Stats")]
-        public void UpdateStatsState()
-        {
-            LooterGameManager.Instance.UserModel.DirtyStatsState();
         }
     }
 }
