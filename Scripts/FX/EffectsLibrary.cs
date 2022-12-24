@@ -18,6 +18,9 @@ namespace Kuantech.Core.FX
         StaffShoot,
         GhostWeapon,
         ArcaneArrowExplosion,
+        GhostAcher,
+        ArcaneArrowEffect,
+        PowerShotArrowEffect,
     }
     
     [Serializable]
@@ -50,6 +53,30 @@ namespace Kuantech.Core.FX
         public void PlayAudio(AudioTypes audioType)
         {
             AudioLibrary.PlaySound(audioType);
+        }
+        
+        public Effect PlayEffect(EffectTypes effectType, Transform parent)
+        {
+            Effect effect = GetEffect(effectType);
+            if (effect == null) return null;
+            effect.Play(parent, Vector3.zero, Quaternion.identity);
+            return effect;
+        }
+        
+        public Effect PlayEffect(EffectTypes effectType, Transform parent, Vector3 localPosition, Quaternion localRotation)
+        {
+            Effect effect = GetEffect(effectType);
+            if (effect == null) return null;
+            effect.Play(parent, localPosition, localRotation);
+            return effect;
+        }
+
+        public Effect PlayEffect(EffectTypes effectType, Vector3 localPosition, Quaternion localRotation)
+        {
+            Effect effect = GetEffect(effectType);
+            if (effect == null) return null;
+            effect.Play(localPosition, localRotation);
+            return effect;
         }
         
         public Effect PlayTimedEffect(EffectTypes effectType, Transform parent)

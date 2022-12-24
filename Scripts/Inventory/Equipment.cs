@@ -23,6 +23,10 @@ namespace Kuantech.Inventory
 
         public float Encumbrance = 0f;
         
+        //Events
+        public EventHandler<Item>  ItemEquippedEvent;
+        public EventHandler<Item> ItemUnequippedEvent;
+
         private void Awake()
         {
             Actor = GetComponent<Actor>();
@@ -89,8 +93,9 @@ namespace Kuantech.Inventory
             Item existingItem = slotTable[itemSlotType].item;
             if (existingItem != null && existingItem != item)
             {
-                LooterGameManager.Instance.UnequipItem(existingItem);
+                ItemUnequippedEvent?.Invoke(this, existingItem);
             }
+            
             slotTable[itemSlotType].item = item;
             if (Actor == null) return;
             if (Actor.TryGetComponent(out CharacterBody cb))

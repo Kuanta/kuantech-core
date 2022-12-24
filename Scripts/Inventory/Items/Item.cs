@@ -165,7 +165,6 @@ namespace Kuantech.Inventory.Items
         {
             StateData.ItemLevel = level;
             UpdateModifiers();
-            LooterGameManager.Instance.UpdateItem(this);
         }
 
         public int GetItemLevel()

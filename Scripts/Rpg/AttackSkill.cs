@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Kuantech.Core;
+using UnityEngine;
 
 namespace Kuantech
 {
@@ -34,7 +35,7 @@ namespace Kuantech
         public int Id;
         public string Name;
         public string Description;
-        public int IconId;
+        public Sprite Icon;
         public float BaseEnergyCost;
         public List<SkillVariable> SkillVariables;
     }

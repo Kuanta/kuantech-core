@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Kuantech.Core;
+using Kuantech.Core.FX;
 using Kuantech.Inventory.Items;
 using UnityEngine;
 
@@ -13,6 +14,7 @@ namespace Kuantech.Combat
         public Weapon ShotFrom = null;
         public bool DestroyOnImpact = true;
         public LayerMask Targets;
+        
         public delegate void ImpactOverrideDelegate(Projectile proj, Actor target);
 
         public ImpactOverrideDelegate ImpactOverride;
@@ -59,6 +61,15 @@ namespace Kuantech.Combat
             component.transform.localPosition = Vector3.zero;
             component.transform.localRotation = Quaternion.identity;
         }
+
+        public void AddEffect(EffectTypes effectType)
+        {
+            Effect effect = EffectsLibrary.Instance.PlayEffect(effectType, Vector3.zero, Quaternion.identity);
+            AddAttachment(effect.gameObject);
+            effect.gameObject.transform.localPosition = Vector3.zero;
+            effect.gameObject.transform.localRotation = Quaternion.identity;
+        }
+        
         private void OnTriggerEnter(Collider other)
         {
             //todo: Apply knockback

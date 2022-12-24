@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.Events;
@@ -83,8 +84,12 @@ namespace Kuantech.Utils
             if (roundToInteger)
             {
                 abs = (int) abs;
+                numberString = abs.ToString();
             }
-            numberString = abs.ToString("F1");
+            else
+            {
+                numberString = abs.ToString("F1");
+            }
             return signString + numberString + quantitySuffix;
         }
         

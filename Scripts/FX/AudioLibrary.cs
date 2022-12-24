@@ -10,10 +10,16 @@ namespace Kuantech.Core.FX
         CoinPickup,
         CloseButton,
         ClickSound,
+        CoinEarnedSound, //For selling and getting coin from enemies
+        WinStinger,
+        LoseStinger,
+        PositiveEffect,
+        NegativeEffect,
+        FireDamageEffect,
     }
     
     [Serializable]
-    public class AudioClipDictionary : SerializableDictionary<AudioTypes, Sound>
+    public class AudioClipDictionary : SerializableDictionary<AudioTypes, AudioSource>
     {
     }
 
@@ -33,13 +39,13 @@ namespace Kuantech.Core.FX
 
         public void Initialize()
         {
-            foreach (var sound in Audios.Values)
-            {
-                sound.AudioSource = gameObject.AddComponent<AudioSource>();
-                sound.AudioSource.clip = sound.Clip;
-                sound.AudioSource.volume = sound.Volume;
-                sound.AudioSource.pitch = sound.Pitch;
-            }
+            // foreach (var sound in Audios.Values)
+            // {
+            //     sound.AudioSource = gameObject.AddComponent<AudioSource>();
+            //     sound.AudioSource.clip = sound.Clip;
+            //     sound.AudioSource.volume = sound.Volume;
+            //     sound.AudioSource.pitch = sound.Pitch;
+            // }
             
             //Load music values
             float musicVolume = PlayerPrefs.GetFloat("MusicVolume", defaultValue:1f);
@@ -51,8 +57,8 @@ namespace Kuantech.Core.FX
         public void PlaySound(AudioTypes audioType)
         {
             if (audioType == AudioTypes.None || Audios == null || !Audios.ContainsKey(audioType)) return;
-            if( Audios[audioType].AudioSource.isPlaying) return;
-            Audios[audioType].AudioSource.Play();
+            if(Audios[audioType] == null) return;
+            Audios[audioType].Play();
         }
         
         /// <summary>
