@@ -346,13 +346,14 @@ namespace Kuantech.Core
             return ShootPosition != null ? ShootPosition.position : transform.position;
         }
         //Attack Casts
-        public static void DealAreaDamage(CombatModule from, float damage, float range, float knockback, bool useSkill, float angle=0f)
+        public static void DealAreaDamage(CombatModule from, float damage, float range, float knockback, bool useSkill, bool checkObstacle, float angle=0f)
         {
             Vector3 center = from.transform.position + Vector3.up;
             Collider[] results = new Collider[32];
             int hitCount = UnityEngine.Physics.OverlapSphereNonAlloc(center, range, results, from.Targets);
             Vector3 forwardVector = from.transform.forward;
             forwardVector.y = 0f;
+            RaycastHit hitResult;
             for (int i = 0; i < hitCount; ++i)
             {
                 if(results[i] == null) continue;
@@ -401,12 +402,49 @@ namespace Kuantech.Core
                 if (_maxFlag && _minFlag && _minAngle <= -halfAngle && _maxAngle >= halfAngle) isInAngleRange = true;
                 
                 if(!isInAngleRange) continue;
+
+          
+                
+                if (checkObstacle)
+                {
+                    //Check if behind obstacle
+                    Vector3 diffVec = results[i].transform.position - center;
+                    diffVec.Normalize();
+
+                    Ray ray = new Ray
+                    {
+                        origin = center,
+                        direction = diffVec
+                    };
+                    bool obscured = false;
+                    RaycastHit[] hits = new RaycastHit[16];
+                    if (UnityEngine.Physics.RaycastNonAlloc(ray, hits, range)  > 0)
+                    {
+                        for (int j = 0; j < hits.Length; ++j)
+                        {
+                            if (hits[j].collider.gameObject == results[i].gameObject)
+                            {
+                                break;
+                            }
+                            if (hits[j].collider.gameObject == from.gameObject)
+                            {
+                                continue;
+                            }
+                            obscured = true;
+                            break;
+                        }
+                    }
+
+                    if (obscured) continue;
+                }
+                
+
                 Actor target = results[i].GetComponent<Actor>();
                 if(target == null) continue;
                 from.DamageActorMelee(target, damage, knockback);   
             }
         }
-        
+
         private void LinearMeleeAttack()
         {
             Vector3 center = transform.position + transform.forward * Range*0.5f;
@@ -419,6 +457,37 @@ namespace Kuantech.Core
                 if(_results[i] == null) continue;
                 Actor target = _results[i].GetComponent<Actor>();
                 if(target == null) continue;
+                
+                //Check if behind obstacle
+                bool obscured = false;
+
+                Vector3 diffVec = _results[i].transform.position - center;
+                diffVec.Normalize();
+                RaycastHit[] hits = new RaycastHit[16];
+                Ray ray = new Ray
+                {
+                    origin = center,
+                    direction = diffVec,
+                };
+                if (UnityEngine.Physics.RaycastNonAlloc(ray, hits, Range)  > 0)
+                {
+                    for (int j = 0; j < hits.Length; ++j)
+                    {
+                        if (hits[j].collider.gameObject == _results[i].gameObject)
+                        {
+                            break;
+                        }
+                        if (hits[j].collider.gameObject == gameObject)
+                        {
+                            continue;
+                        }
+                        obscured = true;
+                        break;
+                    }
+                }
+
+                if (obscured) continue;
+                
                 DamageActorMelee(target,GetDamage(), Knockback);
                 if (CanUseSkill)
                 {
@@ -433,7 +502,7 @@ namespace Kuantech.Core
 
         private void ArcMeleeAttack(float angle)
         {
-            DealAreaDamage(this, GetDamage(), Range, Knockback, true, angle);
+            DealAreaDamage(this, GetDamage(), Range, Knockback, true, true, angle);
         }
 
         private void CircleMeleeAttack()
@@ -553,7 +622,7 @@ namespace Kuantech.Core
 
         private IEnumerator KnockbackRoutine(Actor target, float knockback)
         {
-            Vector3 diff = target.transform.position - transform.position;
+            Vector3 diff = transform.forward;
             diff.y = 0f;
             diff.Normalize();
             diff *= knockback;

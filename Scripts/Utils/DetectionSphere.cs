@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Kuantech
 {
-    [RequireComponent(typeof(SphereCollider))]
+    [RequireComponent(typeof(Collider))]
     public class DetectionSphere : MonoBehaviour
     {
         public EventHandler<GameObject> TargetEntered;

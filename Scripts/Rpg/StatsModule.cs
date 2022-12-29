@@ -298,6 +298,7 @@ namespace Kuantech.Core
         /// <param name="experience"></param>
         public void EarnExperience(int experience)
         {
+            LooterGameManager.Instance.UserModel.DirtyStatsState();
             OverflowExperience += experience;
             while (OverflowExperience >= RequiredExperienceToNextLevel)
             {
@@ -312,7 +313,43 @@ namespace Kuantech.Core
             }
 
         }
+        
+        /// <summary>
+        /// Removes experience and de-levels if necessary
+        /// </summary>
+        /// <param name="experience"></param>
+        public void RemoveExperience(int experience)
+        {
+            LooterGameManager.Instance.UserModel.DirtyStatsState();
+            CalculateLevelOnExperienceRemove(experience, out var newLevel, out var newOverflowExperience);
+            Level = newLevel;
+            OverflowExperience = newOverflowExperience;
+        }
 
+        public void CalculateLevelOnExperienceRemove(int experience, out int newLevel,
+            out int newOverflowExperience)
+        {
+            newLevel = Level;
+            newOverflowExperience = OverflowExperience;
+            while (experience > 0)
+            {
+                if (experience > newOverflowExperience)
+                {
+                    newLevel--;
+                    experience -= newOverflowExperience;
+                    newOverflowExperience = GetRequiredExperience(newLevel + 1);
+                }
+                else
+                {
+                    newOverflowExperience -= experience;
+                    return;
+                }
+            }
+
+            newLevel = Mathf.Max(0, newLevel);
+            newOverflowExperience = Mathf.Max(0, newOverflowExperience);
+        }
+        
         public int GetLevel()
         {
             return Level;
@@ -357,9 +394,7 @@ namespace Kuantech.Core
         /// <returns></returns>
         public static float GetNormalizedOverflowExperience(int currentLevel, int overflowExperience)
         {
-            int currLevelValue = GetRequiredExperience(currentLevel);
-            int nextLevelValue = GetRequiredExperience(currentLevel + 1);
-            return overflowExperience / (float)(nextLevelValue - currLevelValue);
+            return overflowExperience / (float)GetRequiredExperience(currentLevel + 1);
         }
         
         /// <summary>

@@ -33,7 +33,7 @@ namespace Kuantech.Core.Utils
             if (_combatModule == null) return;
             if (Time.time - _lastAttackTime >= Frequency)
             {
-                CombatModule.DealAreaDamage(_combatModule, _damage, _range, _knockback, false,_angle);
+                CombatModule.DealAreaDamage(_combatModule, _damage, _range, _knockback, false,false, _angle);
                 _lastAttackTime = Time.time;
             }
         }

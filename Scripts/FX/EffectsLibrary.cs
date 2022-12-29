@@ -95,11 +95,11 @@ namespace Kuantech.Core.FX
             return effect;
         }
 
-        public Effect PlayTimedEffect(EffectTypes effectType, Vector3 localPosition, Quaternion localRotation)
+        public Effect PlayTimedEffect(EffectTypes effectType, Vector3 position, Quaternion rotation)
         {
             Effect effect = GetEffect(effectType);
             if (effect == null) return null;
-            effect.PlayTimed(effect.Duration, localPosition, localRotation);
+            effect.PlayTimed(effect.Duration, position, rotation);
             return effect;
         }
     }

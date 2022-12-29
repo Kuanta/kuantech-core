@@ -1,4 +1,7 @@
 ﻿using System.Collections;
+using Kuantech.Core;
+using Kuantech.Core.FX;
+using Kuantech.UI;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -10,6 +13,8 @@ namespace Kuantech.Inventory.Items
     public class ItemDropModel : MonoBehaviour
     {
         public Kuantech.Physics.Rigidbody Rigidbody;
+        public ParticleSystem RarirtyGlow;
+        public AudioTypes PickupSound = AudioTypes.None;
         
         //Target follow
         private bool _followTarget;
@@ -28,6 +33,7 @@ namespace Kuantech.Inventory.Items
                 {
                     _followCompleteHandler?.Invoke(this);
                     _followTarget = false;
+                    EffectsLibrary.Instance.PlayAudio(PickupSound);
                     return;
                 }
                 dist.Normalize();
@@ -39,6 +45,13 @@ namespace Kuantech.Inventory.Items
             float acceleration)
         {
             return Rigidbody.SetTrajectory(verticalDistance, horizontalDistance, direction, acceleration);
+        }
+
+        public void SetRarityGlow(ItemRarities rarity)
+        {
+            if (RarirtyGlow == null) return;
+            ParticleSystem.MainModule main = RarirtyGlow.main;
+            main.startColor = UIManager.Instance.ColorPalette.RarityColors[rarity];
         }
         
         /// <summary>

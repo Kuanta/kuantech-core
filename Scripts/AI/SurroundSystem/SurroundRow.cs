@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Kuantech.Data;
+using Kuantech.Managers;
 using UnityEngine;
 
 namespace Kuantech.SurroundSystem
@@ -30,7 +31,6 @@ namespace Kuantech.SurroundSystem
                     Column = i,
                     VerticalDistance = verticalDistance,
                     HorizontalDistance = horizontalDistance,
-                    Occupied = false
                 };
                 
                 //if i=0, add the center to both column list
@@ -63,7 +63,7 @@ namespace Kuantech.SurroundSystem
                 for (int i = LeftSlots.Count - 1; i >= 0; --i)
                 {
                     SurroundSlot leftSlot = LeftSlots[i];
-                    if (!leftSlot.Occupied) continue;
+                    if (!EnemyAIManager.Instance.SurroundSystem.IsSlotOccupied(leftSlot)) continue;
                     if (!foundEdge)
                     {
                         float horizontalPosition = Mathf.Abs(leftSlot.GetHorizontalDistance()) + Mathf.Abs(normalizedHorizontalPosition) * horizontalWidth*0.5f;
@@ -88,7 +88,7 @@ namespace Kuantech.SurroundSystem
                 for (int i = RightSlots.Count - 1; i >= 0; --i)
                 {
                     SurroundSlot rightSlot = RightSlots[i];
-                    if (!rightSlot.Occupied) continue;
+                    if (!EnemyAIManager.Instance.SurroundSystem.IsSlotOccupied(rightSlot)) continue;
                     if (!foundEdge)
                     {
                         float horizontalPosition = Mathf.Abs(rightSlot.GetHorizontalDistance()) + Mathf.Abs(normalizedHorizontalPosition) * horizontalWidth*0.5f;
@@ -126,8 +126,8 @@ namespace Kuantech.SurroundSystem
 
             for (int i = 0; i < primaryCandidates.Count; ++i)
             {
-                if (!primaryCandidates[i].Occupied) return primaryCandidates[i];
-                if (!secondaryCandidates[i].Occupied) return secondaryCandidates[i];
+                if (!EnemyAIManager.Instance.SurroundSystem.IsSlotOccupied(primaryCandidates[i])) return primaryCandidates[i];
+                if (!EnemyAIManager.Instance.SurroundSystem.IsSlotOccupied(secondaryCandidates[i])) return secondaryCandidates[i];
             }
 
             return null;

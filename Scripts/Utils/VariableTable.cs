@@ -17,7 +17,6 @@ namespace Kuantech.Core.Utils
         {
             if (_variables.ContainsKey(name))
             {
-                Debug.LogError( $"Variable named {name} already exists in the board");
                 return;
             }
             

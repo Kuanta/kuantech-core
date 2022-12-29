@@ -16,6 +16,8 @@ namespace Kuantech.Core.FX
         PositiveEffect,
         NegativeEffect,
         FireDamageEffect,
+        CoinPickupSound,
+        ItemPickupSound,
     }
     
     [Serializable]

@@ -17,7 +17,6 @@ namespace Kuantech.SurroundSystem
         public void AssignToSlot(SurroundSlot slot)
         {
             AssignedSlot = slot;
-            slot.Occupied = true;
         }
 
     }

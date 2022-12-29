@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Kuantech.Data;
 using UnityEngine;
 
@@ -19,6 +20,7 @@ namespace Kuantech.SurroundSystem
         public Transform Target;
 
         public Queue<SurroundAgent> QueuedAgents = new Queue<SurroundAgent>();
+        public Dictionary<SurroundSlot, SurroundAgent> SlotsToAgentsMap = new Dictionary<SurroundSlot, SurroundAgent>();
         public SurroundSystem(Transform target)
         {
             Target = target;
@@ -30,15 +32,41 @@ namespace Kuantech.SurroundSystem
             List<SurroundAgent> newRegistry = new List<SurroundAgent>(); //To remove disabled agents
             for (int i = 0; i < RegisteredSurrounders.Count; ++i)
             {
-                if(!RegisteredSurrounders[i].Available) continue;
+                if(RegisteredSurrounders[i] == null || !RegisteredSurrounders[i].Available) continue;
                 newRegistry.Add(RegisteredSurrounders[i]);
                 FindAvailableSlot(RegisteredSurrounders[i]);
             }
             RegisteredSurrounders = newRegistry;
+            
+            //Check for unoccupied slots
+            bool needRecalculate = false;
+            List<SurroundSlot> slots = SlotsToAgentsMap.Keys.ToList();
+            foreach (var slot in slots)
+            {
+                if (!SlotsToAgentsMap[slot].Available)
+                {
+                    SlotsToAgentsMap.Remove(slot);
+                    needRecalculate = true;
+                }else if (SlotsToAgentsMap[slot].Available && SlotsToAgentsMap[slot].AssignedSlot != slot)
+                {
+                    SlotsToAgentsMap.Remove(slot);
+                    needRecalculate = true;
+                    
+                }
+            }
+        }
+
+        public bool IsSlotOccupied(SurroundSlot slot)
+        {
+            if (!SlotsToAgentsMap.ContainsKey(slot)) return false;
+            if (SlotsToAgentsMap[slot].Available) return true;
+            SlotsToAgentsMap.Remove(slot);
+            return false;
         }
         
         public void RegisterAgent(SurroundAgent agent)
         {
+            agent.Available = true;
             QueuedAgents.Enqueue(agent);
         }
         
@@ -48,8 +76,8 @@ namespace Kuantech.SurroundSystem
             SurroundAgent agent = QueuedAgents.Dequeue();
             while (agent != null)
             {
-                FindAvailableSlot(agent);
                 RegisteredSurrounders.Add(agent);
+                FindAvailableSlot(agent);
                 agent = QueuedAgents.Count > 0 ? QueuedAgents.Dequeue() : null;
             }
             QueuedAgents.Clear();
@@ -64,7 +92,7 @@ namespace Kuantech.SurroundSystem
         }
         private void FindAvailableSlot(SurroundAgent agent)
         {
-            if (agent == null) return;
+            if (agent == null || !agent.Available) return;
             Enums.Directions direction;
             Vector3 diffVector = agent.transform.position - Target.position;
             float angle = Vector3.Angle(Target.forward, diffVector);
@@ -86,23 +114,41 @@ namespace Kuantech.SurroundSystem
                 if(agent.AssignedSlot != null && candidateSlot == agent.AssignedSlot) continue;
        
                 //If agent is at an currently optimal position...
-                if (agent.AssignedSlot is {Occupied: true} && candidateSlot != null)
+                if (agent.AssignedSlot != null && IsSlotOccupied(agent.AssignedSlot) && candidateSlot != null)
                 {
+                    if (agent != SlotsToAgentsMap[agent.AssignedSlot])
+                    {
+                        Debug.LogError("ANAYNI BACIYNI");
+                    }
                     bool rowCondition = candidateSlot.Row > agent.AssignedSlot.Row;
                     bool colCondition = candidateSlot.Row == agent.AssignedSlot.Row && Mathf.Abs(candidateSlot.Column) >=
                         Mathf.Abs(agent.AssignedSlot.Column);
-                    if (rowCondition || colCondition)
+                    if (rowCondition)
                     {
+                        //Don't search for slots on back rows if agent already has a place on front row
                         return;
+                    }
+
+                    if (colCondition)
+                    {
+                        continue;
                     }
                 }
                 if(candidateSlot == null) continue;
+                
+                if (SlotsToAgentsMap.ContainsKey(candidateSlot))
+                {
+                    continue;
+                }
+                
                 //Release its old slot
                 if (agent.AssignedSlot != null)
                 {
-                    agent.AssignedSlot.Occupied = false;
+                    SlotsToAgentsMap.Remove(agent.AssignedSlot);
+                    agent.AssignedSlot = null;
                 }
                 agent.AssignToSlot(candidateSlot);
+                SlotsToAgentsMap[candidateSlot] = agent;
                 return;
             }
             
@@ -112,14 +158,17 @@ namespace Kuantech.SurroundSystem
             SurroundSlots.Add(newRow);
             
             //Receive a suitable slot according to agents position
-            agent.AssignToSlot(newRow.FindSuitableSlot(direction));
+            SurroundSlot foundSlot = newRow.FindSuitableSlot(direction);
+            agent.AssignToSlot(foundSlot);
+            SlotsToAgentsMap[foundSlot] = agent;
         }
         
         public void UnregisterAgent(SurroundAgent agent)
         {
             if (agent == null || agent.AssignedSlot == null) return;
+            SlotsToAgentsMap.Remove(agent.AssignedSlot);
             agent.Available = false;
-            agent.AssignedSlot.Reset();
+            agent.AssignedSlot = null;
             RecalculateSlots();
         }
         
@@ -127,6 +176,7 @@ namespace Kuantech.SurroundSystem
         {
             SurroundSlots.Clear();
             RegisteredSurrounders.Clear();
+            SlotsToAgentsMap.Clear();
         }
     }
 }

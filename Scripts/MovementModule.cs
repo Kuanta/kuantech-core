@@ -20,7 +20,11 @@ namespace Kuantech.Core
         }
         private void FixedUpdate()
         {
-            if (GameManager.Instance.GameIsPaused || Actor.Health <= 0f) return;
+            if (GameManager.Instance.GameIsPaused || Actor.Health <= 0f)
+            {
+                Actor.Rigidbody.velocity = Vector3.zero;
+                return;
+            }
             if (Actor.Rigidbody == null) return;
             Vector3 vel = transform.right * (_horizontalSpeed * _movement.x) +
                           transform.forward * (_movement.y * _verticalSpeed) + Actor.ForceMoveVector;

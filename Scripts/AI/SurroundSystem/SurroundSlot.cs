@@ -10,7 +10,6 @@ namespace Kuantech.SurroundSystem
         public float Column = 0; //Column can be floating point like 0.5
         public float VerticalDistance = 1f;
         public float HorizontalDistance = 0f;
-        public bool Occupied = false;
         
         public float LeftOffset = 2f;
         public float RightOffset = 0f;
@@ -47,11 +46,6 @@ namespace Kuantech.SurroundSystem
         public float GetHorizontalDistance()
         {
             return Column * HorizontalDistance;
-        }
-
-        public void Reset()
-        {
-            Occupied = false;
         }
     }
 }
