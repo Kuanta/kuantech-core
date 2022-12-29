@@ -9,8 +9,12 @@ namespace Kuantech.Core
         public float ForwardInput;
 
         public UnityEvent<int> AttackEvent;
+        public UnityEvent AimEvent;
+        public UnityEvent ReleaseAimEvent;
 
-        private void Update()
+        public float MovementScale = 1f;
+        
+        protected virtual void Update()
         {
             if (GameManager.Instance.GameIsPaused) return;
             
@@ -44,6 +48,14 @@ namespace Kuantech.Core
             if (Input.GetKeyDown(KeyCode.Space))
             {
                 AttackEvent?.Invoke(0);
+            }
+
+            if (Input.GetKeyDown(KeyCode.LeftControl))
+            {
+                MovementScale = 0.5f;
+            }else if (Input.GetKeyUp(KeyCode.LeftControl))
+            {
+                MovementScale = 1f;
             }
         }
 

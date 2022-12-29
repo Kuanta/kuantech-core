@@ -21,6 +21,7 @@ namespace Kuantech.Core.FX
         GhostAcher,
         ArcaneArrowEffect,
         PowerShotArrowEffect,
+        None,
     }
     
     [Serializable]

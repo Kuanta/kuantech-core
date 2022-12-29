@@ -15,6 +15,7 @@ namespace Kuantech.Inventory.Items
         public GameObject ProjectilePrefab = null;
         public List<WeaponAttackPattern> AttackPatterns;
         public List<int> SupportedSkills;
+        public EquipmentModel EquipmentModel;
 
         public Weapon(WeaponData data) : base(data)
         {

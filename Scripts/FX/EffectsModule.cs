@@ -13,6 +13,7 @@ namespace Kuantech.Core.FX
         public List<Effect> AttackEffects = new List<Effect>(); //Dependent on the weapon
         public Effect DamageReceiveEffect;
         public Effect DeathEffect;
+        public Effect ImpactEffect;
 
         public override void Initialize()
         {
@@ -59,6 +60,7 @@ namespace Kuantech.Core.FX
             AttackEffects[effectIndex].Play();
         }
 
+        
         private void OnReceiveDamage(object sender, float damage)
         {
             if (DamageReceiveEffect != null)

@@ -6,6 +6,7 @@ using Kuantech.Data;
 using Kuantech.Inventory;
 using Kuantech.Inventory.Items;
 using Kuantech.Core.UI;
+using Kuantech.Core.Utils;
 using Kuantech.Utils;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -19,7 +20,8 @@ namespace Kuantech.Core
         Linear,
         Arc,
         Circle,
-        Ranged,
+        Ranged, //For projecitle based attacks, like arrow and fireball
+        RangedRaycast, //For raycast based attacks
     }
     
     //Event Infos
@@ -38,8 +40,6 @@ namespace Kuantech.Core
     
     public class CombatModule : Module
     {
-        public static readonly float QueueTimeFactor = 0.5f;
-        
         //Components
         public LineTelemetry LineAttackTelemetry;
         public CircleTelemetry CircleAttackTelemetry;
@@ -47,17 +47,13 @@ namespace Kuantech.Core
         
         //Base Parameters for Unarmed Combat (Or for enemies that doesn't need 'equipment'
         public WeaponAttackPattern DefaultAttackPattern;
-        public float DamageTime;
-        public float AnimationTime;
-        public float Range;
-        public float Width;
-        public float Angle = 0; //For arc attacks
-        public float Knockback;
+        private WeaponAttackPattern _currentAttackPattern;
         public AttackTypes CurrentAttackType;
         public Weapon EquippedWeapon = null;
         public Projectile DefaultProjectilePrefab = null;
 
         [Header("Attack Positions")] 
+        public Vector3 AimVector;
         public Transform ShootPosition;
         
         //States
@@ -69,15 +65,15 @@ namespace Kuantech.Core
         //Collision
         private Collider[] _results = new Collider[32];
         public LayerMask Targets;
-
         private UnityAction AttackCompleteHandler;
-
         private InventoryModule _actorInventory;
-        
+        private List<RaycastProjectile> _shotRaycastProjecitles = new List<RaycastProjectile>();
+
         //Attack Flow (Combo)
         [Header("Flow")]
         [SerializeField] private int _flowIndex = 0;
         [SerializeField] private float _flowBreakTime = 0.5f;
+        [SerializeField] private float QueueTimeFactor = 1.1f;
         private float _lastAttackEndTime = 0f;
         private bool _attackQueued = false;
         
@@ -93,6 +89,7 @@ namespace Kuantech.Core
         public EventHandler<ProjectileImpactInfo> RangedImpactEvent;
         public EventHandler<Projectile> ProjectileEndRangeEvent;
         public EventHandler<ProjecitleShotInfo> ProjectileShotEvent;
+        public EventHandler<RaycastHit> RayProjectileHitEvent; 
         
         public override void Initialize()
         {
@@ -115,6 +112,7 @@ namespace Kuantech.Core
             _flowIndex = 0;
             _damageDone = false;
             _attackQueued = false;
+            _shotRaycastProjecitles.Clear();
             ResetActiveTelemetry();
             CalculateManaCosts();
         }
@@ -128,11 +126,16 @@ namespace Kuantech.Core
         private void Update()
         {
             if (GameManager.Instance.GameIsPaused) return;
+            
+            //1) Handle projectile bullets
+            HandleProjectileBullets();
+            
+            //2) Attack Anim
             if (!IsAttacking) return;
             float timePassedAttacking = Time.time - AttackStartTime;
             
             //Check animation time first
-            if (timePassedAttacking >= AnimationTime)
+            if (timePassedAttacking >= _currentAttackPattern.AnimationTime)
             {
                 IsAttacking = false; //Ends the attack
 
@@ -143,7 +146,7 @@ namespace Kuantech.Core
             }
 
             if (_damageDone) return;
-            float normalizedTime = timePassedAttacking / DamageTime;
+            float normalizedTime = timePassedAttacking / _currentAttackPattern.DamageTime;
             
             if(ActiveTelemetry != null) ActiveTelemetry.SetFill(normalizedTime);
             if (normalizedTime > 1f)
@@ -165,24 +168,31 @@ namespace Kuantech.Core
                     case AttackTypes.Ranged:
                         RangedAttack();
                         break;
+                    case AttackTypes.RangedRaycast:
+                        RangedRaycastAttack();
+                        break;
                 }
                 AttackCompleteHandler?.Invoke();
                 _damageDone = true;
             }
         }
 
+        private void HandleProjectileBullets()
+        {
+            _shotRaycastProjecitles.RemoveAll(proj => proj.Impacted == true);
+            foreach (var proj in _shotRaycastProjecitles)
+            {
+                proj.Update(Time.deltaTime);
+            }
+        }
+        
         public void ApplyAttackPattern(WeaponAttackPattern pattern)
         {
             //First parameters...
-            Range = pattern.Range;
-            Angle = pattern.Angle;
-            AnimationTime = pattern.AnimationTime;
-            DamageTime = pattern.DamageTime;
-            Width = pattern.Width;
-            Knockback = pattern.Knockback;
+            _currentAttackPattern = pattern;
             
             //...then attack type
-            SetAttackType(pattern.AttackType);
+            SetAttackType(_currentAttackPattern.AttackType);
             SetAnimationTime(); //For clients
         }
         
@@ -190,9 +200,9 @@ namespace Kuantech.Core
         {
             if (IsAttacking)
             {
-                float queueTime = (Time.time - AttackStartTime) / AnimationTime;
+                float queueTime = (Time.time - AttackStartTime) / _currentAttackPattern.AnimationTime;
                 //Check current frame
-                if (queueTime >= AnimationTime * QueueTimeFactor)
+                if (queueTime >= _currentAttackPattern.AnimationTime * QueueTimeFactor && QueueTimeFactor < 1f)
                 {
                     //Queue next attack
                     _attackQueued = true;
@@ -252,6 +262,11 @@ namespace Kuantech.Core
             return true;
         }
 
+        public void SetAimVector(Vector3 aimVector)
+        {
+            AimVector = aimVector;
+        }
+        
         public int GetFlowIndex()
         {
             if (Time.time - _lastAttackEndTime <= _flowBreakTime)
@@ -294,9 +309,9 @@ namespace Kuantech.Core
 
             if (ActiveTelemetry != null)
             {
-                ActiveTelemetry.SetAngle(Angle);
-                ActiveTelemetry.SetLength(Range);
-                ActiveTelemetry.SetWidth(Width);
+                ActiveTelemetry.SetAngle(_currentAttackPattern.Angle);
+                ActiveTelemetry.SetLength(_currentAttackPattern.Range);
+                ActiveTelemetry.SetWidth(_currentAttackPattern.Width);
                 ResetActiveTelemetry();
             }
         }
@@ -322,14 +337,16 @@ namespace Kuantech.Core
             switch (CurrentAttackType)
             {
                 case AttackTypes.Linear:
-                    return forwardDistrSqr <= Range * Range && widthSqr <= (Width * Width * 0.5f * 0.5f) && Vector3.Dot(transform.forward, diffVector) >= 0;
+                    return forwardDistrSqr <= _currentAttackPattern.Range * _currentAttackPattern.Range && widthSqr <= 
+                        (_currentAttackPattern.Width * _currentAttackPattern.Width * 0.5f * 0.5f) && Vector3.Dot(transform.forward, diffVector) >= 0;
                 case AttackTypes.Arc:
-                    bool pointInAngle = transform.PointIsInAngleRange(target, Angle);
-                    bool isInRange = sqrDist <= Range * Range;
+                    bool pointInAngle = transform.PointIsInAngleRange(target, _currentAttackPattern.Angle);
+                    bool isInRange = sqrDist <= _currentAttackPattern.Range * _currentAttackPattern.Range;
                     return pointInAngle && isInRange;
+                case AttackTypes.RangedRaycast:
                 case AttackTypes.Ranged:
                 case AttackTypes.Circle:
-                    return sqrDist <= Range * Range;
+                    return sqrDist <= _currentAttackPattern.Range * _currentAttackPattern.Range;
                 default:
                     return false;
             }
@@ -447,9 +464,12 @@ namespace Kuantech.Core
 
         private void LinearMeleeAttack()
         {
-            Vector3 center = transform.position + transform.forward * Range*0.5f;
+            Vector3 center = transform.position + transform.forward * _currentAttackPattern.Range*0.5f;
             center.y = 1f;
-            int hitCount = UnityEngine.Physics.OverlapBoxNonAlloc(center, new Vector3(Width*0.5f, Width*0.5f, Range*0.5f), 
+            int hitCount = UnityEngine.Physics.OverlapBoxNonAlloc(center, 
+                new Vector3(_currentAttackPattern.Width*0.5f,
+                    _currentAttackPattern.Width*0.5f, 
+                    _currentAttackPattern.Range*0.5f), 
                 _results, Quaternion.identity, Targets.value);
 
             for (int i = 0; i < hitCount; ++i)
@@ -488,7 +508,7 @@ namespace Kuantech.Core
 
                 if (obscured) continue;
                 
-                DamageActorMelee(target,GetDamage(), Knockback);
+                DamageActorMelee(target,GetDamage(), _currentAttackPattern.Knockback);
                 if (CanUseSkill)
                 {
                     MeleeImpactEvent?.Invoke(this, target);
@@ -497,12 +517,12 @@ namespace Kuantech.Core
         }
         private void ArcMeleeAttack()
         {
-            ArcMeleeAttack(Angle);
+            ArcMeleeAttack(_currentAttackPattern.Angle);
         }
 
         private void ArcMeleeAttack(float angle)
         {
-            DealAreaDamage(this, GetDamage(), Range, Knockback, true, true, angle);
+            DealAreaDamage(this, GetDamage(), _currentAttackPattern.Range, _currentAttackPattern.Knockback, true, angle);
         }
 
         private void CircleMeleeAttack()
@@ -532,7 +552,29 @@ namespace Kuantech.Core
                 transform.forward,
                 true);
         }
+        
+        /// <summary>
+        /// Shoots a raycast projectile
+        /// </summary>
+        /// <param name="origin"></param>
+        /// <param name="direction"></param>
+        /// <param name="maxRange"></param>
+        public void RangedRaycastAttack()
+        {
+            Vector3 origin = GetShootPosition();
+            RaycastProjectile proj = new RaycastProjectile();
+            _shotRaycastProjecitles.Add(proj);
+            proj.Shoot(origin, AimVector, _currentAttackPattern.ProjectileSpeed,  _currentAttackPattern.Range, OnRaycastProjectileHit, _currentAttackPattern.ProjectileDrop);
+        }
 
+        private void OnRaycastProjectileHit(RaycastHit hitInfo)
+        {
+            RayProjectileHitEvent?.Invoke(this, hitInfo);
+            Actor actor = hitInfo.collider.gameObject.GetComponent<Actor>();
+            if (actor == null) return;
+            actor.ReceiveDamage(Actor, GetDamage());
+        }
+        
         /// <summary>
         /// Shoots a projectile from the weapon
         /// </summary>
@@ -549,7 +591,7 @@ namespace Kuantech.Core
             {
                 projectile.Initialize(this, weapon);
                 projectile.Targets = Targets;
-                projectile.Range = Range;
+                projectile.Range = _currentAttackPattern.Range;
                 if (CanUseSkill && castSkill)
                 {
                     ProjectileShotEvent?.Invoke(this, new ProjecitleShotInfo()
@@ -707,7 +749,7 @@ namespace Kuantech.Core
         {
             AnimatorModule animMod = (AnimatorModule)Actor.GetModuleByType(typeof(AnimatorModule));
             if (animMod == null) return;
-            animMod.SetAnimationTime(AnimationTime);
+            animMod.SetAnimationTime(_currentAttackPattern.AnimationTime);
         }
         #endregion
 

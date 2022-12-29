@@ -12,6 +12,8 @@ namespace Kuantech.Core.FX
         public float Delay = 0f;
         public Animator Animator;
         private static readonly int Play1 = Animator.StringToHash("Play");
+        public bool EmitEffect = false; //If set to true, effect will be emitted instead of play
+        public int EmitCount = 1;
 
         public void Play()
         {
@@ -21,8 +23,19 @@ namespace Kuantech.Core.FX
         private IEnumerator PlayRoutine()
         {
             yield return new WaitForSeconds(Delay);
+            PlayEffects();
+        }
+
+        private void PlayEffects()
+        {
             if(Sfx != null) Sfx.Play();
-            if(Vfx != null) Vfx.Play();
+            if(Vfx != null && !EmitEffect) Vfx.Play();
+            else if (Vfx != null && EmitEffect)
+            {
+                Vfx.transform.position = transform.position;
+                Vfx.transform.forward = transform.forward;
+                Vfx.Emit(EmitCount);
+            }
             if(Animator != null) Animator.SetTrigger(Play1);
         }
         

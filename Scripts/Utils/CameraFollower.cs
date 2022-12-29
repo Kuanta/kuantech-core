@@ -24,6 +24,7 @@ namespace Kuantech.Core
         [Header("Lerp Factors")] 
         [SerializeField] private float PositionLerpFactor = 1f;
         [SerializeField] private float RotationSlerpFactor = 1f;
+        [SerializeField] private float ZoomLerpFactor = 10f;
 
         private Vector3 _targetPosition;
         private Vector3 _targetLookAt;
@@ -35,40 +36,46 @@ namespace Kuantech.Core
 
         private float _deltaX = 0f;
         private float _deltaY = 0f;
+
+        private float _zoomFactorTarget = 1f;
+        private float _currentZoomFactor = 1f;
+        
         private void Start()
         {
         }
 
+
+        public void SetDeltaX(float deltaX)
+        {
+            _deltaX = deltaX;
+        }
+
+        public void SetDeltaY(float deltaY)
+        {
+            _deltaY = deltaY;
+        }
         private void Update()
         {
-            // if (Cursor.lockState == CursorLockMode.Locked)
-            // {
-            //     float deltaX = Mathf.Clamp((Input.GetAxis("Mouse X")), -20f, 20f);
-            //     float deltaY = Mathf.Clamp((Input.GetAxis("Mouse Y")), -20f, 20f);
-            //     _deltaX = Mathf.Lerp(_deltaX, deltaX, Time.deltaTime*20f);
-            //     _deltaY = Mathf.Lerp(_deltaY, deltaY, Time.deltaTime*20f);
-            // }
-            // else
-            // {
-            //     _deltaX = 0f;
-            //     _deltaY = 0f;
-            // }
-        }
-        private void LateUpdate()
-        {
             if (Target == null) return;
+
+            float zoomedFollow = FollowDistance * _currentZoomFactor;
+
+            _currentZoomFactor = Mathf.Lerp(_currentZoomFactor, _zoomFactorTarget, Time.deltaTime * ZoomLerpFactor);
             
             _yawAccel = horizontalSensitivity * _deltaX;
             _pitchAccel = verticalSensitivity * _deltaY;
             
-            _yawSpeed += 0.5f*Time.deltaTime * _yawAccel;
-            _pitchSpeed += 0.5f * Time.deltaTime * _pitchAccel;
+            float yawSpeed = _yawSpeed + Time.deltaTime * _yawAccel;
+            float pitchSpeed = _pitchSpeed + Time.deltaTime * _pitchAccel;
 
-            CameraParameters.Spherical.Yaw -= _yawSpeed * Time.deltaTime ;
-            CameraParameters.Spherical.Pitch += _pitchSpeed * Time.deltaTime;
-            
+            CameraParameters.Spherical.Yaw -= _yawSpeed * Time.deltaTime + _yawAccel * Time.deltaTime * Time.deltaTime * 0.5f;  
+            CameraParameters.Spherical.Pitch += _pitchSpeed * Time.deltaTime + _pitchAccel * Time.deltaTime * Time.deltaTime * 0.5f;
+
+            _yawSpeed = yawSpeed;
+            _pitchSpeed = pitchSpeed;
+
             CameraParameters.Spherical.Pitch = Mathf.Clamp(CameraParameters.Spherical.Pitch, Mathf.Deg2Rad * 5.0f, Mathf.Deg2Rad*175.0f);
-            CameraParameters.Spherical.Radius = FollowDistance;
+            CameraParameters.Spherical.Radius = zoomedFollow;
 
             _yawSpeed *= 0.9f;
             _pitchSpeed *= 0.9f;
@@ -84,15 +91,28 @@ namespace Kuantech.Core
                 CameraParameters.Spherical.Yaw + angleDiff, 
                 CameraParameters.Spherical.Pitch) + targetPos;
             
-            Transform targetTransform = transform;
-            transform.position = sphericalPos;
-            targetTransform.LookAt(lookTarget);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetTransform.rotation, Time.deltaTime * RotationSlerpFactor);
+            transform.position = Vector3.Lerp(transform.position, sphericalPos, PositionLerpFactor);
+            // targetTransform.LookAt(lookTarget);
+            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(lookTarget - transform.position, Vector3.up), RotationSlerpFactor);
         }
 
         public void SetTargetParameters(CameraParameters cameraParameters)
         {
             CameraParameters = cameraParameters;
+        }
+        
+        /// <summary>
+        /// Zooms in or out by adjusting zoom in factor. If zoomInFactor>1 zoom in, otherwise zoomout 
+        /// </summary>
+        /// <param name="zoomInFactor"></param>
+        public void Zoom(float zoomInFactor)
+        {
+            _zoomFactorTarget = zoomInFactor;
+        }
+
+        public void ResetZoom()
+        {
+            _zoomFactorTarget = 1f;
         }
     }
 }
