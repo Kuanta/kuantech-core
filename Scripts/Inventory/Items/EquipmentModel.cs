@@ -24,6 +24,7 @@ namespace Kuantech.Inventory.Items
 
         [Header("Effects")] 
         public List<EffectTypes> AttackEffects = new List<EffectTypes>();
+        public Effect ImpactEffect; 
         
         public void Awake()
         {

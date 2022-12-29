@@ -1,5 +1,6 @@
 ﻿using System;
 using UnityEngine;
+using UnityEngine.Animations.Rigging;
 using UnityEngine.Events;
 
 namespace Kuantech.Core
@@ -16,6 +17,9 @@ namespace Kuantech.Core
         private Vector2 _movementParametersScale = Vector2.one;
 
         public float LerpFactor = 10f;
+
+        [Header("Rigging")] 
+        [SerializeField] private Rig AnimationRigLayer;
         
         //Events
         public UnityEvent OnDamageFrameEvent;
@@ -28,12 +32,16 @@ namespace Kuantech.Core
         private static readonly int Death = Animator.StringToHash("Death");
         private static readonly int DamageReceived = Animator.StringToHash("DamageReceived");
         private static readonly int DamageReceivedIndex = Animator.StringToHash("DamageReceivedIndex");
+        private static readonly int Aiming = Animator.StringToHash("Aiming");
 
         public override void Initialize()
         {
             base.Initialize();
             ApplyDefaultAnimationSet();
             Actor.OnDamageReceived += OnDamageReceive;
+            
+            //Rig layers
+            SetAimRigWeight(0f);
         }
         
         private void Update()
@@ -119,8 +127,22 @@ namespace Kuantech.Core
         {
             Animator.SetFloat(TargetTime, animationTime);
         }
-        #endregion
 
+        public void ToggleAiming(bool toggle)
+        {
+            Animator.SetBool(Aiming, toggle);
+        }
+        #endregion
+        
+        #region Rig
+
+        public void SetAimRigWeight(float weight)
+        {
+            if (AnimationRigLayer == null) return;
+            AnimationRigLayer.weight = weight;
+        }
+        
+        #endregion
         public void OnDamageReceive(object sender, float damage)
         {
             Animator.SetInteger(DamageReceivedIndex, UnityEngine.Random.Range(0,3));

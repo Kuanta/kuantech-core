@@ -32,6 +32,8 @@ namespace Kuantech.Inventory.Items
         public float Angle;
         public float Width;
         public float Knockback;
+        public float ProjectileSpeed;
+        public float ProjectileDrop;
     }
     
     [Serializable]

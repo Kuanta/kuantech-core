@@ -30,6 +30,7 @@ namespace Kuantech.Core
                 Actor.Rigidbody.velocity = Actor.ForceMoveVector;
             }
 
+            vel.y = Actor.Rigidbody.velocity.y;
             Actor.Rigidbody.velocity = vel;
         }
 
