@@ -364,7 +364,6 @@ namespace Kuantech.Core
         /// <param name="experience"></param>
         public void EarnExperience(int experience)
         {
-            LooterGameManager.Instance.UserModel.DirtyStatsState();
             OverflowExperience += experience;
             while (OverflowExperience >= RequiredExperienceToNextLevel)
             {
@@ -386,7 +385,6 @@ namespace Kuantech.Core
         /// <param name="experience"></param>
         public void RemoveExperience(int experience)
         {
-            LooterGameManager.Instance.UserModel.DirtyStatsState();
             CalculateLevelOnExperienceRemove(experience, out var newLevel, out var newOverflowExperience);
             Level = newLevel;
             OverflowExperience = newOverflowExperience;
