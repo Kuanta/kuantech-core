@@ -153,7 +153,7 @@ namespace Kuantech.SurroundSystem
             }
             
             //No free slot was available, generate a new row
-            SurroundRow newRow = new SurroundRow(SurroundSlots.Count);
+            SurroundRow newRow = new SurroundRow(SurroundSlots.Count, this);
             newRow.FillSlots(RowSlotCount, HorizontalDistance, VerticalDistance);
             SurroundSlots.Add(newRow);
             

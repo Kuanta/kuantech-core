@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using Kuantech.Data;
-using Kuantech.Managers;
 using UnityEngine;
 
 namespace Kuantech.SurroundSystem
@@ -9,12 +8,14 @@ namespace Kuantech.SurroundSystem
     [Serializable]
     public class SurroundRow
     {
+        public SurroundSystem SurroundSystem;
         public int RowIndex;
         public List<SurroundSlot> LeftSlots;
         public List<SurroundSlot> RightSlots;
        
-        public SurroundRow(int rowIndex)
+        public SurroundRow(int rowIndex, SurroundSystem surroundSystem)
         {
+            SurroundSystem = surroundSystem;
             LeftSlots = new List<SurroundSlot>();
             RightSlots = new List<SurroundSlot>();
             RowIndex = rowIndex;
@@ -63,7 +64,7 @@ namespace Kuantech.SurroundSystem
                 for (int i = LeftSlots.Count - 1; i >= 0; --i)
                 {
                     SurroundSlot leftSlot = LeftSlots[i];
-                    if (!EnemyAIManager.Instance.SurroundSystem.IsSlotOccupied(leftSlot)) continue;
+                    if (!SurroundSystem.IsSlotOccupied(leftSlot)) continue;
                     if (!foundEdge)
                     {
                         float horizontalPosition = Mathf.Abs(leftSlot.GetHorizontalDistance()) + Mathf.Abs(normalizedHorizontalPosition) * horizontalWidth*0.5f;
@@ -88,7 +89,7 @@ namespace Kuantech.SurroundSystem
                 for (int i = RightSlots.Count - 1; i >= 0; --i)
                 {
                     SurroundSlot rightSlot = RightSlots[i];
-                    if (!EnemyAIManager.Instance.SurroundSystem.IsSlotOccupied(rightSlot)) continue;
+                    if (!SurroundSystem.IsSlotOccupied(rightSlot)) continue;
                     if (!foundEdge)
                     {
                         float horizontalPosition = Mathf.Abs(rightSlot.GetHorizontalDistance()) + Mathf.Abs(normalizedHorizontalPosition) * horizontalWidth*0.5f;
@@ -126,8 +127,8 @@ namespace Kuantech.SurroundSystem
 
             for (int i = 0; i < primaryCandidates.Count; ++i)
             {
-                if (!EnemyAIManager.Instance.SurroundSystem.IsSlotOccupied(primaryCandidates[i])) return primaryCandidates[i];
-                if (!EnemyAIManager.Instance.SurroundSystem.IsSlotOccupied(secondaryCandidates[i])) return secondaryCandidates[i];
+                if (!SurroundSystem.IsSlotOccupied(primaryCandidates[i])) return primaryCandidates[i];
+                if (!SurroundSystem.IsSlotOccupied(secondaryCandidates[i])) return secondaryCandidates[i];
             }
 
             return null;
