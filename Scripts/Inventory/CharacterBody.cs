@@ -5,6 +5,7 @@ using Kuantech.Core.FX;
 using Kuantech.Data;
 using Kuantech.Inventory.Items;
 using Kuantech.Managers;
+using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Kuantech.Character
@@ -15,6 +16,8 @@ namespace Kuantech.Character
         public int TemplateId;
         public Enums.EquipmentSlotType EquipmentType;
         public List<GameObject> EquipmentParts;
+        public bool ToggleHair;
+        public bool ToggleFacialHair;
 
         public void Toggle(bool toggle)
         {
@@ -63,6 +66,10 @@ namespace Kuantech.Character
         public List<Material> Skins;
         public List<VisualToBonePair> VisualToBonePairs;
         public List<EquipmentToBonePair> EquipmentToBonePairs;
+
+        [Header("Hairs")] 
+        public GameObject Hair;
+        public GameObject FacialHair;
         
         [Header("Bones")]
         public Dictionary<string, Transform> Skeleton;
@@ -79,17 +86,11 @@ namespace Kuantech.Character
         public Dictionary<Enums.EquipmentSlotType, InplaceEquipment> DefaultInplaceEquipments;
 
         private bool _initialized = false;
-        
-        private void Awake()
-        {
-            Initialize();
-        }
 
-        private void Initialize()
+        public void Initialize()
         {
             if (_initialized) return;
             _initialized = true;
-            Actor = GetComponent<Actor>();
             BoneTable = new Dictionary<Enums.BoneTypes, Transform>();
             VisualsToBoneMapping = new Dictionary<Enums.VisualFields, Enums.BoneTypes>();
             SlottedObjects = new Dictionary<Enums.BoneTypes, GameObject>();
@@ -121,6 +122,7 @@ namespace Kuantech.Character
             foreach (var defaultEquipment in DefaultInplacEquipmentsList)
             {
                 DefaultInplaceEquipments[defaultEquipment.EquipmentType] = defaultEquipment;
+                ToggleDefaultInplaceEquipment(defaultEquipment.EquipmentType, true);
             }
             
             Skeleton = new Dictionary<string, Transform>();
@@ -143,6 +145,13 @@ namespace Kuantech.Character
             SlottedObjects[Enums.BoneTypes.RootBone] = null;
         }
 
+        public void SetActor(Actor actor)
+        {
+            if (actor.AnimatorModule != null)
+            {
+                actor.AnimatorModule.Animator = Animator;
+            }
+        }
         public void SlotObject(Enums.EquipmentSlotType slotType, GameObject prefab)
         {
             if (!EquipmentsToBoneMapping.ContainsKey(slotType))
@@ -221,6 +230,7 @@ namespace Kuantech.Character
                 if (em != null)
                 {
                     em.SetAttackEffects(model.AttackEffects);
+                    if(model.ImpactEffectPrefab != null) em.SetImpactEffect(model.ImpactEffectPrefab);
                 }
             }
         }
@@ -235,12 +245,59 @@ namespace Kuantech.Character
             Enums.EquipmentSlotType slotType = InplaceEquipments[tempalteId].EquipmentType;
             ToggleDefaultInplaceEquipment(slotType, false);
             InplaceEquipments[tempalteId].Toggle(true);
+            //Check hairs
+            if (InplaceEquipments[tempalteId].ToggleHair)
+            {
+                ToggleHair(false);
+            }
+
+            if (InplaceEquipments[tempalteId].ToggleFacialHair)
+            {
+                ToggleFacialHair(false);
+            }
         }
 
+        public void ToggleHair(bool toggle)
+        {
+            if(Hair != null) Hair.SetActive(toggle);
+        }
+
+        public void ToggleFacialHair(bool toggle)
+        {
+            if(FacialHair != null) FacialHair.SetActive(toggle);
+        }
         public void ToggleDefaultInplaceEquipment(Enums.EquipmentSlotType slotType, bool toggle)
         {
             if (DefaultInplaceEquipments == null || !DefaultInplaceEquipments.ContainsKey(slotType)) return;
             DefaultInplaceEquipments[slotType].Toggle(toggle);
+
+            if (slotType != Enums.EquipmentSlotType.Head) return;
+            if (DefaultInplaceEquipments[slotType].ToggleHair)
+            {
+                ToggleHair(!toggle);
+            }
+            else
+            {
+                ToggleHair(true);
+            }
+
+            if (DefaultInplaceEquipments[slotType].ToggleFacialHair)
+            {
+                ToggleFacialHair(!toggle);
+            }
+            else
+            {
+                ToggleFacialHair(true);
+            }
+        }
+        
+        public void ToggleAllDefaultInplaceEquipments(bool toggle)
+        {
+            if (DefaultInplaceEquipments == null) return;
+            foreach (var slotType in DefaultInplaceEquipments.Keys)
+            {
+                ToggleDefaultInplaceEquipment(slotType, toggle);
+            }
         }
         
         public void RemoveObject(Enums.EquipmentSlotType slotType)
@@ -264,6 +321,7 @@ namespace Kuantech.Character
                 if (em != null)
                 {
                     em.RemoveCurrentAttackEffects();
+                    em.RemoveImpactEffect();
                 }
             }
         }
@@ -272,6 +330,16 @@ namespace Kuantech.Character
         {
             if (!InplaceEquipments.ContainsKey(id)) return;
             InplaceEquipments[id].Toggle(false);
+            //Check hairs
+            if (InplaceEquipments[id].ToggleHair)
+            {
+                ToggleHair(true);
+            }
+
+            if (InplaceEquipments[id].ToggleFacialHair)
+            {
+                ToggleFacialHair(true);
+            }
         }
         
         public void ChangeVisual(Enums.VisualFields VisualType, int value)
@@ -322,8 +390,36 @@ namespace Kuantech.Character
             }
         }
 
-        #region Inplace equipment
-        
+        #region Editor
+
+        [Button("Toggle Inplace")]
+        public void ToggleInplaceEditor(int id, bool toggle)
+        {
+            foreach (var equipment in InplaceEquipmentsList)
+            {
+                if (equipment.TemplateId == id)
+                {
+                    foreach (var defaultEquipment in DefaultInplacEquipmentsList)
+                    {
+                        if (defaultEquipment.EquipmentType == equipment.EquipmentType)
+                        {
+                            defaultEquipment.Toggle(!toggle);
+                        }
+                    }
+                    equipment.Toggle(toggle);
+                    if (equipment.ToggleHair)
+                    {
+                        ToggleHair(!toggle);
+                    }
+
+                    if (equipment.ToggleFacialHair)
+                    {
+                        ToggleFacialHair(!toggle);
+                    }
+                    return;
+                }
+            }
+        }
         #endregion
     }
 }

@@ -81,6 +81,7 @@ namespace Kuantech.Core
         [SerializeReference] private Dictionary<int, AttackSkill> AttackSkills = new Dictionary<int, AttackSkill>();
         public float ManaCost = 0;
         public bool CanUseSkill = false;
+        public bool IsResistantToKnockback = false;
         
         //Events
         public EventHandler<int> AttackStartEvent;
@@ -91,6 +92,17 @@ namespace Kuantech.Core
         public EventHandler<ProjecitleShotInfo> ProjectileShotEvent;
         public EventHandler<RaycastHit> RayProjectileHitEvent; 
         
+        //Getters
+        public float GetMovementFactor()
+        {
+            if (IsAttacking)
+            {
+                //Use 1 - slow since default value for floats are 0. This way we are ensuring that non initialized slow factor values wont result in 0 movements
+                return Mathf.Clamp(1 - _currentAttackPattern.MovementSlow, 0f, 1f);
+            }
+
+            return 1f;
+        }
         public override void Initialize()
         {
             base.Initialize();
@@ -138,7 +150,7 @@ namespace Kuantech.Core
             if (timePassedAttacking >= _currentAttackPattern.AnimationTime)
             {
                 IsAttacking = false; //Ends the attack
-
+                _lastAttackEndTime = Time.time;
                 if (!_attackQueued) return;
                 _attackQueued = false;
                 Attack();
@@ -151,7 +163,6 @@ namespace Kuantech.Core
             if(ActiveTelemetry != null) ActiveTelemetry.SetFill(normalizedTime);
             if (normalizedTime > 1f)
             {
-                _lastAttackEndTime = Time.time;
                 ResetActiveTelemetry();
                 AttackEvent?.Invoke(this, _flowIndex);
                 switch (CurrentAttackType)
@@ -191,6 +202,9 @@ namespace Kuantech.Core
             //First parameters...
             _currentAttackPattern = pattern;
             
+            //Apply bonuses
+            _currentAttackPattern.Range += Actor.Stats.GetStat(StatTypes.RangeBonus);
+            
             //...then attack type
             SetAttackType(_currentAttackPattern.AttackType);
             SetAnimationTime(); //For clients
@@ -202,7 +216,7 @@ namespace Kuantech.Core
             {
                 float queueTime = (Time.time - AttackStartTime) / _currentAttackPattern.AnimationTime;
                 //Check current frame
-                if (queueTime >= _currentAttackPattern.AnimationTime * QueueTimeFactor && QueueTimeFactor < 1f)
+                if (queueTime >= QueueTimeFactor && QueueTimeFactor < 1f)
                 {
                     //Queue next attack
                     _attackQueued = true;
@@ -354,8 +368,9 @@ namespace Kuantech.Core
         
         public float GetDamage()
         {
-            if (EquippedWeapon != null) return EquippedWeapon.GetDamage(_flowIndex);
-            return DefaultAttackPattern.Damage;
+            float damageBonus = Actor.Stats.GetStat(StatTypes.DamageBonus);
+            if (EquippedWeapon != null) return EquippedWeapon.GetDamage(_flowIndex) + damageBonus;
+            return Mathf.Max(DefaultAttackPattern.Damage + damageBonus, 1f);
         }
 
         public Vector3 GetShootPosition()
@@ -435,7 +450,9 @@ namespace Kuantech.Core
                     };
                     bool obscured = false;
                     RaycastHit[] hits = new RaycastHit[16];
-                    if (UnityEngine.Physics.RaycastNonAlloc(ray, hits, range)  > 0)
+
+                    int mask = LayerMask.GetMask("Enemy") | LayerMask.GetMask("Obstacle");
+                    if (UnityEngine.Physics.RaycastNonAlloc(ray, hits, range, mask)  > 0)
                     {
                         for (int j = 0; j < hits.Length; ++j)
                         {
@@ -464,7 +481,8 @@ namespace Kuantech.Core
 
         private void LinearMeleeAttack()
         {
-            Vector3 center = transform.position + transform.forward * _currentAttackPattern.Range*0.5f;
+            Vector3 center = transform.position + transform.forward * _currentAttackPattern.Range*0.5f + Vector3.up;
+            Vector3 rayOrigin = transform.position + Vector3.up;
             center.y = 1f;
             int hitCount = UnityEngine.Physics.OverlapBoxNonAlloc(center, 
                 new Vector3(_currentAttackPattern.Width*0.5f,
@@ -481,18 +499,22 @@ namespace Kuantech.Core
                 //Check if behind obstacle
                 bool obscured = false;
 
-                Vector3 diffVec = _results[i].transform.position - center;
+                
+                Vector3 diffVec = _results[i].transform.position - rayOrigin;
+                diffVec.y = 0;
                 diffVec.Normalize();
                 RaycastHit[] hits = new RaycastHit[16];
                 Ray ray = new Ray
                 {
-                    origin = center,
+                    origin = rayOrigin,
                     direction = diffVec,
                 };
-                if (UnityEngine.Physics.RaycastNonAlloc(ray, hits, Range)  > 0)
+                int rayHitCount = UnityEngine.Physics.RaycastNonAlloc(ray, hits, _currentAttackPattern.Range);
+                if (rayHitCount > 0)
                 {
-                    for (int j = 0; j < hits.Length; ++j)
+                    for (int j = 0; j < rayHitCount; ++j)
                     {
+                        if(hits[j].collider == null || hits[j].collider.isTrigger) continue;
                         if (hits[j].collider.gameObject == _results[i].gameObject)
                         {
                             break;
@@ -509,10 +531,6 @@ namespace Kuantech.Core
                 if (obscured) continue;
                 
                 DamageActorMelee(target,GetDamage(), _currentAttackPattern.Knockback);
-                if (CanUseSkill)
-                {
-                    MeleeImpactEvent?.Invoke(this, target);
-                }
             }
         }
         private void ArcMeleeAttack()
@@ -522,7 +540,7 @@ namespace Kuantech.Core
 
         private void ArcMeleeAttack(float angle)
         {
-            DealAreaDamage(this, GetDamage(), _currentAttackPattern.Range, _currentAttackPattern.Knockback, true, angle);
+            DealAreaDamage(this, GetDamage(), _currentAttackPattern.Range, _currentAttackPattern.Knockback, true, true, _currentAttackPattern.Angle);
         }
 
         private void CircleMeleeAttack()
@@ -649,6 +667,8 @@ namespace Kuantech.Core
             }
             
             KnockbackActor(target, knockback + momentum);
+            MeleeImpactEvent?.Invoke(this, target);
+
         }
 
         /// <summary>
@@ -659,6 +679,7 @@ namespace Kuantech.Core
         private void KnockbackActor(Actor target, float knockback)
         {
             //todo: calculate knockback from main stat
+            if (target.CombatModule.IsResistantToKnockback) return; //todo: Move knockback resistance to actor 
             StartCoroutine(KnockbackRoutine(target, knockback));
         }
 

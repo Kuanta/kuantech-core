@@ -72,11 +72,11 @@ namespace Kuantech.Combat
         
         private void OnTriggerEnter(Collider other)
         {
-            //todo: Apply knockback
-            if (CastBy == null || other.gameObject == CastBy.gameObject) return;
-            
             //If in filtered targets...
             if (!((Targets.value & (1 << other.gameObject.layer)) > 0)) return;
+            
+            //todo: Apply knockback
+            if (CastBy != null && other.gameObject == CastBy.gameObject) return;
 
             Actor targetActor = other.GetComponent<Actor>();
             if (targetActor != null && targetActor.Health <= 0f) return;
@@ -114,9 +114,13 @@ namespace Kuantech.Combat
         
         private void Impact(GameObject impacted)
         {
-            if (CastBy == null) return;
-            if (!impacted.TryGetComponent(out Actor target)) return;
-            if (target == CastBy.Actor) return;
+            Actor target = impacted.GetComponent<Actor>();
+            if (CastBy == null)
+            {
+                if(target != null) target.ReceiveDamage(null, Damage); //Cast from something that is not an Actor
+                return;
+            }
+            if (target == null || target == CastBy.Actor) return;
             if(CastBy.CanUseSkill) CastBy.OnProjectileImpact(this, target);
         }
 

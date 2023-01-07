@@ -26,6 +26,7 @@ namespace Kuantech.Inventory.Items
     {
         public AttackTypes AttackType;
         public float Damage;
+        public float MovementSlow; //Factor between 0-1, movement speed while attacking will be MovementSpeed * (1-MovementSlow)
         public float DamageTime;
         public float AnimationTime;
         public float Range;
@@ -35,6 +36,14 @@ namespace Kuantech.Inventory.Items
         public float ProjectileSpeed;
         public float ProjectileDrop;
     }
+
+    [Serializable]
+    public struct TemplateData
+    {
+        public int prefabId;
+        public int iconId;
+        public bool inPlace;
+    }
     
     [Serializable]
     public class ItemData
@@ -42,13 +51,13 @@ namespace Kuantech.Inventory.Items
         // Common mandotary
         public int id;
         public string name;
-        public int templateId;
         public string slotType = "None";
         public string baseStat = "None";
         public float weight;
         public bool stackable = false;
         public Enums.ItemType ItemType;
-
+        public TemplateData Template;
+        
         // Icon
         public int iconId;
         public string description = "";
@@ -84,13 +93,12 @@ namespace Kuantech.Inventory.Items
         public bool equipable = false;
         public bool stackable = false;
         public Enums.EquipmentSlotType slotType = Enums.EquipmentSlotType.None;
-        public int modelPrefabId;
         public float durability;
         public Actor Owner;
         public int amount = 1;
         public int Weight = 1;
         public ItemData data;
-        public ItemTemplate templateData = null;
+        //public ItemTemplate templateData = null;
         
         //Stats
         public ItemStateData StateData;
@@ -99,7 +107,6 @@ namespace Kuantech.Inventory.Items
         {
             Id = data.id;
             name = data.name;
-            modelPrefabId = data.templateId;
             slotType = (Enums.EquipmentSlotType)Enum.Parse(typeof(Enums.EquipmentSlotType), data.slotType);
             BaseStat = (StatTypes) Enum.Parse(typeof(StatTypes), data.baseStat);
             Type = data.ItemType;
@@ -107,10 +114,10 @@ namespace Kuantech.Inventory.Items
             amount = 1;
             
             this.data = data;
-            if (Librarian.Instance.itemTemplates.ContainsKey(data.templateId))
-            {
-                templateData = Librarian.Instance.itemTemplates[data.templateId];
-            }
+            // if (Librarian.Instance.itemTemplates.ContainsKey(data.templateId))
+            // {
+            //     templateData = Librarian.Instance.itemTemplates[data.templateId];
+            // }
 
             StateData = new ItemStateData()
             {

@@ -98,17 +98,17 @@ namespace Kuantech.Inventory
             
             slotTable[itemSlotType].item = item;
             if (Actor == null) return;
-            if (Actor.TryGetComponent(out CharacterBody cb))
+            if (Actor.CharacterBody != null)
             {
-                if (item.templateData.inPlace)
+                if (item.data.Template.inPlace)
                 {
-                    cb.SlotInplaceEquipment(item.data.templateId);
+                    Actor.CharacterBody.SlotInplaceEquipment(item.data.Template.prefabId);
                 }
                 else
                 {
-                    GameObject modelPrefab = Librarian.Instance.GetItemPrefab(item.data.templateId);
+                    GameObject modelPrefab = Librarian.Instance.GetItemTemplatePrefab(item.data.id).ItemPrefab;
                     if (modelPrefab == null) return;
-                    cb.SlotObject(itemSlotType, modelPrefab);
+                    Actor.CharacterBody.SlotObject(itemSlotType, modelPrefab);
                 }
             }
 
@@ -135,18 +135,18 @@ namespace Kuantech.Inventory
             Encumbrance -= item.Weight;
             Encumbrance = Mathf.Max(Encumbrance, 0f);
             if (Actor == null ) return;
-            if (item.templateData != null && Actor.TryGetComponent(out CharacterBody cb))
+            if (Actor.CharacterBody != null)
             {
-                if (item.templateData.inPlace)
+                if (item.data.Template.inPlace)
                 {
-                    cb.RemoveInplaceObject(item.templateData.id);
+                    Actor.CharacterBody.RemoveInplaceObject(item.data.Template.prefabId);
                 }
                 else
                 {
-                    cb.RemoveObject(item.slotType);
+                    Actor.CharacterBody.RemoveObject(item.slotType);
                     
                 }
-                cb.ToggleDefaultInplaceEquipment(item.slotType, true);
+                Actor.CharacterBody.ToggleDefaultInplaceEquipment(item.slotType, true);
 
                 if (item.slotType == Enums.EquipmentSlotType.MainHand && Actor.AnimatorModule != null)
                 {
@@ -163,21 +163,6 @@ namespace Kuantech.Inventory
             catch (Exception e)
             {
                 Debug.LogError(e.Message);
-            }
-        }
-        
-        /// <summary>
-        /// Equips (visually) all equipped items
-        /// </summary>
-        public void SlotEquippedItems()
-        {
-            if (Actor == null) return;
-            if (!Actor.TryGetComponent(out CharacterBody cb)) return;
-            foreach (var key in slotTable.Keys)
-            {
-                if(slotTable[key] == null || slotTable[key].item == null) continue;
-                GameObject modelPrefab = Librarian.Instance.GetItemPrefab(slotTable[key].item.modelPrefabId);
-                cb.SlotObject(slotTable[key].item.slotType, modelPrefab);
             }
         }
     }

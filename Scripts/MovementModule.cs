@@ -1,5 +1,6 @@
 ﻿using System;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace Kuantech.Core
 {
@@ -13,6 +14,13 @@ namespace Kuantech.Core
         private AnimatorModule _animatorModule;
         private Vector3 _lastVelocity = Vector3.zero;
         private Vector3 _lastForcedVelocity = Vector3.zero;
+
+        private bool _movementLocked = false;
+        //Waypoint
+        private Transform _waypoint;
+        private bool _goingToWaypoint;
+        private UnityAction _waypointReachedHandler;
+        private float _movementThreshold = 0.001f;
         
         public override void OnModulesInitialized(object sender, EventArgs args)
         {
@@ -29,15 +37,30 @@ namespace Kuantech.Core
             Vector3 vel = transform.right * (_horizontalSpeed * _movement.x) +
                           transform.forward * (_movement.y * _verticalSpeed) + Actor.ForceMoveVector;
 
+            if (_movementLocked)
+            {
+                vel = Vector3.zero;
+            }
+            
             if (Actor.ForceMoveVector.sqrMagnitude >= 0.001f)
             {
-                Actor.Rigidbody.velocity = Actor.ForceMoveVector;
+                vel = Actor.ForceMoveVector;
             }
 
             vel.y = Actor.Rigidbody.velocity.y;
             Actor.Rigidbody.velocity = vel;
         }
 
+        private void Update()
+        {
+            if (_goingToWaypoint) SetWaypointMovementVectors();
+        }
+
+        public void ToggleMovement(bool toggle)
+        {
+            _movementLocked = !toggle;
+        }
+        
         public float GetForwardMovement()
         {
             return _movement.y;
@@ -69,6 +92,7 @@ namespace Kuantech.Core
         /// <param name="movement"></param>
         public void SetGlobalMovementVector(Vector2 movement)
         {
+            if (_goingToWaypoint) return;
             Vector3 relative = transform.InverseTransformDirection(new Vector3(movement.x, 0, movement.y));
             SetMovementVector(new Vector2(relative.x, relative.z));
         }
@@ -79,6 +103,7 @@ namespace Kuantech.Core
         /// <param name="movement"></param>
         public void SetMovementVector(Vector2 movement)
         {
+            if (_goingToWaypoint) return;
             _movement = movement;
             if (_animatorModule == null) return;
             _animatorModule.SetMovementParameters(_movement);
@@ -94,6 +119,42 @@ namespace Kuantech.Core
         public override void Reset()
         {
             Stop();
+            _movementLocked = false;
+            _goingToWaypoint = false;
         }
+
+        #region Waypoint following
+        public void GoToWaypoint(Transform point, UnityAction handler, float threshold = 0.01f)
+        {
+            Stop();
+            _waypoint = point;
+            _goingToWaypoint = true;
+            _waypointReachedHandler = handler;
+            _movementThreshold = threshold;
+        }
+
+        private void SetWaypointMovementVectors()
+        {
+            Vector3 diffVec = _waypoint.position - transform.position;
+            if (diffVec.sqrMagnitude <= _movementThreshold * _movementThreshold)
+            {
+                _goingToWaypoint = false;
+                _waypoint = null;
+                _waypointReachedHandler?.Invoke();
+                _waypointReachedHandler = null;
+                Stop();
+                return;
+            }
+
+            diffVec.y = 0;
+            diffVec.Normalize();
+            Vector3 relative = transform.InverseTransformDirection(diffVec);
+            _movement = new Vector2(relative.x, relative.z);
+            if (_animatorModule == null) return;
+            _animatorModule.SetMovementParameters(_movement);
+
+        }
+        #endregion
+  
     }
 }

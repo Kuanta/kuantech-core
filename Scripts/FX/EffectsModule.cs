@@ -10,10 +10,10 @@ namespace Kuantech.Core.FX
     /// </summary>
     public class EffectsModule : Module
     {
-        public List<Effect> AttackEffects = new List<Effect>(); //Dependent on the weapon
+        [SerializeField] private List<Effect> AttackEffects = new List<Effect>(); //Dependent on the weapon
         public Effect DamageReceiveEffect;
         public Effect DeathEffect;
-        public Effect ImpactEffect;
+        private Effect _impact;
 
         public override void Initialize()
         {
@@ -27,6 +27,7 @@ namespace Kuantech.Core.FX
             base.OnModulesInitialized(sender, args);
             CombatModule cm = (CombatModule)Actor.GetModuleByType(typeof(CombatModule));
             cm.AttackStartEvent+= OnAttack;
+            cm.MeleeImpactEvent += OnMeleeImpact;
         }
 
         public void SetAttackEffects(List<EffectTypes> effectTypes)
@@ -43,6 +44,12 @@ namespace Kuantech.Core.FX
             }
         }
 
+        public void SetImpactEffect(Effect impactEffectPrefab)
+        {
+            RemoveImpactEffect();
+            _impact = GameManager.Instance.Pool.GetObject(impactEffectPrefab.gameObject).GetComponent<Effect>();
+        }
+        
         public void RemoveCurrentAttackEffects()
         {
             //Clear existing ones
@@ -53,6 +60,13 @@ namespace Kuantech.Core.FX
             AttackEffects.Clear();
         }
 
+        public void RemoveImpactEffect()
+        {
+            if (_impact != null)
+            {
+                GameManager.Instance.Pool.PoolObject(_impact.gameObject);
+            }
+        }
         private void OnAttack(object sender, int attackIndex)
         {
             if (AttackEffects.IsNullOrEmpty()) return;
@@ -60,7 +74,15 @@ namespace Kuantech.Core.FX
             AttackEffects[effectIndex].Play();
         }
 
-        
+        private void OnMeleeImpact(object sender, Actor target)
+        {
+            if (_impact == null) return;
+            _impact.transform.position = target.transform.position;
+            Vector3 diff = target.transform.position - transform.position;
+            diff.y = 0;
+            _impact.transform.rotation = Quaternion.LookRotation(diff);
+            _impact.Play();
+        }
         private void OnReceiveDamage(object sender, float damage)
         {
             if (DamageReceiveEffect != null)

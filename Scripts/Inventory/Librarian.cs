@@ -10,13 +10,13 @@ using YamlDotNet.Serialization.NamingConventions;
 
 namespace Kuantech.Core
 {
-    public class ItemTemplate
-    {
-        public int id;
-        public string name;
-        public int prefabId;
-        public bool inPlace;
-    }
+    // public class ItemTemplate
+    // {
+    //     public int id;
+    //     public string name;
+    //     public int prefabId;
+    //     public bool inPlace;
+    // }
 
     public enum ItemRarities
     {
@@ -54,10 +54,10 @@ namespace Kuantech.Core
         [Header("Modifiers List")] 
         public ModifierDataDictionary ModifierDataDictionary;
         
-        public const string itemTemplatesPath = "/itemTemplates.yaml";
+        //public const string itemTemplatesPath = "/itemTemplates.yaml";
         public const string weaponsDataPath = "/weapons.yaml";
         public const string armorsDataPath = "/armors.yaml";
-        public Dictionary<int, ItemTemplate> itemTemplates = new Dictionary<int, ItemTemplate>();
+        //public Dictionary<int, ItemTemplate> itemTemplates = new Dictionary<int, ItemTemplate>();
         public Dictionary<int, ItemData> ItemDatas = new Dictionary<int, ItemData>();
         
         public void Awake()
@@ -67,30 +67,30 @@ namespace Kuantech.Core
 
         public void Parse()
         {
-            itemTemplates.Clear();
+            //itemTemplates.Clear();
             ItemDatas.Clear();
             // Read Templates
-            var deserializer = new DeserializerBuilder()
-                .WithNamingConvention(CamelCaseNamingConvention.Instance)
-                .WithTagMapping("!ItemTemplate", typeof(ItemTemplate))
-                .Build();
+            // var deserializer = new DeserializerBuilder()
+            //     .WithNamingConvention(CamelCaseNamingConvention.Instance)
+            //     .WithTagMapping("!ItemTemplate", typeof(ItemTemplate))
+            //     .Build();
             
-            string yml = File.ReadAllText(Application.streamingAssetsPath + itemTemplatesPath);
+            //string yml = File.ReadAllText(Application.streamingAssetsPath + itemTemplatesPath);
 
-            List<ItemTemplate> templates = deserializer.Deserialize<List<ItemTemplate>>(yml);
-
-            foreach (ItemTemplate template in templates)
-            {
-                itemTemplates.Add(template.id, template);
-            }
+            // List<ItemTemplate> templates = deserializer.Deserialize<List<ItemTemplate>>(yml);
+            //
+            // foreach (ItemTemplate template in templates)
+            // {
+            //     itemTemplates.Add(template.id, template);
+            // }
             
             // Read Weapons
-            deserializer = new DeserializerBuilder()
+            var deserializer = new DeserializerBuilder()
                 .WithNamingConvention(CamelCaseNamingConvention.Instance)
                 .WithTagMapping("!Weapon", typeof(WeaponData))
                 .Build();
             
-            yml = File.ReadAllText(Application.streamingAssetsPath + weaponsDataPath);
+            string yml = File.ReadAllText(Application.streamingAssetsPath + weaponsDataPath);
             List<WeaponData> weapons = deserializer.Deserialize<List<WeaponData>>(yml);
             foreach (WeaponData data in weapons)
             {
@@ -123,26 +123,26 @@ namespace Kuantech.Core
             return item;
         }
         
-        /// <summary>
-        /// Returns item model prefab from template id
-        /// </summary>
-        /// <param name="templateId"></param>
-        /// <returns></returns>
-        public GameObject GetItemPrefab(int templateId)
-        {
-            return TemplatePrefabs[itemTemplates[templateId].prefabId].ItemPrefab;
-        }
+        // /// <summary>
+        // /// Returns item model prefab from template id
+        // /// </summary>
+        // /// <param name="itemId"></param>
+        // /// <returns></returns>
+        // public GameObject GetItemPrefab(int itemId)
+        // {
+        //     return TemplatePrefabs[ItemDatas[itemId].TemplateData.prefabId].ItemPrefab;
+        // }
         
         /// <summary>
         /// Returns item drop model prefab from template id
         /// </summary>
-        /// <param name="templateId"></param>
+        /// <param name="itemId"></param>
         /// <returns></returns>
-        public GameObject GetItemDropPrefab(int templateId)
+        public GameObject GetItemDropPrefab(int itemId)
         {
             try
             {
-                return TemplatePrefabs[itemTemplates[templateId].prefabId].ItemDropPrefab;
+                return TemplatePrefabs[ItemDatas[itemId].Template.prefabId].ItemDropPrefab;
             }
             catch (Exception e)
             {
@@ -153,11 +153,11 @@ namespace Kuantech.Core
         /// <summary>
         /// Returns game object of the item model
         /// </summary>
-        /// <param name="index"></param>
+        /// <param name="itemId"></param>
         /// <returns></returns>
-        public GameObject GetItemObject(int index)
+        public GameObject GetItemObject(int itemId)
         {
-            GameObject prefab = GetItemPrefab(index);
+            GameObject prefab = GetItemTemplatePrefab(itemId).ItemPrefab;
             if (prefab == null) return null;
             return GameManager.Instance.Pool.GetObject(prefab);
         }
@@ -186,10 +186,10 @@ namespace Kuantech.Core
             return index == -1 ? null : projectilePrefabs[index];
         }
 
-        public Sprite GetIconFromItemId(int itemId)
-        {
-            return GetItemTemplatePrefab(itemId).ItemIcon;
-        }
+        // public Sprite GetIconFromItemId(int itemId)
+        // {
+        //     return GetItemTemplatePrefab(itemId).ItemIcon;
+        // }
         
         /// <summary>
         /// Returns item template visuals from item id
@@ -198,8 +198,11 @@ namespace Kuantech.Core
         /// <returns></returns>
         public ItemTemplatePrefab GetItemTemplatePrefab(int itemId)
         {
-            int tempalteId = ItemDatas[itemId].templateId;
-            return TemplatePrefabs[itemTemplates[tempalteId].prefabId];
+            if (ItemDatas[itemId].Template.inPlace)
+            {
+                Debug.LogError("Trying to get a prefab that is labeled as in-place");
+            }
+            return TemplatePrefabs[ItemDatas[itemId].Template.prefabId];
         }
         #endregion
     }

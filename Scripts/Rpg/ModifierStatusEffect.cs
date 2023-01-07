@@ -1,4 +1,6 @@
 ﻿
+using UnityEngine;
+
 namespace Kuantech.Core
 {
     public class ModifierStatusEffect : StatusEffect

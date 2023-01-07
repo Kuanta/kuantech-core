@@ -57,15 +57,7 @@ namespace Kuantech.Inventory
             return null;
         }
 
-        [Button("Add Item")]
-        public void AddItem(ItemStateData stateData, int amount = 1, bool equip = false, bool updateActorData = true)
-        {
-            Item item = Librarian.Instance.GetItemFromStateData(stateData);
-            item.StateData = stateData;
-            AddItem(item, amount, stateData.Equipped, updateActorData);
-        }
-
-          /// <summary>
+        /// <summary>
         /// Adds an item to the inventory of the player
         /// </summary>
         /// <param name="item"></param>

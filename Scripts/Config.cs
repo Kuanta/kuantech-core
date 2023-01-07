@@ -14,5 +14,9 @@ namespace Kuantech
         public const float LEVEL_FORMULA_Y = 2;
 
         public const float MAX_ENCUMBRANCE = 10f;
+        
+        //Armor
+        public const float ARMOR_POWER_COEFF = 1 / 1.3f;
+        public const float ARMOR_COEFF = 1;
     }
 }

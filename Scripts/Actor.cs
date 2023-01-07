@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using Kuantech.Character;
+using Kuantech.Inventory;
+using Kuantech.Inventory.Items;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -11,13 +14,15 @@ namespace Kuantech.Core
         public GameObject VisualModel;
         
         //public float stats
-        [Header("Components")]
+        [Header("Components")] 
         public Rigidbody Rigidbody;
         public StatsModule Stats;
         public StatusEffectHandler StatusEffectHandler;
         public CombatModule CombatModule;
         public MovementModule MovementModule;
         public AnimatorModule AnimatorModule;
+        public InventoryModule InventoryModule;
+        public CharacterBody CharacterBody;
 
         public float Health; //Current value for health
         public float Energy; //Current value for energy
@@ -47,6 +52,7 @@ namespace Kuantech.Core
             AnimatorModule = (AnimatorModule) GetModuleByType(typeof(AnimatorModule));
             MovementModule = (MovementModule) GetModuleByType(typeof(MovementModule));
             CombatModule = (CombatModule) GetModuleByType(typeof(CombatModule));
+            InventoryModule = (InventoryModule) GetModuleByType(typeof(InventoryModule));
             OnModulesInitialized?.Invoke(this, EventArgs.Empty);
             Reset();
         }
@@ -103,18 +109,20 @@ namespace Kuantech.Core
             ReceiveEnergy(Stats.GetStat(StatTypes.MaxEnergy) * percentage);    
         }
         
-        public virtual void ReceiveDamage(Actor from, float damage)
+        public virtual float ReceiveDamage(Actor from, float damage)
         {
-            if (Health <= 0) return; //Don't hit the dead no more
-            damage -= Mathf.Max(0f, Stats.GetStat(StatTypes.Armor)); //todo: A better armor calculation
+            if (Health <= 0) return 0; //Don't hit the dead no more
+            float armorValue = Stats.GetStat(StatTypes.Armor);
+            damage = damage * Mathf.Pow(damage / (damage + armorValue * Config.ARMOR_COEFF), Config.ARMOR_POWER_COEFF);
             Health -= Mathf.Abs(damage);
             if (Health <= 0f)
             {
                 Health = 0f;
                 Death();
-                return;
+                return damage;
             }
             OnDamageReceived?.Invoke(this, damage);
+            return damage;
         }
 
         public virtual void Death()
@@ -147,6 +155,33 @@ namespace Kuantech.Core
             modifierStatusEffect.TickPeriod = -1;
             modifierStatusEffect.Init(this);
             StatusEffectHandler.AddStatusEffect(modifierStatusEffect);
+        }
+
+        public void ChangeCharacterBody(CharacterBody newBody)
+        {
+            if(CharacterBody != null) CharacterBody.gameObject.SetActive(false);
+            List<Item> swappedItems = new List<Item>();
+            if (InventoryModule != null && InventoryModule.equipment != null)
+            {
+                //Unequip items first
+                foreach (var slot in InventoryModule.equipment.slotTable.Keys)
+                {
+                    if (InventoryModule.equipment.slotTable[slot].item == null) continue;
+                    Item item = InventoryModule.equipment.slotTable[slot].item;
+                    InventoryModule.UnequipItem(InventoryModule.equipment.slotTable[slot].item);
+                    swappedItems.Add(item);
+                }
+            }
+            CharacterBody = newBody;
+            CharacterBody.SetActor(this);
+            CharacterBody.ToggleAllDefaultInplaceEquipments(true);
+            newBody.gameObject.SetActive(true);
+            if (InventoryModule == null || InventoryModule.equipment == null) return;
+            foreach (var item in swappedItems)
+            {
+                if(item == null) continue; //SHOULD NEVER BE THE CASE
+                InventoryModule.EquipItem(item, item.slotType);
+            }
         }
     }
 }

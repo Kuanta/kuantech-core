@@ -24,7 +24,12 @@ namespace Kuantech.Inventory.Items
 
         [Header("Effects")] 
         public List<EffectTypes> AttackEffects = new List<EffectTypes>();
-        public Effect ImpactEffect; 
+        public List<float> AttackEffectsDelays = new List<float>();
+        public Effect ImpactEffectPrefab; //Should be an emitted effect
+
+        [Header("Head Armors")] 
+        [Tooltip("When equipped, this item will disable hair")] public bool DisableHair = false;
+        [Tooltip("When equipped, this item will disable facial hair")] public bool DisableFacialHair = false;
         
         public void Awake()
         {

@@ -81,13 +81,13 @@ namespace Kuantech.Core
             _pitchSpeed *= 0.9f;
             
             //Get cam forward
-            Vector3 camForward = CameraParameters.Spherical.GetForward().normalized;
-            Vector3 camRight = -1 * Vector3.Cross(camForward.normalized, Vector3.up).normalized;
-            Vector3 targetPos = Target.position + CameraParameters.PositionOffset;
-            Vector3 lookTarget = camRight* CameraParameters.LookatOffset.x + camForward * CameraParameters.LookatOffset.z 
-                                                                           + Vector3.up * CameraParameters.LookatOffset.y + targetPos;
+            
+            // camForward = Target.transform.forward;
+            // camRight = Target.transform.right;
+            Vector3 targetPos = GetTargetPosition();
+            Vector3 lookTarget = GetLookAtTarget(targetPos);
             float angleDiff = Mathf.Asin(CameraParameters.LookatOffset.x / CameraParameters.Spherical.Radius);
-            Vector3 sphericalPos = SphericalCoordinate.ToWorld(CameraParameters.Spherical.Radius, 
+            Vector3 sphericalPos = Quaternion.AngleAxis(Target.transform.localRotation.eulerAngles.y, Vector3.up) * SphericalCoordinate.ToWorld(CameraParameters.Spherical.Radius, 
                 CameraParameters.Spherical.Yaw + angleDiff, 
                 CameraParameters.Spherical.Pitch) + targetPos;
             
@@ -96,7 +96,20 @@ namespace Kuantech.Core
             transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(lookTarget - transform.position, Vector3.up), RotationSlerpFactor);
         }
 
-        public void SetTargetParameters(CameraParameters cameraParameters)
+        protected virtual Vector3 GetTargetPosition()
+        {
+            return Target.position + (Quaternion.AngleAxis(Target.transform.localRotation.eulerAngles.y, Vector3.up) * CameraParameters.PositionOffset);
+        }
+
+        protected virtual Vector3 GetLookAtTarget(Vector3 targetPos)
+        {
+            Vector3 camForward = CameraParameters.Spherical.GetForward().normalized;
+            Vector3 camRight = -1 * Vector3.Cross(camForward.normalized, Vector3.up).normalized;
+            return camRight * CameraParameters.LookatOffset.x + camForward * CameraParameters.LookatOffset.z 
+                                                              + Vector3.up * CameraParameters.LookatOffset.y + targetPos;
+        }
+        
+        public virtual void SetTargetParameters(CameraParameters cameraParameters)
         {
             CameraParameters = cameraParameters;
         }

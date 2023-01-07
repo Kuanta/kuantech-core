@@ -119,6 +119,12 @@ namespace Kuantech.Utils
             float angleToPoint = Vector3.SignedAngle(diff, forward, Vector3.up);
             return Mathf.Abs(angleToPoint) <= halfAngle && Vector3.Dot(forward, diff) >= 0f;
         }
+
+        public static Vector3 ProjectPointOnSegment(Vector3 point, Vector3 segmentStart, Vector3 segmentEnd)
+        {
+            Vector3 segmentDirection = (segmentEnd - segmentStart).normalized;
+            return Vector3.Dot((point - segmentStart), segmentDirection) * segmentDirection + segmentStart;
+        }
         #endregion
     }
 }

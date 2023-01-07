@@ -21,6 +21,8 @@ namespace Kuantech.Core
         Intelligence,
         MovementSpeed,
         Armor,
+        DamageBonus,
+        RangeBonus,
         None,
     }
 
@@ -35,6 +37,7 @@ namespace Kuantech.Core
     {
         public StatTypes StatType;
         public float BaseValue;
+        public float LevelToValueFactor;
         public ModifierTypes ModifierType;
     }
     
@@ -45,13 +48,27 @@ namespace Kuantech.Core
         public StatTypes StatType;
         public float BaseValue;
         public float LevelToValueFactor = 1;
+        public StatModifier(){}
+        public StatModifier(StatModifierData data)
+        {
+            BaseValue = data.BaseValue;
+            LevelToValueFactor = data.LevelToValueFactor;
+            ModifierType = data.ModifierType;
+            StatType = data.StatType;
+        }
         public float GetValue()
         {
-            return BaseValue + LevelToValueFactor * Level;
+            return BaseValue + LevelToValueFactor * Level * Math.Sign(BaseValue);
         }
         public ModifierTypes ModifierType;
     }
 
+    [Serializable]
+    public class CombatModifier
+    {
+        
+    }
+    
     [Serializable]
     public struct Stat
     {
@@ -59,6 +76,7 @@ namespace Kuantech.Core
         public float LevelMultiplier;
         public float MultiplicationModifier;
         public float AdditionModifier;
+        public float MinValue;
     }
     
     [Serializable]
@@ -88,6 +106,8 @@ namespace Kuantech.Core
             [StatTypes.MaxHealth] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
             [StatTypes.MovementSpeed] = new Stat(){BaseValue = 0, LevelMultiplier = 0},
             [StatTypes.Armor] = new Stat(){BaseValue = 0, LevelMultiplier = 0},
+            [StatTypes.RangeBonus] = new Stat(){BaseValue = 0, LevelMultiplier = 0},
+            [StatTypes.DamageBonus] = new Stat(){BaseValue = 0, LevelMultiplier = 0},
         };
         
         [NonSerialized] private Dictionary<StatTypes, HashSet<StatModifier>> Modifiers;
@@ -152,6 +172,30 @@ namespace Kuantech.Core
         {
             Modifiers ??= new Dictionary<StatTypes, HashSet<StatModifier>>();
 
+            if (modifier.StatType == StatTypes.MaxHealth)
+            {
+                float modifierValue = modifier.GetValue();
+                if (modifier.ModifierType == ModifierTypes.Addition)
+                {
+                    Actor.Health += modifierValue;
+                }
+                else
+                {
+                    Actor.Health += GetBaseStat(StatTypes.MaxHealth) * modifierValue;
+                }
+            }else if (modifier.StatType == StatTypes.MaxEnergy)
+            {
+                float modifierValue = modifier.GetValue();
+                if (modifier.ModifierType == ModifierTypes.Addition)
+                {
+                    Actor.Energy += modifierValue;
+                }
+                else
+                {
+                    Actor.Energy += GetBaseStat(StatTypes.MaxHealth) * modifierValue;
+                }
+            }
+            
             if (!Modifiers.ContainsKey(modifier.StatType))
             {
                 Modifiers.Add(modifier.StatType, new HashSet<StatModifier>());
@@ -173,6 +217,29 @@ namespace Kuantech.Core
         public void RemoveModifier(StatModifier modifier)
         {
             if(Modifiers == null) return;
+            if (modifier.StatType == StatTypes.MaxHealth)
+            {
+                float modifierValue = modifier.GetValue();
+                if (modifier.ModifierType == ModifierTypes.Addition)
+                {
+                    Actor.Health -= modifierValue;
+                }
+                else
+                {
+                    Actor.Health -= GetBaseStat(StatTypes.MaxHealth) * modifierValue;
+                }
+            }else if (modifier.StatType == StatTypes.MaxEnergy)
+            {
+                float modifierValue = modifier.GetValue();
+                if (modifier.ModifierType == ModifierTypes.Addition)
+                {
+                    Actor.Energy -= modifierValue;
+                }
+                else
+                {
+                    Actor.Energy -= GetBaseStat(StatTypes.MaxHealth) * modifierValue;
+                }
+            }
             if (Modifiers[modifier.StatType].Contains(modifier))
             {
                 Modifiers[modifier.StatType].Remove(modifier);
@@ -249,9 +316,8 @@ namespace Kuantech.Core
         /// <returns></returns>
         public float GetStat(StatTypes statType)
         {
-            if (statType == StatTypes.None) return -1;
-            
-      
+            if (!Stats.ContainsKey(statType)) return 0;
+            if (statType == StatTypes.None) return 0;
             Stat desiredStat = Stats[statType];
             float baseValue = GetBaseStat(statType);
             float finalValue = baseValue * (1 + desiredStat.MultiplicationModifier) + desiredStat.AdditionModifier;
@@ -261,7 +327,7 @@ namespace Kuantech.Core
                finalValue *= GetWeightFactor(0.5f); //todo: A better way can be found for movement speed
             }
 
-            return finalValue;
+            return Mathf.Max(finalValue, Stats[statType].MinValue);
         }
 
         public float GetEncumbrance()
@@ -305,7 +371,7 @@ namespace Kuantech.Core
                 LevelUpEvent?.Invoke(this, EventArgs.Empty);
                 OverflowExperience = OverflowExperience - RequiredExperienceToNextLevel;
                 Level++;
-                RequiredExperienceToNextLevel = GetRequiredExperience(Level);
+                RequiredExperienceToNextLevel = GetRequiredExperienceForLevel(Level);
                 
                 //Refresh
                 Actor.SetHealth(1f);
@@ -337,7 +403,7 @@ namespace Kuantech.Core
                 {
                     newLevel--;
                     experience -= newOverflowExperience;
-                    newOverflowExperience = GetRequiredExperience(newLevel + 1);
+                    newOverflowExperience = GetRequiredExperienceForLevel(newLevel + 1);
                 }
                 else
                 {
@@ -369,7 +435,7 @@ namespace Kuantech.Core
             level = Mathf.Max(1, level);
             Level = level;
             OverflowExperience = overflowExperience;
-            RequiredExperienceToNextLevel = GetRequiredExperience(level + 1);
+            RequiredExperienceToNextLevel = GetRequiredExperienceForLevel(level + 1);
             Actor.SetHealth(1f);
             Actor.SetEnergy(1f);
         }
@@ -394,7 +460,7 @@ namespace Kuantech.Core
         /// <returns></returns>
         public static float GetNormalizedOverflowExperience(int currentLevel, int overflowExperience)
         {
-            return overflowExperience / (float)GetRequiredExperience(currentLevel + 1);
+            return overflowExperience / (float)GetRequiredExperienceForLevel(currentLevel + 1);
         }
         
         /// <summary>
@@ -402,7 +468,7 @@ namespace Kuantech.Core
         /// </summary>
         /// <param name="currentLevel"></param>
         /// <returns></returns>
-        public static int GetRequiredExperience(int currentLevel)
+        public static int GetRequiredExperienceForLevel(int currentLevel)
         {
             if (currentLevel == 0) return 0;
             return GetExperienceForLevel(currentLevel) - (int)Mathf.Max(GetExperienceForLevel(currentLevel-1), 0);
@@ -419,7 +485,7 @@ namespace Kuantech.Core
             resultingOverflowExperience = 0;
             resultingLevel = currentLevel;
 
-            int experienceToNextLevel = GetRequiredExperience(currentLevel + 1);
+            int experienceToNextLevel = GetRequiredExperienceForLevel(currentLevel + 1);
 
             int newOverflowExperience = currentOverflowExperience + earnedExperience;
             
@@ -433,7 +499,7 @@ namespace Kuantech.Core
             {
                 resultingLevel++;
                 newOverflowExperience -= experienceToNextLevel;
-                experienceToNextLevel = GetRequiredExperience(resultingLevel + 1);
+                experienceToNextLevel = GetRequiredExperienceForLevel(resultingLevel + 1);
                 resultingOverflowExperience = newOverflowExperience;
             }
                 
@@ -455,6 +521,8 @@ namespace Kuantech.Core
                 [StatTypes.MaxHealth] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
                 [StatTypes.MovementSpeed] = new Stat(){BaseValue = 0, LevelMultiplier = 0},
                 [StatTypes.Armor] = new Stat(){BaseValue = 0, LevelMultiplier = 0},
+                [StatTypes.RangeBonus] = new Stat(){BaseValue = 0, LevelMultiplier = 0},
+                [StatTypes.DamageBonus] = new Stat(){BaseValue = 0, LevelMultiplier = 0},
             };
         }
     }
