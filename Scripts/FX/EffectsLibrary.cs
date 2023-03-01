@@ -46,7 +46,7 @@ namespace Kuantech.Core.FX
 
         private void Initialize()
         {
-            AudioLibrary.Initialize();
+            if(AudioLibrary != null) AudioLibrary.Initialize();
         }
         
         public Effect GetEffect(EffectTypes effectType)
