@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using Kuantech.Core.Utils;
 using Kuantech.Data;
-using Kuantech.EndlessRunner;
 using Kuantech.Inventory.Items;
 using UnityEngine;
 using YamlDotNet.Serialization;
@@ -70,12 +69,6 @@ namespace Kuantech.Core
             {
                 data.ItemType = Enums.ItemType.Weapon;
                 ItemDatas.Add(data.id, data);
-                LooterGameManager.Instance.LootPool.Lootables.Add(new Lootable
-                {
-                    ItemId = data.id,
-                    MinPowerLevel = data.minPowerLevel,
-                    MaxPowerLevel = data.maxPowerLevel,
-                });
             }
        
             
@@ -91,12 +84,6 @@ namespace Kuantech.Core
             {
                 data.ItemType = Enums.ItemType.Armor;
                 ItemDatas.Add(data.id, data);
-                LooterGameManager.Instance.LootPool.Lootables.Add(new Lootable
-                {
-                    ItemId = data.id,
-                    MinPowerLevel = data.minPowerLevel,
-                    MaxPowerLevel = data.maxPowerLevel,
-                });
             }
         }
 
