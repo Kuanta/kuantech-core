@@ -4,6 +4,8 @@ using System.Linq;
 using Kuantech.Core;
 using Kuantech.Data;
 using Kuantech.Utils;
+using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Kuantech.Inventory.Items
 {
@@ -16,6 +18,7 @@ namespace Kuantech.Inventory.Items
         public ItemRarities ItemRarity;
         public bool Equipped;
         public Dictionary<StatTypes, StatModifier> StatModifiers;
+        public bool IsNew;
     }
 
     /// <summary>
@@ -33,6 +36,7 @@ namespace Kuantech.Inventory.Items
         public float Angle;
         public float Width;
         public float Knockback;
+        public float KnockbackTime;
         public float ProjectileSpeed;
         public float ProjectileDrop;
     }
@@ -54,9 +58,12 @@ namespace Kuantech.Inventory.Items
         public string slotType = "None";
         public string baseStat = "None";
         public float weight;
+        public float value;
         public bool stackable = false;
         public Enums.ItemType ItemType;
         public TemplateData Template;
+        public int minPowerLevel;
+        public int maxPowerLevel;
         
         // Icon
         public int iconId;
@@ -71,16 +78,18 @@ namespace Kuantech.Inventory.Items
         public int projectilePrefabId = -1;
         public int slotSize = 1; //1 for 1 handed, >1 for two handed
         public List<WeaponAttackPattern> AttackPatterns;
+        public WeaponAttackPattern alternativeAttackPattern;
         public List<int> skills;
         public float blockAmount = 0; //Additional armor value
         public bool isOffHand = false;
-        
+        public float scalingFactor = 1;
     }
 
     [Serializable]
     public class ArmorData : ItemData
     {
         public float armorValue = 0f;
+        public float scalingFactor = 1;
     }
     
     [Serializable]
@@ -200,27 +209,15 @@ namespace Kuantech.Inventory.Items
             return StateData.ItemRarity;
         }
 
-        public float GetSellValue()
+        public int GetSellValue()
         {
-            float rarityMultiplier = 1;
-            switch (StateData.ItemRarity)
-            {
-                case ItemRarities.Uncommon:
-                    rarityMultiplier = 1.5f;
-                    break;
-                case ItemRarities.Rare:
-                    rarityMultiplier = 2f;
-                    break;
-                case ItemRarities.Epic:
-                    rarityMultiplier = 2.5f;
-                    break;
-                case ItemRarities.Legendary:
-                    rarityMultiplier = 3f;
-                    break;
-            }
-            return StateData.ItemLevel * rarityMultiplier; 
+            return (int)(StateData.ItemLevel * data.value * Config.ITEM_SELL_VALUE_COEFF); 
         }
-     
+
+        public int GetUpgradeValue()
+        {
+            return (int)(data.value*(StateData.ItemLevel + 1) + (StateData.ItemLevel + 1)*Config.ITEM_UPGRADE_COST_COEFF);
+        }
         #endregion
         #region Modifiers
 
@@ -239,23 +236,22 @@ namespace Kuantech.Inventory.Items
         /// </summary>
         public void AddRandomModifier()
         {
-            List<StatTypes> stats = Enum.GetValues(typeof(StatTypes)).Cast<StatTypes>().ToList();
-            stats.Remove(StatTypes.None);
+            if (Librarian.Instance.ModifierDataDictionary.Count == 0) return;
+            List<StatTypes> stats = Librarian.Instance.ModifierDataDictionary.Keys.ToList();
             stats.Shuffle();
             for (int i = 0; i < stats.Count; ++i)
             {
-                if (!StateData.StatModifiers.ContainsKey(stats[i]))
+                if (StateData.StatModifiers.ContainsKey(stats[i])) continue; //Don't add same modifier twice
+                StatModifierData modifierData = Librarian.Instance.ModifierDataDictionary[stats[i]];
+                StatModifier newModifier = new StatModifier()
                 {
-                    StatModifierData modifierData = Librarian.Instance.ModifierDataDictionary[stats[i]];
-                    StatModifier newModifier = new StatModifier()
-                    {
-                        Level = StateData.ItemLevel,
-                        StatType = modifierData.StatType,
-                        BaseValue = modifierData.BaseValue,
-                        ModifierType = modifierData.ModifierType,
-                    };
-                    AddModifier(newModifier);
-                }
+                    Level = StateData.ItemLevel,
+                    StatType = modifierData.StatType,
+                    BaseValue = modifierData.BaseValue,
+                    ModifierType = modifierData.ModifierType,
+                };
+                AddModifier(newModifier);
+                return;
             }
         }
         

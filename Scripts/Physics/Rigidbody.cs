@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.ProBuilder;
 
 namespace Kuantech.Physics
 {
@@ -31,7 +32,7 @@ namespace Kuantech.Physics
         {
             Vector3 newVelocity = Velocity + Acceleration * deltaTime;
             Vector3 displacement = Velocity * deltaTime + Acceleration * deltaTime * deltaTime * 0.5f;
-            transform.position = transform.position + displacement;
+            transform.position += displacement;
             Velocity = newVelocity;
         }
         
@@ -50,7 +51,7 @@ namespace Kuantech.Physics
             float verticalSpeed = Mathf.Sqrt(verticalSpeedSquared);
             
             //Calculate time pass
-            float time = verticalSpeed / gravity * 2f;
+            float time = verticalSpeed / Mathf.Abs(gravity) * 2f;
             
             //Calculate vertical speed
             float horizontalSpeed = horizontalDistance / time;
@@ -62,8 +63,57 @@ namespace Kuantech.Physics
             WakeUp();
             return time;
         }
-
-        public void WakeUp()
+        
+        /// <summary>
+        /// Sets trajectory by respecting the horizontal distance and horizontal speed. This trajectory will end at y=0
+        /// and vertical speed will be adjusted to achieve that
+        /// </summary>
+        /// <param name="horizontalDistance">Range of the trajectory in horizontal plane</param>
+        /// <param name="initialHorizontalSpeed">Initial horizontal speed</param>
+        /// <param name="direction">Direction in horizontal plane</param>
+        /// <param name="gravity">Gravitational acceleration force</param>
+        /// <param name="initialHeight">Start local y position. For cliff throwaing scenarios</param>
+        /// <returns></returns>
+        public float SetTrajectoryWithHorizontalSpeed(float horizontalDistance, float initialHorizontalSpeed,
+            Vector2 direction, float gravity, float initialHeight = 0f)
+        {
+            //Calculate time pass
+            float totalTime = horizontalDistance / initialHorizontalSpeed;
+            
+            //Calculate vertical speed
+            float horizontalSpeed = horizontalDistance / totalTime;
+            
+            float tTotal = horizontalDistance / horizontalSpeed;
+            float verticalSpeed = -initialHeight / tTotal - 0.5f * (-9.8f) * tTotal;
+            Velocity = new Vector3(direction.x * horizontalSpeed, verticalSpeed,
+                direction.y * horizontalSpeed);
+            Acceleration = new Vector3(0f, -Mathf.Abs(gravity), 0f);
+            _secondsToSleep = totalTime;
+            WakeUp();
+            return totalTime;
+        }
+        
+        /// <summary>
+        /// Returns the time of travel given the displacement and initial speed under uniform acceleration
+        /// </summary>
+        /// <param name="displacement"></param>
+        /// <param name="verticalSpeed"></param>
+        /// <param name="gravity"></param>
+        /// <returns></returns>
+        public float GetTimeToDisplace(float displacement, float initialSpeed, float acceleration = -9.8f)
+        {
+            float a = 0.5f * acceleration;
+            float b = initialSpeed;
+            float c = -1 * displacement;
+            float delta = Mathf.Sqrt(b * b - 4 * a * c);
+            float root_1 = (-b + delta) / (2 * a);
+            float root_2 = (-b - delta) / (2 * a);
+            if (root_1 >= 0) return root_1;
+            if (root_2 >= 0) return root_2;
+            Debug.LogError("No suitable root found for time to displace calculation");
+            return 0f;
+        }
+        private void WakeUp()
         {
             _lastAwakenTime = Time.time;
             IsAwake = true;

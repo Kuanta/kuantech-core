@@ -26,7 +26,7 @@ namespace Kuantech.Core.FX
             PlayEffects();
         }
 
-        private void PlayEffects()
+        protected virtual void PlayEffects()
         {
             if(Sfx != null) Sfx.Play();
             if(Vfx != null && !EmitEffect) Vfx.Play();

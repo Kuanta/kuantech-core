@@ -10,19 +10,21 @@ namespace Kuantech.Combat
     {
         public float Speed;
         public float Range;
+        public float Knockback;
+        public float KnockbackTime;
         public CombatModule CastBy;
         public Weapon ShotFrom = null;
         public bool DestroyOnImpact = true;
         public LayerMask Targets;
         
-        public delegate void ImpactOverrideDelegate(Projectile proj, Actor target);
+        public delegate void ImpactOverrideDelegate(Projectile proj, Actor target, GameObject gameObjects);
 
         public ImpactOverrideDelegate ImpactOverride;
         // Behaviour flags
         public float Damage = 1;
         public float splashRadius = 0f; // 0 means no splash
         
-        private float _age = 0f; // Age of the projectile in terms of seconds
+        protected float _age = 0f; // Age of the projectile in terms of seconds
 
         public List<GameObject> Attachments;
 
@@ -43,7 +45,7 @@ namespace Kuantech.Combat
             }
         }
 
-        private void Update()
+        protected virtual void Update()
         {
             if(Speed == 0) Despawn();
             transform.position = transform.position + transform.forward * Time.deltaTime * Speed;
@@ -76,7 +78,7 @@ namespace Kuantech.Combat
             if (!((Targets.value & (1 << other.gameObject.layer)) > 0)) return;
             
             //todo: Apply knockback
-            if (CastBy != null && other.gameObject == CastBy.gameObject) return;
+            if (CastBy != null && other.gameObject == CastBy.gameObject) return; //Don't trigger for the caster
 
             Actor targetActor = other.GetComponent<Actor>();
             if (targetActor != null && targetActor.Health <= 0f) return;
@@ -88,7 +90,7 @@ namespace Kuantech.Combat
             
             if (ImpactOverride != null)
             {
-                ImpactOverride(this, targetActor);
+                ImpactOverride(this, targetActor, other.gameObject);
                 return;
             }
             
@@ -115,13 +117,16 @@ namespace Kuantech.Combat
         private void Impact(GameObject impacted)
         {
             Actor target = impacted.GetComponent<Actor>();
+            
+            CombatModule.KnockbackActor(CastBy, target, transform.forward, Knockback, KnockbackTime);
+
             if (CastBy == null)
             {
                 if(target != null) target.ReceiveDamage(null, Damage); //Cast from something that is not an Actor
                 return;
             }
             if (target == null || target == CastBy.Actor) return;
-            if(CastBy.CanUseSkill) CastBy.OnProjectileImpact(this, target);
+            CastBy.OnProjectileImpact(this, target);
         }
 
         private void ClearAttachments()
@@ -133,7 +138,7 @@ namespace Kuantech.Combat
             Attachments.Clear();
         }
         
-        public void Despawn()
+        public virtual void Despawn()
         {
             _age = 0f;
             ClearAttachments();

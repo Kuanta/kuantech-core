@@ -14,7 +14,8 @@ namespace Kuantech.Core.FX
         public Effect DamageReceiveEffect;
         public Effect DeathEffect;
         private Effect _impact;
-
+        
+        //[SerializeField] private Dictionary<int, >
         public override void Initialize()
         {
             base.Initialize();

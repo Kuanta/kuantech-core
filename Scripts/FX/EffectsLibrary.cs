@@ -21,6 +21,7 @@ namespace Kuantech.Core.FX
         GhostAcher,
         ArcaneArrowEffect,
         PowerShotArrowEffect,
+        ArrowBarrageEffect,
         None,
     }
     
@@ -33,6 +34,11 @@ namespace Kuantech.Core.FX
         public EffectsDictionary EffectsDictionary;
         public PrefabPool EffectsPool;
 
+        private void Awake()
+        {
+            EffectsPool = new PrefabPool(transform, 1000);
+        }
+
         private void Start()
         {
             Initialize();
@@ -40,7 +46,6 @@ namespace Kuantech.Core.FX
 
         private void Initialize()
         {
-            EffectsPool = new PrefabPool(transform, 1000);
             AudioLibrary.Initialize();
         }
         
@@ -80,27 +85,27 @@ namespace Kuantech.Core.FX
             return effect;
         }
         
-        public Effect PlayTimedEffect(EffectTypes effectType, Transform parent)
+        public Effect PlayTimedEffect(EffectTypes effectType, Transform parent, float duration = -1)
         {
             Effect effect = GetEffect(effectType);
             if (effect == null) return null;
-            effect.PlayTimed(effect.Duration, parent, Vector3.zero, Quaternion.identity);
+            effect.PlayTimed(duration >= 0 ? duration : effect.Duration, parent, Vector3.zero, Quaternion.identity);
             return effect;
         }
         
-        public Effect PlayTimedEffect(EffectTypes effectType, Transform parent, Vector3 localPosition, Quaternion localRotation)
+        public Effect PlayTimedEffect(EffectTypes effectType, Transform parent, Vector3 localPosition, Quaternion localRotation, float duration = -1)
         {
             Effect effect = GetEffect(effectType);
             if (effect == null) return null;
-            effect.PlayTimed(effect.Duration, parent, localPosition, localRotation);
+            effect.PlayTimed(duration >= 0 ? duration : effect.Duration, parent, localPosition, localRotation);
             return effect;
         }
 
-        public Effect PlayTimedEffect(EffectTypes effectType, Vector3 position, Quaternion rotation)
+        public Effect PlayTimedEffect(EffectTypes effectType, Vector3 position, Quaternion rotation, float duration = -1)
         {
             Effect effect = GetEffect(effectType);
             if (effect == null) return null;
-            effect.PlayTimed(effect.Duration, position, rotation);
+            effect.PlayTimed(duration >= 0 ? duration : effect.Duration, position, rotation);
             return effect;
         }
     }

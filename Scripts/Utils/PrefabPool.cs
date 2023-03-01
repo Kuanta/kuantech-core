@@ -80,7 +80,7 @@ namespace Kuantech.Core
                     return CreateNew(prefab);
                 }
                 dequeued.SetActive(true);
-                dequeued.transform.parent = null;
+                dequeued.transform.SetParent(null);
                 dequeued.GetComponent<PoolableComponent>().InUse = true;
                 return dequeued;
             }

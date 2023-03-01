@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Runtime.CompilerServices;
+using Kuantech.EndlessRunner;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -51,6 +53,29 @@ namespace Kuantech.Utils
             } 
         }
 
+        private static readonly float GaussianNormalizationFactor = Mathf.Sqrt(2 * Mathf.PI);
+        public static float Gaussian(float x, float mu, float sigma)
+        {
+            return (1 / (sigma * GaussianNormalizationFactor)) *
+                   Mathf.Exp(-1 * (x - mu) * (x - mu) / (2 * sigma * sigma));
+        }
+        
+        /// <summary>
+        /// Define a gaussian where the result is 1 between two mean values
+        /// </summary>
+        /// <param name="x"></param>
+        /// <param name="mu1">min mean</param>
+        /// <param name="mu2">max mean</param>
+        /// <param name="sigma"></param>
+        /// <returns></returns>
+        public static float PlateauGaussian(float x, float mu1, float mu2, float sigma)
+        {
+            if (x >= mu1 && x <= mu2) return 1;
+            if (x < mu1) return Gaussian(x, mu1, sigma);
+            if (x > mu2) return Gaussian(x, mu2, sigma);
+            return 0;
+        }
+        
         public static void IterateChildren(this Transform parent, UnityAction<GameObject> handler)
         {
             Transform[] childs = parent.GetComponentsInChildren<Transform>();
@@ -80,6 +105,10 @@ namespace Kuantech.Utils
                 abs /= 10E3f;
                 quantitySuffix = " k";
             }
+            else
+            {
+                roundToInteger = true; //Round numbers smaller than 1k to integer
+            }
 
             if (roundToInteger)
             {
@@ -92,7 +121,33 @@ namespace Kuantech.Utils
             }
             return signString + numberString + quantitySuffix;
         }
-        
+
+        public static Vector2 Get2D(this Vector3 vector3)
+        {
+            return new Vector2(vector3.x, vector3.z);
+        }
+        /// <summary>
+        /// Returns an index from a list of probabilities
+        /// </summary>
+        /// <param name="probabilities">List of probabilities. Doesn't have to be normalized</param>
+        /// <returns></returns>
+        public static int DrawFromWeightedProbabilities(float[] probabilities)
+        {
+            float total = probabilities.Sum();
+            float rand = Random.Range(0, total);
+            float currentMin = 0f;
+            for (int i = 0; i < probabilities.Length; ++i)
+            {
+                if (rand < probabilities[i] + currentMin)
+                {
+                    return i;
+                }
+
+                currentMin += probabilities[i];
+            }
+
+            return probabilities.Length - 1;
+        }
         #region Geometry
 
         public static Vector3 GetRelativeRightVector(this Transform parent, Transform target)

@@ -33,6 +33,7 @@ namespace Kuantech.Core
         private static readonly int DamageReceived = Animator.StringToHash("DamageReceived");
         private static readonly int DamageReceivedIndex = Animator.StringToHash("DamageReceivedIndex");
         private static readonly int Aiming = Animator.StringToHash("Aiming");
+        private static readonly int AlternativeAttack = Animator.StringToHash("AlternativeAttack");
 
         public override void Initialize()
         {
@@ -48,7 +49,7 @@ namespace Kuantech.Core
         {
             if (GameManager.Instance.GameIsPaused || Animator == null) return;
             _movementParameters =
-                Vector2.Lerp(_movementParameters, _targetMovementParameters, Time.deltaTime * LerpFactor);
+                Vector2.Lerp(_movementParameters, _targetMovementParameters * _movementParametersScale, Time.deltaTime * LerpFactor);
             Animator.SetFloat(X, _movementParameters.x);
             Animator.SetFloat(Y,_movementParameters.y);
         }
@@ -109,6 +110,13 @@ namespace Kuantech.Core
             Animator.SetInteger(AttackIndex, attackIndex);
         }
 
+        public void AlternativeAttackTrigger(int handIndex = 0, int attackIndex = 0)
+        {
+            Animator.SetTrigger(AlternativeAttack);
+            Animator.SetBool(Hold, false);
+            Animator.SetInteger(HandIndex, handIndex);
+            Animator.SetInteger(AttackIndex, attackIndex);
+        }
         public void SetRelease()
         {
             Animator.SetBool(Hold, false);

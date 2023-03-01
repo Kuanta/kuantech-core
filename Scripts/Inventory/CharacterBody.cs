@@ -18,6 +18,9 @@ namespace Kuantech.Character
         public List<GameObject> EquipmentParts;
         public bool ToggleHair;
         public bool ToggleFacialHair;
+        public bool ToggleHead;
+        public Color PrimaryColor;
+        public Color SecondaryColor;
 
         public void Toggle(bool toggle)
         {
@@ -67,7 +70,9 @@ namespace Kuantech.Character
         public List<VisualToBonePair> VisualToBonePairs;
         public List<EquipmentToBonePair> EquipmentToBonePairs;
 
-        [Header("Hairs")] 
+        [Header("Head & Hairs")] 
+        public GameObject Head;
+        public GameObject Eyebrow; 
         public GameObject Hair;
         public GameObject FacialHair;
         
@@ -245,18 +250,23 @@ namespace Kuantech.Character
             Enums.EquipmentSlotType slotType = InplaceEquipments[tempalteId].EquipmentType;
             ToggleDefaultInplaceEquipment(slotType, false);
             InplaceEquipments[tempalteId].Toggle(true);
-            //Check hairs
-            if (InplaceEquipments[tempalteId].ToggleHair)
-            {
-                ToggleHair(false);
-            }
-
-            if (InplaceEquipments[tempalteId].ToggleFacialHair)
-            {
-                ToggleFacialHair(false);
-            }
+            ToggleHeadElements(InplaceEquipments[tempalteId].ToggleHair, InplaceEquipments[tempalteId].ToggleFacialHair, InplaceEquipments[tempalteId].ToggleHead, false);
         }
-
+        
+        /// <summary>
+        /// Toggles head elements
+        /// </summary>
+        /// <param name="toggleHair"></param>
+        /// <param name="toggleFacialHair"></param>
+        /// <param name="toggleHead"></param>
+        /// <param name="toggle"></param>
+        public void ToggleHeadElements(bool toggleHair, bool toggleFacialHair, bool toggleHead, bool toggle)
+        {
+            if(toggleHair) ToggleHair(toggle);
+            if(toggleFacialHair) ToggleFacialHair(toggle);
+            if(toggleHead) ToggleHead(toggle);
+        }
+        
         public void ToggleHair(bool toggle)
         {
             if(Hair != null) Hair.SetActive(toggle);
@@ -266,6 +276,13 @@ namespace Kuantech.Character
         {
             if(FacialHair != null) FacialHair.SetActive(toggle);
         }
+
+        public void ToggleHead(bool toggle)
+        {
+            if(Head != null) Head.SetActive(toggle);
+            if(Eyebrow != null) Eyebrow.SetActive(toggle);
+        }
+        
         public void ToggleDefaultInplaceEquipment(Enums.EquipmentSlotType slotType, bool toggle)
         {
             if (DefaultInplaceEquipments == null || !DefaultInplaceEquipments.ContainsKey(slotType)) return;
@@ -288,6 +305,15 @@ namespace Kuantech.Character
             else
             {
                 ToggleFacialHair(true);
+            }
+            
+            if (DefaultInplaceEquipments[slotType].ToggleHead)
+            {
+                ToggleHead(!toggle);
+            }
+            else
+            {
+                ToggleHead(true);
             }
         }
         
@@ -339,6 +365,11 @@ namespace Kuantech.Character
             if (InplaceEquipments[id].ToggleFacialHair)
             {
                 ToggleFacialHair(true);
+            }
+
+            if (InplaceEquipments[id].ToggleHead)
+            {
+                ToggleHead(true);
             }
         }
         
@@ -415,6 +446,11 @@ namespace Kuantech.Character
                     if (equipment.ToggleFacialHair)
                     {
                         ToggleFacialHair(!toggle);
+                    }
+
+                    if (equipment.ToggleHead)
+                    {
+                        ToggleHead(!toggle);
                     }
                     return;
                 }

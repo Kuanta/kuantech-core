@@ -1,24 +1,25 @@
 ﻿using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Kuantech.UI
 {
     public class CameraFacingBillboard : MonoBehaviour
     {
-        public Camera camera;
+        [FormerlySerializedAs("camera")] public Camera MainCamera;
 
         public void SetCamera(Camera camera)
         {
-            this.camera = camera;
+            MainCamera = camera;
         }
 
         private void Start()
         {
-            camera = Camera.main;
+            MainCamera = Camera.main;
         }
 
         private void Update()
         {
-            transform.forward = camera.transform.forward;
+            transform.forward = MainCamera.transform.forward;
         }
     }
 }

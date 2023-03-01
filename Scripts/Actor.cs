@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using Kuantech.Character;
 using Kuantech.Inventory;
@@ -12,10 +13,11 @@ namespace Kuantech.Core
     {
         [Header("Visuals")] 
         public GameObject VisualModel;
-        
+
         //public float stats
         [Header("Components")] 
         public Rigidbody Rigidbody;
+        public Collider Collider;
         public StatsModule Stats;
         public StatusEffectHandler StatusEffectHandler;
         public CombatModule CombatModule;
@@ -111,9 +113,9 @@ namespace Kuantech.Core
         
         public virtual float ReceiveDamage(Actor from, float damage)
         {
-            if (Health <= 0) return 0; //Don't hit the dead no more
+            if (Health <= 0 || damage <= 0) return 0; //Don't hit the dead no more
             float armorValue = Stats.GetStat(StatTypes.Armor);
-            damage = damage * Mathf.Pow(damage / (damage + armorValue * Config.ARMOR_COEFF), Config.ARMOR_POWER_COEFF);
+            damage = damage * (1 - Mathf.Exp(-damage/(armorValue*Config.ARMOR_COEFF)));
             Health -= Mathf.Abs(damage);
             if (Health <= 0f)
             {
@@ -124,10 +126,20 @@ namespace Kuantech.Core
             OnDamageReceived?.Invoke(this, damage);
             return damage;
         }
-
+        
+        /// <summary>
+        /// Instantly kills the actor
+        /// </summary>
+        public void Kill()
+        {
+            Health = 0f;
+            Death();
+        }
+        
         public virtual void Death()
         {
             OnDeath?.Invoke(this, EventArgs.Empty);
+            if(Collider != null) Collider.enabled = false;
         }
 
         public virtual void Respawn()
@@ -141,6 +153,7 @@ namespace Kuantech.Core
             Health = Stats.GetStat(StatTypes.MaxHealth);
             Energy = Stats.GetStat(StatTypes.MaxEnergy);
             ForceMoveVector = Vector3.zero;
+            if(Collider != null) Collider.enabled = true;
             foreach (var key in _modules.Keys)
             {
                 _modules[key].Reset();
@@ -183,5 +196,21 @@ namespace Kuantech.Core
                 InventoryModule.EquipItem(item, item.slotType);
             }
         }
+
+        public void Knockback(Vector3 direction, float knockback, float knockbackTime)
+        {
+            StartCoroutine(KnockbackRoutine(direction, knockback, knockbackTime));
+        }
+        private IEnumerator KnockbackRoutine(Vector3 direction, float knockback, float knockbackTime)
+        {
+            direction.y = 0f;
+            direction.Normalize();
+            direction *= knockback;
+            ForceMoveVector += direction;
+            yield return new WaitForSeconds(knockbackTime);
+            ForceMoveVector -= direction;
+        }
     }
+    
+    
 }

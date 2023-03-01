@@ -11,7 +11,6 @@ namespace Kuantech.ActionSequencer
     public class MoveAction : SequenceAction
     {
         [SerializeField] private Transform Waypoint;
-        [SerializeField] private float Speed;
         [SerializeField] private float Threshold = 0.1f;
 
         private Actor _actor;
@@ -44,7 +43,7 @@ namespace Kuantech.ActionSequencer
             diffVec.y = 0;
             diffVec.Normalize();
             _mm.SetGlobalMovementVector(new Vector2(diffVec.x, diffVec.z));
-            _mm.SetMaxSpeed(Speed, Speed);
+            _mm.SetMaxSpeed(_actor.Stats.GetStat(StatTypes.MovementSpeed),_actor.Stats.GetStat(StatTypes.MovementSpeed));
         }
     }
 }

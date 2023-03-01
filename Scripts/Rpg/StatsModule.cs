@@ -39,6 +39,7 @@ namespace Kuantech.Core
         public float BaseValue;
         public float LevelToValueFactor;
         public ModifierTypes ModifierType;
+        public bool IsPercentage;
     }
     
     [Serializable]
@@ -138,7 +139,7 @@ namespace Kuantech.Core
             //Apply armor value
             if (!(item is Armor armor)) return;
             Stat armorStat = Stats[StatTypes.Armor];
-            armorStat.AdditionModifier +=  armor.armorRating;
+            armorStat.AdditionModifier +=  armor.GetArmorRating();
             Stats[StatTypes.Armor] = armorStat;
         }
 
@@ -151,7 +152,7 @@ namespace Kuantech.Core
 
             if (!(item is Armor armor)) return;
             Stat armorStat = Stats[StatTypes.Armor];
-            armorStat.AdditionModifier -=  armor.armorRating;
+            armorStat.AdditionModifier -=  armor.GetArmorRating();
             Stats[StatTypes.Armor] = armorStat;
         }
         
@@ -353,7 +354,7 @@ namespace Kuantech.Core
         {
             if (statType == StatTypes.None) return -1;
             Stat desiredStat = Stats[statType]; 
-            return desiredStat.BaseValue + desiredStat.LevelMultiplier * Level;
+            return desiredStat.BaseValue + desiredStat.LevelMultiplier * Mathf.Max(Level-1, 0);
         }
         #endregion
 
@@ -370,7 +371,7 @@ namespace Kuantech.Core
                 LevelUpEvent?.Invoke(this, EventArgs.Empty);
                 OverflowExperience = OverflowExperience - RequiredExperienceToNextLevel;
                 Level++;
-                RequiredExperienceToNextLevel = GetRequiredExperienceForLevel(Level);
+                RequiredExperienceToNextLevel = GetRequiredExperienceForLevel(Level+1);
                 
                 //Refresh
                 Actor.SetHealth(1f);
@@ -423,11 +424,12 @@ namespace Kuantech.Core
         {
             return OverflowExperience;
         }
-        
+
         /// <summary>
         /// Sets the level and adjust the experience accordingly
         /// </summary>
         /// <param name="level"></param>
+        /// <param name="overflowExperience"></param>
         public void SetLevel(int level, int overflowExperience = 0)
         {
             level = Mathf.Max(1, level);

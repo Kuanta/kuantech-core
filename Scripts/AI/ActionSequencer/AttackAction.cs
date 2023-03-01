@@ -38,7 +38,7 @@ namespace Kuantech.ActionSequencer
             //Don't check target
             if (AttackWithoutTarget)
             {
-                CombatModule.Attack(OnAttackComplete);
+                CombatModule.Attack(true, OnAttackComplete);
                 return;
             }  
             
@@ -51,7 +51,7 @@ namespace Kuantech.ActionSequencer
             
             if (CombatModule.IsInAttackRange(_target.transform))
             {
-                CombatModule.Attack(OnAttackComplete);
+                CombatModule.Attack(true, OnAttackComplete);
             }
        
         }

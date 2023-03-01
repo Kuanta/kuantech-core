@@ -8,7 +8,7 @@ namespace Kuantech.Core
         public float SideInput;
         public float ForwardInput;
 
-        public UnityEvent<int> AttackEvent;
+        public UnityEvent AttackEvent;
         public UnityEvent AimEvent;
         public UnityEvent ReleaseAimEvent;
 
@@ -47,9 +47,9 @@ namespace Kuantech.Core
             
             if (Input.GetKeyDown(KeyCode.Space))
             {
-                AttackEvent?.Invoke(0);
+                AttackEvent?.Invoke();
             }
-
+            
             if (Input.GetKeyDown(KeyCode.LeftControl))
             {
                 MovementScale = 0.5f;

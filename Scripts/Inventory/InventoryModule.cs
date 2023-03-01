@@ -81,7 +81,7 @@ namespace Kuantech.Inventory
             if (availableId < 0) return;
             items[availableId] = item;
             item.StateData.InventoryId = availableId;
-
+            item.StateData.IsNew = true;
             if (equip)
             {
                 EquipItem(item, item.slotType);

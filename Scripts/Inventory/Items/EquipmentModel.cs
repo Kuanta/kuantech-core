@@ -60,6 +60,7 @@ namespace Kuantech.Inventory.Items
 
         public void SavePlacement(Enums.BoneTypes slotType)
         {
+            #if UNITY_EDITOR
             for (int i = 0; i < PlacementsList.Count; i++)
             {
                 if (PlacementsList[i].BoneType != slotType) continue;
@@ -81,6 +82,7 @@ namespace Kuantech.Inventory.Items
             Placements[slotType] = transformStruct;
             InitializeMapping();
             EditorUtility.SetDirty(this);
+            #endif
         }
 
         public TransformStruct GetPlacement(Enums.BoneTypes slotType)
