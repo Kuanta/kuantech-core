@@ -13,7 +13,7 @@ namespace Kuantech.Core
         public UnityEvent ReleaseAimEvent;
 
         public float MovementScale = 1f;
-        
+        public bool ReceivedInput;
         protected virtual void Update()
         {
             if (GameManager.Instance.GameIsPaused) return;
@@ -22,10 +22,12 @@ namespace Kuantech.Core
             if (Input.GetKey(KeyCode.A))
             {
                 SideInput = -1;
+                ReceivedInput = true;
             }
             else if (Input.GetKey(KeyCode.D))
             {
                 SideInput = 1;
+                ReceivedInput = true;
             }
             else
             {
@@ -35,10 +37,12 @@ namespace Kuantech.Core
             if (Input.GetKey(KeyCode.W))
             {
                 ForwardInput = 1;
+                ReceivedInput = true;
             }
             else if (Input.GetKey(KeyCode.S))
             {
                 ForwardInput = -1;
+                ReceivedInput = true;
             }
             else
             {

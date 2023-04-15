@@ -49,6 +49,12 @@ namespace Kuantech.Utils
                 (list[k], list[n]) = (list[n], list[k]);
             } 
         }
+        
+        public static T GetRandomElement<T>(this IList<T> list)
+        {
+            int n = list.Count;
+            return list[Random.Range(0, n)];
+        }
 
         private static readonly float GaussianNormalizationFactor = Mathf.Sqrt(2 * Mathf.PI);
         public static float Gaussian(float x, float mu, float sigma)
@@ -83,7 +89,7 @@ namespace Kuantech.Utils
             }
         }
 
-        public static string Stringfy(this float number, bool roundToInteger = false)
+        public static string Stringfy(this float number, bool roundToInteger = false, bool roundSmallerToInteger = false)
         {
             float abs = Mathf.Abs(number);
             string signString = number < 0 ? "- " : "";
@@ -102,11 +108,12 @@ namespace Kuantech.Utils
                 abs /= 10E3f;
                 quantitySuffix = " k";
             }
-            else
+            else if(roundSmallerToInteger)
             {
                 roundToInteger = true; //Round numbers smaller than 1k to integer
             }
 
+            if (abs - Mathf.Floor(abs) == 0) roundToInteger = true; //If no value after decimal point, to integer
             if (roundToInteger)
             {
                 abs = (int) abs;
@@ -145,6 +152,7 @@ namespace Kuantech.Utils
 
             return probabilities.Length - 1;
         }
+        
         #region Geometry
 
         public static Vector3 GetRelativeRightVector(this Transform parent, Transform target)

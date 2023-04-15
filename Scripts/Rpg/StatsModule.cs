@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using DTT.Utils.Extensions;
+using Kuantech.Data;
 using Kuantech.Inventory;
 using Kuantech.Inventory.Items;
 using Sirenix.OdinInspector;
@@ -23,6 +24,8 @@ namespace Kuantech.Core
         Armor,
         DamageBonus,
         RangeBonus,
+        CooldownReduction,
+        AttackSpeedBonus,
         None,
     }
 
@@ -40,6 +43,11 @@ namespace Kuantech.Core
         public float LevelToValueFactor;
         public ModifierTypes ModifierType;
         public bool IsPercentage;
+
+        public float GetValue(int level)
+        {
+            return BaseValue + LevelToValueFactor * level * Math.Sign(BaseValue);
+        }
     }
     
     [Serializable]
@@ -49,9 +57,11 @@ namespace Kuantech.Core
         public StatTypes StatType;
         public float BaseValue;
         public float LevelToValueFactor = 1;
+        private StatModifierData _data;
         public StatModifier(){}
         public StatModifier(StatModifierData data)
         {
+            _data = data;
             BaseValue = data.BaseValue;
             LevelToValueFactor = data.LevelToValueFactor;
             ModifierType = data.ModifierType;
@@ -59,7 +69,7 @@ namespace Kuantech.Core
         }
         public float GetValue()
         {
-            return BaseValue + LevelToValueFactor * Level * Math.Sign(BaseValue);
+            return BaseValue + LevelToValueFactor * Level;
         }
         public ModifierTypes ModifierType;
     }
@@ -86,6 +96,12 @@ namespace Kuantech.Core
     [Serializable]
     public class ModifierDataDictionary : SerializableDictionary<StatTypes, StatModifierData> { }
     
+    [Serializable]
+    public class WeaponModifierDictionary : SerializableDictionary<Enums.WeaponType, List<StatTypes>>{}
+    
+    [Serializable]
+    public class ArmorModifierDictionary : SerializableDictionary<Enums.ArmorType, List<StatTypes>>{}
+
     [Serializable]
     public class StatsModule : Module
     {
@@ -120,6 +136,14 @@ namespace Kuantech.Core
             OverflowExperience = statsModule.OverflowExperience;
             RequiredExperienceToNextLevel = statsModule.RequiredExperienceToNextLevel;
             Stats = statsModule.Stats;
+        }
+
+        public void CopyFrom(StatDictionary statDictionary)
+        {
+            foreach (var pair in statDictionary)
+            {
+                Stats[pair.Key] = pair.Value;
+            }
         }
         public override void OnModulesInitialized(object sender, EventArgs args)
         {
@@ -173,30 +197,6 @@ namespace Kuantech.Core
         {
             Modifiers ??= new Dictionary<StatTypes, HashSet<StatModifier>>();
 
-            if (modifier.StatType == StatTypes.MaxHealth)
-            {
-                float modifierValue = modifier.GetValue();
-                if (modifier.ModifierType == ModifierTypes.Addition)
-                {
-                    Actor.Health += modifierValue;
-                }
-                else
-                {
-                    Actor.Health += GetBaseStat(StatTypes.MaxHealth) * modifierValue;
-                }
-            }else if (modifier.StatType == StatTypes.MaxEnergy)
-            {
-                float modifierValue = modifier.GetValue();
-                if (modifier.ModifierType == ModifierTypes.Addition)
-                {
-                    Actor.Energy += modifierValue;
-                }
-                else
-                {
-                    Actor.Energy += GetBaseStat(StatTypes.MaxHealth) * modifierValue;
-                }
-            }
-            
             if (!Modifiers.ContainsKey(modifier.StatType))
             {
                 Modifiers.Add(modifier.StatType, new HashSet<StatModifier>());
@@ -218,29 +218,6 @@ namespace Kuantech.Core
         public void RemoveModifier(StatModifier modifier)
         {
             if(Modifiers == null) return;
-            if (modifier.StatType == StatTypes.MaxHealth)
-            {
-                float modifierValue = modifier.GetValue();
-                if (modifier.ModifierType == ModifierTypes.Addition)
-                {
-                    Actor.Health -= modifierValue;
-                }
-                else
-                {
-                    Actor.Health -= GetBaseStat(StatTypes.MaxHealth) * modifierValue;
-                }
-            }else if (modifier.StatType == StatTypes.MaxEnergy)
-            {
-                float modifierValue = modifier.GetValue();
-                if (modifier.ModifierType == ModifierTypes.Addition)
-                {
-                    Actor.Energy -= modifierValue;
-                }
-                else
-                {
-                    Actor.Energy -= GetBaseStat(StatTypes.MaxHealth) * modifierValue;
-                }
-            }
             if (Modifiers[modifier.StatType].Contains(modifier))
             {
                 Modifiers[modifier.StatType].Remove(modifier);
@@ -248,7 +225,7 @@ namespace Kuantech.Core
             }
         }
 
-        private void DirtyStat(StatTypes statType)
+        public void DirtyStat(StatTypes statType)
         {
             DirtiedStats.Enqueue(statType);
         }
@@ -297,6 +274,8 @@ namespace Kuantech.Core
                         break;
                     }
                     statType = DirtiedStats.Dequeue();
+                    
+                    
 
                 }
                 catch (KeyNotFoundException e)
@@ -305,6 +284,8 @@ namespace Kuantech.Core
                     statType = DirtiedStats.Dequeue();
                 }
             }
+            if(GetStat(StatTypes.MaxHealth) <= 0f) Actor.Kill();
+            
         }
 
         
@@ -322,12 +303,7 @@ namespace Kuantech.Core
             Stat desiredStat = Stats[statType];
             float baseValue = GetBaseStat(statType);
             float finalValue = baseValue * (1 + desiredStat.MultiplicationModifier) + desiredStat.AdditionModifier;
-            //Exceptions
-            if (statType == StatTypes.MovementSpeed)
-            {
-               finalValue *= GetWeightFactor(0.5f); //todo: A better way can be found for movement speed
-            }
-
+            
             return Mathf.Max(finalValue, Stats[statType].MinValue);
         }
 
@@ -519,6 +495,25 @@ namespace Kuantech.Core
                 [StatTypes.EnergyRegeneration] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
                 [StatTypes.MaxEnergy] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
                 [StatTypes.MaxHealth] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
+                [StatTypes.MovementSpeed] = new Stat(){BaseValue = 0, LevelMultiplier = 0},
+                [StatTypes.Armor] = new Stat(){BaseValue = 0, LevelMultiplier = 0},
+                [StatTypes.RangeBonus] = new Stat(){BaseValue = 0, LevelMultiplier = 0},
+                [StatTypes.DamageBonus] = new Stat(){BaseValue = 0, LevelMultiplier = 0},
+            };
+        }
+
+        public static StatDictionary GetDefaultStatDictionary()
+        {
+            return new StatDictionary()
+            {
+                [StatTypes.Strength] = new Stat(){BaseValue = 0, LevelMultiplier = 0},
+                [StatTypes.Intelligence] = new Stat(){BaseValue = 0, LevelMultiplier = 0},
+                [StatTypes.Dexterity] = new Stat(){BaseValue = 0, LevelMultiplier = 0},
+                [StatTypes.EnergyRegeneration] = new Stat(){BaseValue = 0, LevelMultiplier = 0},
+                [StatTypes.HealthRegeneration] = new Stat(){BaseValue = 0, LevelMultiplier = 0},
+                [StatTypes.EnergyRegeneration] = new Stat(){BaseValue = 0, LevelMultiplier = 0},
+                [StatTypes.MaxEnergy] = new Stat(){BaseValue = 0, LevelMultiplier = 0},
+                [StatTypes.MaxHealth] = new Stat(){BaseValue = 0, LevelMultiplier = 0},
                 [StatTypes.MovementSpeed] = new Stat(){BaseValue = 0, LevelMultiplier = 0},
                 [StatTypes.Armor] = new Stat(){BaseValue = 0, LevelMultiplier = 0},
                 [StatTypes.RangeBonus] = new Stat(){BaseValue = 0, LevelMultiplier = 0},

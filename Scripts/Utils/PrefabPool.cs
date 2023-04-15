@@ -23,7 +23,7 @@ namespace Kuantech.Core
             _pool = new Dictionary<GameObject, Queue<GameObject>>();
             _poolSizeLevels = new Dictionary<GameObject, int>();
         }
-
+        
         /// <summary>
         /// Pools an object if it has poolable component. Destroys it otherwise.
         /// </summary>

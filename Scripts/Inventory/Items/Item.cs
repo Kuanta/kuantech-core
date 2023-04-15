@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using Kuantech.Core;
 using Kuantech.Data;
 using Kuantech.Utils;
@@ -83,6 +82,7 @@ namespace Kuantech.Inventory.Items
         public float blockAmount = 0; //Additional armor value
         public bool isOffHand = false;
         public float scalingFactor = 1;
+        public Enums.WeaponType weaponType;
     }
 
     [Serializable]
@@ -90,6 +90,7 @@ namespace Kuantech.Inventory.Items
     {
         public float armorValue = 0f;
         public float scalingFactor = 1;
+        [FormerlySerializedAs("armorType")] public Enums.ArmorType armorType;
     }
     
     [Serializable]
@@ -179,6 +180,14 @@ namespace Kuantech.Inventory.Items
         
         #region States
 
+        public void LevelUp()
+        {
+            AddLevel(1);
+        }
+        public void AddLevel(int levelsToAdd)
+        {
+            SetItemLevel(StateData.ItemLevel+levelsToAdd);
+        }
         public void SetItemLevel(int level)
         {
             StateData.ItemLevel = level;
@@ -204,6 +213,28 @@ namespace Kuantech.Inventory.Items
             }
         }
         
+        /// <summary>
+        /// Returns multiplier for item rarities. Useful in case enumeration values change
+        /// </summary>
+        /// <returns></returns>
+        public int GetRarityCoeff()
+        {
+            switch (GetItemRarity())
+            {
+                case ItemRarities.Common:
+                    return 1;
+                case ItemRarities.Uncommon:
+                    return 2;
+                case ItemRarities.Rare:
+                    return 3;
+                case ItemRarities.Epic:
+                    return 4;
+                case ItemRarities.Legendary:
+                    return 1;
+                default:
+                    return 1;
+            }
+        }
         public ItemRarities GetItemRarity()
         {
             return StateData.ItemRarity;
@@ -211,7 +242,9 @@ namespace Kuantech.Inventory.Items
 
         public int GetSellValue()
         {
-            return (int)(StateData.ItemLevel * data.value * Config.ITEM_SELL_VALUE_COEFF); 
+            float sellValue = (StateData.ItemLevel * data.value * Config.ITEM_SELL_VALUE_COEFF) *
+                              (GetRarityCoeff() * 0.5f);
+            return (int)Mathf.Max(sellValue, 1); 
         }
 
         public int GetUpgradeValue()
@@ -228,6 +261,7 @@ namespace Kuantech.Inventory.Items
 
         public void AddModifier(StatModifier modifier)
         {
+            modifier.Level = StateData.ItemLevel;
             StateData.StatModifiers.Add(modifier.StatType, modifier);
         }
         
@@ -236,19 +270,20 @@ namespace Kuantech.Inventory.Items
         /// </summary>
         public void AddRandomModifier()
         {
-            if (Librarian.Instance.ModifierDataDictionary.Count == 0) return;
-            List<StatTypes> stats = Librarian.Instance.ModifierDataDictionary.Keys.ToList();
-            stats.Shuffle();
-            for (int i = 0; i < stats.Count; ++i)
+
+            List<StatTypes> availableModifiers = Librarian.Instance.GetAvailableModifiers(this);
+            availableModifiers.Shuffle();
+            for (int i = 0; i < availableModifiers.Count; ++i)
             {
-                if (StateData.StatModifiers.ContainsKey(stats[i])) continue; //Don't add same modifier twice
-                StatModifierData modifierData = Librarian.Instance.ModifierDataDictionary[stats[i]];
+                if (StateData.StatModifiers.ContainsKey(availableModifiers[i])) continue; //Don't add same modifier twice
+                StatModifierData modifierData = Librarian.Instance.ModifierDataDictionary[availableModifiers[i]];
                 StatModifier newModifier = new StatModifier()
                 {
                     Level = StateData.ItemLevel,
                     StatType = modifierData.StatType,
                     BaseValue = modifierData.BaseValue,
                     ModifierType = modifierData.ModifierType,
+                    LevelToValueFactor = modifierData.LevelToValueFactor,
                 };
                 AddModifier(newModifier);
                 return;
@@ -261,6 +296,7 @@ namespace Kuantech.Inventory.Items
         public void UpdateModifiers()
         {
             int itemLevel = StateData.ItemLevel;
+            if (StateData.StatModifiers == null) return;
             foreach (var pair in StateData.StatModifiers)
             {
                 pair.Value.Level = itemLevel;

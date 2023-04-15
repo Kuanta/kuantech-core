@@ -10,6 +10,7 @@ namespace Kuantech.Inventory
 {
     public class InventoryModule : Module
     {
+        public float MaxEncumbrance = 10f; //Can be a stat value in future
         public Equipment equipment;
         [SerializeReference] public List<Item> items;
         public int Size = 30;
@@ -28,6 +29,7 @@ namespace Kuantech.Inventory
                 items.Add(null);
             }
             equipment = GetComponent<Equipment>();
+            equipment.Initialize();
             _initialized = true;
         }
 
@@ -204,6 +206,16 @@ namespace Kuantech.Inventory
             }
 
             return -1; // No available slot
+        }
+
+        public float GetNormalizedEncumbrance()
+        {
+            return Mathf.Clamp(equipment.Encumbrance / MaxEncumbrance,0f, 1f);
+        }
+
+        public float GetEncumbrance()
+        {
+            return equipment.Encumbrance;
         }
         
         [Button("Clear inventory")]

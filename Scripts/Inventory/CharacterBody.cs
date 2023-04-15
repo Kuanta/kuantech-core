@@ -235,6 +235,7 @@ namespace Kuantech.Character
                 if (em != null)
                 {
                     em.SetAttackEffects(model.AttackEffects);
+                    em.SetAlternativesEffects(model.AlternativeEffects);
                     if(model.ImpactEffectPrefab != null) em.SetImpactEffect(model.ImpactEffectPrefab);
                 }
             }
@@ -347,6 +348,7 @@ namespace Kuantech.Character
                 if (em != null)
                 {
                     em.RemoveCurrentAttackEffects();
+                    em.RemoveCurrentAlternativeAttackEffects();
                     em.RemoveImpactEffect();
                 }
             }

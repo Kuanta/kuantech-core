@@ -12,7 +12,7 @@ namespace Kuantech.Core.Inventory
         private float _throwLifetime;
         private bool _thrown;
         private float _thrownTime;
-        
+        private float _linearSpeed = 0;
         public delegate void LandDelegate(Throwable throwable);
 
         public LandDelegate LandHandler;
@@ -34,6 +34,7 @@ namespace Kuantech.Core.Inventory
             _throwLifetime = Rigidbody.SetTrajectoryWithHorizontalSpeed(horizontalDistance, horizontalSpeed, direction, acceleration, initialHeight);
             _thrownTime = Time.time;
             _thrown = true;
+            _linearSpeed = 0;
         }
 
         public void SetTimeScale(float timeScale)
@@ -46,19 +47,33 @@ namespace Kuantech.Core.Inventory
         {
             _throwLifetime = lifetime;
         }
-        
+
+        public void SetLinearSpeed(float linearSpeed)
+        {
+            _linearSpeed = linearSpeed;
+        }
         protected override void Update()
         {
             if (!_thrown) return;
-            if (!(Time.time - _thrownTime >= _throwLifetime)) return;
-            LandHandler?.Invoke(this);
-            Despawn();
+            if ((Time.time - _thrownTime >= _throwLifetime))
+            {
+                LandHandler?.Invoke(this);
+                Despawn();
+                return;
+            }
+
+            transform.position += transform.forward * (Time.deltaTime * _linearSpeed);
         }
 
         public override void Despawn()
         {
             base.Despawn();
             _thrown = false;
+        }
+
+        public float GetLifeTime()
+        {
+            return _throwLifetime;
         }
     }
 }

@@ -20,7 +20,8 @@ namespace Kuantech.Core.Rpg
         {
             float baseValue = 0;
             baseValue = RankCalculation?.Invoke() ?? DefaultRankCalculation(rank);
-            if (BaseStat == StatTypes.None || actor == null) return baseValue;
+            if (BaseStat == StatTypes.None) return baseValue;
+            if (actor == null) actor = LooterGameManager.Instance.Player;
             return actor.Stats.GetStat(BaseStat) * StatMultiplier + BaseValue;
         }
         public float DefaultRankCalculation(int rank)
@@ -116,16 +117,17 @@ namespace Kuantech.Core.Rpg
 
         public override bool Cast(Actor caster)
         {
-            if (!base.Cast(caster) || (IsBeingCast && IsChanneled)) return false;
             //Calculate
             float energyCost = GetEnergyCost();
-
             if (CombatModule.Actor.Energy < energyCost) return false;
+            
+            if (!base.Cast(caster) || (IsBeingCast && IsChanneled)) return false;
+            
             if (CombatModule.IsAttacking)
             {
                 CombatModule.Cancel();
             }
-            CombatModule.Actor.Energy -= energyCost;
+            CombatModule.Actor.SpendEnergy(energyCost);
 
             _castStartTime = Time.time;
             if (IsChanneled) IsBeingCast = true;
@@ -177,6 +179,7 @@ namespace Kuantech.Core.Rpg
                 CombatModule.transform.forward,false);
             if (shotProjectile == null) return null;
             shotProjectile.DestroyOnImpact = true;
+            shotProjectile.Damage = Damage.GetValue(Rank, CombatModule.Actor);
             shotProjectile.Range = Range.GetValue(Rank);
             shotProjectile.Speed = Speed.GetValue(Rank);
             shotProjectile.Knockback = Knockback.GetValue(Rank);
@@ -184,5 +187,13 @@ namespace Kuantech.Core.Rpg
             return shotProjectile;
         }
         #endregion
+
+        public override float GetCooldown(Actor caster)
+        {
+            float cdReduction = Mathf.Clamp(caster.Stats.GetStat(StatTypes.CooldownReduction), 0, 1);
+            float baseValue = SkillData.Cooldown.GetValue(Rank);
+            float finalValue = Mathf.Max(baseValue * (1 - cdReduction), 0.1f); //Min cooldown should be 0.1
+            return finalValue;
+        }
     }
 }

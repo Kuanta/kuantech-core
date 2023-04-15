@@ -39,7 +39,13 @@ namespace Kuantech.Core
         public Actor Impacted;
         public Projectile Projectile;
     }
-    
+
+    public struct AttackStartData
+    {
+        public int flowIndex;
+        public bool IsAlternativeAttack;
+        public bool PlayEffect;
+    }
     public class CombatModule : Module
     {
         //Components
@@ -91,7 +97,7 @@ namespace Kuantech.Core
         public bool IsResistantToKnockback = false;
         
         //Events
-        public EventHandler<int> AttackStartEvent;
+        public EventHandler<AttackStartData> AttackStartEvent;
         public EventHandler<int> AttackEvent;
         public EventHandler<Actor> MeleeImpactEvent;
         public EventHandler<ProjectileImpactInfo> RangedImpactEvent;
@@ -102,23 +108,19 @@ namespace Kuantech.Core
         //Getters
         public float GetMovementFactor()
         {
-            if (IsAttacking)
-            {
+            return IsAttacking ?
                 //Use 1 - slow since default value for floats are 0. This way we are ensuring that non initialized slow factor values wont result in 0 movements
-                return Mathf.Clamp(1 - CurrentAttackPattern.MovementSlow, 0f, 1f);
-            }
-
-            return 1f;
+                Mathf.Clamp(1 - CurrentAttackPattern.MovementSlow, 0f, 1f) : 1f;
         }
 
         public bool CanAttack()
         {
-            return !IsAttacking && GlobalCooldown.IsOffCooldown() && !AttackLock.IsLocked();
+            return !IsAttacking && GlobalCooldown.IsOffCooldown() && !AttackLock.IsLocked() && Actor.Health > 0;
         }
 
         public bool CanCastSkill()
         {
-            return GlobalCooldown.IsOffCooldown() && !SkillLock.IsLocked();
+            return GlobalCooldown.IsOffCooldown() && !SkillLock.IsLocked() && Actor.Health > 0;
         }
         
         public override void Initialize()
@@ -140,6 +142,7 @@ namespace Kuantech.Core
         {
             //Locks
             AttackLock.Reset();
+            RangedAttackLock.Reset();
             SkillLock.Reset();
             
             IsAttacking = false;
@@ -231,6 +234,11 @@ namespace Kuantech.Core
             
             //Apply bonuses
             CurrentAttackPattern.Range += Actor.Stats.GetStat(StatTypes.RangeBonus);
+
+            float attackSpeedBonus = Actor.Stats.GetStat(StatTypes.AttackSpeedBonus);
+            attackSpeedBonus = Mathf.Max(attackSpeedBonus, 1);
+            CurrentAttackPattern.DamageTime /= attackSpeedBonus;
+            CurrentAttackPattern.AnimationTime /= attackSpeedBonus;
             
             //...then attack type
             SetAttackType(CurrentAttackPattern.AttackType);
@@ -240,8 +248,17 @@ namespace Kuantech.Core
         public bool AlternativeAttack()
         {
             if (!CanAttack()) return false;
-            if(EquippedWeapon != null) ApplyAttackPattern(EquippedWeapon.AlternativeAttackPattern);
-            if(!_Attack(false, null)) return false; //Attack pattern is applied on previous line
+            if (EquippedWeapon != null)
+            {
+                ApplyAttackPattern(EquippedWeapon.AlternativeAttackPattern);
+                CurrentAttackPattern.Damage = EquippedWeapon.GetAlternativeDamage();
+            }
+            if(!_Attack(new AttackStartData
+               {
+                   flowIndex = _flowIndex,
+                   IsAlternativeAttack = true,
+                   PlayEffect = true
+               },false, null)) return false; //Attack pattern is applied on previous line
             PlayAttackAnimation(true);
             return true;
         }
@@ -249,12 +266,22 @@ namespace Kuantech.Core
         public bool Attack(bool applyAttackPattern = true, UnityAction attackCompleteHandler = null)
         {
             if (!CanAttack()) return false;
-            if(!_Attack(applyAttackPattern, attackCompleteHandler)) return false;
+            if(!_Attack(new AttackStartData
+               {
+                   flowIndex = _flowIndex,
+                   IsAlternativeAttack = false,
+                   PlayEffect = true
+               },applyAttackPattern, attackCompleteHandler)) return false;
             PlayAttackAnimation(false);
             return true;
         }
         
         public void PlayAttackAnimation(bool alternativeAnimationSet = false)
+        {
+            PlayAttackAnimation(GetFlowIndex(), alternativeAnimationSet);
+        }
+
+        public void PlayAttackAnimation(int flowIndex, bool alternativeAnimationSet = false)
         {
             AnimatorModule animMod = (AnimatorModule)Actor.GetModuleByType(typeof(AnimatorModule));
 
@@ -262,14 +289,14 @@ namespace Kuantech.Core
             {
                 if (animMod != null)
                 {
-                    animMod.AlternativeAttackTrigger(attackIndex:GetFlowIndex(), handIndex:0);
+                    animMod.AlternativeAttackTrigger(attackIndex:flowIndex, handIndex:0);
                 }
 
                 return;
             }
             if (animMod != null)
             {
-                animMod.LightAttackTrigger(attackIndex:GetFlowIndex(), handIndex:0); //todo: Consider supporting off hand weapons
+                animMod.LightAttackTrigger(attackIndex:flowIndex, handIndex:0); //todo: Consider supporting off hand weapons
             }
         }
         /// <summary>
@@ -277,20 +304,8 @@ namespace Kuantech.Core
         /// Can be used for "forced" cases
         /// </summary>
         /// <param name="attackCompleteHandler"></param>
-        public bool _Attack(bool applyAttackPattern = true, UnityAction attackCompleteHandler = null)
+        public bool _Attack(AttackStartData attackStartData, bool applyAttackPattern = true, UnityAction attackCompleteHandler = null)
         {
-            // if (IsAttacking)
-            // {
-            //     float queueTime = (Time.time - AttackStartTime) / CurrentAttackPattern.AnimationTime;
-            //     //Check current frame
-            //     if (queueTime >= QueueTimeFactor && QueueTimeFactor < 1f)
-            //     {
-            //         //Queue next attack
-            //         _attackQueued = true;
-            //     }
-            //     return false;
-            // }
-
             //Check weapon
             if (_actorInventory != null )
             {
@@ -313,7 +328,12 @@ namespace Kuantech.Core
                     _flowIndex = 0;
                 }
                 if (_flowIndex >= EquippedWeapon.AttackPatterns.Count) _flowIndex = 0;
-                if(applyAttackPattern) ApplyAttackPattern(EquippedWeapon.AttackPatterns[_flowIndex]);
+                if (applyAttackPattern)
+                {
+                    WeaponAttackPattern attackPattern = EquippedWeapon.AttackPatterns[_flowIndex];
+                    attackPattern.Damage = EquippedWeapon.GetDamage(_flowIndex);
+                    ApplyAttackPattern(attackPattern);
+                }
             }
             else if(applyAttackPattern)
             {
@@ -331,11 +351,11 @@ namespace Kuantech.Core
             if (Actor.Energy - ManaCost >= 0)
             {
                 //Use kills
-                Actor.Energy -= ManaCost;
+                Actor.SpendEnergy(ManaCost);
                 CanUseSkill = true;
             }
              
-            AttackStartEvent?.Invoke(this, _flowIndex);
+            AttackStartEvent?.Invoke(this, attackStartData);
             return true;
         }
         
@@ -344,6 +364,7 @@ namespace Kuantech.Core
         /// </summary>
         public void UpdateAttackPattern()
         {
+            EquippedWeapon = Actor.InventoryModule.equipment.GetEquipedItem(Enums.EquipmentSlotType.MainHand) as Weapon;
             ApplyAttackPattern(EquippedWeapon != null ? EquippedWeapon.AttackPatterns[_flowIndex] : DefaultAttackPattern);
         }
         
@@ -351,8 +372,8 @@ namespace Kuantech.Core
         {
             AimVector = aimVector;
         }
-        
-        public int GetFlowIndex()
+
+        private int GetFlowIndex()
         {
             if (Time.time - _lastAttackEndTime <= _flowBreakTime)
             {
@@ -445,8 +466,7 @@ namespace Kuantech.Core
 
         public float GetBaseDamage()
         {
-            if (EquippedWeapon != null) return EquippedWeapon.GetDamage(_flowIndex);
-            return Mathf.Max(DefaultAttackPattern.Damage, 1f);
+            return Mathf.Max(CurrentAttackPattern.Damage, 1f);
         }
         
         public Vector3 GetShootPosition()
@@ -628,9 +648,12 @@ namespace Kuantech.Core
         {
             ArcMeleeAttack(360f);
         }
+        
+        public LockVariable RangedAttackLock = new LockVariable();
 
         private void RangedAttack()
         {
+            if (RangedAttackLock.IsLocked()) return;
             GameObject projectilePrefab = null;
             if (EquippedWeapon != null)
             {
@@ -660,6 +683,7 @@ namespace Kuantech.Core
         /// <param name="maxRange"></param>
         public void RangedRaycastAttack()
         {
+            if (RangedAttackLock.IsLocked()) return;
             Vector3 origin = GetShootPosition();
             RaycastProjectile proj = new RaycastProjectile();
             _shotRaycastProjecitles.Add(proj);
@@ -698,10 +722,7 @@ namespace Kuantech.Core
             if (projectileObj.TryGetComponent(out Projectile projectile))
             {
                 projectile.Initialize(this, weapon);
-                projectile.Targets = Targets;
-                projectile.Range = CurrentAttackPattern.Range;
-                projectile.Knockback = CurrentAttackPattern.Knockback;
-                projectile.KnockbackTime = CurrentAttackPattern.KnockbackTime;
+ 
                 if (CanUseSkill && castSkill)
                 {
                     ProjectileShotEvent?.Invoke(this, new ProjecitleShotInfo()
@@ -753,8 +774,7 @@ namespace Kuantech.Core
                     Impacted = target,
                 });
             }
-            float finalDamage = GetDamage();
-            target.ReceiveDamage(Actor, finalDamage);
+            target.ReceiveDamage(Actor, projectile.Damage);
         }
         #endregion
 
@@ -784,7 +804,7 @@ namespace Kuantech.Core
             {
                 momentum = applier.GetMomentum(target);
             }
-            target.Knockback(direction, knockback+momentum, knockbackTime);
+            target.MovementModule.Knockback(direction, knockback+momentum, knockbackTime);
         }
 
         public float GetMomentum(Actor target)
@@ -889,6 +909,9 @@ namespace Kuantech.Core
         
         public void CalculateManaCosts()
         {
+            //This was before active skill implementation
+            ManaCost = 0f;
+            return;
             float manaCost = 0;
             foreach (var pair in AttackSkills)
             {

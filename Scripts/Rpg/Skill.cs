@@ -15,7 +15,9 @@ namespace Kuantech.Core.Rpg
         public Sprite Icon;
         public float BaseEnergyCost;
         public bool IsActive;
-        public float Cooldown;
+        public SkillVariable Cooldown;
+        public float CastDelay;
+        public StatTypes MainStatType;
         public List<SkillVariable> SkillVariables;
     }
     
@@ -31,6 +33,8 @@ namespace Kuantech.Core.Rpg
         {
             SkillData = data;
             Id = data.Id;
+            CastDelay = data.CastDelay;
+            if (SkillData.SkillVariables == null) return;
             foreach (var skillVariable in SkillData.SkillVariables)
             {
                 SkillVariables[skillVariable.Name] = skillVariable;
@@ -42,24 +46,35 @@ namespace Kuantech.Core.Rpg
             if (!caster.CombatModule.CanCastSkill()) return false;
             if (CastDelay <= 0)
             {
-                if (Time.time - LastCastTime < SkillData.Cooldown) return false;
+                if (Time.time - LastCastTime < GetCooldown(caster)) return false;
                 LastCastTime = Time.time;
                 return true;
             }
 
-            caster.StartCoroutine(CastRoutine());
+            caster.StartCoroutine(CastRoutine(caster));
             return true;
         }
 
-        private IEnumerator CastRoutine()
+        private IEnumerator CastRoutine(Actor caster)
         {
             yield return new WaitForSeconds(CastDelay);
+            if (Time.time - LastCastTime < GetCooldown(caster));
+            LastCastTime = Time.time;
             CastAfterTime();
         }
 
         protected virtual void CastAfterTime()
         {
             
+        }
+
+        public virtual float GetCooldown(Actor caster)
+        {
+            //Get cooldown reduction
+            float cdReduction = Mathf.Clamp(caster.Stats.GetStat(StatTypes.CooldownReduction), 0, 1);
+            float baseValue = SkillData.Cooldown.GetValue();
+            float finalValue = Mathf.Max(baseValue * (1 - cdReduction), 0.1f); //Min cooldown should be 0.1
+            return finalValue;
         }
     }
 }

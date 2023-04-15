@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Kuantech.Core.Animation;
 using Kuantech.Core.FX;
 using Kuantech.Data;
 using Kuantech.Utils;
@@ -24,6 +23,8 @@ namespace Kuantech.Inventory.Items
 
         [Header("Effects")] 
         public List<EffectTypes> AttackEffects = new List<EffectTypes>();
+
+        public List<EffectTypes> AlternativeEffects = new List<EffectTypes>();
         public List<float> AttackEffectsDelays = new List<float>();
         public Effect ImpactEffectPrefab; //Should be an emitted effect
 

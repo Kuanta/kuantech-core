@@ -7,6 +7,15 @@ namespace Kuantech.Core.AI.ActionSequencer
     {
         public float DelayTime;
         private float _startTime;
+
+        public DelayAction()
+        {
+            DelayTime = 1f;
+        }
+        public DelayAction(float delayTime)
+        {
+            DelayTime = delayTime;
+        }
         public override void Execute()
         {
             base.Execute();

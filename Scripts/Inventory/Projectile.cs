@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Kuantech.Core;
 using Kuantech.Core.FX;
 using Kuantech.Inventory.Items;
@@ -8,15 +9,22 @@ namespace Kuantech.Combat
 {
     public class Projectile : MonoBehaviour
     {
+        [Header("Properties")]
         public float Speed;
         public float Range;
         public float Knockback;
         public float KnockbackTime;
+        public bool RawDamage = false;
         public CombatModule CastBy;
         public Weapon ShotFrom = null;
         public bool DestroyOnImpact = true;
         public LayerMask Targets;
+        public float DespawnDelay;
         
+        [Header("Visuals")]
+        public GameObject Visual;
+        public Collider Collider;
+        private bool _despawned = false;
         public delegate void ImpactOverrideDelegate(Projectile proj, Actor target, GameObject gameObjects);
 
         public ImpactOverrideDelegate ImpactOverride;
@@ -31,31 +39,68 @@ namespace Kuantech.Combat
         [Header("Effects")] 
         public AudioSource StartSound;
         public AudioSource ImpactSound;
+
+        private Actor _target;
+        private float _lerpFactor;
         
+        //Events
+        public EventHandler InitializeEvent;
+        public EventHandler DespawnEvent;
+
         public void Initialize(CombatModule castBy, Weapon shotFrom)
         {
             CastBy = castBy;
             ShotFrom = shotFrom;
             ImpactOverride = null;
             DestroyOnImpact = true;
+            if (castBy != null)
+            {
+                Targets = castBy.Targets;
+                Range = castBy.CurrentAttackPattern.Range;
+                Knockback = castBy.CurrentAttackPattern.Knockback;
+                KnockbackTime = castBy.CurrentAttackPattern.KnockbackTime;
+                Damage = castBy.GetDamage();
+            }
             _age = 0f;
             if (StartSound != null)
             {
+                StartSound.time = 0f;
                 StartSound.Play();
             }
+            _target = null;
+            _despawned = false;
+            if (Collider != null) Collider.enabled = true;
+            if(Visual != null) Visual.SetActive(true);
+            InitializeEvent?.Invoke(this, EventArgs.Empty);
         }
 
         protected virtual void Update()
         {
+            if (_despawned) return;
             if(Speed == 0) Despawn();
-            transform.position = transform.position + transform.forward * Time.deltaTime * Speed;
+
+            if (_target != null && _target.gameObject.activeInHierarchy && _target.Health > 0)
+            {
+                Vector3 dist = _target.transform.position - transform.position;
+                dist.y = 0;
+                dist.Normalize();
+                transform.forward = Vector3.Lerp(transform.forward, dist, Time.deltaTime * _lerpFactor);
+            }
+            
+            transform.position += transform.forward * Time.deltaTime * Speed;
             _age += Time.deltaTime;
             if (_age > Range/Speed)
             {
                 Despawn();
             }
         }
-
+        
+        public void SetTarget(Actor target, float followLerpFactor)
+        {
+            _target = target;
+            _lerpFactor = followLerpFactor;
+        }
+        
         public void AddAttachment(GameObject component)
         {
             Attachments.Add(component);
@@ -122,7 +167,7 @@ namespace Kuantech.Combat
 
             if (CastBy == null)
             {
-                if(target != null) target.ReceiveDamage(null, Damage); //Cast from something that is not an Actor
+                if(target != null) target.ReceiveDamage(null, Damage, RawDamage); //Cast from something that is not an Actor
                 return;
             }
             if (target == null || target == CastBy.Actor) return;
@@ -140,9 +185,18 @@ namespace Kuantech.Combat
         
         public virtual void Despawn()
         {
+            _despawned = true;
             _age = 0f;
+            DespawnEvent?.Invoke(this, EventArgs.Empty);
             ClearAttachments();
-            GameManager.Instance.Pool.PoolObject(gameObject);
+            if (DespawnDelay <= 0)
+            {
+                GameManager.Instance.Pool.PoolObject(gameObject);
+                return;
+            }
+            if (Collider != null) Collider.enabled = false;
+            if(Visual != null) Visual.SetActive(false);
+            GameManager.Instance.PoolObjectAfterTime(gameObject, DespawnDelay);
         }
     }
 }

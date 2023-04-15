@@ -34,6 +34,8 @@ namespace Kuantech.Core
         private static readonly int DamageReceivedIndex = Animator.StringToHash("DamageReceivedIndex");
         private static readonly int Aiming = Animator.StringToHash("Aiming");
         private static readonly int AlternativeAttack = Animator.StringToHash("AlternativeAttack");
+        private static readonly int Jump = Animator.StringToHash("Jump");
+        private static readonly int Land = Animator.StringToHash("Land");
 
         public override void Initialize()
         {
@@ -45,11 +47,21 @@ namespace Kuantech.Core
             SetAimRigWeight(0f);
         }
         
+        public override void OnModulesInitialized(object sender, EventArgs args)
+        {
+            base.OnModulesInitialized(sender, args);
+            if (Actor.MovementModule != null)
+            {
+                Actor.MovementModule.OnJumpEvent += OnJump;
+                Actor.MovementModule.OnJumpLandEvent += OnLand;
+            }
+        }
         private void Update()
         {
             if (GameManager.Instance.GameIsPaused || Animator == null) return;
             _movementParameters =
                 Vector2.Lerp(_movementParameters, _targetMovementParameters * _movementParametersScale, Time.deltaTime * LerpFactor);
+            
             Animator.SetFloat(X, _movementParameters.x);
             Animator.SetFloat(Y,_movementParameters.y);
         }
@@ -65,6 +77,15 @@ namespace Kuantech.Core
 
         public void SetMovementParameters(Vector2 movement, bool forced = false)
         {
+            movement.Normalize();
+            if (Actor.MovementModule != null && Actor.MovementModule.IsDodging())
+            {
+                if (movement.magnitude < 0.01f)
+                {
+                    movement = Vector2.up;
+                }
+                movement = movement.normalized * 2;
+            }
             _targetMovementParameters = movement;
             if (!forced) return;
             _movementParameters.x = movement.x *  _movementParametersScale.x;
@@ -95,6 +116,19 @@ namespace Kuantech.Core
             _targetMovementParameters = Vector2.zero;
             _movementParametersScale = Vector2.one;
         }
+        
+        #region Movement
+
+        public void OnJump(object sender, EventArgs args)
+        {
+            Animator.SetTrigger(Jump);
+        }
+
+        public void OnLand(object sender, EventArgs args)
+        {
+            Animator.SetTrigger(Land);
+        }
+        #endregion
         
         #region Combat
         /// <summary>
@@ -151,6 +185,7 @@ namespace Kuantech.Core
         }
         
         #endregion
+        
         public void OnDamageReceive(object sender, float damage)
         {
             Animator.SetInteger(DamageReceivedIndex, UnityEngine.Random.Range(0,3));

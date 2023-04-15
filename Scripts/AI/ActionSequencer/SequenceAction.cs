@@ -19,7 +19,11 @@ namespace Kuantech.ActionSequencer
         public UnityAction OnTerminate;
         public bool IsComplete;
         public bool Disabled = false;
-        
+
+        public virtual void Initialize(GameObject parent)
+        {
+            Parent = parent;
+        }
         public virtual void Execute()
         {
             if (Disabled)

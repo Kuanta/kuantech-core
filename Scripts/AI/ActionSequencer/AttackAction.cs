@@ -1,15 +1,28 @@
-﻿using Kuantech.Core;
+﻿using System;
+using Kuantech.Core;
+using UnityEngine;
 
 namespace Kuantech.ActionSequencer
 {
     public class AttackAction : SequenceAction
     {
-        public CombatModule CombatModule;
+        [NonSerialized] public CombatModule CombatModule;
         public AttackTypes AttackType;
         public string TargetVariableName = "Target";
         public bool AttackWithoutTarget;
 
         private Actor _target;
+
+        public AttackAction(AttackTypes attackType, bool attackWithoutTarget)
+        {
+            AttackType = attackType;
+            AttackWithoutTarget = attackWithoutTarget;
+        }
+        public override void Initialize(GameObject parent)
+        {
+            base.Initialize(parent);
+            CombatModule = parent.GetComponent<CombatModule>();
+        }
         public override void Execute()
         {
             base.Execute();

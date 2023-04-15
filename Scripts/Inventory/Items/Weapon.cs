@@ -30,12 +30,23 @@ namespace Kuantech.Inventory.Items
             SupportedSkills = data.skills;
             Type = Enums.ItemType.Weapon;
             ScalingFactor = data.scalingFactor;
+            WeaponType = data.weaponType;
         }
 
         public float GetDamage(int comboIndex)
         {
             //todo: Base stat???
             float baseDamage = Damage * (1 + StateData.ItemLevel * ScalingFactor);
+            if (BaseStat != StatTypes.None)
+            {
+                baseDamage += Owner.Stats.GetStat(BaseStat) * StatScalingFactor;
+            }
+            return baseDamage;
+        }
+
+        public float GetAlternativeDamage()
+        {
+            float baseDamage = AlternativeAttackPattern.Damage * (1 + StateData.ItemLevel * ScalingFactor);
             if (BaseStat != StatTypes.None)
             {
                 baseDamage += Owner.Stats.GetStat(BaseStat) * StatScalingFactor;

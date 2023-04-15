@@ -22,6 +22,8 @@ namespace Kuantech.Core.FX
         ArcaneArrowEffect,
         PowerShotArrowEffect,
         ArrowBarrageEffect,
+        StaffSwing,
+        BowSwing,
         None,
     }
     

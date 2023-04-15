@@ -16,8 +16,10 @@ namespace Kuantech.Core.FX
         PositiveEffect,
         NegativeEffect,
         FireDamageEffect,
-        CoinPickupSound,
         ItemPickupSound,
+        EquipItemSound,
+        UnequipItemSound,
+        UpgradeItemSound,
     }
     
     [Serializable]
@@ -59,7 +61,7 @@ namespace Kuantech.Core.FX
         public void PlaySound(AudioTypes audioType)
         {
             if (audioType == AudioTypes.None || Audios == null || !Audios.ContainsKey(audioType)) return;
-            if(Audios[audioType] == null) return;
+            if(Audios[audioType] == null || Audios[audioType].isPlaying) return;
             Audios[audioType].Play();
         }
         

@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Data.SqlTypes;
 using System.Linq;
 using Kuantech.Core;
 using Kuantech.Core.AI.ActionSequencer;
@@ -15,29 +14,34 @@ namespace Kuantech.ActionSequencer
         Move,
         Attack,
         Delay,
+        Rotate,
     }
     
     public class ActionSequencer : MonoBehaviour
     {
+        
         [SerializeReference] public List<SequenceAction> Sequence = new List<SequenceAction>();
         [ValueDropdown("Actions")]
         [OnValueChanged("AddAction")]
         public ActionTypes ActionDropdown;
-        private static IEnumerable<ActionTypes> Actions = Enumerable.Range((int)ActionTypes.None, 3).Cast<ActionTypes>();
-        
         private int _currentSequenceIndex = 0;
         private bool _sequenceStarted = false;
 
         public VariableTable VariableTable = new VariableTable();
         private void Start()
         {
+           Initialize();
+        }
+
+        public void Initialize()
+        {
             _currentSequenceIndex = 0;
             foreach (var action in Sequence)
             {
+                action.Initialize(gameObject);
                 action.Sequencer = this;
             }
         }
-
         private void Update()
         {
             if (Sequence == null || Sequence.Count == 0 || !_sequenceStarted) return;
@@ -94,7 +98,7 @@ namespace Kuantech.ActionSequencer
                     ma.Sequencer = this;
                     break;
                 case ActionTypes.Attack:
-                    AttackAction aa = new AttackAction();
+                    AttackAction aa = new AttackAction(AttackTypes.Linear, true);
                     aa.Parent = gameObject;
                     aa.CombatModule = GetComponent<CombatModule>();
                     Sequence.Add(aa);
@@ -105,6 +109,12 @@ namespace Kuantech.ActionSequencer
                     da.Parent = gameObject;
                     Sequence.Add(da);
                     da.Sequencer = this;
+                    break;
+                case ActionTypes.Rotate:
+                    RotateAction ra = new RotateAction();
+                    ra.Parent = gameObject;
+                    Sequence.Add(ra);
+                    ra.Sequencer = this;
                     break;
             }
         }
@@ -120,6 +130,12 @@ namespace Kuantech.ActionSequencer
             current.Terminate();
             _currentSequenceIndex = 0;
             _sequenceStarted = false;
+        }
+
+        public void ClearActions()
+        {
+            Sequence.Clear();
+            _currentSequenceIndex = 0;
         }
     }
 }

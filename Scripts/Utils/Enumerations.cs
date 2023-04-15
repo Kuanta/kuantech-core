@@ -53,11 +53,17 @@ namespace Kuantech.Data
         [Serializable]
         public enum WeaponType
         {
-            OneHanded,
+            OneHanded = 0,
             TwoHanded,
             Bow,
             Staff,
             Shield,
+        }
+        public enum ArmorType
+        {
+            Light = 0,
+            Medium,
+            Heavy
         }
         public enum MovementState
         {

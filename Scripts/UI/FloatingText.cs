@@ -48,6 +48,11 @@ namespace Kuantech.UI
             Text.color = color;
         }
 
+        public void SetFontSize(int fontSize)
+        {
+            Text.fontSize = fontSize;
+        }
+        
         public bool IsActive()
         {
             return _active;

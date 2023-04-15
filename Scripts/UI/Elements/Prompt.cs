@@ -10,7 +10,8 @@ namespace Kuantech.Core.UI
         [SerializeField] protected Button ConfirmButton;
         [SerializeField] protected Button CancelButton;
 
-        [SerializeField] private UnityAction ConfirmHandler;
+        private UnityAction ConfirmHandler;
+        private UnityAction CloseHandler;
         
         private void Awake()
         {
@@ -20,12 +21,22 @@ namespace Kuantech.Core.UI
                 Close();
             }));
             
-            CancelButton.onClick.AddListener(Close);
+            CancelButton.onClick.AddListener((() =>
+            {
+                CloseHandler?.Invoke();
+                Close();
+            }));
         }
 
-        public void SetListener(UnityAction handler)
+        public void SetConfirmListener(UnityAction handler)
         {
             ConfirmHandler = handler;
         }
+
+        public void SetCloseListener(UnityAction handler)
+        {
+            CloseHandler = handler;
+        }
+        
     }
 }

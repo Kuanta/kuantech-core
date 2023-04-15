@@ -8,6 +8,7 @@ public class AttackBehaviour : StateMachineBehaviour
     public override void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
         float targetTime = animator.GetFloat(AnimatorModule.TargetTime);
+        if (targetTime == 0f) targetTime = 1f;
         float speedMultiplier = stateInfo.length * stateInfo.speedMultiplier / targetTime;
         animator.SetFloat(AnimatorModule.AttackSpeed, speedMultiplier);
     }

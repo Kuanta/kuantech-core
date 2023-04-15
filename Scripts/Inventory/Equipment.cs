@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Kuantech.Character;
 using Kuantech.Core;
 using Kuantech.Data;
 using Kuantech.Inventory.Items;
@@ -27,9 +26,10 @@ namespace Kuantech.Inventory
         public EventHandler<Item>  ItemEquippedEvent;
         public EventHandler<Item> ItemUnequippedEvent;
 
-        private void Awake()
+        public void Initialize()
         {
             Actor = GetComponent<Actor>();
+            if (slotTable != null) return;
             slotTable = new Dictionary<Enums.EquipmentSlotType, EquipmentSlot>();
             foreach (EquipmentSlot slot in slotTypes)
             {
@@ -37,7 +37,6 @@ namespace Kuantech.Inventory
                 slotTable.Add(slot.type, slot);
             }
         }
-
         public Item GetEquipedItem(Enums.EquipmentSlotType slot)
         {
             if (!slotTable.ContainsKey(slot)) return null;
@@ -84,7 +83,7 @@ namespace Kuantech.Inventory
             {
                 itemSlotType = item.slotType;
             }
-       
+            
             if (!slotTable.ContainsKey(itemSlotType)) return;
             Encumbrance += item.Weight; //Add to encumberance
             item.StateData.Equipped = true;

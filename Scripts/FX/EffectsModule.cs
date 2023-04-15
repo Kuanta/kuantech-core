@@ -11,7 +11,10 @@ namespace Kuantech.Core.FX
     public class EffectsModule : Module
     {
         [SerializeField] private List<Effect> AttackEffects = new List<Effect>(); //Dependent on the weapon
+        [SerializeField] private List<Effect> AlternativeAttackEffects = new List<Effect>();
         public Effect DamageReceiveEffect;
+        public Effect JumpEffect;
+        public Effect DodgeEffect;
         public Effect DeathEffect;
         private Effect _impact;
         
@@ -29,6 +32,8 @@ namespace Kuantech.Core.FX
             CombatModule cm = (CombatModule)Actor.GetModuleByType(typeof(CombatModule));
             cm.AttackStartEvent+= OnAttack;
             cm.MeleeImpactEvent += OnMeleeImpact;
+            Actor.MovementModule.OnJumpEvent += OnJump;
+            Actor.MovementModule.OnDodgeEvent += OnDodge;
         }
 
         public void SetAttackEffects(List<EffectTypes> effectTypes)
@@ -45,6 +50,18 @@ namespace Kuantech.Core.FX
             }
         }
 
+        public void SetAlternativesEffects(List<EffectTypes> effectTypes)
+        {
+            RemoveCurrentAlternativeAttackEffects();
+            foreach (var effectType in effectTypes)
+            {
+                Effect effect = EffectsLibrary.Instance.GetEffect(effectType);
+                AlternativeAttackEffects.Add(effect);
+                effect.transform.SetParent(transform);
+                effect.transform.localPosition = Vector3.zero;
+                effect.transform.localRotation = Quaternion.identity;
+            }
+        }
         public void SetImpactEffect(Effect impactEffectPrefab)
         {
             RemoveImpactEffect();
@@ -61,6 +78,15 @@ namespace Kuantech.Core.FX
             AttackEffects.Clear();
         }
 
+        public void RemoveCurrentAlternativeAttackEffects()
+        {
+            //Clear existing ones
+            foreach (var effect in AlternativeAttackEffects)
+            {
+                EffectsLibrary.Instance.EffectsPool.PoolObject(effect.gameObject);
+            }
+            AlternativeAttackEffects.Clear();
+        }
         public void RemoveImpactEffect()
         {
             if (_impact != null)
@@ -68,11 +94,15 @@ namespace Kuantech.Core.FX
                 GameManager.Instance.Pool.PoolObject(_impact.gameObject);
             }
         }
-        private void OnAttack(object sender, int attackIndex)
+        private void OnAttack(object sender, AttackStartData attackStartData)
         {
-            if (AttackEffects.IsNullOrEmpty()) return;
-            int effectIndex = attackIndex % AttackEffects.Count;
-            AttackEffects[effectIndex].Play();
+            if (attackStartData is {PlayEffect: true, IsAlternativeAttack: false} && !AttackEffects.IsNullOrEmpty())
+            {
+                AttackEffects[attackStartData.flowIndex % AttackEffects.Count].Play();
+            }else if (attackStartData.PlayEffect && !AlternativeAttackEffects.IsNullOrEmpty() && attackStartData.IsAlternativeAttack)
+            {
+                AlternativeAttackEffects[attackStartData.flowIndex % AlternativeAttackEffects.Count].Play();
+            }
         }
 
         private void OnMeleeImpact(object sender, Actor target)
@@ -92,6 +122,21 @@ namespace Kuantech.Core.FX
             }
         }
 
+        private void OnDodge(object sender, EventArgs args)
+        {
+            if (DodgeEffect != null)
+            {
+                DodgeEffect.Play();
+            }
+        }
+        private void OnJump(object sender, EventArgs args)
+        {
+            if (JumpEffect != null)
+            {
+                JumpEffect.Play();
+            }
+        }
+        
         private void OnDeath(object sender, EventArgs empty)
         {
             if (DeathEffect != null)

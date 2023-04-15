@@ -4,6 +4,8 @@ using System.IO;
 using Kuantech.Core.Utils;
 using Kuantech.Data;
 using Kuantech.Inventory.Items;
+using Kuantech.Utils;
+using Unity.Burst.Intrinsics;
 using UnityEngine;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -45,6 +47,24 @@ namespace Kuantech.Core
 
         [Header("Modifiers List")] 
         public ModifierDataDictionary ModifierDataDictionary;
+        private readonly Dictionary<Enums.WeaponType, List<StatTypes>> _weaponModifiers = new Dictionary<Enums.WeaponType, List<StatTypes>>
+        {
+            {Enums.WeaponType.OneHanded, 
+                new List<StatTypes> {StatTypes.Strength, StatTypes.DamageBonus, StatTypes.MaxHealth, StatTypes.MaxEnergy, StatTypes.HealthRegeneration, StatTypes.EnergyRegeneration, StatTypes.AttackSpeedBonus}},
+            {Enums.WeaponType.Bow, 
+                new List<StatTypes> {StatTypes.Dexterity, StatTypes.DamageBonus, StatTypes.MaxHealth, StatTypes.MaxEnergy, StatTypes.HealthRegeneration, StatTypes.EnergyRegeneration, StatTypes.AttackSpeedBonus}},
+            {Enums.WeaponType.Staff, 
+                new List<StatTypes> {StatTypes.Intelligence, StatTypes.DamageBonus, StatTypes.MaxHealth, StatTypes.MaxEnergy, StatTypes.HealthRegeneration, StatTypes.EnergyRegeneration, StatTypes.AttackSpeedBonus}},
+        };
+        private readonly Dictionary<Enums.ArmorType, List<StatTypes>> _armorModifiers = new Dictionary<Enums.ArmorType, List<StatTypes>>
+        {
+            {Enums.ArmorType.Light, 
+                new List<StatTypes> {StatTypes.Intelligence, StatTypes.MaxEnergy, StatTypes.EnergyRegeneration, StatTypes.CooldownReduction}},
+            {Enums.ArmorType.Medium, 
+                new List<StatTypes> {StatTypes.Dexterity, StatTypes.AttackSpeedBonus, StatTypes.DamageBonus, StatTypes.Armor}},
+            {Enums.ArmorType.Heavy, 
+                new List<StatTypes> {StatTypes.Strength, StatTypes.MaxHealth, StatTypes.HealthRegeneration, StatTypes.Armor}}
+        };
         
         //public const string itemTemplatesPath = "/itemTemplates.yaml";
         public const string weaponsDataPath = "/weapons.yaml";
@@ -85,6 +105,22 @@ namespace Kuantech.Core
                 data.ItemType = Enums.ItemType.Armor;
                 ItemDatas.Add(data.id, data);
             }
+        }
+
+        public List<StatTypes> GetAvailableModifiers(Item item)
+        {
+            if (item is Weapon weapon )
+            {
+                Enums.WeaponType weaponType = weapon.WeaponType;
+                return _weaponModifiers[weaponType];
+            }
+            if (item is Armor armor)
+            {
+                Enums.ArmorType armorType = armor.ArmorType;
+                return _armorModifiers[armorType];
+            }
+
+            return null;
         }
 
         #region Items
