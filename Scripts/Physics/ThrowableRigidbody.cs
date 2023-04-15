@@ -2,7 +2,7 @@
 
 namespace Kuantech.Physics
 {
-    public class Rigidbody : MonoBehaviour
+    public class ThrowableRigidbody : MonoBehaviour
     {
         public Vector3 Velocity;
         public Vector3 Acceleration;

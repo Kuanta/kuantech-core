@@ -1,13 +1,14 @@
 ﻿using Kuantech.Combat;
 using Kuantech.Inventory.Items;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.SocialPlatforms;
 
 namespace Kuantech.Core.Inventory
 {
     public class Throwable : Projectile
     {
-        public Kuantech.Physics.Rigidbody Rigidbody;
+        [FormerlySerializedAs("Rigidbody")] public Kuantech.Physics.ThrowableRigidbody throwableRigidbody;
 
         private float _throwLifetime;
         private bool _thrown;
@@ -31,7 +32,7 @@ namespace Kuantech.Core.Inventory
             float acceleration = -9.8f, float initialHeight = 0f)
         {
             Initialize(combatModule, shotFrom);
-            _throwLifetime = Rigidbody.SetTrajectoryWithHorizontalSpeed(horizontalDistance, horizontalSpeed, direction, acceleration, initialHeight);
+            _throwLifetime = throwableRigidbody.SetTrajectoryWithHorizontalSpeed(horizontalDistance, horizontalSpeed, direction, acceleration, initialHeight);
             _thrownTime = Time.time;
             _thrown = true;
             _linearSpeed = 0;
@@ -39,7 +40,7 @@ namespace Kuantech.Core.Inventory
 
         public void SetTimeScale(float timeScale)
         {
-            Rigidbody.TimeScale = timeScale;
+            throwableRigidbody.TimeScale = timeScale;
             _throwLifetime /= timeScale;
         }
         
