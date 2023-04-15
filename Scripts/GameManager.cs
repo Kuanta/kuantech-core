@@ -9,7 +9,7 @@ namespace Kuantech.Core
         public PrefabPool Pool;
         public bool GameIsPaused = false;
         
-        protected void Awake()
+        protected virtual void Awake()
         {
             Pool = new PrefabPool(transform, 1000);
         }

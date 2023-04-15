@@ -12,6 +12,8 @@ namespace Kuantech.Core.HyperCasual
     
     public class Level : MonoBehaviour
     {
+        public LevelState CurrentState;
+        public int LevelIndex;
         public virtual void StartLevel()
         {
             

@@ -21,7 +21,6 @@ namespace Kuantech.Core.Rpg
             float baseValue = 0;
             baseValue = RankCalculation?.Invoke() ?? DefaultRankCalculation(rank);
             if (BaseStat == StatTypes.None) return baseValue;
-            if (actor == null) actor = LooterGameManager.Instance.Player;
             return actor.Stats.GetStat(BaseStat) * StatMultiplier + BaseValue;
         }
         public float DefaultRankCalculation(int rank)

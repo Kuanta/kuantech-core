@@ -4,7 +4,12 @@ using UnityEngine.Events;
 
 namespace Kuantech.Ads
 {
+#if UNITY_UNITYADS_API
+
     public class AdsManager: MonoBehaviour, IUnityAdsInitializationListener, IUnityAdsLoadListener, IUnityAdsShowListener
+#else
+    public class AdsManager: MonoBehaviour
+    #endif
     {
         public bool AdsEnabled = true;
         public string AndroidId = "5215395";
@@ -25,6 +30,8 @@ namespace Kuantech.Ads
         private UnityAction _rewardHandler = null;
         public void Initialize()
         {
+#if UNITY_UNITYADS_API
+
             _lastAdPlayedTime = -1 * AdCooldown;
 #if UNITY_IOS
 	Advertisement.Initialize(myGameIdIOS, testMode);
@@ -37,10 +44,13 @@ namespace Kuantech.Ads
             rewardedAdId = adRewardAndroid;
 #endif
             Advertisement.Load(myAdUnitId, this);
+#endif
         }
 
         public void ShowAd(UnityAction adCompleteHandler)
         {
+#if UNITY_UNITYADS_API
+
             if (!AdsEnabled || !Advertisement.isInitialized  || Time.time - _lastAdPlayedTime < AdCooldown)
             {
                 adCompleteHandler?.Invoke();
@@ -51,10 +61,15 @@ namespace Kuantech.Ads
             _adFinishedHandler = adCompleteHandler;
             _lastAdPlayedTime = Time.time;
             Advertisement.Show(myAdUnitId, this);
+#else
+            adCompleteHandler?.Invoke();
+            #endif
         }
 
         public void ShowRewardedAd(UnityAction adCompleteHandler, UnityAction rewardHandler)
         {
+#if UNITY_UNITYADS_API
+
             if (!AdsEnabled || !Advertisement.isInitialized)
             {
                 adCompleteHandler?.Invoke();
@@ -65,7 +80,9 @@ namespace Kuantech.Ads
             adStarted = true;
             _adFinishedHandler = adCompleteHandler;
             Advertisement.Show(rewardedAdId, this);
+#endif
         }
+#if UNITY_UNITYADS_API
 
         public void OnUnityAdsReady(string placementId)
         {
@@ -84,6 +101,7 @@ namespace Kuantech.Ads
 
         public void OnUnityAdsDidFinish(string placementId, ShowResult showResult)
         {
+
             if (placementId == rewardedAdId && showResult == ShowResult.Finished)
             {
                 //Reward player
@@ -92,6 +110,7 @@ namespace Kuantech.Ads
             adStarted = false;
             _adFinishedHandler?.Invoke();
         }
+        
 
         public void OnUnityAdsAdLoaded(string placementId)
         {
@@ -147,5 +166,6 @@ namespace Kuantech.Ads
             _rewardHandler = null;
             Advertisement.Load(placementId, this);
         }
+#endif
     }
 }

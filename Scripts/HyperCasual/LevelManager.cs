@@ -12,6 +12,8 @@ namespace Kuantech.Core.HyperCasual
 
         public virtual Level GetLevel(int levelIndex)
         {
+            Level level = LevelDictionary[levelIndex];
+            level.LevelIndex = levelIndex;
             return LevelDictionary[levelIndex];
         }
     }
