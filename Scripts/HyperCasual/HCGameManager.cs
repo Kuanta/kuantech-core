@@ -52,22 +52,24 @@ namespace Kuantech.Core.HyperCasual
         protected virtual void OnGameStart()
         {
             CurrentLevel = LevelManager.GetLevel(CurrentLevelIndex);
+            CurrentLevel.PrepareLevel();
             ChangeCurrentState(LevelState.Waiting);
         }
 
         public virtual void PlayLevel()
         {
             CurrentLevel.StartLevel();
+            ChangeCurrentState(LevelState.Playing);
         }
 
-        protected virtual void RestartLevel()
+        public virtual void RestartLevel()
         {
             CurrentLevel.ClearLevel();
             CurrentLevel.PrepareLevel();
             CurrentLevel.StartLevel();
         }
 
-        protected virtual void CompleteLevel()
+        public virtual void CompleteLevel()
         {
             CurrentLevel.ClearLevel();
             Destroy(CurrentLevel.gameObject);
@@ -78,7 +80,7 @@ namespace Kuantech.Core.HyperCasual
             ChangeCurrentState(LevelState.Waiting);
         }
 
-        protected virtual void LeaveLevel()
+        public virtual void LeaveLevel()
         {
             
         }
@@ -106,7 +108,7 @@ namespace Kuantech.Core.HyperCasual
             
         }
 
-        protected virtual void ChangeCurrentState(LevelState newState)
+        public virtual void ChangeCurrentState(LevelState newState)
         {
             if (CurrentLevel == null) return;
             CurrentLevel.CurrentState = newState;

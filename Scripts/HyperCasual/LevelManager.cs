@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using UnityEngine;
 
 namespace Kuantech.Core.HyperCasual
@@ -12,9 +13,15 @@ namespace Kuantech.Core.HyperCasual
 
         public virtual Level GetLevel(int levelIndex)
         {
-            Level level = LevelDictionary[levelIndex];
+            if (!LevelDictionary.ContainsKey(levelIndex))
+            {
+                levelIndex = (LevelDictionary.Keys.ToList())[LevelDictionary.Keys.Count -1];
+            }
+            Level level = Instantiate(LevelDictionary[levelIndex].gameObject).GetComponent<Level>();
+            level.transform.position = Vector3.zero;
+            level.transform.rotation = Quaternion.identity;
             level.LevelIndex = levelIndex;
-            return LevelDictionary[levelIndex];
+            return level;
         }
     }
 }

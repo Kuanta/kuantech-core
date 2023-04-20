@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Kuantech.Physics.Car;
 using UnityEngine;
 
 namespace Kuantech.Core.HyperCasual
@@ -43,7 +44,7 @@ namespace Kuantech.Core.HyperCasual
 
         public virtual void CompleteLevel()
         {
-           
+            
         }
     }
 }
