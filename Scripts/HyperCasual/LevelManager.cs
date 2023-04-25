@@ -21,6 +21,7 @@ namespace Kuantech.Core.HyperCasual
             level.transform.position = Vector3.zero;
             level.transform.rotation = Quaternion.identity;
             level.LevelIndex = levelIndex;
+            level.OnLevelCreated(); //todo(optimization): This may be unefficient
             return level;
         }
     }

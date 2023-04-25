@@ -10,6 +10,7 @@ namespace Kuantech.Core.FX
         public ParticleSystem Vfx;
         public float Duration;
         public float Delay = 0f;
+        public float SfxFadeOutDuration = 0; //If set to a value >0, sfx will top with fading out
         public Animator Animator;
         private static readonly int Play1 = Animator.StringToHash("Play");
         public bool EmitEffect = false; //If set to true, effect will be emitted instead of play
@@ -92,7 +93,21 @@ namespace Kuantech.Core.FX
         
         public void Stop()
         {
-            
+            if(Vfx!=null) Vfx.Stop();
+            if (Sfx == null) return;
+            if (SfxFadeOutDuration > 0)
+            {
+                StartCoroutine(FadeOutCoroutine(Sfx, SfxFadeOutDuration));
+            }
+            else
+            {
+                Sfx.Stop();
+            }
+        }
+
+        public void SetAudioPitch(float pitch)
+        {
+            if (Sfx != null) Sfx.pitch = pitch;
         }
         private IEnumerator PoolRoutine(float duration)
         {
@@ -106,5 +121,23 @@ namespace Kuantech.Core.FX
             if(Sfx != null) Sfx.Stop();
             EffectsLibrary.Instance.EffectsPool.PoolObject(gameObject);
         }
+
+        #region FadeInOut
+
+        private IEnumerator FadeOutCoroutine(AudioSource audioSource, float fadeOutSecs)
+        {
+            float startVolume = audioSource.volume;
+
+            while (audioSource.volume > 0)
+            {
+                audioSource.volume -= startVolume * Time.deltaTime / fadeOutSecs;
+                yield return null;
+            }
+
+            audioSource.Stop();
+            audioSource.volume = startVolume;
+        }
+
+        #endregion
     }
 }

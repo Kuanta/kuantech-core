@@ -1,3 +1,4 @@
+using Kuantech.Core.FX;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -5,15 +6,18 @@ namespace Kuantech.Physics.Car
 {
     public class CarBody : MonoBehaviour
     {
-        [Header("Properties")] [SerializeField]
-        private Vector3 CenterOfMass = Vector3.zero;
+        [Header("Properties")] 
+        [SerializeField] private Vector3 CenterOfMass = Vector3.zero;
+        [SerializeField] private float GravityScale = 1;
+        
         [Header("Suspension")]
         [SerializeField] private float Suspension = 1f;
         [SerializeField] private float DampingFactor = 1f;
         [SerializeField] private float WheelsRestDistance = 0.5f;
         [SerializeField] private float MaxWheelDistance = 2f;
 
-        [Header("Handling")]
+        [FormerlySerializedAs("GroundAirDrag")] [Header("Handling")] [SerializeField] private float GroudnAngularDrag = 30;
+        public float TurnSpeed = 10;
         [SerializeField] private float Handling = 10;
         [SerializeField] private float WheelWeight = 1f;
         public float WheelFriction = 0.1f;
@@ -25,6 +29,11 @@ namespace Kuantech.Physics.Car
         [SerializeField] private float BreakForce = 10;
         [SerializeField] private float DragReleaseAcceleration = 50f; //This is for the drag and release
 
+        [FormerlySerializedAs("AirAngleDrag")]
+        [Header("In Air Control")] 
+        [SerializeField] private float AirAngularDrag = 1;
+        [SerializeField] private float AirControlFactor = 1;
+        
         [Header("Incline")]
         public Transform InclineRayShootPosition;
         public LayerMask InclineRayMask;
@@ -35,20 +44,36 @@ namespace Kuantech.Physics.Car
         public float AntiFlipForceMultiplier = 1;
         
         [Header("Components")]
-        private Rigidbody _rigidbody;
+        [SerializeField] private Rigidbody BodyRigidbody;
+        [SerializeField] private Collider BodyCollider;
 
         [SerializeField] private Wheel[] _wheels = new Wheel[4];
 
+        [Header("Audio")]
+        public Effect GasSound;
+        public Effect TurnEngineOnEffect;
+        public Effect TurnEngineOffEffect; 
+        public float MinPitch = 0.5f;
+        public float MaxPitch = 2.5f;
 
+        //States
         private float _forward = 0f;
         private float _side = 0f;
-        
+        private bool _engineOn;
+
         // Start is called before the first frame update
         void Start()
         {
-            _rigidbody = GetComponent<Rigidbody>();
+            BodyRigidbody = GetComponent<Rigidbody>();
             UpdateWheelParameters();
-            _rigidbody.centerOfMass = CenterOfMass;
+            BodyRigidbody.centerOfMass = CenterOfMass;
+
+            if (BodyCollider == null) return;
+            Collider[] childColliders = transform.GetComponentsInChildren<Collider>();
+            foreach (var childCollider in childColliders)
+            {
+                UnityEngine.Physics.IgnoreCollision(BodyCollider, childCollider);
+            }
         }
 
         [SerializeField] private float SideInputDecayRate = 0.9f;
@@ -57,17 +82,38 @@ namespace Kuantech.Physics.Car
         public void ApplyImpulseForce(float force, Vector2 direction)
         {
             _side = direction.x;
-            _rigidbody.velocity = transform.forward * force * MaxSpeed;
+            BodyRigidbody.velocity = transform.forward * force * MaxSpeed;
             Vector3 globalDireciton = transform.TransformDirection(new Vector3(direction.x, 0, direction.y));
-            foreach (var dr in _wheels)
+            AlignToDirection(globalDireciton);
+        }
+        
+        #region Aligning
+        public bool Aligning { get; private set;}
+        private Vector3 _targetDirection ;
+        private void AlignToDirection(Vector3 targetDirection)
+        {
+            if(Aligning) return;
+            _targetDirection = targetDirection;
+            Aligning = true;
+            foreach (var wheel in _wheels)
             {
-                if (dr.Turnable)
+                if (wheel.Turnable)
                 {
-                    dr.AlignToDirection(globalDireciton);
+                    wheel.LookTowardsAngle(targetDirection);
                 }
             }
         }
-
+        private void AlignStep()
+        {
+            if (!Aligning) return;
+            
+            // Check if the car body's forward vector is aligned with the wheel's forward vector
+            if (Vector3.Dot(_targetDirection, transform.forward) > 0.9f) {
+                // Stop aligning
+                Aligning = false;
+            }
+        }
+        #endregion
  
         private void UpdateWheelParameters()
         {
@@ -84,6 +130,10 @@ namespace Kuantech.Physics.Car
             } 
         }
 
+        public void ToggleRigidbody(bool toggle)
+        {
+            BodyRigidbody.constraints = toggle ? RigidbodyConstraints.None : RigidbodyConstraints.FreezeAll;
+        }
         public void SetMovementParameters(float forward, float side)
         {
             _forward = forward;
@@ -91,20 +141,29 @@ namespace Kuantech.Physics.Car
         }
         // Update is called once per frame
         private Vector3 _groundIncline = Vector3.zero;
-
+        private float _lastGroundedTime;
         private void FixedUpdate()
         {
             float currentSpeed = 0f;
             if (IsGrounded())
             {
-                Vector3 horizontalVelocity = new Vector3(_rigidbody.velocity.x, 0, _rigidbody.velocity.z); // ignore the y component of the velocity
+                Vector3 horizontalVelocity = new Vector3(BodyRigidbody.velocity.x, 0, BodyRigidbody.velocity.z); // ignore the y component of the velocity
                 float horizontalSpeed = horizontalVelocity.magnitude;
                 // limit the car's on-ground speed
                 if (horizontalSpeed > MaxSpeed)
                 {
                     float maxSpeedRatio = MaxSpeed / horizontalSpeed;
-                    _rigidbody.velocity = new Vector3(_rigidbody.velocity.x * maxSpeedRatio, _rigidbody.velocity.y, _rigidbody.velocity.z * maxSpeedRatio);
+                    BodyRigidbody.velocity = new Vector3(BodyRigidbody.velocity.x * maxSpeedRatio, BodyRigidbody.velocity.y, BodyRigidbody.velocity.z * maxSpeedRatio);
                 }
+            }
+            else if(Time.time - _lastGroundedTime > 1f)
+            {
+                //In air controls
+                // Calculate torque based on input
+                Vector3 torque = new Vector3(_forward, _side, 0) * AirControlFactor * BodyRigidbody.mass;
+
+                // Add torque to the rigidbody
+                BodyRigidbody.AddRelativeTorque(torque);
             }
             ClampSpeed();
         }
@@ -119,14 +178,14 @@ namespace Kuantech.Physics.Car
                 if (horizontalSpeed > MaxSpeed)
                 {
                     float maxSpeedRatio = MaxSpeed / horizontalSpeed;
-                    _rigidbody.velocity = new Vector3(_rigidbody.velocity.x * maxSpeedRatio, _rigidbody.velocity.y, _rigidbody.velocity.z * maxSpeedRatio);
+                    BodyRigidbody.velocity = new Vector3(BodyRigidbody.velocity.x * maxSpeedRatio, BodyRigidbody.velocity.y, BodyRigidbody.velocity.z * maxSpeedRatio);
                 }
             }
         }
 
         public float GetGroundSpeed()
         {
-            Vector3 velocity = _rigidbody.velocity;
+            Vector3 velocity = BodyRigidbody.velocity;
             Vector3 horizontalVelocity = new Vector3(velocity.x, 0, velocity.z); // ignore the y component of the velocity
             return horizontalVelocity.magnitude;
         }
@@ -140,31 +199,26 @@ namespace Kuantech.Physics.Car
         }
         void Update()
         {
+            bool grounded = IsGrounded();
+            if (grounded) _lastGroundedTime = Time.time;
             UpdateWheelParameters();
-          
+            BodyRigidbody.angularDrag = grounded ? GroudnAngularDrag : AirAngularDrag;
+            AlignStep();
+            
             Vector3 newGroundIncline = GetGroundIncline();
+            float normalizedSpeed = GetNormalizedSpeed();
             foreach (Wheel wheel in _wheels)
             {
                 if(wheel == null) continue;
-                if (wheel.Turnable)
+                if (wheel.Turnable && !Aligning)
                 {
                     wheel.Turn(_side);
                     wheel.InclineForce(_groundIncline);
-                    // if (wheel.IsGrounded())
-                    // {
-                    //     newGroundIncline += wheel.WheelTurnIntention;
-                    // }
                 }
 
-                if (wheel.Driver && wheel.IsGrounded())
-                {
-                    float availableTorque = GetAvailableTorque() * _forward;
-                    Vector3 wheelPosition = transform.position;
-                    Vector3 localWheelPosition = wheel.transform.localPosition;
-                    localWheelPosition.y = 0;
-                    wheelPosition += Utils.Helpers.ProjectVector(localWheelPosition, transform.forward);
-                    _rigidbody.AddForceAtPosition(wheel.transform.forward * availableTorque, wheel.transform.position);
-                }
+                if (!wheel.Driver || !wheel.IsGrounded()) continue;
+                float availableTorque = GetAvailableTorque(normalizedSpeed) * _forward;
+                BodyRigidbody.AddForceAtPosition(wheel.transform.forward * availableTorque, wheel.transform.position);
             }
 
             newGroundIncline = Vector3.ProjectOnPlane(newGroundIncline, transform.up);
@@ -172,6 +226,12 @@ namespace Kuantech.Physics.Car
             SetWheelTurnIntentionDebug(_groundIncline);
 
             _side *= SideInputDecayRate;
+            
+            //Sound
+            if (GasSound != null)
+            {
+                GasSound.SetAudioPitch(Mathf.Lerp(MinPitch, MaxPitch,normalizedSpeed));
+            }
         }
 
         private RaycastHit[] _groundHits = new RaycastHit[4];
@@ -205,7 +265,7 @@ namespace Kuantech.Physics.Car
         [SerializeField] private float StillVelocityThreshold = 0.1f;
         public bool IsStandingStill()
         {
-            if (_rigidbody.velocity.sqrMagnitude <= StillVelocityThreshold * StillVelocityThreshold) return true;
+            if (BodyRigidbody.velocity.sqrMagnitude <= StillVelocityThreshold * StillVelocityThreshold) return true;
             return false;
         }
         [SerializeField] private GameObject TurnDebugger;
@@ -219,14 +279,14 @@ namespace Kuantech.Physics.Car
         }
         public void Stop()
         {
-            if(_rigidbody == null) return;
-            _rigidbody.velocity = Vector3.zero;
-            _rigidbody.angularVelocity = Vector3.zero;
+            if(BodyRigidbody == null) return;
+            BodyRigidbody.velocity = Vector3.zero;
+            BodyRigidbody.angularVelocity = Vector3.zero;
             _impulseApplied = false;
         }
         public Rigidbody GetRigidbody()
         {
-            return _rigidbody;
+            return BodyRigidbody;
         }
 
 
@@ -239,10 +299,15 @@ namespace Kuantech.Physics.Car
             }
         }
 
-        private float GetAvailableTorque()
+        private float GetNormalizedSpeed()
         {
-            float carSpeed = Vector3.Dot(transform.forward, _rigidbody.velocity);
+            float carSpeed = Vector3.Dot(transform.forward, BodyRigidbody.velocity);
             float normalizedSpeed = Mathf.Clamp01(carSpeed / MaxSpeed);
+            return normalizedSpeed;
+        }
+        private float GetAvailableTorque(float normalizedSpeed)
+        {
+            
             //todo: Implement a power curve here
             return normalizedSpeed >= 1 ? 0f : AccelerationCurve.Evaluate(normalizedSpeed) * Acceleration;
         }
@@ -250,11 +315,30 @@ namespace Kuantech.Physics.Car
         public void Reset()
         {
             Stop();
+            _engineOn = false;
+            Aligning = false;
             foreach (var wheel in _wheels)
             {
                 wheel.Reset();
             }
         }
+        
+        #region EngineOnOff
+
+        public void TurnEngineOn()
+        {
+            TurnEngineOnEffect.Play();
+            GasSound.Play();
+            _engineOn = true;
+        }
+
+        public void TurnEngineOff()
+        {
+            GasSound.Stop();
+            TurnEngineOffEffect.Play();
+            _engineOn = false;
+        }
+        #endregion
     }
 
 }

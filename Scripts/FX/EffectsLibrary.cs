@@ -5,25 +5,6 @@ namespace Kuantech.Core.FX
 {
     public enum EffectTypes
     {
-        SwordSwing_1,
-        SwordSwing_2,
-        SwordSwing_3,
-        ArrowShoot,
-        StaffSwing_1,
-        StaffSwing_2,
-        LevelUp,
-        Slam,
-        QuickStrikes,
-        MagicOrb,
-        StaffShoot,
-        GhostWeapon,
-        ArcaneArrowExplosion,
-        GhostAcher,
-        ArcaneArrowEffect,
-        PowerShotArrowEffect,
-        ArrowBarrageEffect,
-        StaffSwing,
-        BowSwing,
         None,
     }
     

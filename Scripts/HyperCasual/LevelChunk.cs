@@ -10,7 +10,11 @@ namespace Kuantech.Core.HyperCasual
         public virtual void OnLevelCreate()
         {
             LevelElements = GetComponentsInChildren<LevelElement>();
-           
+            foreach (var element in LevelElements)
+            {
+                element.InitialPosition = element.transform.position;
+                element.InitialRotaiton = element.transform.rotation;
+            }
         }
         
         #region Lifecycle

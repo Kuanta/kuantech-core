@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace Kuantech.Physics.Car
@@ -7,6 +8,7 @@ namespace Kuantech.Physics.Car
         public bool DebugEnabled = false;
         public CarBody CarBody;
         public GameObject WheelVisual;
+        public float WheelVisualRadius;
 
         [Header("Properties")] 
         public bool Driver = false;
@@ -38,25 +40,43 @@ namespace Kuantech.Physics.Car
         private void Update()
         {
             CheckGround();
-            AlignStep();
-            if (!_aligning)
+            if (!CarBody.Aligning)
             {
+
                 float _currentAngle = transform.localEulerAngles.y;
-                _currentAngle = Mathf.Lerp(_currentAngle, _targetAngle, 1);
-                _currentAngle = TurnTowardsIncline(_currentAngle);
+
+                if (_currentAngle > 180f) _currentAngle -= 360f;
+                float angleDiff = _targetAngle - _currentAngle;
+ 
+                // Calculate the angle to turn this frame
+                _currentAngle += Math.Sign(angleDiff) * CarBody.TurnSpeed * Time.deltaTime;
+                
+                //_currentAngle = TurnTowardsIncline(_currentAngle);
                 _currentAngle = Mathf.Clamp(_currentAngle, -AngleRange, AngleRange);
-         
+
                 transform.localEulerAngles = new Vector3(0f, _currentAngle, 0f);
             }
 
+            if (IsGrounded())
+            {
+                Vector3 carVelocity = CarBody.GetRigidbody().velocity;
+                float speed = carVelocity.magnitude;
+                float angularSpeed = (speed / (2 * Mathf.PI * WheelVisualRadius))*Mathf.Rad2Deg;
+                float rightDot = Vector3.Dot(CarBody.transform.right, transform.right);
+                float forwardDot = Vector3.Dot(CarBody.transform.forward, carVelocity);
+                float angle = angularSpeed * Time.fixedDeltaTime * rightDot * forwardDot;
+                WheelVisual.transform.Rotate(angle, 0f, 0f, Space.Self);
+            }
             if (WheelVisual == null) return;
             float offset = _hitDistance;
             if (!_isGrounded) offset = MaxWheelDistance;
-            WheelVisual.transform.position = transform.position - transform.up * offset;
+            WheelVisual.transform.position = transform.position + transform.up * Mathf.Min(-offset + WheelVisualRadius, transform.localPosition.y);
         }
 
         private float TurnTowardsIncline(float currentAngle)
         {
+            if (_currentIncline.sqrMagnitude <= 0.01f) return 0;
+
             Vector3 relativeIncline = transform.InverseTransformDirection(_currentIncline);
             Quaternion targetRotation = Quaternion.LookRotation(relativeIncline, Vector3.up);
             float rotationSpeedScaled = CarBody.InclineLerpFactor * _currentIncline.magnitude;
@@ -88,7 +108,6 @@ namespace Kuantech.Physics.Car
             Vector3 springDir = transform.up;
             Vector3 worldVel = carRigidbody.GetPointVelocity(wheelPosition);
             float offset = SuspensionRestDist - _hitDistance;
-   
             float vel = Vector3.Dot(springDir, worldVel);
             Vector3 force = springDir * ((offset * SuspensionFactor) - (vel * DampingFactor));
             carRigidbody.AddForceAtPosition(force, wheelPosition);
@@ -123,7 +142,7 @@ namespace Kuantech.Physics.Car
             float steeringVel = Vector3.Dot(steeringDir, carVelocity);
             float desiredVelChange = -steeringVel * breakForce;
             float desiredAccel = desiredVelChange / Time.fixedDeltaTime;
-            CarBody.GetRigidbody().AddForceAtPosition(steeringDir * TireMass * desiredAccel, wheelPosition);
+            CarBody.GetRigidbody().AddForceAtPosition(steeringDir * desiredAccel, wheelPosition);
         }
 
         public void InclineForce(Vector3 inclineVector)
@@ -176,6 +195,18 @@ namespace Kuantech.Physics.Car
             turnRate = Mathf.Clamp(turnRate, -1f, 1f);
             _targetAngle = turnRate * AngleRange;
         }
+
+        public void LookTowardsAngle(Vector3 targetDirection)
+        {
+            // Calculate the current forward direction in world space
+            Vector3 currentForward = transform.forward;
+
+            // Calculate the desired forward direction in world space
+            Vector3 desiredForward = Vector3.RotateTowards(currentForward, targetDirection, AngleRange * Mathf.Deg2Rad, 0f);
+
+            // Set the new forward direction
+            transform.forward = desiredForward;
+        }
         #endregion
  
         [HideInInspector] public float BaseTracktion = 0f;
@@ -185,35 +216,9 @@ namespace Kuantech.Physics.Car
             return BaseTracktion;
         }
 
-        private Vector3 _targetDirection;
-        private bool _aligning = false;
-        public void AlignToDirection(Vector3 targetDirection)
-        {
-            if(_aligning) return;
-            _targetDirection = targetDirection;
-            _aligning = true;
-        }
-
-        private void AlignStep()
-        {
-            if (!_aligning) return;
-            float angle = Vector3.SignedAngle(transform.forward, _targetDirection, transform.up);
-            
-            // Calculate the rotation to apply this frame
-            Quaternion deltaRotation = Quaternion.AngleAxis(angle, transform.up);
-            
-            // Apply the rotation to the wheel's current rotation
-            transform.rotation = deltaRotation * transform.rotation;
-            
-            // Check if the car body's forward vector is aligned with the wheel's forward vector
-            if (Vector3.Dot(transform.forward, CarBody.transform.forward) > 0.9f) {
-                // Stop aligning
-                _aligning = false;
-            }
-        }
+   
         public void Reset()
         {
-            _aligning = false;
             _currentIncline = Vector3.zero;
         }
     }
