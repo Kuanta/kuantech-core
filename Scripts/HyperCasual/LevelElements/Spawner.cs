@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using Kuantech.EndlessRunner;
 using UnityEngine;
 
 namespace Kuantech.Core.HyperCasual

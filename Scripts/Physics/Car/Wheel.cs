@@ -39,6 +39,7 @@ namespace Kuantech.Physics.Car
 
         private void Update()
         {
+            if (CarBody == null) return;
             CheckGround();
             if (!CarBody.Aligning)
             {
@@ -49,9 +50,9 @@ namespace Kuantech.Physics.Car
                 float angleDiff = _targetAngle - _currentAngle;
  
                 // Calculate the angle to turn this frame
-                _currentAngle += Math.Sign(angleDiff) * CarBody.TurnSpeed * Time.deltaTime;
+                _currentAngle += Math.Sign(angleDiff) * CarBody.CarData.TurnSpeed * Time.deltaTime;
                 
-                //_currentAngle = TurnTowardsIncline(_currentAngle);
+                //s_currentAngle = TurnTowardsIncline(_currentAngle);
                 _currentAngle = Mathf.Clamp(_currentAngle, -AngleRange, AngleRange);
 
                 transform.localEulerAngles = new Vector3(0f, _currentAngle, 0f);
@@ -93,7 +94,7 @@ namespace Kuantech.Physics.Car
         {
             Vector3 suspensionForce = SuspensionForce();
             TracktionForce();
-            Break(CarBody.WheelFriction);
+            Brake(CarBody.WheelFriction);
         }
 
         #region Forces
@@ -131,7 +132,7 @@ namespace Kuantech.Physics.Car
             CarBody.GetRigidbody().AddForceAtPosition(steeringDir * TireMass * desiredAccel, wheelPosition);
         }
 
-        public void Break(float breakForce = 1)
+        public void Brake(float brakeForce = 1)
         {
             if (!_isGrounded || CarBody == null) return;
             
@@ -140,9 +141,10 @@ namespace Kuantech.Physics.Car
             Vector3 carVelocity = CarBody.GetRigidbody().GetPointVelocity(wheelPosition);
             Vector3 steeringDir = transform.forward;
             float steeringVel = Vector3.Dot(steeringDir, carVelocity);
-            float desiredVelChange = -steeringVel * breakForce;
-            float desiredAccel = desiredVelChange / Time.fixedDeltaTime;
-            CarBody.GetRigidbody().AddForceAtPosition(steeringDir * desiredAccel, wheelPosition);
+            // float desiredVelChange = -steeringVel * breakForce;
+            // float desiredAccel = desiredVelChange / Time.fixedDeltaTime;
+            //if(DebugEnabled) Debug.LogError($"Brake:{steeringDir * desiredAccel}");
+            CarBody.GetRigidbody().AddForceAtPosition(-steeringDir * steeringVel * brakeForce, wheelPosition);
         }
 
         public void InclineForce(Vector3 inclineVector)

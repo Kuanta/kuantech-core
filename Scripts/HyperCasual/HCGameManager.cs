@@ -32,12 +32,12 @@ namespace Kuantech.Core.HyperCasual
         //public EventHandler<Currency> CurrencyChangedEvent;
 
         # region UnityEvents
-        protected override void Awake()
+
+        protected virtual void Awake()
         {
             base.Awake();
             Initialize();
         }
-
         protected virtual void Update()
         {
             
@@ -54,10 +54,12 @@ namespace Kuantech.Core.HyperCasual
         
         #region Lifecycle
 
-        public virtual void Initialize()
+        protected virtual void Initialize()
         {
-            //Data
-            GameState = new GameState(CurrencyIds);
+            if (GameState == null)
+            {
+                GameState = new GameState(CurrencyIds);
+            }
             GameState.LoadData();
             foreach (var currencyId in CurrencyIds)
             {
@@ -92,7 +94,7 @@ namespace Kuantech.Core.HyperCasual
             CurrentLevel.ClearLevel();
             CurrentLevel.PrepareLevel();
             CurrentLevel.StartLevel();
-            ChangeCurrentState(LevelState.Playing);
+            ChangeCurrentState(LevelState.Waiting);
         }
 
         public virtual void CompleteLevel()
@@ -145,7 +147,8 @@ namespace Kuantech.Core.HyperCasual
         #endregion
 
         #region Currencies
-
+        
+        [Button("Add Currency")]
         public virtual void AddCurrency(int currencyId, int amount)
         {
             GameState.AddCurrency(currencyId, amount);

@@ -1,5 +1,4 @@
-﻿using Kuantech.EndlessRunner;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Kuantech.Core.HyperCasual
 {

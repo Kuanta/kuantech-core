@@ -1,98 +1,85 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.IO;
+using System.Collections.Generic;
+using Newtonsoft.Json;
 using Sirenix.Utilities;
 using UnityEngine;
 
 namespace Kuantech.Core.HyperCasual
 {
-    public class GameState
+    [Serializable]
+    //Base Class for common game states
+    public class GameStateModel
     {
         public int LevelIndex;
-        private Dictionary<int, Currency> _currencies;
+        public Dictionary<int, Currency> Currencies;
 
+        public virtual void SetDefaultValues()
+        {
+            LevelIndex = 0;
+        }
+    }
+    
+    public class GameState
+    {
+        // public int LevelIndex;
+        // private Dictionary<int, Currency> _currencies;
+        public GameStateModel GameStateModel;
+        public string StateFileName = "/gameState.json";
+
+        protected bool Dirtied = false;
         public GameState(List<int> currencyIds)
         {
-            if (currencyIds.IsNullOrEmpty())
-            {
-                currencyIds = new List<int> {0};
-            }
-            _currencies = new Dictionary<int, Currency>();
-            foreach (int id in currencyIds)
-            {
-                _currencies[id] = new Currency
-                {
-                    CurrencyId = id,
-                    Amount = 0,
-                };
-            }    
+            Dirtied = false;
         }
-        
+
         public virtual void LoadData()
         {
-            LoadCurrencies();
+            string jsonPath = GetSaveFilePath();
+            if (!File.Exists(jsonPath))
+            {
+                GameStateModel.SetDefaultValues();
+                return;
+            }
+            string jsonString = File.ReadAllText(jsonPath);
+            GameStateModel = JsonConvert.DeserializeObject<GameStateModel>(jsonString);
         }
 
         public virtual void SaveData()
         {
-            SaveCurrencies();
+            if (!Dirtied) return;
+            string jsonString = JsonConvert.SerializeObject(GameStateModel);
+
+            // Write JSON to file.
+            string inventoryPath = GetSaveFilePath();
+            File.WriteAllText(inventoryPath, jsonString);
+            Dirtied = false;
         }
-        
+
+        protected string GetSaveFilePath()
+        {
+            return Application.persistentDataPath + StateFileName;
+        }
         #region Level
         public virtual void SetLevelIndex(int levelIndex)
         {
-            PlayerPrefs.SetInt("LevelIndex", levelIndex);
+            GameStateModel.LevelIndex = levelIndex;
+            Dirtied = true;
+            //PlayerPrefs.SetInt("LevelIndex", levelIndex);
         }
 
         public virtual int GetLevelIndex()
         {
-            return PlayerPrefs.GetInt("LevelIndex", 0);
+            return GameStateModel.LevelIndex;
         }
         #endregion
         
         #region Currencies
-
-        protected virtual void LoadCurrencies()
-        {
-            foreach (int currencyId in _currencies.Keys)
-            {
-                int amount = ReadCurrency(currencyId);
-                _currencies[currencyId].SetAmount(amount);
-            }
-        }
-
-        protected virtual void SaveCurrencies()
-        {
-            // foreach (int currencyId in _currencies.Keys)
-            // {
-            //     int amount = _currencies[currencyId].Amount;
-            //     WriteCurrency(currencyId);
-            // } 
-        }
-        
-        /// <summary>
-        /// Reads the amount of currency from saved data
-        /// </summary>
-        /// <param name="currencyId"></param>
-        /// <returns></returns>
-        protected virtual int ReadCurrency(int currencyId)
-        {
-            return PlayerPrefs.GetInt(currencyId.ToString(), 0);
-        }
-        
-        /// <summary>
-        /// Writes the currency to desired format.
-        /// </summary>
-        /// <param name="currencyId"></param>
-        /// <param name="amount"></param>
-        protected virtual void WriteCurrency(int currencyId)
-        {
-            PlayerPrefs.SetInt(currencyId.ToString(), _currencies[currencyId].Amount);
-        }
-        
         public virtual void AddCurrency(int currencyId, int amount)
         {
-            if (!_currencies.ContainsKey(currencyId))
+            if (!GameStateModel.Currencies.ContainsKey(currencyId))
             {
-                _currencies[currencyId] = new Currency
+                GameStateModel.Currencies[currencyId] = new Currency
                 {
                     CurrencyId = currencyId,
                     Amount = amount,
@@ -100,9 +87,10 @@ namespace Kuantech.Core.HyperCasual
             }
             else
             {
-                _currencies[currencyId] = _currencies[currencyId].AddAmount(amount);
+                GameStateModel.Currencies[currencyId] = GameStateModel.Currencies[currencyId].AddAmount(amount);
             }
-            WriteCurrency(currencyId);
+
+            Dirtied = true;
         }
 
         public virtual void RemoveCurrency(int currencyId, int amount)
@@ -112,24 +100,24 @@ namespace Kuantech.Core.HyperCasual
 
         public virtual Currency GetCurrency(int currencyId)
         {
-            if (!_currencies.ContainsKey(currencyId)) return new Currency
+            if (!GameStateModel.Currencies.ContainsKey(currencyId)) return new Currency
             {
                 CurrencyId = currencyId,
                 Amount = 0,
             };
-            return _currencies[currencyId];
+            return GameStateModel.Currencies[currencyId];
         }
         public virtual int GetCurrencyAmount(int currencyId)
         {
-            if (!_currencies.ContainsKey(currencyId)) return 0;
-            return _currencies[currencyId].Amount;
+            GameStateModel.Currencies ??= new Dictionary<int, Currency>();
+            return !GameStateModel.Currencies.ContainsKey(currencyId) ? 0 : GameStateModel.Currencies[currencyId].Amount;
         }
 
         public virtual void SetCurrency(int currencyId, int amount)
         {
-            if (!_currencies.ContainsKey(currencyId))
+            if (!GameStateModel.Currencies.ContainsKey(currencyId))
             {
-                _currencies[currencyId] = new Currency
+                GameStateModel.Currencies[currencyId] = new Currency
                 {
                     CurrencyId = currencyId,
                     Amount = amount,
@@ -137,10 +125,11 @@ namespace Kuantech.Core.HyperCasual
             }
             else
             {
-                _currencies[currencyId].SetAmount(amount);
+                GameStateModel.Currencies[currencyId].SetAmount(amount);
 
             }
-            WriteCurrency(currencyId);
+
+            Dirtied = true;
         }
         #endregion
     }

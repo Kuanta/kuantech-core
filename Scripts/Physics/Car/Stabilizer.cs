@@ -5,8 +5,8 @@ namespace Kuantech.Physics.Car
 {
     public class Stabilizer : MonoBehaviour
     {
-        [SerializeField] private CarBody CarBody;
-        [SerializeField] private Rigidbody Rigidbody;
+        public CarBody CarBody;
+        public Rigidbody Rigidbody;
         public PIDController YawPIDController = new PIDController();
         public PIDController RollPIDController = new PIDController();
       
@@ -18,7 +18,7 @@ namespace Kuantech.Physics.Car
 
         private void Stabilize()
         {
-            if (CarBody.IsGrounded()) return;
+            if (CarBody == null || CarBody.IsGrounded() || Rigidbody == null) return;
             Vector3 currentForward = transform.forward.normalized;
             Vector3 currentRight = transform.right.normalized;
             Vector3 refForward = currentForward;

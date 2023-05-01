@@ -153,6 +153,26 @@ namespace Kuantech.Utils
             return probabilities.Length - 1;
         }
         
+        public static void ChangeTagRecursively(this Transform transform, string newTag)
+        {
+            transform.tag = newTag;
+ 
+            for (int i = 0; i < transform.childCount; i++)
+            {
+                Transform child = transform.GetChild(i);
+                ChangeTagRecursively(child, newTag);
+            }
+        }
+        public static void ChangeLayerRecursively(this Transform transform, int newLayer)
+        {
+            transform.gameObject.layer = newLayer;
+ 
+            for (int i = 0; i < transform.childCount; i++)
+            {
+                Transform child = transform.GetChild(i);
+                ChangeLayerRecursively(child, newLayer);
+            }
+        }
         #region Geometry
 
         public static Vector3 GetRelativeRightVector(this Transform parent, Transform target)

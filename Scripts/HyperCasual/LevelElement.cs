@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace Kuantech.EndlessRunner
+namespace Kuantech.Core.HyperCasual
 {
     public abstract class LevelElement : MonoBehaviour
     {

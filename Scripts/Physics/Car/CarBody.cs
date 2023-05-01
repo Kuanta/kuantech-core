@@ -1,4 +1,5 @@
 using Kuantech.Core.FX;
+using Kuantech.DragAndRace;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -6,30 +7,12 @@ namespace Kuantech.Physics.Car
 {
     public class CarBody : MonoBehaviour
     {
-        [Header("Properties")] 
-        [SerializeField] private Vector3 CenterOfMass = Vector3.zero;
-        [SerializeField] private float GravityScale = 1;
+        public CarData CarData;
         
-        [Header("Suspension")]
-        [SerializeField] private float Suspension = 1f;
-        [SerializeField] private float DampingFactor = 1f;
-        [SerializeField] private float WheelsRestDistance = 0.5f;
-        [SerializeField] private float MaxWheelDistance = 2f;
-
-        [FormerlySerializedAs("GroundAirDrag")] [Header("Handling")] [SerializeField] private float GroudnAngularDrag = 30;
-        public float TurnSpeed = 10;
-        [SerializeField] private float Handling = 10;
+        [SerializeField] private float GroudnAngularDrag = 30;
         [SerializeField] private float WheelWeight = 1f;
         public float WheelFriction = 0.1f;
 
-        [Header("Acceleration")] 
-        [SerializeField] private AnimationCurve AccelerationCurve;
-        [SerializeField] private float MaxSpeed = 10;
-        [SerializeField] private float Acceleration = 1;
-        [SerializeField] private float BreakForce = 10;
-        [SerializeField] private float DragReleaseAcceleration = 50f; //This is for the drag and release
-
-        [FormerlySerializedAs("AirAngleDrag")]
         [Header("In Air Control")] 
         [SerializeField] private float AirAngularDrag = 1;
         [SerializeField] private float AirControlFactor = 1;
@@ -46,11 +29,12 @@ namespace Kuantech.Physics.Car
         [Header("Components")]
         [SerializeField] private Rigidbody BodyRigidbody;
         [SerializeField] private Collider BodyCollider;
+        public Stabilizer Stabilizer;
 
-        [SerializeField] private Wheel[] _wheels = new Wheel[4];
+        [FormerlySerializedAs("_wheels")] public Wheel[] Wheels = new Wheel[4];
 
-        [Header("Audio")]
-        public Effect GasSound;
+        [FormerlySerializedAs("GasSound")] [Header("Effects")]
+        public Effect EngineLoopEffect;
         public Effect TurnEngineOnEffect;
         public Effect TurnEngineOffEffect; 
         public float MinPitch = 0.5f;
@@ -62,18 +46,21 @@ namespace Kuantech.Physics.Car
         private bool _engineOn;
 
         // Start is called before the first frame update
-        void Start()
+        public void Initialize(Rigidbody rigidbody)
         {
-            BodyRigidbody = GetComponent<Rigidbody>();
+            BodyRigidbody = rigidbody;
             UpdateWheelParameters();
-            BodyRigidbody.centerOfMass = CenterOfMass;
-
-            if (BodyCollider == null) return;
-            Collider[] childColliders = transform.GetComponentsInChildren<Collider>();
-            foreach (var childCollider in childColliders)
-            {
-                UnityEngine.Physics.IgnoreCollision(BodyCollider, childCollider);
-            }
+            BodyRigidbody.centerOfMass = CarData.CenterOfMass;
+            Stabilizer = GetComponent<Stabilizer>();
+            Stabilizer.Rigidbody = rigidbody;
+            Stabilizer.CarBody = this;
+            //
+            // if (BodyCollider == null) return;
+            // Collider[] childColliders = transform.GetComponentsInChildren<Collider>();
+            // foreach (var childCollider in childColliders)
+            // {
+            //     UnityEngine.Physics.IgnoreCollision(BodyCollider, childCollider);
+            // }
         }
 
         [SerializeField] private float SideInputDecayRate = 0.9f;
@@ -82,7 +69,7 @@ namespace Kuantech.Physics.Car
         public void ApplyImpulseForce(float force, Vector2 direction)
         {
             _side = direction.x;
-            BodyRigidbody.velocity = transform.forward * force * MaxSpeed;
+            BodyRigidbody.velocity = transform.forward * force * CarData.MaxSpeed;
             Vector3 globalDireciton = transform.TransformDirection(new Vector3(direction.x, 0, direction.y));
             AlignToDirection(globalDireciton);
         }
@@ -95,7 +82,7 @@ namespace Kuantech.Physics.Car
             if(Aligning) return;
             _targetDirection = targetDirection;
             Aligning = true;
-            foreach (var wheel in _wheels)
+            foreach (var wheel in Wheels)
             {
                 if (wheel.Turnable)
                 {
@@ -117,16 +104,16 @@ namespace Kuantech.Physics.Car
  
         private void UpdateWheelParameters()
         {
-            foreach (var wheel in _wheels)
+            foreach (var wheel in Wheels)
             {
                 if(wheel == null) continue;
                 wheel.CarBody = this;
-                wheel.SuspensionFactor = Suspension;
-                wheel.DampingFactor = DampingFactor;
+                wheel.SuspensionFactor = CarData.Suspension;
+                wheel.DampingFactor = CarData.DampingFactor;
                 wheel.TireMass = WheelWeight;
-                wheel.SuspensionRestDist = WheelsRestDistance;
-                wheel.BaseTracktion = Handling;
-                wheel.MaxWheelDistance = MaxWheelDistance;
+                wheel.SuspensionRestDist = CarData.WheelsRestDistance;
+                wheel.BaseTracktion = CarData.Handling;
+                wheel.MaxWheelDistance = CarData.MaxWheelDistance;
             } 
         }
 
@@ -144,17 +131,11 @@ namespace Kuantech.Physics.Car
         private float _lastGroundedTime;
         private void FixedUpdate()
         {
+            if (BodyRigidbody == null) return;
             float currentSpeed = 0f;
             if (IsGrounded())
             {
-                Vector3 horizontalVelocity = new Vector3(BodyRigidbody.velocity.x, 0, BodyRigidbody.velocity.z); // ignore the y component of the velocity
-                float horizontalSpeed = horizontalVelocity.magnitude;
-                // limit the car's on-ground speed
-                if (horizontalSpeed > MaxSpeed)
-                {
-                    float maxSpeedRatio = MaxSpeed / horizontalSpeed;
-                    BodyRigidbody.velocity = new Vector3(BodyRigidbody.velocity.x * maxSpeedRatio, BodyRigidbody.velocity.y, BodyRigidbody.velocity.z * maxSpeedRatio);
-                }
+                ClampSpeed();
             }
             else if(Time.time - _lastGroundedTime > 1f)
             {
@@ -170,16 +151,16 @@ namespace Kuantech.Physics.Car
 
         void ClampSpeed()
         {
+            if (!IsGrounded()) return;
             float horizontalSpeed = GetGroundSpeed();
+            float maxSpeed = CarData.MaxSpeed;
+            if (_boosted) maxSpeed *= _boostMaxSpeedMultiplier;
 
-            if (IsGrounded())
+            // limit the car's on-ground speed
+            if (horizontalSpeed > maxSpeed)
             {
-                // limit the car's on-ground speed
-                if (horizontalSpeed > MaxSpeed)
-                {
-                    float maxSpeedRatio = MaxSpeed / horizontalSpeed;
-                    BodyRigidbody.velocity = new Vector3(BodyRigidbody.velocity.x * maxSpeedRatio, BodyRigidbody.velocity.y, BodyRigidbody.velocity.z * maxSpeedRatio);
-                }
+                float maxSpeedRatio = maxSpeed / horizontalSpeed;
+                BodyRigidbody.velocity = new Vector3(BodyRigidbody.velocity.x * maxSpeedRatio, BodyRigidbody.velocity.y, BodyRigidbody.velocity.z * maxSpeedRatio);
             }
         }
 
@@ -191,7 +172,7 @@ namespace Kuantech.Physics.Car
         }
         public bool IsGrounded()
         {
-            foreach (Wheel wheel in _wheels)
+            foreach (Wheel wheel in Wheels)
             {
                 if (wheel.IsGrounded()) return true;
             }
@@ -199,6 +180,7 @@ namespace Kuantech.Physics.Car
         }
         void Update()
         {
+            if (BodyRigidbody == null) return;
             bool grounded = IsGrounded();
             if (grounded) _lastGroundedTime = Time.time;
             UpdateWheelParameters();
@@ -207,7 +189,19 @@ namespace Kuantech.Physics.Car
             
             Vector3 newGroundIncline = GetGroundIncline();
             float normalizedSpeed = GetNormalizedSpeed();
-            foreach (Wheel wheel in _wheels)
+
+            if (_boosted)
+            {
+                float torque = _boostAcceleration;
+                BodyRigidbody.AddForce(transform.forward * torque, ForceMode.Acceleration);
+                _remainingBoostTime -= Time.deltaTime;
+                if (_remainingBoostTime <= 0f)
+                {
+                    _boosted = false;
+                    Debug.LogError("Boost Ended");
+                }
+            }
+            foreach (Wheel wheel in Wheels)
             {
                 if(wheel == null) continue;
                 if (wheel.Turnable && !Aligning)
@@ -215,8 +209,8 @@ namespace Kuantech.Physics.Car
                     wheel.Turn(_side);
                     wheel.InclineForce(_groundIncline);
                 }
-
-                if (!wheel.Driver || !wheel.IsGrounded()) continue;
+                
+                if (!wheel.Driver || !wheel.IsGrounded() || _boosted) continue;
                 float availableTorque = GetAvailableTorque(normalizedSpeed) * _forward;
                 BodyRigidbody.AddForceAtPosition(wheel.transform.forward * availableTorque, wheel.transform.position);
             }
@@ -228,9 +222,10 @@ namespace Kuantech.Physics.Car
             _side *= SideInputDecayRate;
             
             //Sound
-            if (GasSound != null)
+            if (EngineLoopEffect != null)
             {
-                GasSound.SetAudioPitch(Mathf.Lerp(MinPitch, MaxPitch,normalizedSpeed));
+                float pitch = Mathf.Min(MinPitch + (MaxPitch - MinPitch) * Mathf.Max(normalizedSpeed, 0), 3);
+                EngineLoopEffect.SetAudioPitch(pitch);
             }
         }
 
@@ -289,35 +284,39 @@ namespace Kuantech.Physics.Car
             return BodyRigidbody;
         }
 
+        public void SetRigidbody(Rigidbody rigidbody)
+        {
+            
+        }
 
         public void Brake()
         {
-            foreach (Wheel wheel in _wheels)
+            foreach (Wheel wheel in Wheels)
             {
                 if(wheel == null) continue;
-                wheel.Break(BreakForce);
+                wheel.Brake(CarData.BrakeForce);
             }
         }
 
         private float GetNormalizedSpeed()
         {
             float carSpeed = Vector3.Dot(transform.forward, BodyRigidbody.velocity);
-            float normalizedSpeed = Mathf.Clamp01(carSpeed / MaxSpeed);
+            float normalizedSpeed = carSpeed / CarData.MaxSpeed;
             return normalizedSpeed;
         }
         private float GetAvailableTorque(float normalizedSpeed)
         {
-            
             //todo: Implement a power curve here
-            return normalizedSpeed >= 1 ? 0f : AccelerationCurve.Evaluate(normalizedSpeed) * Acceleration;
+            return normalizedSpeed >= 1 ? 0f : CarData.AccelerationCurve.Evaluate(normalizedSpeed) * CarData.MaxAcceleration;
         }
 
         public void Reset()
         {
             Stop();
             _engineOn = false;
+            _boosted = false;
             Aligning = false;
-            foreach (var wheel in _wheels)
+            foreach (var wheel in Wheels)
             {
                 wheel.Reset();
             }
@@ -327,16 +326,33 @@ namespace Kuantech.Physics.Car
 
         public void TurnEngineOn()
         {
-            TurnEngineOnEffect.Play();
-            GasSound.Play();
+            if(TurnEngineOnEffect != null) TurnEngineOnEffect.Play();
+            if(EngineLoopEffect != null) EngineLoopEffect.Play();
             _engineOn = true;
         }
 
         public void TurnEngineOff()
         {
-            GasSound.Stop();
-            TurnEngineOffEffect.Play();
+            if(EngineLoopEffect != null) EngineLoopEffect.Stop();
+            if(TurnEngineOnEffect != null) TurnEngineOffEffect.Play();
             _engineOn = false;
+        }
+        #endregion
+
+        [Header("Boost")] 
+        private float _boostAcceleration = 1.5f;
+        private float _boostMaxSpeedMultiplier = 1.5f;
+
+        private bool _boosted = false;
+        private float _remainingBoostTime = 0;
+        #region Boost
+
+        public void Boost(float duration, float boostAcceleration, float boostMaxSpeedMultiplier)
+        {
+            _remainingBoostTime = Mathf.Max(duration, _remainingBoostTime);
+            _boostAcceleration = boostAcceleration;
+            _boostMaxSpeedMultiplier = boostMaxSpeedMultiplier;
+            _boosted = true;
         }
         #endregion
     }

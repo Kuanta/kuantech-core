@@ -1,5 +1,4 @@
 ﻿using Kuantech.Core.FX;
-using Kuantech.EndlessRunner;
 using UnityEngine;
 
 namespace Kuantech.Core.HyperCasual
