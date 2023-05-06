@@ -6,6 +6,7 @@ namespace Kuantech.Core.HyperCasual
     {
         Coin = 0,
         Gem = 1,
+        Star = 2,
     }
     public struct Currency
     {

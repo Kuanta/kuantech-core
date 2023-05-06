@@ -6,7 +6,7 @@ namespace Kuantech.Core.HyperCasual
     {
         public Vector3 InitialPosition;
         public Quaternion InitialRotaiton;
-        
+        public virtual void OnLevelCreated(){}
         public abstract void OnPrepareLevel();
         public abstract void OnLeaveLevel();
         public abstract void OnPlayLevel();

@@ -6,7 +6,9 @@ namespace Kuantech.Core.HyperCasual
 {
     public class MovingElement : LevelElement
     {
-        [Header("Rigidbody")]
+        [Header("Rigidbody")] 
+        [SerializeField] private Rigidbody Rigidbody;
+        [SerializeField] private bool UseRigidbody;
         
         [Header("Translation")] 
         public int InitialWaypointIndex = 0;
@@ -41,7 +43,19 @@ namespace Kuantech.Core.HyperCasual
                 if (Time.time - _delayStartTime > WaitDelay) _delaying = false;
                 else return;
             }
-            
+            if(!UseRigidbody) HandleUpdate();
+        
+        }
+
+        private void FixedUpdate()
+        {
+            HandleUpdate();
+        }
+
+        private void HandleUpdate()
+        {
+            if (_delaying) return;
+            float deltaTime = UseRigidbody ? Time.fixedDeltaTime : Time.deltaTime;
             if (IsMoving)
             {
                 Vector3 diff = Waypoints[_currentWaypointIndex].position - MovingPart.transform.position;
@@ -55,7 +69,7 @@ namespace Kuantech.Core.HyperCasual
                 }
                 else
                 {
-                    Translate(diff);
+                    Translate(diff, deltaTime);
                 }
 
             }
@@ -63,7 +77,8 @@ namespace Kuantech.Core.HyperCasual
             if (!IsRotation) return;
             if (Angles.Count <= 1)
             {
-                transform.Rotate(RotationAxis, AngularSpeed * Time.deltaTime);
+                Quaternion rot = transform.localRotation * Quaternion.AngleAxis(AngularSpeed * deltaTime, RotationAxis);
+                Rotate(rot);
                 return;
             }
             float angleDiff = Angles[_currentTargetAngleIndex] - _currentAngle;
@@ -78,16 +93,26 @@ namespace Kuantech.Core.HyperCasual
             }
             else
             {
-                float angleChange = Time.deltaTime * Math.Sign(angleDiff) * AngularSpeed;
+                float angleChange = deltaTime * Math.Sign(angleDiff) * AngularSpeed;
                 _currentAngle += angleChange;
                 RotatingPart.localRotation = Quaternion.AngleAxis(_currentAngle, RotationAxis);
                 _previousAngleChange = angleChange;
             }
         }
-
-        protected virtual void Translate(Vector3 diff)
+        private void Rotate(Quaternion rotation)
         {
-            Vector3 displacement = diff.normalized * (Time.deltaTime * MovementSpeed);
+            if (UseRigidbody)
+            {
+                Rigidbody.MoveRotation(rotation);
+            }
+            else
+            {
+                RotatingPart.localRotation = rotation;
+            }
+        }
+        protected virtual void Translate(Vector3 diff, float deltaTime)
+        {
+            Vector3 displacement = diff.normalized * (deltaTime * MovementSpeed);
             MovingPart.transform.localPosition += displacement;
             _previousDisplacement = displacement;
         }
@@ -102,7 +127,7 @@ namespace Kuantech.Core.HyperCasual
 
         public override void OnPlayLevel()
         {
-            if (IsRotation)
+            if (IsRotation && Angles.Count > 0)
             {
                 InitialAngle = Angles[InitialAngleIndex];
                 _currentAngle = Angles[InitialAngleIndex];

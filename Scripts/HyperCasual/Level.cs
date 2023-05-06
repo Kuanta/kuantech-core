@@ -19,7 +19,7 @@ namespace Kuantech.Core.HyperCasual
         public List<LevelChunk> LevelChunks;
         
         //Earnings
-        private Dictionary<int, Currency> _earnedCurrencies = new Dictionary<int, Currency>();
+        protected Dictionary<int, Currency> EarnedCurrencies = new Dictionary<int, Currency>();
 
         public virtual void StartLevel()
         {
@@ -66,7 +66,7 @@ namespace Kuantech.Core.HyperCasual
         public int GetCurrentCurrencyAmount(int currencyId)
         {
             return ((HCGameManager) HCGameManager.Instance).GetCurrency(currencyId).Amount +
-                   _earnedCurrencies[currencyId].Amount;
+                   EarnedCurrencies[currencyId].Amount;
         }
         
         /// <summary>
@@ -78,17 +78,17 @@ namespace Kuantech.Core.HyperCasual
         /// <param name="amount"></param>
         public virtual void AddCurrency(int currencyId, int amount)
         {
-            _earnedCurrencies ??= new Dictionary<int, Currency>();
-            if (!_earnedCurrencies.ContainsKey(currencyId))
+            EarnedCurrencies ??= new Dictionary<int, Currency>();
+            if (!EarnedCurrencies.ContainsKey(currencyId))
             {
-                _earnedCurrencies[currencyId] = new Currency
+                EarnedCurrencies[currencyId] = new Currency
                 {
                     CurrencyId = currencyId,
                     Amount = amount
                 };
                 return;
             }
-            _earnedCurrencies[currencyId] = _earnedCurrencies[currencyId].AddAmount(amount);
+            EarnedCurrencies[currencyId] = EarnedCurrencies[currencyId].AddAmount(amount);
             
             //Uncomment if want to update during level
             //UIManager.Instance.SetCurrencyAmount(currencyId, GetCurrentCurrencyAmount(currencyId)); 
@@ -96,7 +96,7 @@ namespace Kuantech.Core.HyperCasual
 
         public virtual Currency GetEarnedCurrency(int currencyId)
         {
-            if (_earnedCurrencies.ContainsKey(currencyId)) return _earnedCurrencies[currencyId];
+            if (EarnedCurrencies.ContainsKey(currencyId)) return EarnedCurrencies[currencyId];
             return new Currency
             {
                 CurrencyId = currencyId,
@@ -106,16 +106,16 @@ namespace Kuantech.Core.HyperCasual
         protected virtual void SaveEarnings()
         {
             //Save currencies
-            foreach (var pair in _earnedCurrencies)
+            foreach (var pair in EarnedCurrencies)
             {
                 ((HCGameManager)HCGameManager.Instance).AddCurrency(pair.Value.CurrencyId, pair.Value.Amount);
             }
-            _earnedCurrencies.Clear();
+            EarnedCurrencies.Clear();
         }
         
         protected virtual void ReleaseEarnings()
         {
-            _earnedCurrencies.Clear();
+            EarnedCurrencies.Clear();
         }
 
         #endregion

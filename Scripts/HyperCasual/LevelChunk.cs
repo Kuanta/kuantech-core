@@ -13,6 +13,7 @@ namespace Kuantech.Core.HyperCasual
             {
                 element.InitialPosition = element.transform.position;
                 element.InitialRotaiton = element.transform.rotation;
+                element.OnLevelCreated();
             }
         }
         

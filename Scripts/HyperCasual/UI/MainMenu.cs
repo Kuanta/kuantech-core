@@ -1,5 +1,4 @@
-﻿using Kuantech.DragAndRace;
-using Kuantech.UI;
+﻿using Kuantech.UI;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -11,9 +10,14 @@ namespace Kuantech.Core.HyperCasual
 
         protected virtual void Start()
         {
+            if (StartLevelButton == null) return;
             StartLevelButton.onClick.AddListener(OnStartLevelButtonPressed);
         }
-        
+
+        public virtual void Initialize()
+        {
+            
+        }
         private void OnStartLevelButtonPressed()
         {
             ((HCGameManager)GameManager.Instance).PlayLevel();

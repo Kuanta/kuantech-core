@@ -1,10 +1,43 @@
+using System;
 using Kuantech.Core.FX;
-using Kuantech.DragAndRace;
 using UnityEngine;
 using UnityEngine.Serialization;
 
 namespace Kuantech.Physics.Car
 {
+    [Serializable]
+    public struct CarData
+    {
+        public int CarId;
+        public string CarName;
+        public GameObject CarPrefab;
+        public int Price;
+        
+        //Preview
+        public int AccelerationRank;
+        public int TopSpeedRank;
+        public int HandlingRank;
+
+        //CenterOfGravity
+        public Vector3 CenterOfMass;
+        
+        //Suspension
+        public float Suspension;
+        public float DampingFactor;
+        public float WheelsRestDistance;
+        public float MaxWheelDistance;
+        
+        //Handling
+        public float TurnSpeed;
+        public float Handling;
+        
+        //Acceleration
+        public AnimationCurve AccelerationCurve;
+        public float MaxSpeed;
+        public float MaxAcceleration;
+        public float BrakeForce;
+    }
+    
     public class CarBody : MonoBehaviour
     {
         public CarData CarData;

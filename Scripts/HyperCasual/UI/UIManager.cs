@@ -12,6 +12,7 @@ namespace Kuantech.Core.HyperCasual
         public void Initialize()
         {
             ((HCGameManager)GameManager.Instance).StateChangeEvent += OnStateChange;
+            MainMenu.Initialize();
         }
 
         public void SetCurrencyAmount(int currencyType, int amount)
@@ -19,7 +20,12 @@ namespace Kuantech.Core.HyperCasual
             if (HeaderPanel == null) return;
             HeaderPanel.SetCurrencyAmount((Currencies)currencyType, amount);
         }
-        
+
+        public void SetCurrentLevel(int levelIndex)
+        {
+            if (HeaderPanel == null) return;
+            HeaderPanel.SetCurrentLevel(levelIndex);
+        }
         private void OnStateChange(object sender, StateChangeData change)
         {
             IngameMenu.OnStateChange(change.NewState);

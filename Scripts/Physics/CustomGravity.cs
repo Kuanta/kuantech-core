@@ -12,7 +12,7 @@ namespace Kuantech.Physics
         // Global Gravity doesn't appear in the inspector. Modify it here in the code
         // (or via scripting) to define a different default gravity for all objects.
  
-        public static float globalGravity = -9.81f;
+        public static float GlobalGravity = -9.81f;
  
         Rigidbody m_rb;
  
@@ -24,7 +24,7 @@ namespace Kuantech.Physics
  
         void FixedUpdate ()
         {
-            Vector3 gravity = globalGravity * gravityScale * Vector3.up;
+            Vector3 gravity = GlobalGravity * gravityScale * Vector3.up;
             m_rb.AddForce(gravity, ForceMode.Acceleration);
         }
     }

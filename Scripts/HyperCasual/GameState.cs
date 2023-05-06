@@ -17,6 +17,7 @@ namespace Kuantech.Core.HyperCasual
         public virtual void SetDefaultValues()
         {
             LevelIndex = 0;
+            Currencies = new Dictionary<int, Currency>();
         }
     }
     
@@ -38,13 +39,20 @@ namespace Kuantech.Core.HyperCasual
             string jsonPath = GetSaveFilePath();
             if (!File.Exists(jsonPath))
             {
-                GameStateModel.SetDefaultValues();
+                CreateStateModel();
                 return;
             }
             string jsonString = File.ReadAllText(jsonPath);
             GameStateModel = JsonConvert.DeserializeObject<GameStateModel>(jsonString);
+            GameStateModel.Currencies ??= new Dictionary<int, Currency>();
         }
 
+        protected virtual void CreateStateModel()
+        {
+            GameStateModel = new GameStateModel();
+            GameStateModel.SetDefaultValues();
+        }
+        
         public virtual void SaveData()
         {
             if (!Dirtied) return;

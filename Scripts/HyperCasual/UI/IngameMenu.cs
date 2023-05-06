@@ -10,8 +10,8 @@ namespace Kuantech.Core.HyperCasual
         public override void Show()
         {
             base.Show();
-            LevelCompletePanel.Close();
-            LevelFailedPanel.Close();
+            if(LevelCompletePanel != null) LevelCompletePanel.Close();
+            if(LevelFailedPanel != null) LevelFailedPanel.Close();
         }
         
         public override void Close()

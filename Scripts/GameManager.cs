@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace Kuantech.Core
 {
@@ -25,15 +26,18 @@ namespace Kuantech.Core
 
         #region pool
 
-        public void PoolObjectAfterTime(GameObject objToPool, float delay)
+        public IEnumerator PoolObjectAfterTime(GameObject objToPool, float delay, UnityAction handler = null)
         {
-            StartCoroutine(PoolRoutine(objToPool, delay));
+            IEnumerator coroutine = PoolRoutine(objToPool, delay, handler);
+            StartCoroutine(coroutine);
+            return coroutine;
         }
 
-        private IEnumerator PoolRoutine(GameObject objToPool, float delay)
+        private IEnumerator PoolRoutine(GameObject objToPool, float delay, UnityAction handler)
         {
             yield return new WaitForSeconds(delay);
             Pool.PoolObject(objToPool);
+            handler?.Invoke();
         }
 
         #endregion

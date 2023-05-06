@@ -56,17 +56,15 @@ namespace Kuantech.Core.HyperCasual
 
         protected virtual void Initialize()
         {
-            if (GameState == null)
-            {
-                GameState = new GameState(CurrencyIds);
-            }
+            GameState ??= new GameState(CurrencyIds);
             GameState.LoadData();
+            UIManager.Instance.Initialize(); //Initialize after data loading
             foreach (var currencyId in CurrencyIds)
             {
                 UIManager.Instance.SetCurrencyAmount(currencyId, GameState.GetCurrencyAmount(currencyId));
             }
             CurrentLevelIndex = GameState.GetLevelIndex();
-            UIManager.Instance.HeaderPanel.SetCurrentLevel(CurrentLevelIndex);
+            UIManager.Instance.SetCurrentLevel(CurrentLevelIndex);
             _lastCheckTime = Time.time;
             
             OnGameStart();
@@ -103,6 +101,7 @@ namespace Kuantech.Core.HyperCasual
             Destroy(CurrentLevel.gameObject);
             CurrentLevelIndex++;
             SetLevel(CurrentLevelIndex);
+            CurrentLevelIndex = CurrentLevel.LevelIndex;
             GameState.SetLevelIndex(CurrentLevelIndex);
             ChangeCurrentState(LevelState.Waiting);
         }
@@ -127,9 +126,10 @@ namespace Kuantech.Core.HyperCasual
 
             CurrentLevelIndex = levelIndex;
             CurrentLevel = LevelManager.GetLevel(levelIndex);
+            levelIndex = CurrentLevel.LevelIndex;
             CurrentLevel.PrepareLevel();
             GameState.SetLevelIndex(levelIndex);
-            UIManager.Instance.HeaderPanel.SetCurrentLevel(levelIndex);
+            UIManager.Instance.SetCurrentLevel(levelIndex);
         }
 
         public virtual void ChangeCurrentState(LevelState newState)

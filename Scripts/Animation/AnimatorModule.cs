@@ -1,6 +1,5 @@
 ﻿using System;
 using UnityEngine;
-using UnityEngine.Animations.Rigging;
 using UnityEngine.Events;
 
 namespace Kuantech.Core
@@ -18,8 +17,7 @@ namespace Kuantech.Core
 
         public float LerpFactor = 10f;
 
-        [Header("Rigging")] 
-        [SerializeField] private Rig AnimationRigLayer;
+    
         
         //Events
         public UnityEvent OnDamageFrameEvent;
@@ -42,9 +40,6 @@ namespace Kuantech.Core
             base.Initialize();
             ApplyDefaultAnimationSet();
             Actor.OnDamageReceived += OnDamageReceive;
-            
-            //Rig layers
-            SetAimRigWeight(0f);
         }
         
         public override void OnModulesInitialized(object sender, EventArgs args)
@@ -174,16 +169,6 @@ namespace Kuantech.Core
         {
             Animator.SetBool(Aiming, toggle);
         }
-        #endregion
-        
-        #region Rig
-
-        public void SetAimRigWeight(float weight)
-        {
-            if (AnimationRigLayer == null) return;
-            AnimationRigLayer.weight = weight;
-        }
-        
         #endregion
         
         public void OnDamageReceive(object sender, float damage)
