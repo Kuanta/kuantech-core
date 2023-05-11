@@ -8,7 +8,6 @@ namespace Kuantech.Core.HyperCasual
 {
     public class SettingsMenu : UIMenu
     {
-        [SerializeField] private Button CloseButton;
         [SerializeField] private Slider MusicVolume;
         [SerializeField] private Slider SfxVolume;
         

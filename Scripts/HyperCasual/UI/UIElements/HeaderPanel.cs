@@ -27,10 +27,13 @@ namespace Kuantech.Core.HyperCasual
 
         private void Start()
         {
-            SettingsButton.onClick.AddListener((() =>
+            if (SettingsButton != null)
             {
-                SettingsMenu.Show();
-            }));
+                SettingsButton.onClick.AddListener((() =>
+                {
+                    SettingsMenu.Show();
+                }));
+            }
         }
         public void SetCurrencyAmount(Currencies currencyId, int amount)
         {
@@ -42,7 +45,7 @@ namespace Kuantech.Core.HyperCasual
 
         public void SetCurrentLevel(int levelIndex)
         {
-            CurrentLevelText.text = $"Stage {levelIndex.ToString()}";
+            CurrentLevelText.text = $"Stage {(levelIndex+1).ToString()}";
         }
     }
 }

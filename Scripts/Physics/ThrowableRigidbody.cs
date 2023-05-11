@@ -4,15 +4,18 @@ namespace Kuantech.Physics
 {
     public class ThrowableRigidbody : MonoBehaviour
     {
+        public float Mass;
         public Vector3 Velocity;
         public Vector3 Acceleration;
-
+        public float VelocityDrag;
+        
         public bool IsAwake;
         public float TimeScale = 1f;
         private float _lastAwakenTime = 0f;
         private float _secondsToSleep = -1f;
+
         
-        private void FixedUpdate()
+        private void Update()
         {
             if (!IsAwake) return;
             if (_secondsToSleep >= 0)
@@ -23,16 +26,21 @@ namespace Kuantech.Physics
                     return;
                 }
             }
-            ApplyKinematicEquations(Time.fixedDeltaTime * TimeScale);
-            
+            ApplyKinematicEquations(Time.deltaTime * TimeScale);
         }
-
+        
+        public void AddImpulse(Vector3 impulse)
+        {
+            Velocity = impulse;
+        }
+        
         private void ApplyKinematicEquations(float deltaTime)
         {
             Vector3 newVelocity = Velocity + Acceleration * deltaTime;
             Vector3 displacement = Velocity * deltaTime + Acceleration * deltaTime * deltaTime * 0.5f;
-            transform.position += displacement;
             Velocity = newVelocity;
+            Velocity *= VelocityDrag;
+            transform.position += displacement;
         }
         
         /// <summary>
@@ -112,10 +120,22 @@ namespace Kuantech.Physics
             Debug.LogError("No suitable root found for time to displace calculation");
             return 0f;
         }
-        private void WakeUp()
+
+        public void Sleep()
+        {
+            IsAwake = false;
+        }
+        
+        public void WakeUp()
         {
             _lastAwakenTime = Time.time;
             IsAwake = true;
+        }
+        
+        public void Stop()
+        {
+            Velocity = Vector3.zero;
+            Acceleration = Vector3.zero;
         }
     }
 }
