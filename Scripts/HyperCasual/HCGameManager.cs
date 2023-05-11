@@ -115,8 +115,9 @@ namespace Kuantech.Core.HyperCasual
             
         }
         [Button("SetLevel")]
-        protected virtual void SetLevel(int levelIndex)
+        public virtual void SetLevel(int levelIndex)
         {
+            if (levelIndex == CurrentLevel.LevelIndex) return;
             if (CurrentLevel != null && CurrentLevel.LevelIndex != levelIndex)
             {
                 CurrentLevel.ClearLevel();

@@ -46,7 +46,7 @@ namespace Kuantech.Core.HyperCasual
             GameStateModel = JsonConvert.DeserializeObject<GameStateModel>(jsonString);
             GameStateModel.Currencies ??= new Dictionary<int, Currency>();
         }
-
+        
         protected virtual void CreateStateModel()
         {
             GameStateModel = new GameStateModel();

@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Linq;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Kuantech.Core.HyperCasual
@@ -9,13 +9,13 @@ namespace Kuantech.Core.HyperCasual
     public class LevelManager : Singleton<LevelManager>
     {
         [Header("Levels List")] 
-        public LevelDictionary LevelDictionary = new LevelDictionary();
+        public List<Level> LevelDictionary = new List<Level>();
 
         public virtual Level GetLevel(int levelIndex)
         {
-            if (!LevelDictionary.ContainsKey(levelIndex))
+            if (LevelDictionary.Count <= levelIndex)
             {
-                levelIndex = (LevelDictionary.Keys.ToList())[LevelDictionary.Keys.Count -1];
+                levelIndex = LevelDictionary.Count - 1;
             }
             Level level = Instantiate(LevelDictionary[levelIndex].gameObject).GetComponent<Level>();
             level.transform.position = Vector3.zero;
