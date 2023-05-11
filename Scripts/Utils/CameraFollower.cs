@@ -111,7 +111,12 @@ namespace Kuantech.Core
         
         public virtual void SetTargetParameters(CameraParameters cameraParameters)
         {
-            CameraParameters = cameraParameters;
+            CameraParameters = new CameraParameters
+            {
+                LookatOffset = cameraParameters.LookatOffset,
+                PositionOffset = cameraParameters.LookatOffset,
+                Spherical = cameraParameters.Spherical,
+            };
         }
         
         /// <summary>
