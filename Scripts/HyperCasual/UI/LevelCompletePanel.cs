@@ -10,7 +10,7 @@ namespace Kuantech.Core.HyperCasual
     {
         [SerializeField] private TMP_Text EarnedCoinsText;
         [SerializeField] private Button CompleteLevelButton;
-        [SerializeField] private Effect ShowEffect;
+        [SerializeField] protected Effect ShowEffect;
 
         public override void Show()
         {

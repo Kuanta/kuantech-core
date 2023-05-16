@@ -173,6 +173,17 @@ namespace Kuantech.Utils
                 ChangeLayerRecursively(child, newLayer);
             }
         }
+
+        #region Time
+
+        public static void GetMinSecMil(float elapsedTime, out int minutes, out int seconds, out int milliseconds)
+        {
+            minutes = Mathf.FloorToInt(elapsedTime / 60f);
+            seconds = Mathf.FloorToInt(elapsedTime % 60f);
+            milliseconds = Mathf.FloorToInt((elapsedTime * 100f) % 100f);
+        }
+
+        #endregion
         #region Geometry
 
         public static Vector3 GetRelativeRightVector(this Transform parent, Transform target)
