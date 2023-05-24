@@ -91,7 +91,6 @@ namespace Kuantech.Core.HyperCasual
         {
             CurrentLevel.ClearLevel();
             CurrentLevel.PrepareLevel();
-            CurrentLevel.StartLevel();
             ChangeCurrentState(LevelState.Waiting);
         }
 
@@ -112,8 +111,10 @@ namespace Kuantech.Core.HyperCasual
         }
         public virtual void LeaveLevel()
         {
-            
+            CurrentLevel.ClearLevel();
+            ChangeCurrentState(LevelState.Waiting);
         }
+        
         [Button("SetLevel")]
         public virtual void SetLevel(int levelIndex)
         {

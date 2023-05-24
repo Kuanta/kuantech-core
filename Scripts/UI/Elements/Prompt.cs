@@ -28,6 +28,18 @@ namespace Kuantech.Core.UI
             }));
         }
 
+        public override void Show()
+        {
+            base.Show();
+            GameManager.Instance.PauseGame();
+        }
+
+        public override void Close()
+        {
+            base.Close();
+            GameManager.Instance.ResumeGame();
+        }
+        
         public void SetConfirmListener(UnityAction handler)
         {
             ConfirmHandler = handler;

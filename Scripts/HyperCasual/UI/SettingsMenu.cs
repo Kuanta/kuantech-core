@@ -1,4 +1,5 @@
-﻿using Kuantech.Core;
+﻿using System;
+using Kuantech.Core;
 using Kuantech.Core.FX;
 using Kuantech.UI;
 using UnityEngine;
@@ -10,18 +11,27 @@ namespace Kuantech.Core.HyperCasual
     {
         [SerializeField] private Slider MusicVolume;
         [SerializeField] private Slider SfxVolume;
+        [SerializeField] private ToggleButton ToggleMusicButton;
+        [SerializeField] private ToggleButton ToggleSfxButton;
         
         private void Awake()
         {
             CloseButton.onClick.AddListener(Close);
             float musicVolume = PlayerPrefs.GetFloat("MusicVolume", defaultValue:1f);
             float sfxVolume = PlayerPrefs.GetFloat("SfxVolume", defaultValue: 1f);
-            
+            int toggleMusic = PlayerPrefs.GetInt("ToggleMusic", defaultValue:1);
+            int toggleSfx = PlayerPrefs.GetInt("ToggleSfx", defaultValue: 1);
             SfxVolume.onValueChanged.AddListener(OnSfxVolumeChange);
             MusicVolume.onValueChanged.AddListener(OnMusicVolumeChange);
             
-            SfxVolume.value = sfxVolume;
-            MusicVolume.value = musicVolume;
+            ToggleSfxButton.SetState(Convert.ToBoolean(toggleSfx));
+            ToggleMusicButton.SetState(Convert.ToBoolean(toggleMusic));
+            SfxVolume.value = ToggleSfxButton.State ? sfxVolume : 0.0001f;
+            MusicVolume.value = ToggleMusicButton.State ? musicVolume : 0.0001f;
+      
+
+            ToggleMusicButton.OnToggle += OnMusicToggle;
+            ToggleSfxButton.OnToggle += OnSfxToggle;
         }
 
         public override void Show()
@@ -39,13 +49,27 @@ namespace Kuantech.Core.HyperCasual
         private void OnMusicVolumeChange(float value)
         {
             PlayerPrefs.SetFloat("MusicVolume",value);
+            value = ToggleMusicButton.State ? value : 0.0001f;
             EffectsLibrary.Instance.AudioLibrary.SetMusicVolume(value);
         }
 
         private void OnSfxVolumeChange(float value)
         {
             PlayerPrefs.SetFloat("SfxVolume", value);
+            value = ToggleSfxButton.State ? value : 0.0001f;
             EffectsLibrary.Instance.AudioLibrary.SetSfxVolume(value);
+        }
+
+        private void OnMusicToggle(bool toggle)
+        {
+            PlayerPrefs.SetInt("ToggleMusic", toggle ? 1 : 0 );
+            EffectsLibrary.Instance.AudioLibrary.SetMusicVolume(toggle ? MusicVolume.value : 0.0001f);
+        }
+
+        private void OnSfxToggle(bool toggle)
+        {
+            PlayerPrefs.SetInt("ToggleSfx", toggle ? 1 : 0 );
+            EffectsLibrary.Instance.AudioLibrary.SetSfxVolume(toggle ? SfxVolume.value : 0.0001f);
         }
     }
 }

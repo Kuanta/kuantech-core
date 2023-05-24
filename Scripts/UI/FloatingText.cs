@@ -1,7 +1,4 @@
-﻿using DG.Tweening;
-using DG.Tweening.Core;
-using DG.Tweening.Plugins.Options;
-using Kuantech.Core;
+﻿using Kuantech.Core;
 using TMPro;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -10,10 +7,8 @@ namespace Kuantech.UI
 {
     public class FloatingText : MonoBehaviour
     {
-        public RectTransform RectTransform;
         [SerializeField] private TMP_Text Text;
         [SerializeField] private float LifeTime = 1.5f;
-        [SerializeField] private Vector3 StartLocalPosition = new Vector3(0, 0f, 0f);
         [SerializeField] private Vector3 InitialVelocity = new Vector3(0.1f, 1f, 0f);
 
         private float _timer = 0f;
@@ -21,22 +16,16 @@ namespace Kuantech.UI
         [SerializeField] private Vector3 Acceleration = new Vector3(0, -9.8f, 0);
         [SerializeField] private float AnimaitonSpeedScale = 1f;
 
-        private Vector3 _initialLocalPosition;
         private bool _active = false;
 
-        private TweenerCore<Vector3, Vector3, VectorOptions> _scaleTween;
         
-        public void Initialize(string text, float speed = 0.5f)
+        public void Initialize(string text, Vector3 initialVelocity)
         {
             _active = true;
             _timer = 0f;
             Text.text = text;
-            _initialLocalPosition = RectTransform.position + new Vector3(Random.Range(-50f, 50f), 0f, 0f);
-            RectTransform.position = _initialLocalPosition;
-            InitialVelocity.x = Random.Range(-speed, speed);
+            InitialVelocity = initialVelocity;
             _velocity = InitialVelocity;
-            RectTransform.localScale = Vector3.one * 0.7f;
-            _scaleTween = transform.DOScale(Vector3.one, 0.5f);
         }
 
         public void SetText(string text)
@@ -70,15 +59,6 @@ namespace Kuantech.UI
             transform.localPosition += displacement;
             _velocity = newVelocity;
             _timer += Time.deltaTime;
-        }
-
-        public void Reset()
-        {
-            if(_scaleTween != null) _scaleTween.Kill();
-            RectTransform.localScale = Vector3.one;
-            _timer = 0f;
-            transform.position = _initialLocalPosition;
-            _velocity = InitialVelocity;
         }
 
         public void Stop()

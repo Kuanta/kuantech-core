@@ -40,7 +40,6 @@ namespace Kuantech.Core.FX
         public AudioSource MainMenuMusic;
         public AudioSource IngameMusic;
 
-
         public void Initialize()
         {
             // foreach (var sound in Audios.Values)
@@ -54,8 +53,10 @@ namespace Kuantech.Core.FX
             //Load music values
             float musicVolume = PlayerPrefs.GetFloat("MusicVolume", defaultValue:1f);
             float sfxVolume = PlayerPrefs.GetFloat("SfxVolume", defaultValue: 1f);
-            SetMusicVolume(musicVolume);
-            SetSfxVolume(sfxVolume);
+            int toggleMusic = PlayerPrefs.GetInt("ToggleMusic", defaultValue:1);
+            int toggleSfx = PlayerPrefs.GetInt("ToggleSfx", defaultValue: 1);
+            SetMusicVolume(toggleMusic == 1 ? musicVolume : 0.0001f);
+            SetSfxVolume(toggleSfx == 1 ? sfxVolume : 0.0001f);
         }
         
         public void PlaySound(AudioTypes audioType)
@@ -71,11 +72,13 @@ namespace Kuantech.Core.FX
         /// <param name="value">Normalized volume value</param>
         public void SetMusicVolume(float value)
         {
+            value = Mathf.Max(0.0001f, value);
             MasterMixer.SetFloat("musicVolume", Mathf.Log10(value * 0.5f) * 20);
         }
 
         public void SetSfxVolume(float value)
         {
+            value = Mathf.Max(0.0001f, value);
             MasterMixer.SetFloat("sfxVolume", Mathf.Log10(value * 0.5f) * 20);
         }
     }
