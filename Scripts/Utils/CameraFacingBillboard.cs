@@ -6,7 +6,7 @@ namespace Kuantech.UI
     public class CameraFacingBillboard : MonoBehaviour
     {
         [FormerlySerializedAs("camera")] public Camera MainCamera;
-
+        [SerializeField] private int Direction = 1;
         public void SetCamera(Camera camera)
         {
             MainCamera = camera;
@@ -19,7 +19,7 @@ namespace Kuantech.UI
 
         private void Update()
         {
-            transform.forward = MainCamera.transform.forward;
+            transform.forward = MainCamera.transform.forward * Direction;
         }
     }
 }

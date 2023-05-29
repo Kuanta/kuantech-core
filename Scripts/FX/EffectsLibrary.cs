@@ -9,7 +9,7 @@ namespace Kuantech.Core.FX
     }
     
     [Serializable]
-    public class EffectsDictionary : SerializableDictionary<EffectTypes, Effect>{}
+    public class EffectsDictionary : SerializableDictionary<int, Effect>{}
     
     public class EffectsLibrary : Singleton<EffectsLibrary>
     {
@@ -34,8 +34,8 @@ namespace Kuantech.Core.FX
         
         public Effect GetEffect(EffectTypes effectType)
         {
-            if (EffectsDictionary == null || !EffectsDictionary.ContainsKey(effectType)) return null;
-            GameObject obj = EffectsPool.GetObject(EffectsDictionary[effectType].gameObject);
+            if (EffectsDictionary == null || !EffectsDictionary.ContainsKey((int)effectType)) return null;
+            GameObject obj = EffectsPool.GetObject(EffectsDictionary[(int)effectType].gameObject);
             return obj.GetComponent<Effect>();
         }
 
@@ -90,6 +90,11 @@ namespace Kuantech.Core.FX
             if (effect == null) return null;
             effect.PlayTimed(duration >= 0 ? duration : effect.Duration, position, rotation);
             return effect;
+        }
+
+        public EffectTypes GetEffectType(int i)
+        {
+            return (EffectTypes) i;
         }
     }
 }

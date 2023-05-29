@@ -5,7 +5,7 @@ namespace Kuantech.Core.FX
 {
     public class Effect : MonoBehaviour
     {
-        public EffectTypes EffectType;
+        public int EffectTypeId;
         public AudioSource Sfx;
         public ParticleSystem Vfx;
         public float Duration;

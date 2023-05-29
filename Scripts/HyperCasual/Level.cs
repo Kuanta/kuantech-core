@@ -41,7 +41,7 @@ namespace Kuantech.Core.HyperCasual
         {
             foreach (LevelChunk chunk in LevelChunks)
             {
-                chunk.OnPrepare();
+                chunk.OnPrepare(this);
             }
             ReleaseEarnings();
         }
