@@ -8,9 +8,9 @@ namespace Kuantech.Core.HyperCasual
     {
         [SerializeField] private Button RestartLevelButton;
 
-        private void Start()
+        public void Initialize()
         {
-            RestartLevelButton.onClick.AddListener(OnRestartLevelButton);
+            if(RestartLevelButton != null) RestartLevelButton.onClick.AddListener(OnRestartLevelButton);
         }
 
         private void OnRestartLevelButton()

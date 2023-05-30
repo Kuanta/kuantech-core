@@ -6,6 +6,12 @@ namespace Kuantech.Core.HyperCasual
     {
         public LevelCompletePanel LevelCompletePanel;
         public LevelFailedPanel LevelFailedPanel;
+
+        public void Initialize()
+        {
+            LevelCompletePanel.Initialize();
+            LevelFailedPanel.Initialize();
+        }
         
         public override void Show()
         {

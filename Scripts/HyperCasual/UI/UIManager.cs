@@ -18,6 +18,7 @@ namespace Kuantech.Core.HyperCasual
         {
             ((HCGameManager)GameManager.Instance).StateChangeEvent += OnStateChange;
             MainMenu.Initialize();
+            IngameMenu.Initialize();
         }
 
         public void SetCurrencyAmount(int currencyType, int amount)

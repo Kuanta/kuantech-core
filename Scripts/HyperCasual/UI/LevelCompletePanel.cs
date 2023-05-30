@@ -17,12 +17,12 @@ namespace Kuantech.Core.HyperCasual
             base.Show();
             if(ShowEffect != null) ShowEffect.Play();
         }
-        protected override void Start()
+
+        public void Initialize()
         {
-            base.Start();
             CompleteLevelButton.onClick.AddListener(OnCompleteLevelButton);
         }
-
+        
         public virtual void SetEarnings(int earnedCoins)
         {
             if(EarnedCoinsText != null) EarnedCoinsText.text = earnedCoins.ToString();
