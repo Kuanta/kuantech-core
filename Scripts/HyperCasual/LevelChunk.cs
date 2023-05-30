@@ -25,6 +25,7 @@ namespace Kuantech.Core.HyperCasual
             foreach (LevelElement levelElement in LevelElements)
             {
                 if(levelElement == null) continue; //todo: Boss chunk has a null level element
+                levelElement.ParentLevel = ParentLevel;
                 levelElement.OnPrepareLevel();
             }
 
