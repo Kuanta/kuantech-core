@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Kuantech.Ads;
+using Kuantech.Core.FX;
 using Kuantech.UI;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -59,6 +60,7 @@ namespace Kuantech.Core.HyperCasual
             GameState ??= new GameState(CurrencyIds);
             GameState.LoadData();
             UIManager.Instance.Initialize(); //Initialize after data loading
+            EffectsLibrary.Instance.Initialize();
             foreach (var currencyId in CurrencyIds)
             {
                 UIManager.Instance.SetCurrencyAmount(currencyId, GameState.GetCurrencyAmount(currencyId));

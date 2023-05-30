@@ -22,12 +22,7 @@ namespace Kuantech.Core.FX
             EffectsPool = new PrefabPool(transform, 1000);
         }
 
-        private void Start()
-        {
-            Initialize();
-        }
-
-        private void Initialize()
+        public void Initialize()
         {
             if(AudioLibrary != null) AudioLibrary.Initialize();
         }
