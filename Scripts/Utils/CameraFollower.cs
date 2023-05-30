@@ -96,7 +96,7 @@ namespace Kuantech.Core
             _yawSpeed = yawSpeed;
             _pitchSpeed = pitchSpeed;
 
-            CameraParameters.Spherical.Pitch = Mathf.Clamp(CameraParameters.Spherical.Pitch, Mathf.Deg2Rad * 5.0f, Mathf.Deg2Rad*179.9f);
+            CameraParameters.Spherical.Pitch = Mathf.Clamp(CameraParameters.Spherical.Pitch, -Mathf.Deg2Rad*179.9f, Mathf.Deg2Rad*179.9f);
             CameraParameters.Spherical.Radius = zoomedFollow;
 
             _yawSpeed *= 0.9f;

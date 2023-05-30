@@ -14,6 +14,11 @@ namespace Kuantech.Core
             Pool = new PrefabPool(transform, 1000);
         }
 
+        protected virtual void Start()
+        {
+            
+        }
+        
         public void PauseGame()
         {
             Time.timeScale = 0f;
