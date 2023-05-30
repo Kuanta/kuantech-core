@@ -34,14 +34,9 @@ namespace Kuantech.Core.HyperCasual
 
         # region UnityEvents
 
-        protected virtual void Awake()
+        protected override void Start()
         {
-            base.Awake();
             Initialize();
-        }
-        protected virtual void Update()
-        {
-            
         }
 
         protected virtual void LateUpdate()
