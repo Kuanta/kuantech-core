@@ -119,6 +119,21 @@ namespace Kuantech.Core.HyperCasual
         public override void OnPrepareLevel()
         {
             Reset();
+            if (IsRotation)
+            {
+                if (Angles.Count > 0)
+                {
+                    InitialAngle = Angles[InitialAngleIndex];
+                    _currentTargetAngleIndex = InitialAngleIndex;
+                }
+                _currentAngle = InitialAngle;
+                Debug.LogError("Initial Angle:"+InitialAngle);
+                RotatingPart.localRotation = Quaternion.AngleAxis(_currentAngle, RotationAxis);
+            }
+            else
+            {
+                _currentWaypointIndex = InitialWaypointIndex;
+            }
         }
 
         public override void OnLeaveLevel()
@@ -127,17 +142,6 @@ namespace Kuantech.Core.HyperCasual
 
         public override void OnPlayLevel()
         {
-            if (IsRotation && Angles.Count > 0)
-            {
-                InitialAngle = Angles[InitialAngleIndex];
-                _currentAngle = Angles[InitialAngleIndex];
-                _currentTargetAngleIndex = InitialAngleIndex;
-                RotatingPart.localRotation = Quaternion.AngleAxis(_currentAngle, RotationAxis);
-            }
-            else
-            {
-                _currentWaypointIndex = InitialWaypointIndex;
-            }
         }
 
         public override void OnPlayerEntered()

@@ -20,6 +20,7 @@ namespace Kuantech.Core.FX
         EquipItemSound,
         UnequipItemSound,
         UpgradeItemSound,
+        ErrorSound,
     }
     
     [Serializable]
