@@ -1,5 +1,6 @@
 ﻿using Kuantech.Core;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -26,6 +27,7 @@ namespace Kuantech.UI
             Text.text = text;
             InitialVelocity = initialVelocity;
             _velocity = InitialVelocity;
+            Text.alpha = 1f;
         }
 
         public void SetText(string text)
@@ -59,6 +61,7 @@ namespace Kuantech.UI
             transform.localPosition += displacement;
             _velocity = newVelocity;
             _timer += Time.deltaTime;
+            Text.alpha = Mathf.Clamp01(1 - _timer / LifeTime);
         }
 
         public void Stop()
