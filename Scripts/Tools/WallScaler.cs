@@ -37,56 +37,54 @@ public class WallScaler : MonoBehaviour
     {
         if (!IsSelected())
         {
-            ShowHandles(false);
+           ShowHandles(false);
             return;
         }
         ShowHandles(true);
-        if (!EditorApplication.isPlaying)
-        {
-            // Get the current handle local positions
-            Vector3 HandleStartPosition = HandleStart.position;
-            Vector3 HandleEndPosition = HandleEnd.position;
-            Vector3 handleStartLocalPosition = transform.InverseTransformPoint(HandleStartPosition);
-            Vector3 handleEndLocalPosition = transform.InverseTransformPoint(HandleEndPosition);
-            Vector3 handleHeightLocalPosition = transform.InverseTransformPoint(HandleHeight.position);
+        if (EditorApplication.isPlaying) return;
+        // Get the current handle local positions
+        Vector3 HandleStartPosition = HandleStart.position;
+        Vector3 HandleEndPosition = HandleEnd.position;
+        Vector3 handleStartLocalPosition = transform.InverseTransformPoint(HandleStartPosition);
+        Vector3 handleEndLocalPosition = transform.InverseTransformPoint(HandleEndPosition);
+        Vector3 handleHeightLocalPosition = transform.InverseTransformPoint(HandleHeight.position);
 
 
-            // Constrain the handle movement along the local X-axis
-            handleStartLocalPosition.y = _initialHandleStartLocalPosition.y;
-            handleStartLocalPosition.z = _initialHandleStartLocalPosition.z;
-            handleEndLocalPosition.y = _initialHandleEndLocalPosition.y;
-            handleEndLocalPosition.z = _initialHandleEndLocalPosition.z;
+        // Constrain the handle movement along the local X-axis
+        handleStartLocalPosition.y = _initialHandleStartLocalPosition.y;
+        handleStartLocalPosition.z = _initialHandleStartLocalPosition.z;
+        handleEndLocalPosition.y = _initialHandleEndLocalPosition.y;
+        handleEndLocalPosition.z = _initialHandleEndLocalPosition.z;
 
-            // Calculate the new scale based on the constrained handle local positions
-            Vector3 scale = new Vector3(
-                Vector3.Distance(handleStartLocalPosition, handleEndLocalPosition),
-                handleHeightLocalPosition.y,
-                _initialScale.z
-            );
+        // Calculate the new scale based on the constrained handle local positions
+        Vector3 scale = new Vector3(
+            Vector3.Distance(handleStartLocalPosition, handleEndLocalPosition),
+            handleHeightLocalPosition.y,
+            _initialScale.z
+        );
 
-            // Apply the new scale to the object to scale
-            ObjectToScale.localScale = scale;
+        // Apply the new scale to the object to scale
+        ObjectToScale.localScale = scale;
             
-            // Adjust the position of the box shape based on the new scale
-            Vector3 handlesCenter = HandleStartPosition*0.5f + HandleEndPosition*0.5f;
-            transform.position = new Vector3(handlesCenter.x, transform.position.y, handlesCenter.z);
+        // Adjust the position of the box shape based on the new scale
+        Vector3 handlesCenter = HandleStartPosition*0.5f + HandleEndPosition*0.5f;
+        transform.position = new Vector3(handlesCenter.x, transform.position.y, handlesCenter.z);
             
-            Vector3 objectToScaleLocalPosition =  ObjectToScale.localPosition;
-            objectToScaleLocalPosition.y = scale.y / 2;
-            ObjectToScale.localPosition = objectToScaleLocalPosition;
+        Vector3 objectToScaleLocalPosition =  ObjectToScale.localPosition;
+        objectToScaleLocalPosition.y = scale.y / 2;
+        ObjectToScale.localPosition = objectToScaleLocalPosition;
             
 
-            // Update the handle local positions
-            HandleStart.localPosition = new Vector3(scale.x*0.5f, _initialHandleStartLocalPosition.y, 0f);
-            HandleEnd.localPosition = new Vector3(-scale.x*0.5f, _initialHandleEndLocalPosition.y, 0f);
+        // Update the handle local positions
+        HandleStart.localPosition = new Vector3(scale.x*0.5f, _initialHandleStartLocalPosition.y, 0f);
+        HandleEnd.localPosition = new Vector3(-scale.x*0.5f, _initialHandleEndLocalPosition.y, 0f);
 
-            // Constrain the height handle movement along the local X and Z-axes
-            handleHeightLocalPosition.x = _initialHandleHeightLocalPosition.x;
-            handleHeightLocalPosition.z = _initialHandleHeightLocalPosition.z;
+        // Constrain the height handle movement along the local X and Z-axes
+        handleHeightLocalPosition.x = _initialHandleHeightLocalPosition.x;
+        handleHeightLocalPosition.z = _initialHandleHeightLocalPosition.z;
 
-            // Update the height handle position
-            HandleHeight.localPosition = new Vector3(objectToScaleLocalPosition.x, HandleHeight.localPosition.y, objectToScaleLocalPosition.z);
-        }
+        // Update the height handle position
+        HandleHeight.localPosition = new Vector3(objectToScaleLocalPosition.x, HandleHeight.localPosition.y, objectToScaleLocalPosition.z);
     }
 
     private bool IsSelected()
@@ -125,9 +123,12 @@ public class WallScaler : MonoBehaviour
 #if UNITY_EDITOR
     private void ApplyScale()
     {
-        // Get the current handle local positions
-        Vector3 handleStartLocalPosition = transform.InverseTransformPoint(HandleStart.position);
-        Vector3 handleEndLocalPosition = transform.InverseTransformPoint(HandleEnd.position);
+          Vector3 HandleStartPosition = HandleStart.position;
+        Vector3 HandleEndPosition = HandleEnd.position;
+        Vector3 handleStartLocalPosition = transform.InverseTransformPoint(HandleStartPosition);
+        Vector3 handleEndLocalPosition = transform.InverseTransformPoint(HandleEndPosition);
+        Vector3 handleHeightLocalPosition = transform.InverseTransformPoint(HandleHeight.position);
+
 
         // Constrain the handle movement along the local X-axis
         handleStartLocalPosition.y = _initialHandleStartLocalPosition.y;
@@ -138,19 +139,32 @@ public class WallScaler : MonoBehaviour
         // Calculate the new scale based on the constrained handle local positions
         Vector3 scale = new Vector3(
             Vector3.Distance(handleStartLocalPosition, handleEndLocalPosition),
-            _initialScale.y,
+            handleHeightLocalPosition.y,
             _initialScale.z
         );
 
         // Apply the new scale to the object to scale
         ObjectToScale.localScale = scale;
-
+            
         // Adjust the position of the box shape based on the new scale
-        ObjectToScale.position = (HandleStart.position + HandleEnd.position) / 2f;
+        Vector3 handlesCenter = HandleStartPosition*0.5f + HandleEndPosition*0.5f;
+        transform.position = new Vector3(handlesCenter.x, transform.position.y, handlesCenter.z);
+            
+        Vector3 objectToScaleLocalPosition =  ObjectToScale.localPosition;
+        objectToScaleLocalPosition.y = scale.y / 2;
+        ObjectToScale.localPosition = objectToScaleLocalPosition;
+            
 
         // Update the handle local positions
-        HandleStart.position = transform.TransformPoint(handleStartLocalPosition);
-        HandleEnd.position = transform.TransformPoint(handleEndLocalPosition);
+        HandleStart.localPosition = new Vector3(scale.x*0.5f, _initialHandleStartLocalPosition.y, 0f);
+        HandleEnd.localPosition = new Vector3(-scale.x*0.5f, _initialHandleEndLocalPosition.y, 0f);
+
+        // Constrain the height handle movement along the local X and Z-axes
+        handleHeightLocalPosition.x = _initialHandleHeightLocalPosition.x;
+        handleHeightLocalPosition.z = _initialHandleHeightLocalPosition.z;
+
+        // Update the height handle position
+        HandleHeight.localPosition = new Vector3(objectToScaleLocalPosition.x, HandleHeight.localPosition.y, objectToScaleLocalPosition.z);
     }
 #endif
     
