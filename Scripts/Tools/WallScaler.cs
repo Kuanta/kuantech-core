@@ -11,7 +11,9 @@ public class WallScaler : MonoBehaviour
     public Transform HandleStart;
     public Transform HandleEnd;
     public Transform HandleHeight;
+    public float Thickness = 1;
     public Transform ObjectToScale;
+    
 
 #if UNITY_EDITOR
     private Vector3 _initialScale;
@@ -60,7 +62,7 @@ public class WallScaler : MonoBehaviour
         Vector3 scale = new Vector3(
             Vector3.Distance(handleStartLocalPosition, handleEndLocalPosition),
             handleHeightLocalPosition.y,
-            _initialScale.z
+            Thickness
         );
 
         // Apply the new scale to the object to scale
@@ -123,7 +125,7 @@ public class WallScaler : MonoBehaviour
 #if UNITY_EDITOR
     private void ApplyScale()
     {
-          Vector3 HandleStartPosition = HandleStart.position;
+        Vector3 HandleStartPosition = HandleStart.position;
         Vector3 HandleEndPosition = HandleEnd.position;
         Vector3 handleStartLocalPosition = transform.InverseTransformPoint(HandleStartPosition);
         Vector3 handleEndLocalPosition = transform.InverseTransformPoint(HandleEndPosition);
@@ -140,7 +142,7 @@ public class WallScaler : MonoBehaviour
         Vector3 scale = new Vector3(
             Vector3.Distance(handleStartLocalPosition, handleEndLocalPosition),
             handleHeightLocalPosition.y,
-            _initialScale.z
+            Thickness
         );
 
         // Apply the new scale to the object to scale
