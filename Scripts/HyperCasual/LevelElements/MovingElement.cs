@@ -12,6 +12,7 @@ namespace Kuantech.Core.HyperCasual
         
         [Header("Translation")] 
         public int InitialWaypointIndex = 0;
+        public float InitialPositionFactor = 0f; //
         [SerializeField] private bool IsMoving = false;
         [SerializeField] private Transform MovingPart;
         [SerializeField] private float MovementSpeed = 1;
@@ -51,14 +52,13 @@ namespace Kuantech.Core.HyperCasual
         {
             HandleUpdate();
         }
-
         private void HandleUpdate()
         {
             if (_delaying) return;
             float deltaTime = UseRigidbody ? Time.fixedDeltaTime : Time.deltaTime;
             if (IsMoving)
             {
-                Vector3 diff = Waypoints[_currentWaypointIndex].position - MovingPart.transform.position;
+                Vector3 diff = Waypoints[_currentWaypointIndex].localPosition - MovingPart.transform.localPosition;
                 if (Vector3.Dot(diff, _previousDisplacement) < 0 || diff.sqrMagnitude <= 0.01f)
                 {
                     //Reached
@@ -99,6 +99,7 @@ namespace Kuantech.Core.HyperCasual
                 _previousAngleChange = angleChange;
             }
         }
+
         private void Rotate(Quaternion rotation)
         {
             if (UseRigidbody)
@@ -133,6 +134,12 @@ namespace Kuantech.Core.HyperCasual
             else
             {
                 _currentWaypointIndex = InitialWaypointIndex;
+                if (Waypoints.Count < 2) return;
+                int nextWaypointIndex = (_currentWaypointIndex + 1) % Waypoints.Count;
+                Vector3 diff = Waypoints[nextWaypointIndex].localPosition - Waypoints[_currentWaypointIndex].localPosition;
+                float distance = diff.magnitude * InitialPositionFactor;
+                MovingPart.transform.localPosition =
+                    Waypoints[_currentWaypointIndex].localPosition + diff.normalized * distance;
             }
         }
 
