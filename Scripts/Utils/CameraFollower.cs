@@ -2,6 +2,7 @@
 using DG.Tweening;
 using UnityEngine;
 using Kuantech.Utils;
+using Unity.VisualScripting;
 using UnityEngine.Events;
 
 namespace Kuantech.Core
@@ -195,7 +196,10 @@ namespace Kuantech.Core
         #region PublicInterface
         public virtual void SetCameraParameters(CameraParameters cameraParameters)
         {
-            CameraParameters= cameraParameters;
+            CameraParameters = cameraParameters;
+            
+            //Set spherical coordinates with new class since class members are passed by ref
+            CameraParameters.Spherical = new SphericalCoordinate(cameraParameters.Spherical.Radius, cameraParameters.Spherical.Yaw, cameraParameters.Spherical.Pitch);
         }
         
         /// <summary>
