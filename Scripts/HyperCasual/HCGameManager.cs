@@ -80,6 +80,11 @@ namespace Kuantech.Core.HyperCasual
         
         public virtual void PlayLevel()
         {
+            if (CurrentLevel.CurrentState != LevelState.Waiting)
+            {
+                Debug.LogError("Trying to start level while not in waiting state");
+                return;
+            }
             CurrentLevel.StartLevel();
             ChangeCurrentState(LevelState.Playing);
         }
