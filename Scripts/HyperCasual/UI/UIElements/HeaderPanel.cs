@@ -21,9 +21,11 @@ namespace Kuantech.Core.HyperCasual
 
         [Header("Texts")] 
         public TMP_Text CurrentLevelText;
-        
+        public string LevelPrefix = "Level";        
+
         [Header("Panels")] 
         public SettingsMenu SettingsMenu;
+        
 
         private void Start()
         {
@@ -45,7 +47,7 @@ namespace Kuantech.Core.HyperCasual
 
         public void SetCurrentLevel(int levelIndex)
         {
-            CurrentLevelText.text = $"Stage {(levelIndex+1).ToString()}";
+            CurrentLevelText.text = $"{LevelPrefix} {(levelIndex+1).ToString()}";
         }
     }
 }
