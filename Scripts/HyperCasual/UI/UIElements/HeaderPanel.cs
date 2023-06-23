@@ -47,6 +47,7 @@ namespace Kuantech.Core.HyperCasual
 
         public void SetCurrentLevel(int levelIndex)
         {
+            if (CurrentLevelText == null) return;
             CurrentLevelText.text = $"{LevelPrefix} {(levelIndex+1).ToString()}";
         }
     }

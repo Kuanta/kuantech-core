@@ -9,8 +9,8 @@ namespace Kuantech.Core.HyperCasual
 
         public void Initialize()
         {
-            LevelCompletePanel.Initialize();
-            LevelFailedPanel.Initialize();
+            if(LevelCompletePanel != null) LevelCompletePanel.Initialize();
+            if(LevelFailedPanel != null) LevelFailedPanel.Initialize();
         }
         
         public override void Show()
@@ -32,20 +32,20 @@ namespace Kuantech.Core.HyperCasual
         
         public void OnStateChange(LevelState newState)
         {
-            if (newState == LevelState.Completed)
+            if (newState == LevelState.Completed && LevelCompletePanel != null)
             {
                 LevelCompletePanel.Show();
             }
-            else
+            else if(LevelCompletePanel != null)
             {
                 LevelCompletePanel.Close();
             }
 
-            if (newState == LevelState.Failed)
+            if (newState == LevelState.Failed && LevelFailedPanel != null)
             {
                 LevelFailedPanel.Show();
             }
-            else
+            else if(LevelFailedPanel != null)
             {
                 LevelFailedPanel.Close();
             }

@@ -4,10 +4,10 @@ namespace Kuantech.Core.HyperCasual
 {
     public interface ISpawnable
     {
-        public void OnSpawn(Vector3 position, Quaternion rotation);
+        public void OnSpawn();
 
-        public void OnRespawn(Vector3 position, Quaternion rotation);
+        public void OnRespawn();
 
-        public void OnPlayerEnteredChunk();
+        public void OnDespawn();
     }
 }

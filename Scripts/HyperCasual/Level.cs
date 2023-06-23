@@ -18,6 +18,9 @@ namespace Kuantech.Core.HyperCasual
         public int LevelIndex;
         public List<LevelChunk> LevelChunks;
         
+        //Spawnables
+        public List<ISpawnable> Spawns;
+        
         //Earnings
         protected Dictionary<int, Currency> EarnedCurrencies = new Dictionary<int, Currency>();
 
@@ -32,6 +35,7 @@ namespace Kuantech.Core.HyperCasual
         public virtual void OnLevelCreated()
         {
             LevelChunks = GetComponentsInChildren<LevelChunk>().ToList();
+            Spawns = new List<ISpawnable>();
             foreach (var levelChunk in LevelChunks)
             {
                 levelChunk.OnLevelCreate();
@@ -53,6 +57,7 @@ namespace Kuantech.Core.HyperCasual
                 chunk.OnClear();
             }
             ReleaseEarnings();
+            ClearSpawnables();
         }
 
         public virtual void CompleteLevel()
@@ -60,7 +65,30 @@ namespace Kuantech.Core.HyperCasual
             SaveEarnings();
             ((HCGameManager)HCGameManager.Instance).ChangeCurrentState(LevelState.Completed);
         }
+        
+        #region Spawns
 
+        public void SpawnSpawnable(ISpawnable spawnable)
+        {
+            Spawns.Add(spawnable);
+            spawnable.OnSpawn();
+        }
+
+        public void DespawnSpawnables(ISpawnable spawnable)
+        {
+            Spawns.Remove(spawnable);
+            spawnable.OnDespawn();
+        }
+
+        public void ClearSpawnables()
+        {
+            foreach (var spawnable in Spawns)
+            {
+                spawnable.OnDespawn();
+            }
+            Spawns.Clear();
+        }
+        #endregion
         #region Earnings
 
         public int GetCurrentCurrencyAmount(int currencyId)

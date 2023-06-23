@@ -33,11 +33,7 @@ namespace Kuantech.Core.HyperCasual
 
         public virtual void OnClear()
         {
-            foreach (LevelElement levelElement in LevelElements)
-            {
-                if(levelElement == null) continue;
-                levelElement.OnLeaveLevel();
-            } 
+            ClearChunk();
         }
 
         public virtual void OnPlay()
@@ -69,6 +65,11 @@ namespace Kuantech.Core.HyperCasual
                 if(levelElement == null) continue;
                 levelElement.OnPlayerExited();
             }
+        }
+
+        public virtual void ClearChunk()
+        {
+            ClearChunk();
         }
     }
 }

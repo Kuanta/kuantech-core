@@ -54,18 +54,13 @@ namespace Kuantech.Core.HyperCasual
 
         public override void OnPlayerEntered()
         {
-            for (int i = 0; i < _ispawnables.Count; ++i)
-            {
-                _ispawnables[i].OnPlayerEnteredChunk();
-            }
         }
 
         public override void OnPlayerExited()
         {
-            
         }
 
-        
+
         /// <summary>
         /// Calls spawn for existing actors
         /// </summary>
@@ -74,7 +69,7 @@ namespace Kuantech.Core.HyperCasual
             //todo: If not every spawnable is a mono, ther would be mismatches between initial transforms and spawnables list
             for (int i = 0; i < _ispawnables.Count; ++i)
             {
-                _ispawnables[i].OnSpawn(InitialPositions[i], InitialRotations[i]);
+                _ispawnables[i].OnSpawn();
             }
         }
         
@@ -83,7 +78,7 @@ namespace Kuantech.Core.HyperCasual
             //todo: If not every spawnable is a mono, ther would be mismatches between initial transforms and spawnables list
             for (int i = 0; i < _ispawnables.Count; ++i)
             {
-                _ispawnables[i].OnRespawn(InitialPositions[i], InitialRotations[i]);
+                _ispawnables[i].OnRespawn();
             }
         }
     }

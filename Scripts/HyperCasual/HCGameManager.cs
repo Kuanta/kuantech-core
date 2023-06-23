@@ -15,22 +15,27 @@ namespace Kuantech.Core.HyperCasual
     }
     public class HCGameManager : GameManager
     {
-        public AdsManager AdsManager;
+        //SubManagers
+        [Header("SubManagers")]
+        public AdsManager AdsManager; //todo: Make AdsManager a subManager
+        public LevelManager LevelManager; //todo: Make LevelManager a subManager
+        private SubManager[] _subManagers;
         
         //Level
-        public LevelManager LevelManager;
+        [Header("Levels")]
         public int CurrentLevelIndex;
         public Level CurrentLevel;
 
         //Data
+        [Header("Data")]
         public GameState GameState;
         [SerializeField] private float SaveCheckFrequency = 1f;
         private float _lastCheckTime;
         public List<int> CurrencyIds;
         
+
         //Events
         public EventHandler<StateChangeData> StateChangeEvent;
-        //public EventHandler<Currency> CurrencyChangedEvent;
 
         # region UnityEvents
 
@@ -52,6 +57,7 @@ namespace Kuantech.Core.HyperCasual
 
         protected virtual void Initialize()
         {
+            //todo: Make UIManager a submanager
             GameState ??= new GameState(CurrencyIds);
             GameState.LoadData();
             UIManager.Instance.Initialize(); //Initialize after data loading
@@ -64,6 +70,8 @@ namespace Kuantech.Core.HyperCasual
             UIManager.Instance.SetCurrentLevel(CurrentLevelIndex);
             _lastCheckTime = Time.time;
             
+            InitializeSubManagers();
+            LevelManager = GetSubManagerByType<LevelManager>() as LevelManager;
             OnGameStart();
         }
         protected virtual void OnGameStart()
@@ -180,6 +188,32 @@ namespace Kuantech.Core.HyperCasual
         {
             UIManager.Instance.SetCurrencyAmount(currencyId, amount);
             //CurrencyChangedEvent?.Invoke(this, GameState.GetCurrency(currencyId));
+        }
+        #endregion
+
+        #region SubManagers
+
+        public void InitializeSubManagers()
+        {
+            //Initialize SubManagers
+            _subManagers = GetComponentsInChildren<SubManager>();
+            foreach (SubManager subManager in _subManagers)
+            {
+                subManager.Initialize(this);
+            }
+        }
+        
+        public SubManager GetSubManagerByType<T>()
+        {
+            for (int i = 0; i < _subManagers.Length; i++)
+            {
+                if (_subManagers[i] is T)
+                {
+                    return _subManagers[i];
+                }
+            }
+
+            return null; // Return null if no matching submanager is found
         }
         #endregion
     }

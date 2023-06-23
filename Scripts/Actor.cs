@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Kuantech.Character;
+using Kuantech.Core.HyperCasual;
 using Kuantech.Inventory;
 using Kuantech.Inventory.Items;
 using Sirenix.OdinInspector;
@@ -8,8 +9,11 @@ using UnityEngine;
 
 namespace Kuantech.Core
 {
-    public class Actor : MonoBehaviour
+    public class Actor : MonoBehaviour, ISpawnable
     {
+        [Header("Properties")] 
+        public uint FactionId;
+        
         [Header("Visuals")] 
         public GameObject VisualModel;
 
@@ -48,7 +52,7 @@ namespace Kuantech.Core
         public EventHandler OnModulesInitialized;
         public EventHandler<float> OnDamageReceived;
         public EventHandler OnDeath;
-        public EventHandler OnRespawn;
+        public EventHandler OnRespawnEvent;
 
         private bool _initialized = false;
         public virtual void Initialize()
@@ -61,11 +65,12 @@ namespace Kuantech.Core
             {
                 _modules[module.GetType()] = module;
                 OnDeath += module.OnDeath;
-                OnRespawn += module.OnRespawn;
+                OnRespawnEvent += module.OnRespawn;
                 module.Actor = this;
                 module.Initialize();
             }
             //Quick references
+            Stats = (StatsModule) GetModuleByType(typeof(StatsModule));
             AnimatorModule = (AnimatorModule) GetModuleByType(typeof(AnimatorModule));
             MovementModule = (MovementModule) GetModuleByType(typeof(MovementModule));
             CombatModule = (CombatModule) GetModuleByType(typeof(CombatModule));
@@ -83,6 +88,7 @@ namespace Kuantech.Core
         
         protected virtual void Update()
         {
+            if (Stats == null) return;
             if (GameManager.Instance.GameIsPaused || Health <= 0f) return;
             //todo: Implement health and mana regeneration
             StatusEffectHandler?.Update();
@@ -179,7 +185,7 @@ namespace Kuantech.Core
 
         public virtual void Respawn()
         {
-            OnRespawn?.Invoke(this, EventArgs.Empty);
+            OnRespawnEvent?.Invoke(this, EventArgs.Empty);
             Reset();
         }
         
@@ -232,7 +238,20 @@ namespace Kuantech.Core
             }
         }
 
-        
+
+        public void OnSpawn()
+        {
+            Initialize();
+        }
+
+        public void OnRespawn()
+        {
+        }
+
+        public void OnDespawn()
+        {
+            Destroy(gameObject); //todo: Use pool
+        }
     }
     
     

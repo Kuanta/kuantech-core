@@ -6,11 +6,11 @@ namespace Kuantech.Core.HyperCasual
 {
     [Serializable]
     public class LevelDictionary : SerializableDictionary<int, Level>{}
-    public class LevelManager : Singleton<LevelManager>
+    public class LevelManager : SubManager
     {
         [Header("Levels List")] 
         public List<Level> LevelDictionary = new List<Level>();
-
+        
         public virtual Level GetLevel(int levelIndex)
         {
             if (LevelDictionary.Count <= levelIndex)
