@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using Kuantech.Combat;
 using Kuantech.Core.Inventory;
@@ -24,6 +23,8 @@ namespace Kuantech.Core
         Circle,
         Ranged, //For projecitle based attacks, like arrow and fireball
         RangedRaycast, //For raycast based attacks
+        Target,
+        TargetProjectile,
     }
     
     //Event Infos
@@ -63,6 +64,9 @@ namespace Kuantech.Core
         [Header("Attack Positions")] 
         public Vector3 AimVector;
         public Transform ShootPosition;
+        
+        //Targets
+        public Actor CurrentTarget;
         
         //States
         public float AttackStartTime;
@@ -115,7 +119,8 @@ namespace Kuantech.Core
 
         public bool CanAttack()
         {
-            return !IsAttacking && GlobalCooldown.IsOffCooldown() && !AttackLock.IsLocked() && Actor.Health > 0;
+            if (CurrentAttackPattern.AttackType == AttackTypes.Target && CurrentTarget == null) return false;
+            return !IsAttacking && GlobalCooldown.IsOffCooldown() && !AttackLock.IsLocked() && Actor.Health > 0 ;
         }
 
         public bool CanCastSkill()
@@ -138,7 +143,7 @@ namespace Kuantech.Core
             GlobalCooldown = new Cooldown(1f);
         }
         
-        public override void Reset()
+        public override void Reset() 
         {
             //Locks
             AttackLock.Reset();
@@ -209,6 +214,8 @@ namespace Kuantech.Core
                         break;
                     case AttackTypes.RangedRaycast:
                         RangedRaycastAttack();
+                        break;
+                    case AttackTypes.Target:
                         break;
                 }
                 AttackCompleteHandler?.Invoke();
@@ -422,8 +429,6 @@ namespace Kuantech.Core
             }
         }
         
-        #region AttackMethods
-        
         /// <summary>
         /// Checks whether a target is in the attack range. Current attack pattern will be used
         /// </summary>
@@ -458,6 +463,18 @@ namespace Kuantech.Core
             }
         }
         
+        /// <summary>
+        /// Simply checks if target is inside a circular target
+        /// </summary>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        public bool IsInCircularRange(Transform target)
+        {
+            Vector3 diffVector = target.position - transform.position;
+            diffVector.y = 0;
+            float sqrDist = diffVector.sqrMagnitude;
+            return sqrDist <= CurrentAttackPattern.Range * CurrentAttackPattern.Range;
+        }
         public float GetDamage()
         {
             float damageBonus = Actor.Stats.GetStat(StatTypes.DamageBonus);
@@ -473,18 +490,57 @@ namespace Kuantech.Core
         {
             return ShootPosition != null ? ShootPosition.position : transform.position;
         }
+        #region Attack Casts
         //Attack Casts
-        public static void DealCircularAreaDamage(CombatModule from, float damage, float range, float knockback, float knockbackTime, bool useSkill, bool checkObstacle, float angle=0f)
+        
+        public static bool CheckObstaclesBetween(GameObject source, GameObject destionation, float range, float heightOffset = 1f)
         {
-            Vector3 center = from.transform.position + Vector3.up;
+            Vector3 center = source.transform.position + Vector3.up * heightOffset;
+            //Check if behind obstacle
+            Vector3 diffVec = destionation.transform.position - center;
+            diffVec.Normalize();
+
+            Ray ray = new Ray
+            {
+                origin = center,
+                direction = diffVec
+            };
+            bool obscured = false;
+            RaycastHit[] hits = new RaycastHit[16];
+
+            int mask = LayerMask.GetMask("Enemy") | LayerMask.GetMask("Obstacle");
+            if (UnityEngine.Physics.RaycastNonAlloc(ray, hits, range, mask) > 0)
+            {
+                for (int j = 0; j < hits.Length; ++j)
+                {
+                    if (hits[j].collider.gameObject == destionation)
+                    {
+                        break;
+                    }
+
+                    if (hits[j].collider.gameObject == source)
+                    {
+                        continue;
+                    }
+
+                    obscured = true;
+                    break;
+                }
+            }
+            return false;
+        }
+        public List<Actor> GetCircularAreaEnemies(float range, bool checkObstacle, float angle = 0f)
+        {
+            List<Actor> attackables = new List<Actor>();
+            Vector3 center = transform.position + Vector3.up;
             Collider[] results = new Collider[32];
-            int hitCount = UnityEngine.Physics.OverlapSphereNonAlloc(center, range, results, from.Targets);
-            Vector3 forwardVector = from.transform.forward;
+            int hitCount = UnityEngine.Physics.OverlapSphereNonAlloc(center, range, results, Targets);
+             Vector3 forwardVector = transform.forward;
             forwardVector.y = 0f;
             for (int i = 0; i < hitCount; ++i)
             {
-                if(results[i] == null) continue;
-                
+                if (results[i] == null) continue;
+
                 bool isInAngleRange = false;
                 Collider collider = results[i];
                 var bounds = collider.bounds;
@@ -496,10 +552,10 @@ namespace Kuantech.Core
                     new Vector3(bounds.center.x - bounds.extents.x, 0, bounds.center.z + bounds.extents.z),
                     new Vector3(bounds.center.x - bounds.extents.x, 0, bounds.center.z - bounds.extents.z),
                 };
-                
+
                 //At least the object's center should be in front
-                if(Vector3.Angle(forwardVector, colliderCorners[0] - from.transform.position) > 90f) continue;
-                
+                if (Vector3.Angle(forwardVector, colliderCorners[0] - transform.position) > 90f) continue;
+
                 float _minAngle = 0f;
                 float _maxAngle = 0f;
                 bool _minFlag = false;
@@ -508,7 +564,7 @@ namespace Kuantech.Core
                 foreach (var corner in colliderCorners)
                 {
                     //Check angle
-                    Vector3 differenceVector = corner - from.transform.position;
+                    Vector3 differenceVector = corner - transform.position;
                     differenceVector.y = 0;
                     float angleOfCollider = Vector3.SignedAngle(differenceVector, forwardVector, Vector3.up);
                     if (angleOfCollider >= -90f && angleOfCollider < _minAngle)
@@ -522,67 +578,51 @@ namespace Kuantech.Core
                         _maxAngle = angleOfCollider;
                         _maxFlag = true;
                     }
-                    if(Mathf.Abs(angleOfCollider) <= halfAngle) isInAngleRange = true; //1f for safety check
+
+                    if (Mathf.Abs(angleOfCollider) <= halfAngle) isInAngleRange = true; //1f for safety check
                 }
-                
+
                 //We still need to check if all angles were outside (if collider is too big and all angles are outside the range
                 if (_maxFlag && _minFlag && _minAngle <= -halfAngle && _maxAngle >= halfAngle) isInAngleRange = true;
-                
-                if(!isInAngleRange) continue;
-                
+
+                if (!isInAngleRange) continue;
+
                 if (checkObstacle)
                 {
-                    //Check if behind obstacle
-                    Vector3 diffVec = results[i].transform.position - center;
-                    diffVec.Normalize();
-
-                    Ray ray = new Ray
-                    {
-                        origin = center,
-                        direction = diffVec
-                    };
-                    bool obscured = false;
-                    RaycastHit[] hits = new RaycastHit[16];
-
-                    int mask = LayerMask.GetMask("Enemy") | LayerMask.GetMask("Obstacle");
-                    if (UnityEngine.Physics.RaycastNonAlloc(ray, hits, range, mask)  > 0)
-                    {
-                        for (int j = 0; j < hits.Length; ++j)
-                        {
-                            if (hits[j].collider.gameObject == results[i].gameObject)
-                            {
-                                break;
-                            }
-                            if (hits[j].collider.gameObject == from.gameObject)
-                            {
-                                continue;
-                            }
-                            obscured = true;
-                            break;
-                        }
-                    }
-
+                    bool obscured = CheckObstaclesBetween(gameObject, results[i].gameObject, range);
                     if (obscured) continue;
                 }
-                
-
+            
                 Actor target = results[i].GetComponent<Actor>();
-                if(target == null) continue;
-                from.DamageActorMelee(target, damage, knockback, knockbackTime);   
+                if (target == null || target.FactionId == this.Actor.FactionId) continue; //todo: Implement a better faction checking (consider neutrals)
+                attackables.Add(target);
+            }
+            return attackables;
+        }
+            
+        public static void DealCircularAreaDamage(CombatModule from, float damage, float range, float knockback, float knockbackTime, bool useSkill, bool checkObstacle, float angle=0f)
+        {
+            List<Actor> attackables =
+                from.GetCircularAreaEnemies(range, checkObstacle, angle);
+            foreach (var actor in attackables)
+            {
+                if(actor == null) continue;
+                from.DamageActorMelee(actor, damage, knockback, knockbackTime);   
             }
         }
 
-        public static void DealLinearAreaDamage(CombatModule from, float damage, float range, float width, float knockback, float knockbackTime, bool checkObstacle)
+        public List<Actor> GetLinearAreaEnemies(float range, float width, bool checkObstacle)
         {
-            Vector3 center = from.transform.position + from.transform.forward * range*0.5f + Vector3.up;
-            Vector3 rayOrigin = from.transform.position + Vector3.up;
+            List<Actor> attackables = new List<Actor>();
+            Vector3 center = transform.position + transform.forward * range*0.5f + Vector3.up;
+            Vector3 rayOrigin = transform.position + Vector3.up;
             center.y = 1f;
             Collider[] results = new Collider[32];
             int hitCount = UnityEngine.Physics.OverlapBoxNonAlloc(center, 
                 new Vector3(width*0.5f,
                     width*0.5f, 
                     range*0.5f), 
-                results, Quaternion.identity, from.Targets.value);
+                results, Quaternion.identity, Targets.value);
             
             for (int i = 0; i < hitCount; ++i)
             {
@@ -592,44 +632,22 @@ namespace Kuantech.Core
 
                 if (checkObstacle)
                 {
-                    //Check if behind obstacle
-                    bool obscured = false;
-
-                
-                    Vector3 diffVec = results[i].transform.position - rayOrigin;
-                    diffVec.y = 0;
-                    diffVec.Normalize();
-                    RaycastHit[] hits = new RaycastHit[16];
-                    Ray ray = new Ray
-                    {
-                        origin = rayOrigin,
-                        direction = diffVec,
-                    };
-                    //todo: Why there is no layer mask here?
-                    int rayHitCount = UnityEngine.Physics.RaycastNonAlloc(ray, hits, from.CurrentAttackPattern.Range);
-                    if (rayHitCount > 0)
-                    {
-                        for (int j = 0; j < rayHitCount; ++j)
-                        {
-                            if(hits[j].collider == null || hits[j].collider.isTrigger) continue;
-                            if (hits[j].collider.gameObject == results[i].gameObject)
-                            {
-                                break;
-                            }
-                            if (hits[j].collider.gameObject == from.gameObject)
-                            {
-                                continue;
-                            }
-                            obscured = true;
-                            break;
-                        }
-                    }
-
+                    bool obscured = CheckObstaclesBetween(gameObject, results[i].gameObject, range);
                     if (obscured) continue;
                 }
+                attackables.Add(target);
+            }
+            return attackables;
+        }
+        public static void DealLinearAreaDamage(CombatModule from, float damage, float range, float width, float knockback, float knockbackTime, bool checkObstacle)
+        {
+            List<Actor> attackables = from.GetLinearAreaEnemies(range, width, checkObstacle);
+            foreach (var target in attackables)
+            {
                 from.DamageActorMelee(target,damage, knockback, knockbackTime);
             }
         }
+        
         private void LinearMeleeAttack()
         {
             DealLinearAreaDamage(this, GetDamage(), CurrentAttackPattern.Range, CurrentAttackPattern.Width, CurrentAttackPattern.Knockback, CurrentAttackPattern.KnockbackTime, true);
@@ -655,24 +673,28 @@ namespace Kuantech.Core
         {
             if (RangedAttackLock.IsLocked()) return;
             GameObject projectilePrefab = null;
-            if (EquippedWeapon != null)
-            {
-                projectilePrefab = EquippedWeapon.ProjectilePrefab;
-            }
-            if (DefaultProjectilePrefab != null)
-            {
-                projectilePrefab = DefaultProjectilePrefab.gameObject;
-            }
-
+            // if (EquippedWeapon != null)
+            // {
+            //     projectilePrefab = EquippedWeapon.ProjectilePrefab;
+            // }
+            // if (DefaultProjectilePrefab != null)
+            // {
+            //     projectilePrefab = DefaultProjectilePrefab.gameObject;
+            // }
+            projectilePrefab = CurrentAttackPattern.ProjectilePrefab;
             if (projectilePrefab == null)
             {
                 Debug.LogError("Tried to shoot projectile with no default projectile and null equipped weapon");
                 return;
             }
+
+            Actor target = CurrentAttackPattern.TargetedProjectile ? CurrentTarget : null;
+            
             ShootProjectile(EquippedWeapon, projectilePrefab, 
                 GetShootPosition(), 
                 transform.forward,
-                true);
+                true,target.transform,
+                CurrentAttackPattern.ProjectileRisHeight);
         }
         
         /// <summary>
@@ -698,11 +720,12 @@ namespace Kuantech.Core
             actor.ReceiveDamage(Actor, GetDamage());
         }
 
-        public Projectile ShootProjectile(Weapon weapon, GameObject projectilePrefab, bool castSkill)
+        public Projectile ShootProjectile(Weapon weapon, GameObject projectilePrefab, bool castSkill,Transform target = null, 
+            float riseHeight = 0f)
         {
             Vector3 shootPosition = GetShootPosition();
             Vector3 direction = transform.forward;
-            return ShootProjectile(weapon, projectilePrefab, shootPosition, direction, castSkill);
+            return ShootProjectile(weapon, projectilePrefab, shootPosition, direction, castSkill, target, riseHeight);
         }
         
         /// <summary>
@@ -713,15 +736,17 @@ namespace Kuantech.Core
         /// <param name="direction"></param>
         /// <param name="castSkill"></param>
         /// <param name="shootPosition"></param>
-        public Projectile ShootProjectile(Weapon weapon, GameObject projectilePrefab, Vector3 shootPosition, Vector3 direction, bool castSkill)
+        public Projectile ShootProjectile(Weapon weapon, GameObject projectilePrefab, Vector3 shootPosition, Vector3 direction, bool castSkill,
+            Transform target = null, 
+            float riseHeight = 0f)
         {
             if (projectilePrefab == null) return null;
             PrefabPool pool = GameManager.Instance.Pool;
             GameObject projectileObj = pool.GetObject(projectilePrefab);
-            //Vector3 shootPosition = ShootPosition != null ? ShootPosition.position : transform.position;
+            Quaternion shootRotation = Quaternion.LookRotation(direction);
             if (projectileObj.TryGetComponent(out Projectile projectile))
             {
-                projectile.Initialize(this, weapon);
+                projectile.Initialize(this, weapon, shootPosition, shootRotation, target, riseHeight);
  
                 if (CanUseSkill && castSkill)
                 {
@@ -732,10 +757,8 @@ namespace Kuantech.Core
                         From = shootPosition,
                     });
                 }
-                
-                projectileObj.transform.position = shootPosition;
-                projectile.transform.rotation = Quaternion.LookRotation(direction);
                 projectileObj.SetActive(true);
+
                 return projectile;
 
             }
@@ -750,7 +773,7 @@ namespace Kuantech.Core
             GameObject throwableObj = pool.GetObject(throwablePrefab);
             if (throwableObj.TryGetComponent(out Throwable throwable))
             {
-                throwable.Throw(this, weapon, horizontalDistance, horizontalSpeed, direction.Get2D(), -9.8f, initialHeight);
+                throwable.Throw(this, weapon, shootPosition, Quaternion.LookRotation(direction), horizontalDistance, horizontalSpeed, direction.Get2D(), -9.8f, initialHeight);
                 throwable.transform.position = shootPosition;
                 throwable.transform.rotation = Quaternion.LookRotation(direction);
                 return throwable;

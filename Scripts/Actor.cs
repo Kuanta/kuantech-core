@@ -181,6 +181,7 @@ namespace Kuantech.Core
         {
             OnDeath?.Invoke(this, EventArgs.Empty);
             if(Collider != null) Collider.enabled = false;
+            if(VisualModel != null) VisualModel.gameObject.SetActive(false);
         }
 
         public virtual void Respawn()
@@ -194,6 +195,7 @@ namespace Kuantech.Core
             _normalizedHealth = 1f;
             _normalizedEnergy = 1f;
             if(Collider != null) Collider.enabled = true;
+            if(VisualModel != null) VisualModel.gameObject.SetActive(true);
             foreach (var key in _modules.Keys)
             {
                 _modules[key].Reset();
@@ -242,6 +244,7 @@ namespace Kuantech.Core
         public void OnSpawn()
         {
             Initialize();
+            Reset();
         }
 
         public void OnRespawn()
@@ -250,7 +253,7 @@ namespace Kuantech.Core
 
         public void OnDespawn()
         {
-            Destroy(gameObject); //todo: Use pool
+            
         }
     }
     

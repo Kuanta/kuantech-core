@@ -4,16 +4,20 @@ using Kuantech.Core;
 using Kuantech.Core.FX;
 using Kuantech.Inventory.Items;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Kuantech.Combat
 {
     public class Projectile : MonoBehaviour
     {
+        public const float ReachThreshold = 0.01f;
         [Header("Properties")]
         public float Speed;
         public float Range;
+        public float FollowLerpFactor;
         public float Knockback;
         public float KnockbackTime;
+
         public bool RawDamage = false;
         public CombatModule CastBy;
         public Weapon ShotFrom = null;
@@ -33,6 +37,8 @@ namespace Kuantech.Combat
         public float splashRadius = 0f; // 0 means no splash
         
         protected float _age = 0f; // Age of the projectile in terms of seconds
+        protected float _lifeTime = 0f;
+        protected float _riseHeight;
 
         public List<GameObject> Attachments;
 
@@ -40,15 +46,31 @@ namespace Kuantech.Combat
         public AudioSource StartSound;
         public AudioSource ImpactSound;
 
-        private Actor _target;
-        private float _lerpFactor;
+        private Vector3 _shotPosition;
+        
+        //Target variables
+        private Transform _target;
+        private float _targetHeightOffset = 1.5f;
+        private float _InitialDistanceToTarget = 0f;
         
         //Events
         public EventHandler InitializeEvent;
         public EventHandler DespawnEvent;
-
-        public void Initialize(CombatModule castBy, Weapon shotFrom)
+        
+        /// <summary>
+        /// Initializes and shoots the projectile
+        /// </summary>
+        /// <param name="castBy">CombatModule that shoots the projectile. If null, damage will be calculated from projectile properties</param>
+        /// <param name="shotFrom">Weapon that this projectile is shot from. If null, damage will be calculated from default attack pattern or projectile properties</param>
+        /// <param name="target">Target transform. If set to non-null, proectile will follow the target</param>
+        /// <param name="riseHeight">To act as pseudo throwable. Projectile will rise to this height and falls down in a sinudoidal fasion.</param>
+        public void Initialize(CombatModule castBy, Weapon shotFrom, Vector3 shootPosition, Quaternion shootRotation, Transform target = null, float riseHeight = 0f)
         {
+            //Set pos and rot
+                            
+            transform.position = shootPosition;
+            transform.rotation = shootRotation;
+            
             CastBy = castBy;
             ShotFrom = shotFrom;
             ImpactOverride = null;
@@ -62,43 +84,79 @@ namespace Kuantech.Combat
                 Damage = castBy.GetDamage();
             }
             _age = 0f;
+            
             if (StartSound != null)
             {
                 StartSound.time = 0f;
                 StartSound.Play();
             }
-            _target = null;
+            
+            _InitialDistanceToTarget = Range;
+            _target = target;
+            if (_target != null)
+            {
+                Vector3 diffToTarget = (shootPosition - _target.transform.position);
+                _InitialDistanceToTarget = diffToTarget.magnitude;
+                _lifeTime = 100.0f; //todo: This should be handled better
+            }
+            else
+            {
+                _lifeTime = Range / Speed;
+            }
+            
+            _riseHeight = riseHeight;
             _despawned = false;
+            _shotPosition = shootPosition;
             if (Collider != null) Collider.enabled = true;
             if(Visual != null) Visual.SetActive(true);
             InitializeEvent?.Invoke(this, EventArgs.Empty);
+            _newPosition = transform.position;
         }
 
+        private Vector3 _newPosition; //Need a seperate variable that doesn't include rise height values
         protected virtual void Update()
         {
             if (_despawned) return;
             if(Speed == 0) Despawn();
-
-            if (_target != null && _target.gameObject.activeInHierarchy && _target.Health > 0)
+            Vector3 moveDirection = transform.forward;
+            Vector3 dist = _target.transform.position - transform.position;
+            dist.y = 0;
+            float sqrMag = dist.sqrMagnitude;
+            if (_target != null && _target.gameObject.activeInHierarchy)
             {
-                Vector3 dist = _target.transform.position - transform.position;
-                dist.y = 0;
-                dist.Normalize();
-                transform.forward = Vector3.Lerp(transform.forward, dist, Time.deltaTime * _lerpFactor);
+                if (sqrMag > (ReachThreshold*ReachThreshold))
+                {
+                    moveDirection = dist.normalized;
+                    transform.forward = Vector3.Lerp(moveDirection, dist, Time.deltaTime * FollowLerpFactor);
+                }
             }
             
-            transform.position += transform.forward * Time.deltaTime * Speed;
+            //Act like targeted throwable. For actual throwable, see throwable class
+            Vector3 horizontalDiff = (transform.position - _shotPosition);
+            horizontalDiff.y = 0f;
+            float normalizedHeight = Mathf.Clamp01(horizontalDiff.magnitude / _InitialDistanceToTarget);
+            float throwbleHeightAddition = Mathf.Sin(normalizedHeight * Mathf.PI) * _riseHeight;
+            _newPosition += transform.forward * Time.deltaTime * Speed;
+            transform.position = _newPosition + Vector3.up * throwbleHeightAddition;
+            
+            //Check lifetime
             _age += Time.deltaTime;
-            if (_age > Range/Speed)
+            if (_age > _lifeTime)
             {
+                Despawn();
+            }
+            
+            //Check Target Reach Distance
+            if (_target != null && sqrMag <= ReachThreshold * ReachThreshold && _target.gameObject.activeInHierarchy)
+            {
+                HandleOnTriggerEnter(_target.gameObject);
                 Despawn();
             }
         }
         
-        public void SetTarget(Actor target, float followLerpFactor)
+        public void SetTarget(Transform target)
         {
             _target = target;
-            _lerpFactor = followLerpFactor;
         }
         
         public void AddAttachment(GameObject component)
@@ -121,12 +179,19 @@ namespace Kuantech.Combat
         {
             //If in filtered targets...
             if (!((Targets.value & (1 << other.gameObject.layer)) > 0)) return;
-            
-            //todo: Apply knockback
-            if (CastBy != null && other.gameObject == CastBy.gameObject) return; //Don't trigger for the caster
+            HandleOnTriggerEnter(other.gameObject);
+        }
 
-            Actor targetActor = other.GetComponent<Actor>();
-            if (targetActor != null && targetActor.Health <= 0f) return;
+        private void HandleOnTriggerEnter(GameObject triggeredObject)
+        {
+                  
+            //todo: Apply knockback
+            if (CastBy != null && triggeredObject == CastBy.gameObject) return; //Don't trigger for the caster
+
+            Actor targetActor = triggeredObject.GetComponent<Actor>();
+            if (targetActor != null && 
+                (targetActor.Health <= 0f || 
+                 (CastBy != null && targetActor.FactionId == CastBy.Actor.FactionId))) return; //Don't attack actor with same faction
             
             if (ImpactSound != null)
             {
@@ -135,13 +200,13 @@ namespace Kuantech.Combat
             
             if (ImpactOverride != null)
             {
-                ImpactOverride(this, targetActor, other.gameObject);
+                ImpactOverride(this, targetActor, triggeredObject.gameObject);
                 return;
             }
             
             if (splashRadius > 0)
             {
-                Vector3 origin = other.ClosestPoint(transform.position);
+                Vector3 origin = transform.position;
                 Collider[] colliders = UnityEngine.Physics.OverlapSphere(origin, splashRadius);
                 foreach (Collider coll in colliders)
                 {
@@ -151,14 +216,13 @@ namespace Kuantech.Combat
             else
             {
                 // Just hurt the collided
-                Impact(other.gameObject);
+                Impact(triggeredObject);
             }
             if (DestroyOnImpact)
             {
                 Despawn();
             }
         }
-        
         private void Impact(GameObject impacted)
         {
             Actor target = impacted.GetComponent<Actor>();

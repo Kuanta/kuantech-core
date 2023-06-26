@@ -249,6 +249,12 @@ namespace Kuantech.Core
             if(setTarget) Target = target;
         }
 
+        public void WarpCamera()
+        {
+            if (Target == null) return;
+            WarpCamera(Target, false);
+        }
+        
         public void Transition(TransitionParameters transitionParameters, UnityAction transitionCompleteHandler)
         {
             _positionTransition = transitionParameters.TransitionPosition;

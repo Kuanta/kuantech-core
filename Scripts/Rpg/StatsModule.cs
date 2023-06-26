@@ -334,6 +334,18 @@ namespace Kuantech.Core
         }
         #endregion
 
+        #region Setters
+        public void SetStat(StatTypes statType, float baseValue, float levelMultiplier)
+        {
+            Stats[statType] = new Stat()
+            {
+                BaseValue = baseValue,
+                LevelMultiplier = levelMultiplier,
+            };
+        }
+
+        #endregion
+        
         #region Level
         /// <summary>
         /// Increase the experience

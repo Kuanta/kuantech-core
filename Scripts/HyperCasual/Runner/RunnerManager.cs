@@ -1,16 +1,19 @@
-﻿using UnityEngine;
+﻿using Kuantech.MergeRunner;
+using UnityEngine;
 
 namespace Kuantech.Core.HyperCasual
 {
     public class RunnerManager : SubManager
     {
         public Runner Runner;
+        public RunnerParty RunnerParty;
         public RunnerInputHandler RunnerInputHandler;
         
         public override void Initialize(HCGameManager hcGameManager)
         {
             base.Initialize(hcGameManager);
             RunnerInputHandler.Runner = Runner;
+            RunnerParty.Initialize();
         }
         
         protected override void OnStateChange(object sender, StateChangeData stateChangeData)
