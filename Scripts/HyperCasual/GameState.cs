@@ -34,6 +34,11 @@ namespace Kuantech.Core.HyperCasual
             Dirtied = false;
         }
 
+        protected void SetDirty()
+        {
+            Dirtied = true;
+        }
+        
         public virtual void LoadData()
         {
             string jsonPath = GetSaveFilePath();
