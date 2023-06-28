@@ -7,8 +7,19 @@ namespace Kuantech.Core.HyperCasual
         public float Speed = 10f;
         public Vector2 MovementVector = Vector2.zero;
         
+        
+        public void Initialize()
+        {
+        }
         private void Update()
         {
+            //Check Current Level
+            Level currentLevel = ((HCGameManager) HCGameManager.Instance).CurrentLevel;
+            if (currentLevel == null || currentLevel.CurrentState != LevelState.Playing)
+            {
+                MovementVector = Vector2.zero;
+                return;
+            }
             Vector3 globalDirection = LocalToGlobalDirection(MovementVector);
             transform.position += globalDirection.normalized * (Time.deltaTime * Speed);
         }
@@ -20,5 +31,6 @@ namespace Kuantech.Core.HyperCasual
 
             return globalDirection;
         }
+        
     }
 }

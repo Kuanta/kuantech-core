@@ -1,10 +1,12 @@
-﻿using UnityEngine;
+﻿using Kuantech.Core.UI;
+using UnityEngine;
 
 namespace Kuantech.Core.HyperCasual
 {
     public class RunnerInputHandler : MonoBehaviour
     {
         public Runner Runner;
+        [SerializeField] private VirtualJoystick VirtualJoystick;
         
         private void Update()
         {
@@ -13,19 +15,30 @@ namespace Kuantech.Core.HyperCasual
 
             float side = 0;
             float forward = 0;
-            if (Input.GetKey(KeyCode.A))
+
+            if (VirtualJoystick != null)
             {
-                side = -1;
-            }else if (Input.GetKey(KeyCode.D))
-            {
-                side = 1;
+                Vector2 joystickInput = VirtualJoystick.GetInputVector();
+                if (VirtualJoystick.Dragging) forward = 1;
+                side = joystickInput.x;
             }
-            if (Input.GetKey(KeyCode.W))
+
+            if (side == 0 && forward == 0)
             {
-                forward = 1;
-            }else if (Input.GetKey(KeyCode.S))
-            {
-                forward = -1;
+                if (Input.GetKey(KeyCode.A))
+                {
+                    side = -1;
+                }else if (Input.GetKey(KeyCode.D))
+                {
+                    side = 1;
+                }
+                if (Input.GetKey(KeyCode.W))
+                {
+                    forward = 1;
+                }else if (Input.GetKey(KeyCode.S))
+                {
+                    forward = -1;
+                }
             }
 
             Runner.MovementVector = new Vector2(side, forward);
