@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Kuantech.Core.HyperCasual;
+using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
@@ -6,52 +7,59 @@ namespace Kuantech.Core.UI
 {
     public class VirtualJoystick : MonoBehaviour, IDragHandler, IPointerUpHandler, IPointerDownHandler
     {
-        public Image bgImage;
-        public Image joystickImage;
+        public float MaxRadius = 100.0f;
+        public float DeadZone = 0.1f;
 
-        private Vector3 inputVector;
-        private Vector3 defaultPosition;
-
-        private void Start()
+        private Vector2 _inputVector = Vector2.zero;
+        private Vector2 _startPosition;
+        
+        private bool _dragging;
+        public bool Dragging
         {
-            defaultPosition = bgImage.transform.position;
-        }
-
-        public void OnDrag(PointerEventData eventData)
-        {
-            Vector2 pos;
-            if (RectTransformUtility.ScreenPointToLocalPointInRectangle(bgImage.rectTransform, eventData.position, eventData.pressEventCamera, out pos))
-            {
-                pos.x = (pos.x / bgImage.rectTransform.sizeDelta.x);
-                pos.y = (pos.y / bgImage.rectTransform.sizeDelta.y);
-
-                inputVector = new Vector3(pos.x * 2, 0, pos.y * 2);
-                inputVector = (inputVector.magnitude > 1.0f) ? inputVector.normalized : inputVector;
-
-                joystickImage.rectTransform.anchoredPosition = new Vector3(inputVector.x * (bgImage.rectTransform.sizeDelta.x / 3), inputVector.z * (bgImage.rectTransform.sizeDelta.y / 3));
-            }
+            get { return _dragging;}
+            private set { _dragging = value; }
         }
 
         public void OnPointerDown(PointerEventData eventData)
         {
+            _startPosition = eventData.position;
+            _inputVector = Vector2.zero;
             OnDrag(eventData);
         }
 
         public void OnPointerUp(PointerEventData eventData)
         {
-            inputVector = Vector3.zero;
-            joystickImage.rectTransform.anchoredPosition = Vector3.zero;
-            bgImage.transform.position = defaultPosition;
+            _inputVector = Vector2.zero;
+            Dragging = false;
         }
 
-        public float GetHorizontalInput()
+        public void OnDrag(PointerEventData eventData)
         {
-            return inputVector.x;
+            Dragging = true;
+            Vector2 position = eventData.position;
+            Vector2 center = _startPosition;
+            Vector2 direction = (position - center).normalized;
+            float distance = Vector2.Distance(center, position);
+
+            if (distance > MaxRadius)
+            {
+                //position = center + direction * MaxRadius;
+                distance = MaxRadius;
+            }
+
+            if (distance < DeadZone)
+            {
+                _inputVector = Vector2.zero;
+            }
+            else
+            {
+                _inputVector = direction * ((distance - DeadZone) / (MaxRadius - DeadZone));
+            }
         }
 
-        public float GetVerticalInput()
+        public Vector2 GetInputVector()
         {
-            return inputVector.z;
+            return _inputVector;
         }
     }
 
