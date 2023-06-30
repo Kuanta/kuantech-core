@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using Kuantech.Ads;
 using Kuantech.Core.FX;
-using Kuantech.UI;
 using Sirenix.OdinInspector;
 using UnityEngine;
 

@@ -40,8 +40,7 @@ namespace Kuantech.Core.HyperCasual
                     forward = -1;
                 }
             }
-
-            Runner.MovementVector = new Vector2(side, forward);
+            Runner.SetMovementVector(new Vector2(side, forward));
         }
     }
 }

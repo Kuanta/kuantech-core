@@ -98,6 +98,16 @@ namespace Kuantech.Core
             ReceiveEnergy(Stats.GetStat(StatTypes.EnergyRegeneration) * Time.deltaTime);
         }
 
+        public float GetNormalizedHealth()
+        {
+            return _normalizedHealth;
+        }
+
+        public float GetNormalizedEnergy()
+        {
+            return _normalizedEnergy;
+        }
+        
         public virtual void SetHealth(float normalizedValue)
         {
             normalizedValue = Mathf.Clamp(normalizedValue, 0f, 1f);
@@ -133,7 +143,11 @@ namespace Kuantech.Core
         public virtual float ReceiveDamage(Actor from, float damage, bool rawDamage = false)
         {
             if (Health <= 0 || damage <= 0) return 0; //Don't hit the dead no more
-            
+
+            if (from != null && from == this)
+            {
+                Debug.LogError("Self inflicting damaj");
+            }
             //If not raw damage, apply armor reduction
             if (!rawDamage)
             {
@@ -142,6 +156,7 @@ namespace Kuantech.Core
             }
 
             Health -= Mathf.Abs(damage);
+
             if (Health <= 0f)
             {
                 Health = 0f;

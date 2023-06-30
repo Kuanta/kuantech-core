@@ -60,6 +60,7 @@ namespace Kuantech.Core.HyperCasual
         LeftTurn = 3,
         RightTurn = 4,
         CorridorShort = 5,
+        BossChunk = 6,
     }
     
     /// <summary>
@@ -133,6 +134,7 @@ namespace Kuantech.Core.HyperCasual
             }
             //Instantiate empty level prefab
             RunnerLevel runnerLevel = Instantiate(EmptyLevelPrefab.gameObject).GetComponent<RunnerLevel>();
+            runnerLevel.LevelIndex = levelIndex;
             runnerLevel.transform.position = Vector3.zero;
             runnerLevel.transform.rotation = Quaternion.identity;
             runnerLevel.SetLevelDesign(LevelDesigns.Levels[levelIndex]);

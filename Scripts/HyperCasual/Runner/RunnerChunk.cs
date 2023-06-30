@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Kuantech.Core.Utils;
 using UnityEngine;
 
@@ -19,18 +20,44 @@ namespace Kuantech.Core.HyperCasual
         
         public RunnerLevel ParentLevel;
         private ChunkFormat _chunkFormat;
-        
-        public void Initialize(RunnerLevel parentLevel, ChunkFormat chunkFormat)
+        private HashSet<IChunkElement> ChunkElements;
+
+        private bool _chunkCompleted = false;
+        private bool _isFinalChunk;
+        public virtual void Initialize(RunnerLevel parentLevel, ChunkFormat chunkFormat, bool isFinalChunk=false)
         {
             ParentLevel = parentLevel;
-            EnterGateTrigger.OnTriggerEnterEvent += OnRunnerEnter;
-            ExitGateTrigger.OnTriggerExitEvent += OnRunnerExit;
+            EnterGateTrigger.OnTriggerEnterEvent += OnEnterGateTriggered;
+            ExitGateTrigger.OnTriggerExitEvent += OnExitGateTriggered;
+            _chunkCompleted = false;
+            _isFinalChunk = isFinalChunk;
             GenerateChunk(chunkFormat);
+            
+            //Some slots doesn't have a script attached but still contains IChunkElement. Get them with get components
+            HashSet<IChunkElement> newChunkElements = GetComponentsInChildren<IChunkElement>().ToHashSet(); //Call this after generating
+            
+            ChunkElements ??= new HashSet<IChunkElement>();
+
+            foreach (var newChunkElement in newChunkElements)
+            {
+                if(newChunkElement == null) continue;
+                ChunkElements.Add(newChunkElement);
+            }
+            
+            foreach (var element in ChunkElements)
+            {
+                element.OnChunkGenerated(this);
+            }
+
         }
 
+        public void AddChunkElement(IChunkElement element)
+        {
+            if (ChunkElements == null) ChunkElements = new HashSet<IChunkElement>();
+            ChunkElements.Add(element);
+        }
         private void GenerateChunk(ChunkFormat chunkFormat)
         {
- 
             RunnerLevelManager rlm = ((HCGameManager)HCGameManager.Instance).GetSubManagerByType<RunnerLevelManager>() 
                 as RunnerLevelManager;
             
@@ -145,7 +172,8 @@ namespace Kuantech.Core.HyperCasual
              slot.transform.localPosition = localPos;
              slot.transform.localRotation = Quaternion.identity;
          }
-        public void AttachNewChunk(RunnerChunk newChunk)
+        
+         public void AttachNewChunk(RunnerChunk newChunk)
         {
             if (AttachPoint == null)
             {
@@ -164,23 +192,62 @@ namespace Kuantech.Core.HyperCasual
             newChunk.transform.position = AttachPoint.position + offset;
         }
 
-
+         public void CompleteChunk()
+         {
+             if (_chunkCompleted) return;
+             _chunkCompleted = true;
+             if (_isFinalChunk)
+             {
+                 ParentLevel.CompleteLevel();
+             }
+         }
         public void ClearChunk()
         {
-            
+            foreach (IChunkElement chunkElement in ChunkElements)
+            {
+                if(chunkElement == null) continue;
+                chunkElement.OnClearChunk();
+            }
         }
         
         #region Triggers
 
-        public void OnRunnerEnter(object sender, Collider other)
-        {
-        }
-        
-        public void OnRunnerExit(object sender, Collider other)
+        private void OnEnterGateTriggered(object sender, Collider other)
         {
             if (!other.TryGetComponent(out Runner runner)) return;
+            OnRunnerEnter(runner);
+        }
+        
+        private void OnExitGateTriggered(object sender, Collider other)
+        {
+            if (!other.TryGetComponent(out Runner runner)) return;
+            OnRunnerExit(runner);
+        }
+
+        protected virtual void OnRunnerEnter(Runner runner)
+        {
+            foreach (var chunkElement in ChunkElements)
+            {
+                chunkElement.OnPlayerEnteredChunk();
+                EnterGateTrigger.gameObject.SetActive(false);
+            }
+        }
+
+        protected virtual void OnRunnerExit(Runner runner)
+        {
+            foreach (var chunkElement in ChunkElements)
+            {
+                chunkElement.OnPlayerEnteredChunk();
+                ExitGateTrigger.gameObject.SetActive(false);
+            }
             ParentLevel.OnPlayerExitChunk(this);
         }
         #endregion
+
+        public void Reset()
+        {
+            EnterGateTrigger.gameObject.SetActive(true);
+            ExitGateTrigger.gameObject.SetActive(true);
+        }
     }
 }

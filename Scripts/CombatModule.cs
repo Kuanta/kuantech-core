@@ -216,6 +216,7 @@ namespace Kuantech.Core
                         RangedRaycastAttack();
                         break;
                     case AttackTypes.Target:
+                        TargetAttack();
                         break;
                 }
                 AttackCompleteHandler?.Invoke();
@@ -540,7 +541,9 @@ namespace Kuantech.Core
             for (int i = 0; i < hitCount; ++i)
             {
                 if (results[i] == null) continue;
-
+                Actor target = results[i].GetComponent<Actor>();
+                if (target == null || target.FactionId == this.Actor.FactionId || target == Actor) continue; //todo: Implement a better faction checking (consider neutrals)
+                
                 bool isInAngleRange = false;
                 Collider collider = results[i];
                 var bounds = collider.bounds;
@@ -593,8 +596,7 @@ namespace Kuantech.Core
                     if (obscured) continue;
                 }
             
-                Actor target = results[i].GetComponent<Actor>();
-                if (target == null || target.FactionId == this.Actor.FactionId) continue; //todo: Implement a better faction checking (consider neutrals)
+           
                 attackables.Add(target);
             }
             return attackables;
@@ -628,7 +630,7 @@ namespace Kuantech.Core
             {
                 if(results[i] == null) continue;
                 Actor target = results[i].GetComponent<Actor>();
-                if(target == null) continue;
+                if(target == null || target == Actor) continue;
 
                 if (checkObstacle)
                 {
@@ -712,6 +714,14 @@ namespace Kuantech.Core
             proj.Shoot(origin, AimVector, CurrentAttackPattern.ProjectileSpeed,  CurrentAttackPattern.Range, OnRaycastProjectileHit, CurrentAttackPattern.ProjectileDrop);
         }
 
+        public void TargetAttack()
+        {
+            float damage = GetDamage();
+            Actor target = CurrentTarget;
+            if (target == null || target.Health <= 0f) return;
+            target.ReceiveDamage(Actor, damage);
+            //todo: Discuss knockback
+        }
         private void OnRaycastProjectileHit(RaycastHit hitInfo)
         {
             RayProjectileHitEvent?.Invoke(this, hitInfo);
@@ -803,7 +813,8 @@ namespace Kuantech.Core
 
         public void DamageActorMelee(Actor target, float damage, float knockback, float knockbackTime)
         {
-            if (target.Health <= 0f) return;
+            if (target.Health <= 0f || Actor.FactionId == target.FactionId) return;
+            Debug.LogError($"{gameObject.name} attacked {target.name}");
             target.ReceiveDamage(Actor, damage);
             
             KnockbackActor(this, target, transform.forward, knockback, knockbackTime);

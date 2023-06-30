@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
 
 namespace Kuantech.Core.HyperCasual
 {
@@ -6,5 +8,10 @@ namespace Kuantech.Core.HyperCasual
     {
         public abstract void OnAssign(RunnerChunk chunk, int row, int col, int maxRow, int maxCol,
             string customParameter = null);
+
+        protected List<string> ParseArgument(string customParameter)
+        {
+            return customParameter.Split(',').ToList();
+        }
     }
 }

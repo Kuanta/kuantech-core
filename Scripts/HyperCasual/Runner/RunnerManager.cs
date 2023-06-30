@@ -1,44 +1,36 @@
-﻿using Kuantech.MergeRunner;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Kuantech.Core.HyperCasual
 {
     public class RunnerManager : SubManager
     {
         public Runner Runner;
-        public RunnerParty RunnerParty;
         public RunnerInputHandler RunnerInputHandler;
         
         public override void Initialize(HCGameManager hcGameManager)
         {
             base.Initialize(hcGameManager);
             RunnerInputHandler.Runner = Runner;
-            RunnerParty.Initialize();
+            Runner.Initialize();
         }
         
         protected override void OnStateChange(object sender, StateChangeData stateChangeData)
         {
+            if (stateChangeData.NewState == LevelState.Waiting)
+            {
+                Runner.transform.position = Vector3.zero;
+                Runner.transform.rotation = Quaternion.identity;
+            }
             if (stateChangeData.NewState == LevelState.Playing)
             {
                 RunnerInputHandler.gameObject.SetActive(true);
                 RunnerLevel currentLevel = HcGameManager.CurrentLevel as RunnerLevel;
                 currentLevel.SetRunner(Runner);
+                Runner.OnPlay();
             }
             else
             {
                 RunnerInputHandler.gameObject.SetActive(false);
-            }
-        }
-
-        private void Update()
-        {
-            if (Input.GetKeyDown(KeyCode.R))
-            {
-                if (HcGameManager.CurrentLevel != null && (HcGameManager.CurrentLevel.CurrentState == LevelState.Playing)
-                    || (HcGameManager.CurrentLevel.CurrentState == LevelState.Failed))
-                {
-                    HcGameManager.RestartLevel();
-                }
             }
         }
     }

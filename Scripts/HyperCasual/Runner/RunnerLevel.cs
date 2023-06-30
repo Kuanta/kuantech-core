@@ -68,6 +68,7 @@ namespace Kuantech.Core.HyperCasual
         public override void ClearLevel()
         {
             StopAllCoroutines();
+            ReleaseEarnings();
             if (_liveChunks == null) return;
             foreach (var chunk in _liveChunks)
             {
@@ -92,17 +93,6 @@ namespace Kuantech.Core.HyperCasual
         }
         
         #region ChunkGeneration
-
-        public RunnerChunk GenerateChunk(ChunkFormat chunkFormat)
-        {
-            Debug.LogError($"Getting {chunkFormat.ChunkType.ToString()}");
-            GameObject chunkPrefab = _runnerLevelManager.GetChunkPrefab(chunkFormat.ChunkType);
-            GameObject chunk = Instantiate(chunkPrefab);//GameManager.Instance.Pool.GetObject(prefab);
-            RunnerChunk runnerChunk = chunk.GetComponent<RunnerChunk>();
-            runnerChunk.Initialize(this, chunkFormat);
-            return runnerChunk;
-        }
-
         public void AttachChunk(RunnerChunk newChunk)
         {
             newChunk.transform.SetParent(transform);
@@ -117,7 +107,6 @@ namespace Kuantech.Core.HyperCasual
                 _lastAddedChunk.AttachNewChunk(newChunk);    
             }
             _lastAddedChunk = newChunk;
-          
         }
 
         public RunnerChunk CreateAndAttachChunk()
@@ -128,16 +117,27 @@ namespace Kuantech.Core.HyperCasual
                 Debug.LogError("Already at the end, can't generate more chunks");
                 return null;
             }
+
+            bool isFinal = _currentChunkIndex == _levelFormat.Chunks.Count - 1;
             ChunkFormat chunkFormat = _levelFormat.Chunks[_currentChunkIndex];
-            RunnerChunk newChunk = GenerateChunk(chunkFormat);
-            AttachChunk(newChunk);
+            Debug.LogError($"Getting {chunkFormat.ChunkType.ToString()}");
+            GameObject chunkPrefab = _runnerLevelManager.GetChunkPrefab(chunkFormat.ChunkType);
+            GameObject chunk = Instantiate(chunkPrefab);//GameManager.Instance.Pool.GetObject(prefab);
+            RunnerChunk runnerChunk = chunk.GetComponent<RunnerChunk>();
+            AttachChunk(runnerChunk);
+            
+            //Position of the chunk must be set before initialize. (Spawning objects need correct positions)
+            runnerChunk.Initialize(this, chunkFormat, isFinal);
             _currentChunkIndex++;
-            return newChunk;
+            return runnerChunk;
         }
 
         private void RetireChunk(RunnerChunk chunk)
         {
-            StartCoroutine(RetireChunkCoroutine(chunk, 0));
+            chunk.ClearChunk();
+            //GameManager.Instance.Pool.PoolObject(chunk.gameObject);
+            Destroy(chunk.gameObject);
+            //StartCoroutine(RetireChunkCoroutine(chunk, 0));
         }
 
         private IEnumerator RetireChunkCoroutine(RunnerChunk chunk, float delay)
