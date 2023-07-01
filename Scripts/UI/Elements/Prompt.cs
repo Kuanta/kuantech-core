@@ -1,4 +1,5 @@
 ﻿using Kuantech.UI;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
@@ -9,7 +10,8 @@ namespace Kuantech.Core.UI
     {
         [SerializeField] protected Button ConfirmButton;
         [SerializeField] protected Button CancelButton;
-
+        [SerializeField] private TMP_Text PromptText;
+        
         private UnityAction ConfirmHandler;
         private UnityAction CloseHandler;
         
@@ -48,6 +50,12 @@ namespace Kuantech.Core.UI
         public void SetCloseListener(UnityAction handler)
         {
             CloseHandler = handler;
+        }
+
+        public void SetPromptText(string text)
+        {
+            if (PromptText == null) return;
+            PromptText.text = text;
         }
         
     }

@@ -21,6 +21,11 @@ namespace Kuantech.Core.HyperCasual
         {
         }
 
+        public Vector2 GetMovemenetVector()
+        {
+            return _movementVector;
+        }
+
         public void OnPlay()
         {
             MovementLock.Reset();
@@ -51,7 +56,7 @@ namespace Kuantech.Core.HyperCasual
         private void RigibodyMovement()
         {
             if(Rigidbody == null) return;
-            if (_movingToPoint)
+            if (_movingToPoint || MovementLock.IsLocked())
             {
                 //Leave the movement to Update
                 Rigidbody.velocity = Vector3.zero;

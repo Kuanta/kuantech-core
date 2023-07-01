@@ -96,6 +96,7 @@ namespace Kuantech.Core.HyperCasual
         public override void Initialize(HCGameManager hcGameManager)
         {
             base.Initialize(hcGameManager);
+            BetterStreamingAssets.Initialize();
             ReadLevels(LevelDesignsFileName);
         }
         
@@ -117,10 +118,9 @@ namespace Kuantech.Core.HyperCasual
         private bool ReadDesignsFile(string designFileName, out LevelDesigns levelDesigns)
         {
             levelDesigns = new LevelDesigns();
-            string filePath = Application.dataPath + $"/StreamingAssets/{designFileName}";
-            string outputFolder = $"Assets/Kuantech/Prefabs/Levels/Generated/";
-            if (!File.Exists(filePath)) return false;
-            string fileContent = File.ReadAllText(filePath);
+            string filePath = designFileName;
+            if (!BetterStreamingAssets.FileExists(filePath)) return false;
+            string fileContent = BetterStreamingAssets.ReadAllText(filePath);
             levelDesigns = JsonConvert.DeserializeObject<LevelDesigns>(fileContent);
             return true;
         }

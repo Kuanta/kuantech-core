@@ -34,6 +34,8 @@ namespace Kuantech.Core
         private static readonly int AlternativeAttack = Animator.StringToHash("AlternativeAttack");
         private static readonly int Jump = Animator.StringToHash("Jump");
         private static readonly int Land = Animator.StringToHash("Land");
+        private static readonly int Cast = Animator.StringToHash("Cast");
+        private static readonly int CastIndex = Animator.StringToHash("CastIndex");
 
         public override void Initialize()
         {
@@ -56,13 +58,15 @@ namespace Kuantech.Core
             if (GameManager.Instance.GameIsPaused || Animator == null) return;
             _movementParameters =
                 Vector2.Lerp(_movementParameters, _targetMovementParameters * _movementParametersScale, Time.deltaTime * LerpFactor);
-            
+           
+            if (Animator == null) return;
             Animator.SetFloat(X, _movementParameters.x);
             Animator.SetFloat(Y,_movementParameters.y);
         }
 
         public void ApplyDefaultAnimationSet()
         {
+            if (DefaultAnimationSet == null) return; 
             Animator.runtimeAnimatorController = DefaultAnimationSet;
             // if (DefaultAnimationSet != null && AnimatorOverrideController != null)
             // {
@@ -106,8 +110,11 @@ namespace Kuantech.Core
         public override void Reset()
         {
             base.Reset();
-            Animator.SetFloat(X, 0);
-            Animator.SetFloat(Y, 0);
+            if (Animator != null)
+            {            
+                Animator.SetFloat(X, 0);
+                Animator.SetFloat(Y, 0);
+            }
             _targetMovementParameters = Vector2.zero;
             _movementParametersScale = Vector2.one;
         }
@@ -133,6 +140,7 @@ namespace Kuantech.Core
         /// <param name="attackIndex"></param>
         public void LightAttackTrigger(int handIndex = 0, int attackIndex = 0)
         {
+            if (Animator == null) return;
             Animator.SetTrigger(Attack);
             Animator.SetBool(Hold, false);
             Animator.SetInteger(HandIndex, handIndex);
@@ -141,6 +149,7 @@ namespace Kuantech.Core
 
         public void AlternativeAttackTrigger(int handIndex = 0, int attackIndex = 0)
         {
+            if (Animator == null) return;
             Animator.SetTrigger(AlternativeAttack);
             Animator.SetBool(Hold, false);
             Animator.SetInteger(HandIndex, handIndex);
@@ -162,28 +171,40 @@ namespace Kuantech.Core
 
         public void SetAnimationTime(float animationTime)
         {
+            if (Animator == null) return;
             Animator.SetFloat(TargetTime, animationTime);
         }
 
         public void ToggleAiming(bool toggle)
         {
+            if (Animator == null) return;
             Animator.SetBool(Aiming, toggle);
+        }
+
+        public void SkillCast(int castIndex = 0)
+        {
+            if (Animator == null) return;
+            Animator.SetInteger(CastIndex, castIndex);
+            Animator.SetTrigger(Cast);
         }
         #endregion
         
         public void OnDamageReceive(object sender, float damage)
         {
+            if (Animator == null) return;
             Animator.SetInteger(DamageReceivedIndex, UnityEngine.Random.Range(0,3));
             Animator.SetTrigger(DamageReceived);
         }
         public override void OnDeath(object sender, EventArgs empty)
         {
+            if (Animator == null) return;
             Animator.SetTrigger(Death);
         }
 
         public override void OnRespawn(object sender, EventArgs empty)
         {
             Reset();
+            if (Animator == null) return;
             Animator.Rebind();
         }
     }

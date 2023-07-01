@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Kuantech.Ads;
 using Kuantech.Core.FX;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -16,7 +15,6 @@ namespace Kuantech.Core.HyperCasual
     {
         //SubManagers
         [Header("SubManagers")]
-        public AdsManager AdsManager; //todo: Make AdsManager a subManager
         public LevelManager LevelManager; //todo: Make LevelManager a subManager
         private SubManager[] _subManagers;
         
@@ -59,7 +57,6 @@ namespace Kuantech.Core.HyperCasual
             //todo: Make UIManager a submanager
             GameState ??= new GameState(CurrencyIds);
             GameState.LoadData();
-            UIManager.Instance.Initialize(); //Initialize after data loading
             EffectsLibrary.Instance.Initialize();
             foreach (var currencyId in CurrencyIds)
             {
@@ -70,6 +67,7 @@ namespace Kuantech.Core.HyperCasual
             _lastCheckTime = Time.time;
             
             InitializeSubManagers();
+            UIManager.Instance.Initialize(); //Initialize after data loading and store listing
             LevelManager = GetSubManagerByType<LevelManager>() as LevelManager;
             OnGameStart();
         }
