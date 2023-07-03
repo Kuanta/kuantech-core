@@ -5,6 +5,30 @@ using UnityEngine;
 
 namespace Kuantech.Core.Rpg
 {
+    /// <summary>
+    /// Skill variable that can be skilled by a stat
+    /// </summary>
+    [Serializable]
+    public struct SkillVariable
+    {
+        public string Name;
+        public StatTypes BaseStat;
+        public float BaseValue;
+        public float StatMultiplier;
+        public float RankMultiplier;
+        [NonSerialized] public Func<float> RankCalculation;
+        public float GetValue(int rank = 0, Actor actor = null)
+        {
+            float baseValue = 0;
+            baseValue = RankCalculation?.Invoke() ?? DefaultRankCalculation(rank);
+            if (BaseStat == StatTypes.None) return baseValue;
+            return actor.Stats.GetStat(BaseStat) * StatMultiplier + BaseValue;
+        }
+        public float DefaultRankCalculation(int rank)
+        {
+            return rank * RankMultiplier + BaseValue;
+        }
+    }
     
     [Serializable]
     public struct SkillData
@@ -15,25 +39,25 @@ namespace Kuantech.Core.Rpg
         public Sprite Icon;
         public float BaseEnergyCost;
         public bool IsActive;
-        public SkillVariable Cooldown;
-        public float CastDelay;
         public StatTypes MainStatType;
         public List<SkillVariable> SkillVariables;
+        
+        //Timings
+        public float CastTime;//This is the time that the actual effects will take place
+        public float AnimationTime; //This is the animation time of the skill. Can initiate a global cooldown for this.
+        public SkillVariable Cooldown;
     }
     
-    public class Skill
+    public abstract class Skill
     {
-        public int Id;
+        public int Rank = 1;
         protected Dictionary<string, SkillVariable> SkillVariables = new Dictionary<string, SkillVariable>();
         protected SkillData SkillData;
-        protected float CastDelay;
 
         protected float LastCastTime = 0f; //For active skills
         public Skill(SkillData data)
         {
             SkillData = data;
-            Id = data.Id;
-            CastDelay = data.CastDelay;
             if (SkillData.SkillVariables == null) return;
             foreach (var skillVariable in SkillData.SkillVariables)
             {
@@ -41,32 +65,66 @@ namespace Kuantech.Core.Rpg
             }
         }
 
-        public virtual bool Cast(Actor caster)
-        {
-            if (!caster.CombatModule.CanCastSkill()) return false;
-            if (CastDelay <= 0)
-            {
-                if (Time.time - LastCastTime < GetCooldown(caster)) return false;
-                LastCastTime = Time.time;
-                return true;
-            }
-
-            caster.StartCoroutine(CastRoutine(caster));
-            return true;
-        }
-
-        private IEnumerator CastRoutine(Actor caster)
-        {
-            yield return new WaitForSeconds(CastDelay);
-            if (Time.time - LastCastTime < GetCooldown(caster));
-            LastCastTime = Time.time;
-            CastAfterTime();
-        }
-
-        protected virtual void CastAfterTime()
+        public virtual void AddToActor(CombatModule combatModule)
         {
             
         }
+
+        public virtual void RemoveFromActor()
+        {
+            
+        }
+
+        public virtual void Cancel()
+        {
+            
+        }
+
+        public bool IsOffCooldown(Actor caster)
+        {
+            return Time.time - LastCastTime > GetCooldown(caster);
+        }
+        public virtual bool Cast(Actor caster)
+        {
+            if (caster.CombatModule == null || !caster.CombatModule.CanCastSkill()) return false;
+            if (!IsOffCooldown(caster)) return false;
+           InitiateCooldown(caster);
+           OnCast(caster);
+            if (SkillData.CastTime <= 0)
+            {
+                ApplySkillEffect();
+            }
+            caster.StartCoroutine(CastRoutine(caster));
+            return true;
+        }
+        protected virtual void InitiateCooldown(Actor caster)
+        {
+            LastCastTime = Time.time;
+            //Apply global cooldown
+            float globalCooldownTime = Mathf.Max(Config.GLOBAL_COOLDOWN_TIME, SkillData.AnimationTime);
+            caster.CombatModule.GlobalCooldown.StartCooldown(globalCooldownTime);
+        }
+        private IEnumerator CastRoutine(Actor caster)
+        {
+            yield return new WaitForSeconds(SkillData.CastTime);
+            if (Time.time - LastCastTime < GetCooldown(caster));
+            LastCastTime = Time.time;
+            ApplySkillEffect();
+        }
+        
+        /// <summary>
+        /// This will be called on Cast. Skills can make preparations with this method.
+        /// </summary>
+        /// <param name="caster"></param>
+        protected virtual void OnCast(Actor caster)
+        {
+            
+        }
+
+        /// <summary>
+        /// This is the hearth of skills. A skill will implement this in order to be useful
+        /// </summary>
+        protected abstract void ApplySkillEffect();
 
         public virtual float GetCooldown(Actor caster)
         {
@@ -76,5 +134,35 @@ namespace Kuantech.Core.Rpg
             float finalValue = Mathf.Max(baseValue * (1 - cdReduction), 0.1f); //Min cooldown should be 0.1
             return finalValue;
         }
+        
+        #region SkillVariables
+
+        public float GetSkillAnimationTime()
+        {
+            return Mathf.Max(SkillData.AnimationTime, 0.1f);
+        }
+        public SkillVariable GetSkillVariable(string variableName)
+        {
+            if (SkillVariables.ContainsKey(variableName)) return SkillVariables[variableName];
+            return new SkillVariable()
+            {
+                Name = null,
+                BaseStat = StatTypes.None,
+                BaseValue = 0,
+                StatMultiplier = 0,
+                RankMultiplier = 0,
+            };
+        }
+        
+        public virtual float GetEnergyCost()
+        {
+            return SkillData.BaseEnergyCost * Rank;
+        }
+        
+        public void IncreaseRank()
+        {
+            Rank += 1;
+        }
+        #endregion
     }
 }

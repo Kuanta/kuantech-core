@@ -82,6 +82,7 @@ namespace Kuantech.Core
         //Collision
         private Collider[] _results = new Collider[32];
         public LayerMask Targets;
+        public LayerMask ObstacleLayerMask;
         private UnityAction AttackCompleteHandler;
         private InventoryModule _actorInventory;
         private List<RaycastProjectile> _shotRaycastProjecitles = new List<RaycastProjectile>();
@@ -95,7 +96,7 @@ namespace Kuantech.Core
         private bool _attackQueued = false;
         
         //AttackSkill
-        [SerializeReference] private Dictionary<int, AttackSkill> AttackSkills = new Dictionary<int, AttackSkill>();
+        [SerializeReference] private Dictionary<Type, Skill> Skills = new Dictionary<Type, Skill>();
         public float ManaCost = 0;
         public bool CanUseSkill = false;
         public bool IsResistantToKnockback = false;
@@ -116,7 +117,11 @@ namespace Kuantech.Core
                 //Use 1 - slow since default value for floats are 0. This way we are ensuring that non initialized slow factor values wont result in 0 movements
                 Mathf.Clamp(1 - CurrentAttackPattern.MovementSlow, 0f, 1f) : 1f;
         }
-
+        
+        /// <summary>
+        /// Checks whether the actor can attack or not
+        /// </summary>
+        /// <returns></returns>
         public bool CanAttack()
         {
             if (CurrentAttackPattern.AttackType == AttackTypes.Target && CurrentTarget == null) return false;
@@ -169,8 +174,6 @@ namespace Kuantech.Core
         private void Update()
         {
             if (GameManager.Instance.GameIsPaused) return;
-            
-            UpdateAttackSkills();
             
             //1) Handle projectile bullets
             HandleProjectileBullets();
@@ -493,8 +496,7 @@ namespace Kuantech.Core
         }
         #region Attack Casts
         //Attack Casts
-        
-        public static bool CheckObstaclesBetween(GameObject source, GameObject destionation, float range, float heightOffset = 1f)
+        public static bool CheckObstaclesBetween(GameObject source, GameObject destionation, float range, LayerMask obstacleLayerMask, float heightOffset = 1f)
         {
             Vector3 center = source.transform.position + Vector3.up * heightOffset;
             //Check if behind obstacle
@@ -509,8 +511,7 @@ namespace Kuantech.Core
             bool obscured = false;
             RaycastHit[] hits = new RaycastHit[16];
 
-            int mask = LayerMask.GetMask("Enemy") | LayerMask.GetMask("Obstacle");
-            if (UnityEngine.Physics.RaycastNonAlloc(ray, hits, range, mask) > 0)
+            if (UnityEngine.Physics.RaycastNonAlloc(ray, hits, range, obstacleLayerMask.value) > 0)
             {
                 for (int j = 0; j < hits.Length; ++j)
                 {
@@ -592,7 +593,7 @@ namespace Kuantech.Core
 
                 if (checkObstacle)
                 {
-                    bool obscured = CheckObstaclesBetween(gameObject, results[i].gameObject, range);
+                    bool obscured = CheckObstaclesBetween(gameObject, results[i].gameObject, range, ObstacleLayerMask);
                     if (obscured) continue;
                 }
             
@@ -634,7 +635,7 @@ namespace Kuantech.Core
 
                 if (checkObstacle)
                 {
-                    bool obscured = CheckObstaclesBetween(gameObject, results[i].gameObject, range);
+                    bool obscured = CheckObstaclesBetween(gameObject, results[i].gameObject, range, ObstacleLayerMask);
                     if (obscured) continue;
                 }
                 attackables.Add(target);
@@ -857,50 +858,54 @@ namespace Kuantech.Core
             return (diff * dotProd).magnitude;
         }
 
-        #region AttackSkills
-        
+        #region Skills
+
+        public bool CastSkill<T>()
+        {
+            if (!CanCastSkill()) return false;
+            if (!Skills.ContainsKey(typeof(T))) return false;
+            Skill skill = GetSkill<T>();
+            if (!skill.IsOffCooldown(Actor)) return false;
+            if (!skill.Cast(Actor)) return false;
+            float animTime = skill.GetSkillAnimationTime();
+            SetAnimationTime(animTime);
+            if(Actor.AnimatorModule != null) Actor.AnimatorModule.SkillCast();
+            return true;
+        }
         [Button("Add Skill")]
-        public void AddAttackSkill(AttackSkill skill)
+        public void AddAttackSkill(Skill skill)
         {
             if (skill == null) return;
 
-            AttackSkills ??= new Dictionary<int, AttackSkill>();
-            if (AttackSkills.ContainsKey(skill.Id))
+            Skills ??= new Dictionary<Type, Skill>();
+            if (Skills.ContainsKey(skill.GetType()))
             {
                 //Increase rank
-                AttackSkills[skill.Id].IncreaseRank();
+                Skills[skill.GetType()].IncreaseRank();
                 return;
             }
-            AttackSkills[skill.Id] = skill;
-            skill.Initialize(this);
+            Skills[skill.GetType()] = skill;
+            skill.AddToActor(this);
             CalculateManaCosts(); //To be safe, recalculate all
         }
-        
-        private void UpdateAttackSkills()
+
+        public Skill GetSkill<T>()
         {
-            //Update Skills
-            foreach (var key in AttackSkills.Keys)
-            {
-                if(AttackSkills[key] == null) continue;
-                AttackSkills[key].Update(Time.deltaTime);
-            }
+            if (Skills == null || !Skills.ContainsKey(typeof(T))) return null;
+            return Skills[typeof(T)];
         }
-        
-        public void RemoveAttackSkill(AttackSkill skill)
-        {
-            RemoveAttackSkill(skill.Id);
-        }
+ 
         
         /// <summary>
         /// Removes all attack skills
         /// </summary>
         public void RemoveAllAttackSkills()
         {
-            foreach (var key in AttackSkills.Keys)
+            foreach (var key in Skills.Keys)
             {
-                AttackSkills[key].Remove();
+                Skills[key].RemoveFromActor();
             }
-            AttackSkills.Clear();
+            Skills.Clear();
             CalculateManaCosts();
         }
         
@@ -909,45 +914,39 @@ namespace Kuantech.Core
         /// </summary>
         public void CancelAllAttackSkills()
         {
-            foreach (var key in AttackSkills.Keys)
+            foreach (var key in Skills.Keys)
             {
-                if(AttackSkills[key] == null) continue;
-                AttackSkills[key].Cancel();
+                if(Skills[key] == null) continue;
+                Skills[key].Cancel();
             }
         }
-        public AttackSkill GetAttackSkill(int skillId)
-        {
-            if (!AttackSkills.ContainsKey(skillId)) return null;
-            return AttackSkills[skillId];
-        }
+
         
         /// <summary>
         /// Returns the rank of the skill given by id. If player doesn't have that skill, it will return 0
         /// </summary>
         /// <param name="skillId"></param>
-        public int GetSkillRank(int skillId)
+        public int GetSkillRank<T>( )
         {
-            if (AttackSkills.ContainsKey(skillId))
-            {
-                return AttackSkills[skillId].Rank;
-            }
-            return 0;
+            Skill skill = GetSkill<T>();
+            if (skill == null) return 0; 
+            return skill.Rank;
         }
-        public void RemoveAttackSkill(int skillId)
+        public void RemoveAttackSkill<T>()
         {
-            if (!AttackSkills.ContainsKey(skillId)) return;
-            AttackSkills[skillId].Remove();//Unsubscribe from events
-            AttackSkills.Remove(skillId); 
+            if (!Skills.ContainsKey(typeof(T))) return;
+            Skills.Remove(typeof(T)); 
             CalculateManaCosts();
         }
         
         public void CalculateManaCosts()
         {
+            //todo(refactor): Clear this
             //This was before active skill implementation
             ManaCost = 0f;
             return;
             float manaCost = 0;
-            foreach (var pair in AttackSkills)
+            foreach (var pair in Skills)
             {
                 manaCost += pair.Value.GetEnergyCost();
             }

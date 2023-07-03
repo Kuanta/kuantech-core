@@ -1,41 +1,13 @@
-﻿using System;
-using Kuantech.Combat;
+﻿using Kuantech.Combat;
 using UnityEngine;
 
 namespace Kuantech.Core.Rpg
 {
     /// <summary>
-    /// Skill variable that can be skilled by a stat
-    /// </summary>
-    [Serializable]
-    public struct SkillVariable
-    {
-        public string Name;
-        public StatTypes BaseStat;
-        public float BaseValue;
-        public float StatMultiplier;
-        public float RankMultiplier;
-        [NonSerialized] public Func<float> RankCalculation;
-        public float GetValue(int rank = 0, Actor actor = null)
-        {
-            float baseValue = 0;
-            baseValue = RankCalculation?.Invoke() ?? DefaultRankCalculation(rank);
-            if (BaseStat == StatTypes.None) return baseValue;
-            return actor.Stats.GetStat(BaseStat) * StatMultiplier + BaseValue;
-        }
-        public float DefaultRankCalculation(int rank)
-        {
-            return rank * RankMultiplier + BaseValue;
-        }
-    }
-
-    
-    /// <summary>
     /// Attack skills are passive effects that are triggered on certain points during the lifetime of the combat modules
     /// </summary>
     public class AttackSkill : Skill
     {
-        public int Rank = 1;
         protected CombatModule CombatModule;
         
         //Channel Casts
@@ -68,20 +40,14 @@ namespace Kuantech.Core.Rpg
             Speed = GetSkillVariable("speed");
         }
         
-        public SkillVariable GetSkillVariable(string variableName)
+        protected virtual void OnProjectileShot(object sender, ProjecitleShotInfo shotInfo){}
+        protected virtual void OnMeleeImpact(object sender, Actor impacted){}
+        protected virtual void OnRangedImpact(object sender, ProjectileImpactInfo impactInfo){}
+        protected virtual void OnAttack(object sender, int attackIndex){}
+        
+        public override void AddToActor(CombatModule combatModule)
         {
-            if (SkillVariables.ContainsKey(variableName)) return SkillVariables[variableName];
-            return new SkillVariable()
-            {
-                Name = null,
-                BaseStat = StatTypes.None,
-                BaseValue = 0,
-                StatMultiplier = 0,
-                RankMultiplier = 0,
-            };
-        }
-        public virtual void Initialize(CombatModule combatModule)
-        {
+            base.AddToActor(combatModule);
             CombatModule = combatModule;
             CombatModule.AttackEvent += OnAttack;
             CombatModule.MeleeImpactEvent += OnMeleeImpact;
@@ -89,24 +55,10 @@ namespace Kuantech.Core.Rpg
             CombatModule.RangedImpactEvent += OnRangedImpact;
             IsBeingCast = false;
         }
-
-        public virtual float GetEnergyCost()
+     
+        public override void RemoveFromActor()
         {
-            return SkillData.BaseEnergyCost * Rank;
-        }
-        
-        protected virtual void OnProjectileShot(object sender, ProjecitleShotInfo shotInfo){}
-        protected virtual void OnMeleeImpact(object sender, Actor impacted){}
-        protected virtual void OnRangedImpact(object sender, ProjectileImpactInfo impactInfo){}
-        protected virtual void OnAttack(object sender, int attackIndex){}
-
-        public void IncreaseRank()
-        {
-            Rank += 1;
-            CombatModule.CalculateManaCosts();
-        }
-        public void Remove()
-        {
+            base.RemoveFromActor();
             CombatModule.AttackEvent -= OnAttack;
             CombatModule.MeleeImpactEvent -= OnMeleeImpact;
             CombatModule.ProjectileShotEvent -= OnProjectileShot;
@@ -132,11 +84,16 @@ namespace Kuantech.Core.Rpg
             if (IsChanneled) IsBeingCast = true;
             
             //Apply global cooldown
+            float globalCooldownTime = Mathf.Max(Config.GLOBAL_COOLDOWN_TIME, SkillData.AnimationTime);
             CombatModule.GlobalCooldown.StartCooldown(IsChanneled
                 ? ChannelDuration.GetValue(Rank)
-                : Config.GLOBAL_COOLDOWN_TIME);
+                : globalCooldownTime);
             
             return true;
+        }
+
+        protected override void ApplySkillEffect()
+        {
         }
 
         public virtual void Update(float deltaTime)
@@ -186,13 +143,5 @@ namespace Kuantech.Core.Rpg
             return shotProjectile;
         }
         #endregion
-
-        public override float GetCooldown(Actor caster)
-        {
-            float cdReduction = Mathf.Clamp(caster.Stats.GetStat(StatTypes.CooldownReduction), 0, 1);
-            float baseValue = SkillData.Cooldown.GetValue(Rank);
-            float finalValue = Mathf.Max(baseValue * (1 - cdReduction), 0.1f); //Min cooldown should be 0.1
-            return finalValue;
-        }
     }
 }
