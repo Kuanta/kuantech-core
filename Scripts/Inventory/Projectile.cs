@@ -10,13 +10,13 @@ namespace Kuantech.Combat
 {
     public class Projectile : MonoBehaviour
     {
-        public const float ReachThreshold = 0.01f;
         [Header("Properties")]
         public float Speed;
         public float Range;
         public float FollowLerpFactor;
         public float Knockback;
         public float KnockbackTime;
+        public const float ReachThreshold = 0.1f;
 
         public bool RawDamage = false;
         public CombatModule CastBy;
@@ -56,7 +56,8 @@ namespace Kuantech.Combat
         //Events
         public EventHandler InitializeEvent;
         public EventHandler DespawnEvent;
-        
+
+        private bool _targeted;
         /// <summary>
         /// Initializes and shoots the projectile
         /// </summary>
@@ -93,6 +94,7 @@ namespace Kuantech.Combat
             
             _InitialDistanceToTarget = Range;
             _target = target;
+            _targeted = _target != null;
             if (_target != null)
             {
                 Vector3 diffToTarget = (shootPosition - _target.transform.position);
@@ -117,7 +119,11 @@ namespace Kuantech.Combat
         protected virtual void Update()
         {
             if (_despawned) return;
-            if(Speed == 0) Despawn();
+            if (_targeted && _target == null || Speed == 0f)
+            {
+                Despawn();
+                return;
+            }
             Vector3 moveDirection = transform.forward;
             Vector3 dist = _target.transform.position - transform.position;
             dist.y = 0;
