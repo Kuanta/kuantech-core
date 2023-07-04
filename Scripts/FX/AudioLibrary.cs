@@ -74,12 +74,14 @@ namespace Kuantech.Core.FX
         public void SetMusicVolume(float value)
         {
             value = Mathf.Max(0.0001f, value);
+            if (MasterMixer == null) return;
             MasterMixer.SetFloat("musicVolume", Mathf.Log10(value * 0.5f) * 20);
         }
 
         public void SetSfxVolume(float value)
         {
             value = Mathf.Max(0.0001f, value);
+            if (MasterMixer == null) return;
             MasterMixer.SetFloat("sfxVolume", Mathf.Log10(value * 0.5f) * 20);
         }
     }
