@@ -96,8 +96,7 @@ namespace Kuantech.Core.HyperCasual
 
         public virtual void RestartLevel()
         {
-            CurrentLevel.ClearLevel();
-            CurrentLevel.PrepareLevel();
+            CurrentLevel.RestartLevel();
             ChangeCurrentState(LevelState.Waiting);
         }
 

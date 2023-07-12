@@ -11,9 +11,13 @@ namespace Kuantech.Core.HyperCasual
             ParentChunk.CompleteChunk();
         }
 
-        public void OnChunkGenerated(RunnerChunk parentChunk)
+        public void OnChunkGenerated(RunnerChunk chunk)
         {
-            ParentChunk = parentChunk;
+            ParentChunk = chunk;
+        }
+
+        public void OnChunkRestart()
+        {
         }
 
         public void OnPlayerEnteredChunk()

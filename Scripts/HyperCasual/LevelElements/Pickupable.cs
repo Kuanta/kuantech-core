@@ -92,6 +92,11 @@ namespace Kuantech.Core.HyperCasual
             Spawn();
         }
 
+        public override void OnRestartLevel()
+        {
+            Reset();
+        }
+
         public override void OnLeaveLevel()
         {
         }

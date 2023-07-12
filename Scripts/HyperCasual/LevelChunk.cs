@@ -5,7 +5,7 @@ namespace Kuantech.Core.HyperCasual
     public class LevelChunk : MonoBehaviour
     {
         public LevelElement[] LevelElements;
-        protected Level ParentLevel;
+        public Level ParentLevel;
         public virtual void OnLevelCreate()
         {
             LevelElements = GetComponentsInChildren<LevelElement>();
@@ -31,6 +31,16 @@ namespace Kuantech.Core.HyperCasual
 
         }
 
+        public virtual void OnRestart()
+        {
+            //Restart level elements
+            foreach (LevelElement levelElement in LevelElements)
+            {
+                if(levelElement == null) continue; //todo: Boss chunk has a null level element
+                levelElement.OnRestartLevel();
+            }
+        }
+        
         public virtual void OnClear()
         {
             ClearChunk();
@@ -69,7 +79,6 @@ namespace Kuantech.Core.HyperCasual
 
         public virtual void ClearChunk()
         {
-            ClearChunk();
         }
     }
 }

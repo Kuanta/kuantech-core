@@ -66,7 +66,9 @@ namespace Kuantech.Core
         public Transform ShootPosition;
         
         //Targets
+        [Header("Targeting")]
         public Actor CurrentTarget;
+        public Vector3 CurrentTargetPosition = Vector3.zero;
         
         //States
         public float AttackStartTime;
@@ -201,6 +203,7 @@ namespace Kuantech.Core
             {
                 ResetActiveTelemetry();
                 AttackEvent?.Invoke(this, _flowIndex);
+                if (!IsAttacking) return;
                 switch (CurrentAttackType)
                 {
                     case AttackTypes.Arc:
@@ -399,6 +402,7 @@ namespace Kuantech.Core
         {
             IsAttacking = false;
             _attackQueued = false;
+            //todo(animation): Apply attack canceling here
             ResetActiveTelemetry();
         }
         public void SetAttackType(AttackTypes attackType)
@@ -524,17 +528,14 @@ namespace Kuantech.Core
                     {
                         continue;
                     }
-
-                    obscured = true;
                     break;
                 }
             }
             return false;
         }
-        public List<Actor> GetCircularAreaEnemies(float range, bool checkObstacle, float angle = 0f)
+        public List<Actor> GetCircularAreaEnemies(Vector3 center, float range, bool checkObstacle, float angle = 0f)
         {
             List<Actor> attackables = new List<Actor>();
-            Vector3 center = transform.position + Vector3.up;
             Collider[] results = new Collider[32];
             int hitCount = UnityEngine.Physics.OverlapSphereNonAlloc(center, range, results, Targets);
              Vector3 forwardVector = transform.forward;
@@ -602,11 +603,11 @@ namespace Kuantech.Core
             }
             return attackables;
         }
-            
+        
         public static void DealCircularAreaDamage(CombatModule from, float damage, float range, float knockback, float knockbackTime, bool useSkill, bool checkObstacle, float angle=0f)
         {
             List<Actor> attackables =
-                from.GetCircularAreaEnemies(range, checkObstacle, angle);
+                from.GetCircularAreaEnemies(from.transform.position, range, checkObstacle, angle);
             foreach (var actor in attackables)
             {
                 if(actor == null) continue;
@@ -614,6 +615,16 @@ namespace Kuantech.Core
             }
         }
 
+        public static void DealCircularAreaDamageAtPosition(CombatModule from, Vector3 position, float damage, float range, float knockback, float knockbackTime, bool useSkill, bool checkObstacle, float angle=0f)
+        {
+            List<Actor> attackables =
+                from.GetCircularAreaEnemies(position, range, checkObstacle, angle);
+            foreach (var actor in attackables)
+            {
+                if(actor == null) continue;
+                from.DamageActorMelee(actor, damage, knockback, knockbackTime);   
+            }
+        }
         public List<Actor> GetLinearAreaEnemies(float range, float width, bool checkObstacle)
         {
             List<Actor> attackables = new List<Actor>();
@@ -676,14 +687,7 @@ namespace Kuantech.Core
         {
             if (RangedAttackLock.IsLocked()) return;
             GameObject projectilePrefab = null;
-            // if (EquippedWeapon != null)
-            // {
-            //     projectilePrefab = EquippedWeapon.ProjectilePrefab;
-            // }
-            // if (DefaultProjectilePrefab != null)
-            // {
-            //     projectilePrefab = DefaultProjectilePrefab.gameObject;
-            // }
+
             projectilePrefab = CurrentAttackPattern.ProjectilePrefab;
             if (projectilePrefab == null)
             {
@@ -692,11 +696,12 @@ namespace Kuantech.Core
             }
 
             Actor target = CurrentAttackPattern.TargetedProjectile ? CurrentTarget : null;
+            Transform targetTransform = target != null ? target.transform : null;
             
             ShootProjectile(EquippedWeapon, projectilePrefab, 
                 GetShootPosition(), 
                 transform.forward,
-                true,target.transform,
+                true,targetTransform,
                 CurrentAttackPattern.ProjectileRisHeight);
         }
         
@@ -719,9 +724,11 @@ namespace Kuantech.Core
         {
             float damage = GetDamage();
             Actor target = CurrentTarget;
-            if (target == null || target.Health <= 0f) return;
+            if (target == null || 
+                target.Health <= 0f || 
+                Vector3.Distance(target.transform.position, transform.position) > CurrentAttackPattern.Range) return;
+            
             target.ReceiveDamage(Actor, damage);
-            //todo: Discuss knockback
         }
         private void OnRaycastProjectileHit(RaycastHit hitInfo)
         {
@@ -872,6 +879,19 @@ namespace Kuantech.Core
             if(Actor.AnimatorModule != null) Actor.AnimatorModule.SkillCast();
             return true;
         }
+
+        public bool CastSkill(Type t)
+        {
+            if (!CanCastSkill()) return false;
+            if (!Skills.ContainsKey(t)) return false;
+            Skill skill = GetSkill(t);
+            if (!skill.IsOffCooldown(Actor)) return false;
+            if (!skill.Cast(Actor)) return false;
+            float animTime = skill.GetSkillAnimationTime();
+            SetAnimationTime(animTime);
+            if(Actor.AnimatorModule != null) Actor.AnimatorModule.SkillCast();
+            return true;
+        }
         [Button("Add Skill")]
         public void AddAttackSkill(Skill skill)
         {
@@ -894,8 +914,12 @@ namespace Kuantech.Core
             if (Skills == null || !Skills.ContainsKey(typeof(T))) return null;
             return Skills[typeof(T)];
         }
- 
-        
+
+        public Skill GetSkill(Type t)
+        {
+            if (Skills == null || !Skills.ContainsKey(t)) return null;
+            return Skills[t];
+        }
         /// <summary>
         /// Removes all attack skills
         /// </summary>

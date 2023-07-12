@@ -24,9 +24,9 @@ namespace Kuantech.Core.HyperCasual
             if (stateChangeData.NewState == LevelState.Playing)
             {
                 RunnerInputHandler.gameObject.SetActive(true);
-                RunnerLevel currentLevel = HcGameManager.CurrentLevel as RunnerLevel;
-                currentLevel.SetRunner(Runner);
                 Runner.OnPlay();
+                Runner.transform.position = Vector3.zero;
+                Runner.transform.rotation = Quaternion.identity;
             }
             else
             {

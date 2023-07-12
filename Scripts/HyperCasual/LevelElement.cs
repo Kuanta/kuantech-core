@@ -9,6 +9,7 @@ namespace Kuantech.Core.HyperCasual
         public Level ParentLevel;
         public virtual void OnLevelCreated(){}
         public abstract void OnPrepareLevel();
+        public abstract void OnRestartLevel();
         public abstract void OnLeaveLevel();
         public abstract void OnPlayLevel();
         public abstract void OnPlayerEntered();

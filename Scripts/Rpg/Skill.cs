@@ -53,7 +53,7 @@ namespace Kuantech.Core.Rpg
         public int Rank = 1;
         protected Dictionary<string, SkillVariable> SkillVariables = new Dictionary<string, SkillVariable>();
         protected SkillData SkillData;
-
+        protected Actor Caster;
         protected float LastCastTime = 0f; //For active skills
         public Skill(SkillData data)
         {
@@ -67,7 +67,7 @@ namespace Kuantech.Core.Rpg
 
         public virtual void AddToActor(CombatModule combatModule)
         {
-            
+            Caster = combatModule.Actor;
         }
 
         public virtual void RemoveFromActor()
@@ -88,8 +88,9 @@ namespace Kuantech.Core.Rpg
         {
             if (caster.CombatModule == null || !caster.CombatModule.CanCastSkill()) return false;
             if (!IsOffCooldown(caster)) return false;
-           InitiateCooldown(caster);
-           OnCast(caster);
+            Caster = caster;
+            InitiateCooldown(caster);
+            OnCast(caster);
             if (SkillData.CastTime <= 0)
             {
                 ApplySkillEffect();

@@ -12,9 +12,14 @@ namespace Kuantech.UI
             MainCamera = camera;
         }
 
-        private void Start()
+        private void Awake()
         {
             MainCamera = Camera.main;
+        }
+
+        private void OnEnable()
+        {
+            transform.forward = MainCamera.transform.forward * Direction;
         }
 
         private void Update()

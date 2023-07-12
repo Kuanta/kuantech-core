@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Kuantech.Core;
 using Kuantech.Core.FX;
 using Kuantech.Inventory.Items;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -58,6 +59,7 @@ namespace Kuantech.Combat
         public EventHandler DespawnEvent;
 
         private bool _targeted;
+        private Vector3 _lastDirection;
         /// <summary>
         /// Initializes and shoots the projectile
         /// </summary>
@@ -97,7 +99,8 @@ namespace Kuantech.Combat
             _targeted = _target != null;
             if (_target != null)
             {
-                Vector3 diffToTarget = (shootPosition - _target.transform.position);
+                Vector3 diffToTarget = (target.transform.position - _shotPosition);
+                _lastDirection = diffToTarget;
                 _InitialDistanceToTarget = diffToTarget.magnitude;
                 _lifeTime = 100.0f; //todo: This should be handled better
             }
@@ -125,17 +128,34 @@ namespace Kuantech.Combat
                 return;
             }
             Vector3 moveDirection = transform.forward;
-            Vector3 dist = _target.transform.position - transform.position;
-            dist.y = 0;
-            float sqrMag = dist.sqrMagnitude;
-            if (_target != null && _target.gameObject.activeInHierarchy)
+            if (_targeted)
             {
-                if (sqrMag > (ReachThreshold*ReachThreshold))
+                Vector3 dist = _target.transform.position - transform.position;
+                dist.y = 0;
+                float dot = Vector3.Dot(dist, _lastDirection);
+                float sqrMag = dist.sqrMagnitude;
+                Vector3 forwardDir = transform.forward;
+                forwardDir.y = 0;
+                _lastDirection.y = 0;
+                bool reachedTarget = dot < 0 || sqrMag <= ReachThreshold*ReachThreshold;
+                //Check Target Reach Distance
+                if (reachedTarget && _target.gameObject.activeInHierarchy)
                 {
-                    moveDirection = dist.normalized;
-                    transform.forward = Vector3.Lerp(moveDirection, dist, Time.deltaTime * FollowLerpFactor);
+                    HandleOnTriggerEnter(_target.gameObject);
+                    Despawn();
+                    return;
+                }
+                
+                if (_target.gameObject.activeInHierarchy)
+                {
+                    if (sqrMag > (ReachThreshold*ReachThreshold))
+                    {
+                        moveDirection = dist.normalized;
+                        transform.forward = Vector3.Lerp(moveDirection, dist, Time.deltaTime * FollowLerpFactor);
+                    }
                 }
             }
+      
             
             //Act like targeted throwable. For actual throwable, see throwable class
             Vector3 horizontalDiff = (transform.position - _shotPosition);
@@ -143,6 +163,7 @@ namespace Kuantech.Combat
             float normalizedHeight = Mathf.Clamp01(horizontalDiff.magnitude / _InitialDistanceToTarget);
             float throwbleHeightAddition = Mathf.Sin(normalizedHeight * Mathf.PI) * _riseHeight;
             _newPosition += transform.forward * Time.deltaTime * Speed;
+            _lastDirection = transform.forward;
             transform.position = _newPosition + Vector3.up * throwbleHeightAddition;
             
             //Check lifetime
@@ -152,14 +173,9 @@ namespace Kuantech.Combat
                 Despawn();
             }
             
-            //Check Target Reach Distance
-            if (_target != null && sqrMag <= ReachThreshold * ReachThreshold && _target.gameObject.activeInHierarchy)
-            {
-                HandleOnTriggerEnter(_target.gameObject);
-                Despawn();
-            }
+         
         }
-        
+
         public void SetTarget(Transform target)
         {
             _target = target;

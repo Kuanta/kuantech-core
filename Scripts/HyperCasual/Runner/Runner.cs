@@ -9,6 +9,8 @@ namespace Kuantech.Core.HyperCasual
         public float Speed = 10f;
         private Vector2 _movementVector = Vector2.zero;
         public Rigidbody Rigidbody;
+
+        public bool FrontMovementBlocked = false;
         
         //Move to point
         [SerializeField] private float _targetReachThreshold = 0.05f;
@@ -28,6 +30,7 @@ namespace Kuantech.Core.HyperCasual
 
         public void OnPlay()
         {
+            FrontMovementBlocked = false;
             MovementLock.Reset();
         }
         
@@ -93,6 +96,7 @@ namespace Kuantech.Core.HyperCasual
         {
             if (_movingToPoint) return;
             _movementVector = movementVec;
+            if (FrontMovementBlocked) _movementVector.y = 0;
         }
         public void MoveToPoint(Transform point, UnityAction pointReachedHandler)
         {

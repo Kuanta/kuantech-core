@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using Kuantech.Character;
-using Kuantech.Core.HyperCasual;
 using Kuantech.Inventory;
 using Kuantech.Inventory.Items;
 using Sirenix.OdinInspector;
@@ -9,7 +8,7 @@ using UnityEngine;
 
 namespace Kuantech.Core
 {
-    public class Actor : MonoBehaviour, ISpawnable
+    public class Actor : MonoBehaviour
     {
         [Header("Properties")] 
         public uint FactionId;
@@ -196,7 +195,7 @@ namespace Kuantech.Core
         {
             OnDeath?.Invoke(this, EventArgs.Empty);
             if(Collider != null) Collider.enabled = false;
-            if(VisualModel != null) VisualModel.gameObject.SetActive(false);
+            ToggleVisuals(false);
         }
 
         public virtual void Respawn()
@@ -204,13 +203,18 @@ namespace Kuantech.Core
             OnRespawnEvent?.Invoke(this, EventArgs.Empty);
             Reset();
         }
-        
+
+        protected virtual void ToggleVisuals(bool toggle)
+        {
+            if(VisualModel != null) VisualModel.gameObject.SetActive(toggle);
+
+        }
         public virtual void Reset()
         {
             _normalizedHealth = 1f;
             _normalizedEnergy = 1f;
             if(Collider != null) Collider.enabled = true;
-            if(VisualModel != null) VisualModel.gameObject.SetActive(true);
+            ToggleVisuals(true);
             foreach (var key in _modules.Keys)
             {
                 _modules[key].Reset();
@@ -255,21 +259,6 @@ namespace Kuantech.Core
             }
         }
 
-
-        public void OnSpawn()
-        {
-            Initialize();
-            Reset();
-        }
-
-        public void OnRespawn()
-        {
-        }
-
-        public void OnDespawn()
-        {
-            
-        }
     }
     
     

@@ -79,73 +79,89 @@ namespace Kuantech.Core.HyperCasual
     
     public class RunnerLevelManager : LevelManager
     {
+        [Header("General")] 
+        public bool GeneratedLevels;
+        
         [Header("Designs File paths")]
         [SerializeField] private string LevelDesignsFileName = "Levels.json";
 
         [Header("Empty Level")] 
         [SerializeField] private RunnerLevel EmptyLevelPrefab;
-        
-        [Header("Chunks")] 
-        public LevelChunkDictionary LevelChunkPrefabs = new LevelChunkDictionary();
-        
+
         [Header("Slots")] 
         public SlotDictionary SlotPrefabs = new SlotDictionary();
         
         [FormerlySerializedAs("_levelDesigns")] public LevelDesigns LevelDesigns;
             
-        public override void Initialize(HCGameManager hcGameManager)
-        {
-            base.Initialize(hcGameManager);
-            BetterStreamingAssets.Initialize();
-            ReadLevels(LevelDesignsFileName);
-        }
+        // public override void Initialize(HCGameManager hcGameManager)
+        // {
+        //     base.Initialize(hcGameManager);
+        //     BetterStreamingAssets.Initialize();
+        //     ReadLevels(LevelDesignsFileName);
+        // }
         
-        #region Data Reading
-        /// <summary>
-        /// Reads the json that contains multiple level designs
-        /// </summary>
-        /// <param name="levelsFormatFilename"></param>
-        private void ReadLevels(string levelsFormatFilename)
-        {
-            if (!ReadDesignsFile(levelsFormatFilename, out LevelDesigns))
-            {
-                Debug.LogError("Level Designs couldn't be read");
-                return;
-            }
-            Debug.LogError($"All {LevelDesigns.Levels.Count} levels has been read");
-        }
-        
-        private bool ReadDesignsFile(string designFileName, out LevelDesigns levelDesigns)
-        {
-            levelDesigns = new LevelDesigns();
-            string filePath = designFileName;
-            if (!BetterStreamingAssets.FileExists(filePath)) return false;
-            string fileContent = BetterStreamingAssets.ReadAllText(filePath);
-            levelDesigns = JsonConvert.DeserializeObject<LevelDesigns>(fileContent);
-            return true;
-        }
-        #endregion
+        // #region Data Reading
+        // /// <summary>
+        // /// Reads the json that contains multiple level designs
+        // /// </summary>
+        // /// <param name="levelsFormatFilename"></param>
+        // private void ReadLevels(string levelsFormatFilename)
+        // {
+        //     if (!ReadDesignsFile(levelsFormatFilename, out LevelDesigns))
+        //     {
+        //         Debug.LogError("Level Designs couldn't be read");
+        //         return;
+        //     }
+        //     Debug.LogError($"All {LevelDesigns.Levels.Count} levels has been read");
+        // }
+        //
+        // private bool ReadDesignsFile(string designFileName, out LevelDesigns levelDesigns)
+        // {
+        //     levelDesigns = new LevelDesigns();
+        //     string filePath = designFileName;
+        //     if (!BetterStreamingAssets.FileExists(filePath)) return false;
+        //     string fileContent = BetterStreamingAssets.ReadAllText(filePath);
+        //     levelDesigns = JsonConvert.DeserializeObject<LevelDesigns>(fileContent);
+        //     return true;
+        // }
+        // #endregion
 
         public override Level GetLevel(int levelIndex)
         {
-            if (LevelDesigns.Levels.Count <= levelIndex)
-            {
-                levelIndex = LevelDesigns.Levels.Count - 1;
-            }
             //Instantiate empty level prefab
+            RunnerLevel runnerLevel = null;
+            if (GeneratedLevels)
+            {
+                runnerLevel = GenerateLevel(levelIndex);
+            }
+            else
+            {
+                if (LevelDictionary.Count <= levelIndex)
+                {
+                    levelIndex = LevelDictionary.Count - 1;
+                }
+                runnerLevel = Instantiate(LevelDictionary[levelIndex].gameObject).GetComponent<RunnerLevel>();
+                runnerLevel.transform.position = Vector3.zero;
+                runnerLevel.transform.rotation = Quaternion.identity;
+                runnerLevel.LevelIndex = levelIndex;
+            }
+            if (runnerLevel == null) throw new Exception("Level is null!");
+            //todo(gameplay): Get power level and chunk count
+            runnerLevel.OnLevelCreated(GetPowerLevel(levelIndex + 1), 4);
+            return runnerLevel;
+        }
+        public RunnerLevel GenerateLevel(int levelIndex)
+        {
             RunnerLevel runnerLevel = Instantiate(EmptyLevelPrefab.gameObject).GetComponent<RunnerLevel>();
             runnerLevel.LevelIndex = levelIndex;
             runnerLevel.transform.position = Vector3.zero;
             runnerLevel.transform.rotation = Quaternion.identity;
-            runnerLevel.SetLevelDesign(LevelDesigns.Levels[levelIndex]);
-            runnerLevel.OnLevelCreated();
             return runnerLevel;
         }
-        public GameObject GetChunkPrefab(ChunkType chunkType)
+        public static int GetPowerLevel(int levelIndex)
         {
-            return LevelChunkPrefabs[chunkType];
+            return levelIndex;
         }
-        
         #region Editor Methods
         [Button("Assign Slots")]
         public void AssignSlots(string folderPath = "Assets/Kuantech/Prefabs/Levels/LevelSlots/")

@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Kuantech.Core.HyperCasual
 {
-    public class RunnerChunk : MonoBehaviour
+    public class RunnerChunk : LevelChunk
     {
         [Header("Chunk Properties")] 
         public float ChunkWidth;
@@ -18,20 +18,17 @@ namespace Kuantech.Core.HyperCasual
         [SerializeField] private Transform AttachPoint;
         [SerializeField] private Transform OriginPoint;
         
-        public RunnerLevel ParentLevel;
-        private ChunkFormat _chunkFormat;
-        private HashSet<IChunkElement> ChunkElements;
+        private HashSet<IChunkElement> ChunkElements = new HashSet<IChunkElement>();
 
         private bool _chunkCompleted = false;
-        private bool _isFinalChunk;
-        public virtual void Initialize(RunnerLevel parentLevel, ChunkFormat chunkFormat, bool isFinalChunk=false)
+        public bool IsFinalChunk;
+        public virtual void Initialize(RunnerLevel parentLevel, bool isFinalChunk=false)
         {
             ParentLevel = parentLevel;
             EnterGateTrigger.OnTriggerEnterEvent += OnEnterGateTriggered;
             ExitGateTrigger.OnTriggerExitEvent += OnExitGateTriggered;
             _chunkCompleted = false;
-            _isFinalChunk = isFinalChunk;
-            GenerateChunk(chunkFormat);
+            IsFinalChunk = isFinalChunk;
             
             //Some slots doesn't have a script attached but still contains IChunkElement. Get them with get components
             HashSet<IChunkElement> newChunkElements = GetComponentsInChildren<IChunkElement>().ToHashSet(); //Call this after generating
@@ -48,9 +45,29 @@ namespace Kuantech.Core.HyperCasual
             {
                 element.OnChunkGenerated(this);
             }
-
         }
 
+        public override void OnPrepare(Level parentLevel)
+        {
+            base.OnPrepare(parentLevel);
+             EnterGateTrigger.OnTriggerEnterEvent += OnEnterGateTriggered;
+            ExitGateTrigger.OnTriggerExitEvent += OnExitGateTriggered;
+            _chunkCompleted = false;
+        }
+        
+        
+        public override void OnRestart()
+        {
+            base.OnRestart();
+            EnterGateTrigger.gameObject.SetActive(true);
+            ExitGateTrigger.gameObject.SetActive(true);
+            _chunkCompleted = false;
+            foreach (var element in ChunkElements)
+            {
+                element.OnChunkRestart();
+            }
+        }
+        
         public void AddChunkElement(IChunkElement element)
         {
             if (ChunkElements == null) ChunkElements = new HashSet<IChunkElement>();
@@ -196,19 +213,11 @@ namespace Kuantech.Core.HyperCasual
          {
              if (_chunkCompleted) return;
              _chunkCompleted = true;
-             if (_isFinalChunk)
+             if (IsFinalChunk)
              {
                  ParentLevel.CompleteLevel();
              }
          }
-        public void ClearChunk()
-        {
-            foreach (IChunkElement chunkElement in ChunkElements)
-            {
-                if(chunkElement == null) continue;
-                chunkElement.OnClearChunk();
-            }
-        }
         
         #region Triggers
 
@@ -222,6 +231,7 @@ namespace Kuantech.Core.HyperCasual
         {
             if (!other.TryGetComponent(out Runner runner)) return;
             OnRunnerExit(runner);
+            
         }
 
         protected virtual void OnRunnerEnter(Runner runner)
@@ -231,6 +241,7 @@ namespace Kuantech.Core.HyperCasual
                 chunkElement.OnPlayerEnteredChunk();
                 EnterGateTrigger.gameObject.SetActive(false);
             }
+            ((RunnerLevel)ParentLevel).OnPlayerEnterChunk(this);
         }
 
         protected virtual void OnRunnerExit(Runner runner)
@@ -240,14 +251,9 @@ namespace Kuantech.Core.HyperCasual
                 chunkElement.OnPlayerEnteredChunk();
                 ExitGateTrigger.gameObject.SetActive(false);
             }
-            ParentLevel.OnPlayerExitChunk(this);
+            ((RunnerLevel)ParentLevel).OnPlayerExitChunk(this);
         }
         #endregion
 
-        public void Reset()
-        {
-            EnterGateTrigger.gameObject.SetActive(true);
-            ExitGateTrigger.gameObject.SetActive(true);
-        }
     }
 }

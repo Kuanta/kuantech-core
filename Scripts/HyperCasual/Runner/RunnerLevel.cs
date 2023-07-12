@@ -1,55 +1,135 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Linq;
+using Kuantech.MergeRunner;
+using Kuantech.Utils;
+using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Kuantech.Core.HyperCasual
 {
+
     public class RunnerLevel : Level
     {
+        private List<GameObject> _availableChunkContents;
+
+        [Header("Properties")] 
+        public bool Generated;
+        public int ChunkCount;
+        
         [Header("Runner")]
         [SerializeField] private Transform RunnerStartPoint;
         
         [Header("Chunks")]
-        [SerializeField] private GameObject StarterChunkPrefab;
-        [SerializeField] private GameObject BaseChunkPrefab;
-        [SerializeField] private int LiveChunkCount = 2;
-        [SerializeField] private float RetireChunkDelay = 2f;
+        [SerializeField] private int LiveChunkCount = 4;
 
         private Queue<RunnerChunk> _liveChunks = new Queue<RunnerChunk>();
         private int _currentChunkIndex;
-        private RunnerChunk _lastAddedChunk;
         private Runner _currentRunner;
         private RunnerChunk _startChunk = null;
-        private LevelFormat _levelFormat;
 
         private RunnerLevelManager _runnerLevelManager;
-        
-        public void SetLevelDesign(LevelFormat levelFormat)
-        {
-            _levelFormat = levelFormat;
-        }
-        
+
+        public EnemySet CurrentEnemySet;
         public void SetRunner(Runner runner)
         {
             _currentRunner = runner;
             PositionRunner();
         }
 
-        public override void OnLevelCreated()
+        private void Update()
         {
-            base.OnLevelCreated();
-            _runnerLevelManager = ((HCGameManager)HCGameManager.Instance).GetSubManagerByType<RunnerLevelManager>() as RunnerLevelManager;
-        }
-        public override void PrepareLevel()
-        {
-            ClearLevel();
-            PositionRunner();
-            for (int i = 0; i < LiveChunkCount; ++i)
+            if (Input.GetKeyDown(KeyCode.R))
             {
-                CreateAndAttachChunk();
+                ((HCGameManager)HCGameManager.Instance).RestartLevel();
             }
         }
 
+        public void OnLevelCreated(int powerLevel, int chunkCount)
+        {
+            base.OnLevelCreated();
+            PowerLevel = powerLevel;
+            CurrentEnemySet = ((MergeRunnerManager) MergeRunnerManager.Instance).GetEnemySet();
+            CurrentEnemySet.SetPowerLevel(powerLevel);
+            if (Generated)
+            {
+                GenerateLevel(chunkCount);
+            }
+            else
+            {
+                //Get existing chunks
+                LevelChunks = GetComponentsInChildren<LevelChunk>().ToList();
+                if(LevelChunks.Count == 0) Debug.LogError("Premade level has no chunk");
+                _currentChunkIndex = 0;
+                _startChunk = LevelChunks[0] as RunnerChunk;
+                ChunkCount = LevelChunks.Count;
+                for (int i = 0; i < LevelChunks.Count; ++i)
+                {
+                    RunnerChunk rc = LevelChunks[i] as RunnerChunk;
+                    rc.Initialize(this, rc.IsFinalChunk);
+                    if (i < LiveChunkCount)
+                    {
+                        rc.gameObject.SetActive(true);
+                        _liveChunks.Enqueue(rc);
+                    }
+                    else
+                    {
+                        rc.gameObject.SetActive(false);                        
+                    }
+                }
+            }
+        }
+
+        private void GenerateLevel(int chunkCount)
+        {
+            ChunkCount = Mathf.Max(3,chunkCount); //1 for start 1 for end and 1 for regular
+            if (LevelChunks != null)
+            {
+                foreach (var levelChunk in LevelChunks)
+                {
+                    Destroy(levelChunk.gameObject);
+                }
+                LevelChunks.Clear();
+            }
+            LevelChunks = new List<LevelChunk>();
+            _availableChunkContents = GetAvailableChunkContents(PowerLevel);
+            _runnerLevelManager = ((HCGameManager)HCGameManager.Instance).GetSubManagerByType<RunnerLevelManager>() as RunnerLevelManager;
+            _currentChunkIndex = 0;
+            int chunksToGenerate = Mathf.Min(LiveChunkCount, chunkCount);
+            for (int i = 0; i < chunksToGenerate; ++i)
+            {
+                GenerateAndAtttachNextChunk();
+                _currentChunkIndex++;
+            }
+        }
+        public override void PrepareLevel()
+        {
+            PositionRunner();
+        }
+        
+        /// <summary>
+        /// Restarts the level. If not endless, doesn't clear existing chunks.
+        /// </summary>
+        public override void RestartLevel()
+        {
+            base.RestartLevel();
+            PositionRunner();
+            if (ChunkCount <= 0 && !Generated) //Its endless, remove all
+            {
+                ClearLevel();
+                return;
+            }
+
+            _currentChunkIndex = 0;
+            _liveChunks.Clear();
+            for (int i = 0; i < LevelChunks.Count; ++i)
+            {
+                LevelChunks[i].gameObject.SetActive(i<LiveChunkCount);
+                LevelChunks[i].OnRestart();
+                _liveChunks.Enqueue(LevelChunks[i] as RunnerChunk);
+            }
+
+            _startChunk = LevelChunks[0] as RunnerChunk;
+        }
         private void PositionRunner()
         {
             if (_currentRunner == null) return;
@@ -65,6 +145,10 @@ namespace Kuantech.Core.HyperCasual
                 runnerTransform.localRotation = Quaternion.identity;
             }
         }
+        
+        /// <summary>
+        /// Clears the level by clearing and destroying all chunks.
+        /// </summary>
         public override void ClearLevel()
         {
             StopAllCoroutines();
@@ -75,28 +159,127 @@ namespace Kuantech.Core.HyperCasual
                 RetireChunk(chunk);
             }
             _liveChunks.Clear();
-            _lastAddedChunk = null;
             _currentChunkIndex = 0;
         }
+
+        public void OnPlayerEnterChunk(RunnerChunk chunk)
+        {
+            
+        }
+        
+        /// <summary>
+        /// Called when player exits a chunk
+        /// </summary>
+        /// <param name="chunk"></param>
         public void OnPlayerExitChunk(RunnerChunk chunk)
         {
             if (CurrentState != LevelState.Playing) return;
             
-            //Add a chunk, remove the oldest one
-            Debug.LogError($"Left Chunk {chunk.gameObject.name}");
             if (chunk == _startChunk) return;
             _startChunk = null; //No needed anymore
-            RunnerChunk newChunk = CreateAndAttachChunk();
-            if (newChunk == null) return; //No new chunk has been added
+            RunnerChunk nextChunk = GenerateAndAtttachNextChunk();
+            _currentChunkIndex++; //Went to next chunk
+            
+            if (nextChunk == null) return; //No new chunk has been added
             RunnerChunk oldestChunk = _liveChunks.Dequeue();
-            RetireChunk(oldestChunk);
+
+            if (ChunkCount <= 0)
+            {
+                RetireChunk(oldestChunk);
+            }
+            else
+            {
+                oldestChunk.gameObject.SetActive(false);
+            }
         }
         
-        #region ChunkGeneration
+        /// <summary>
+        /// Combines generating and attaching next chunk to a single method
+        /// </summary>
+        private RunnerChunk GenerateAndAtttachNextChunk()
+        {
+            RunnerChunk nextChunk = null;
+            if (LevelChunks.Count > _currentChunkIndex && LevelChunks[_currentChunkIndex + 1] != null)
+            {
+                nextChunk = LevelChunks[_currentChunkIndex + 1] as RunnerChunk;
+                nextChunk.gameObject.SetActive(true);
+                nextChunk.OnRestart();
+                return nextChunk;
+            }
+            nextChunk = GenerateNextChunk();
+            if (nextChunk == null) return nextChunk;
+            AttachChunk(nextChunk);
+            LevelChunks.Add(nextChunk);
+            return nextChunk;
+        }
+        #region Chunks Generation
+        
+        /// <summary>
+        /// Returns a list of available chunk contents according to the current level
+        /// </summary>
+        /// <param name="powerLevel">Current power level.</param>
+        /// <returns></returns>
+        private List<GameObject> GetAvailableChunkContents(int powerLevel)
+        {
+            return ((MergeRunnerManager) MergeRunnerManager.Instance).GetChunkSet().ChunkContents
+                .GetAvailableElements(powerLevel);
+
+        }
+        
+        /// <summary>
+        /// Generates a chunk given the chunk type
+        /// </summary>
+        /// <param name="chunkType"></param>
+        /// <returns></returns>
+        public RunnerChunk GenerateNextChunk()
+        {
+            if (ChunkCount > 0 && _currentChunkIndex >= ChunkCount)
+            {
+                //todo: Consider endless runner here
+                Debug.LogError("Already at the end, can't generate more chunks");
+                return null;
+            }
+            
+            bool isFinal = ChunkCount > 0 && _currentChunkIndex == ChunkCount - 1;
+            ChunkType chunkType = ChunkType.Corridor;
+            if (_currentChunkIndex == 0)
+            {
+                chunkType = ChunkType.StartChunk;
+            }else if (isFinal)
+            {
+                chunkType = ChunkType.EndChunk; //todo: Boss Chunk?
+            }
+            
+            //Instantiate base chunk
+            GameObject baseChunkPrefab = ((MergeRunnerManager)MergeRunnerManager.Instance).
+                GetChunkSet().GetRandomBaseChunk(chunkType);
+            GameObject baseChunk = Instantiate(baseChunkPrefab);
+            RunnerChunk runnerChunk = baseChunk.GetComponent<RunnerChunk>();
+            
+            //Instantiate chunk contents
+            if (chunkType != ChunkType.StartChunk && 
+                chunkType != ChunkType.EndChunk &&
+                chunkType != ChunkType.BossChunk)
+            {
+                //Chunk contents not available for start and end chunks
+                GameObject chunkContentsPrefab = _availableChunkContents.GetRandomElement();
+                GameObject chunkContents = Instantiate(chunkContentsPrefab, runnerChunk.transform);
+                chunkContents.transform.localPosition = Vector3.zero;
+                chunkContents.transform.localRotation = Quaternion.identity;
+            }
+            runnerChunk.Initialize(this, isFinal);
+            return runnerChunk;
+        }
+        
+        /// <summary>
+        /// Attaches the freshly created chunk to the level
+        /// </summary>
+        /// <param name="newChunk"></param>
         public void AttachChunk(RunnerChunk newChunk)
         {
             newChunk.transform.SetParent(transform);
             _liveChunks.Enqueue(newChunk);
+            RunnerChunk _lastAddedChunk = GetLastAddedChunk();
             if (_lastAddedChunk == null)
             {
                 newChunk.transform.localPosition = Vector3.zero;
@@ -106,47 +289,56 @@ namespace Kuantech.Core.HyperCasual
             {
                 _lastAddedChunk.AttachNewChunk(newChunk);    
             }
-            _lastAddedChunk = newChunk;
         }
 
-        public RunnerChunk CreateAndAttachChunk()
+        private RunnerChunk GetLastAddedChunk()
         {
-            if (_currentChunkIndex >= _levelFormat.Chunks.Count)
-            {
-                //todo: Consider endless runner here
-                Debug.LogError("Already at the end, can't generate more chunks");
-                return null;
-            }
-
-            bool isFinal = _currentChunkIndex == _levelFormat.Chunks.Count - 1;
-            ChunkFormat chunkFormat = _levelFormat.Chunks[_currentChunkIndex];
-            Debug.LogError($"Getting {chunkFormat.ChunkType.ToString()}");
-            GameObject chunkPrefab = _runnerLevelManager.GetChunkPrefab(chunkFormat.ChunkType);
-            GameObject chunk = Instantiate(chunkPrefab);//GameManager.Instance.Pool.GetObject(prefab);
-            RunnerChunk runnerChunk = chunk.GetComponent<RunnerChunk>();
-            AttachChunk(runnerChunk);
-            
-            //Position of the chunk must be set before initialize. (Spawning objects need correct positions)
-            runnerChunk.Initialize(this, chunkFormat, isFinal);
-            _currentChunkIndex++;
-            return runnerChunk;
+            if (LevelChunks.Count == 0) return null;
+            return LevelChunks[^1] as RunnerChunk;
         }
-
+        
         private void RetireChunk(RunnerChunk chunk)
         {
             chunk.ClearChunk();
-            //GameManager.Instance.Pool.PoolObject(chunk.gameObject);
             Destroy(chunk.gameObject);
-            //StartCoroutine(RetireChunkCoroutine(chunk, 0));
         }
 
-        private IEnumerator RetireChunkCoroutine(RunnerChunk chunk, float delay)
+        #endregion
+        
+        #if UNITY_EDITOR
+        [Header("Editor")] 
+        public ChunkSet ChunkSet;
+
+        #region EditorMethods
+        [Button("Add Chunk")]
+        public void E_AddChunk(ChunkType chunkType)
         {
-            yield return new WaitForSeconds(delay);
-            chunk.ClearChunk();
-            //GameManager.Instance.Pool.PoolObject(chunk.gameObject);
-            Destroy(chunk.gameObject);
+            LevelChunks ??= new List<LevelChunk>();
+            if (ChunkSet == null)
+            {
+                Debug.LogError("Chunk set is null");
+                return;
+            }
+            //Instantiate base chunk
+            GameObject baseChunkPrefab = ((MergeRunnerManager)MergeRunnerManager.Instance).
+                GetChunkSet().GetRandomBaseChunk(chunkType);
+            GameObject baseChunk = Instantiate(baseChunkPrefab);
+            RunnerChunk newChunk = baseChunk.GetComponent<RunnerChunk>();
+            newChunk.transform.SetParent(transform);
+            RunnerChunk _lastAddedChunk = GetLastAddedChunk();
+            if (_lastAddedChunk == null)
+            {
+                newChunk.transform.localPosition = Vector3.zero;
+                newChunk.transform.localRotation = Quaternion.identity;
+            }
+            else
+            {
+                _lastAddedChunk.AttachNewChunk(newChunk);    
+            }
+            LevelChunks.Add(newChunk);
         }
         #endregion
+        
+        #endif
     }
 }

@@ -16,6 +16,7 @@ namespace Kuantech.Core.HyperCasual
     {
         public LevelState CurrentState;
         public int LevelIndex;
+        public int PowerLevel = 1;
         public List<LevelChunk> LevelChunks;
         
         //Spawnables
@@ -23,7 +24,8 @@ namespace Kuantech.Core.HyperCasual
         
         //Earnings
         protected Dictionary<int, Currency> EarnedCurrencies = new Dictionary<int, Currency>();
-
+    
+        #region Level Lifecycke
         public virtual void StartLevel()
         {
             foreach (LevelChunk chunk in LevelChunks)
@@ -31,16 +33,29 @@ namespace Kuantech.Core.HyperCasual
                 chunk.OnPlay();
             }
         }
-
+        
+        /// <summary>
+        /// Called when this level is first created. Not on restarts
+        /// </summary>
         public virtual void OnLevelCreated()
         {
             LevelChunks = GetComponentsInChildren<LevelChunk>().ToList();
-            Spawns = new List<ISpawnable>();
+            Spawns = GetComponentsInChildren<ISpawnable>().ToList();
             foreach (var levelChunk in LevelChunks)
             {
                 levelChunk.OnLevelCreate();
             }
+
+            foreach (ISpawnable spawnable in Spawns)
+            {
+                spawnable.OnSpawn();
+                
+            }
         }
+        
+        /// <summary>
+        /// Prepares the level, iterates through chunks and informs about the current state
+        /// </summary>
         public virtual void PrepareLevel()
         {
             foreach (LevelChunk chunk in LevelChunks)
@@ -50,6 +65,17 @@ namespace Kuantech.Core.HyperCasual
             ReleaseEarnings();
         }
 
+        public virtual void RestartLevel()
+        {
+            foreach (LevelChunk chunk in LevelChunks)
+            {
+                chunk.OnRestart();
+            }
+            foreach (ISpawnable spawnable in Spawns)
+            {
+                spawnable.OnRespawn();
+            }
+        }
         public virtual void ClearLevel()
         {
             foreach (LevelChunk chunk in LevelChunks)
@@ -57,7 +83,11 @@ namespace Kuantech.Core.HyperCasual
                 chunk.OnClear();
             }
             ReleaseEarnings();
-            ClearSpawnables();
+            foreach (var spawnable in Spawns)
+            {
+                spawnable.OnDespawn();
+            }
+            Spawns.Clear();
         }
 
         public virtual void CompleteLevel()
@@ -65,30 +95,8 @@ namespace Kuantech.Core.HyperCasual
             SaveEarnings();
             ((HCGameManager)HCGameManager.Instance).ChangeCurrentState(LevelState.Completed);
         }
-        
-        #region Spawns
-
-        public void SpawnSpawnable(ISpawnable spawnable)
-        {
-            Spawns.Add(spawnable);
-            spawnable.OnSpawn();
-        }
-
-        public void DespawnSpawnables(ISpawnable spawnable)
-        {
-            Spawns.Remove(spawnable);
-            spawnable.OnDespawn();
-        }
-
-        public void ClearSpawnables()
-        {
-            foreach (var spawnable in Spawns)
-            {
-                spawnable.OnDespawn();
-            }
-            Spawns.Clear();
-        }
         #endregion
+        
         #region Earnings
 
         public int GetCurrentCurrencyAmount(int currencyId)
@@ -147,6 +155,5 @@ namespace Kuantech.Core.HyperCasual
         }
 
         #endregion
-       
     }
 }
