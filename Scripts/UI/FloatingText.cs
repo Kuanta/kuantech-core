@@ -39,6 +39,10 @@ namespace Kuantech.UI
             Text.color = color;
         }
 
+        public void SetGlowColor(Color color)
+        {
+            Text.fontSharedMaterial.SetColor(ShaderUtilities.ID_GlowColor, color);
+        }
         public void SetFontSize(int fontSize)
         {
             Text.fontSize = fontSize;
