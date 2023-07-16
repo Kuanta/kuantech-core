@@ -822,7 +822,6 @@ namespace Kuantech.Core
         public void DamageActorMelee(Actor target, float damage, float knockback, float knockbackTime)
         {
             if (target.Health <= 0f || Actor.FactionId == target.FactionId) return;
-            Debug.LogError($"{gameObject.name} attacked {target.name}");
             target.ReceiveDamage(Actor, damage);
             
             KnockbackActor(this, target, transform.forward, knockback, knockbackTime);

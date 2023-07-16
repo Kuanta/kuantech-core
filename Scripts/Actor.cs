@@ -166,6 +166,11 @@ namespace Kuantech.Core
             return damage;
         }
 
+        public virtual float ReceivePercentageDamage(Actor from, float damage, bool rawDamage = false)
+        {
+            return ReceiveDamage(from, Stats.GetStat(StatTypes.MaxHealth) * damage, rawDamage);
+        }
+        
         public void RemoveHealth(float healthToRemove)
         {
             Health -= healthToRemove;
