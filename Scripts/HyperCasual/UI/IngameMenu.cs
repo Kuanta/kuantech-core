@@ -24,11 +24,6 @@ namespace Kuantech.Core.HyperCasual
         {
             base.Close();
         }
-
-        public virtual void SetEarnings(int earnedCoins)
-        {
-            LevelCompletePanel.SetEarnings(earnedCoins);
-        }
         
         public void OnStateChange(LevelState newState)
         {

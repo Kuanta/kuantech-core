@@ -1,6 +1,6 @@
-﻿using Kuantech.Core.FX;
+﻿using System.Collections.Generic;
+using Kuantech.Core.FX;
 using Kuantech.UI;
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -8,24 +8,31 @@ namespace Kuantech.Core.HyperCasual
 {
     public class LevelCompletePanel : UIMenu
     {
-        [SerializeField] private TMP_Text EarnedCoinsText;
         [SerializeField] private Button CompleteLevelButton;
         [SerializeField] protected Effect ShowEffect;
+        [SerializeField] private List<CurrencyIndicator> CurrencyIndicators;
 
         public override void Show()
         {
             base.Show();
             if(ShowEffect != null) ShowEffect.Play();
+            SetEarnings();
         }
 
         public void Initialize()
         {
             CompleteLevelButton.onClick.AddListener(OnCompleteLevelButton);
         }
-        
-        public virtual void SetEarnings(int earnedCoins)
+
+        protected virtual void SetEarnings()
         {
-            if(EarnedCoinsText != null) EarnedCoinsText.text = earnedCoins.ToString();
+            if (CurrencyIndicators == null) return;
+            Level currentLevel = ((HCGameManager) HCGameManager.Instance).CurrentLevel;
+            foreach (var indicator in CurrencyIndicators)
+            {
+                int earnedCurrency = currentLevel.GetEarnedCurrency((int) indicator.CurrencyId).Amount;
+                indicator.SetAmount(earnedCurrency);
+            }
         }
         
         private void OnCompleteLevelButton()

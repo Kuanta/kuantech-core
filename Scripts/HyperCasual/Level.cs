@@ -92,8 +92,8 @@ namespace Kuantech.Core.HyperCasual
 
         public virtual void CompleteLevel()
         {
-            SaveEarnings();
             ((HCGameManager)HCGameManager.Instance).ChangeCurrentState(LevelState.Completed);
+            SaveEarnings();
         }
         #endregion
         
