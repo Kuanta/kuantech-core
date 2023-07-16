@@ -32,8 +32,8 @@ namespace Kuantech.Core.FX
             CombatModule cm = (CombatModule)Actor.GetModuleByType(typeof(CombatModule));
             cm.AttackStartEvent+= OnAttack;
             cm.MeleeImpactEvent += OnMeleeImpact;
-            Actor.MovementModule.OnJumpEvent += OnJump;
-            Actor.MovementModule.OnDodgeEvent += OnDodge;
+            if(Actor.MovementModule != null) Actor.MovementModule.OnJumpEvent += OnJump;
+            if(Actor.MovementModule != null) Actor.MovementModule.OnDodgeEvent += OnDodge;
         }
 
         public void SetAttackEffects(List<EffectTypes> effectTypes)
