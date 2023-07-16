@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Kuantech.Core.HyperCasual
 {
-    public class MovingElement : LevelElement
+    public class MovingElement : LevelElement, IChunkElement
     {
         [Header("Rigidbody")] 
         [SerializeField] private Rigidbody Rigidbody;
@@ -120,27 +120,6 @@ namespace Kuantech.Core.HyperCasual
         public override void OnPrepareLevel()
         {
             Reset();
-            if (IsRotation)
-            {
-                if (Angles.Count > 0)
-                {
-                    InitialAngle = Angles[InitialAngleIndex];
-                    _currentTargetAngleIndex = InitialAngleIndex;
-                }
-                _currentAngle = InitialAngle;
-                Debug.LogError("Initial Angle:"+InitialAngle);
-                RotatingPart.localRotation = Quaternion.AngleAxis(_currentAngle, RotationAxis);
-            }
-            else
-            {
-                _currentWaypointIndex = InitialWaypointIndex;
-                if (Waypoints.Count < 2) return;
-                int nextWaypointIndex = (_currentWaypointIndex + 1) % Waypoints.Count;
-                Vector3 diff = Waypoints[nextWaypointIndex].localPosition - Waypoints[_currentWaypointIndex].localPosition;
-                float distance = diff.magnitude * InitialPositionFactor;
-                MovingPart.transform.localPosition =
-                    Waypoints[_currentWaypointIndex].localPosition + diff.normalized * distance;
-            }
         }
 
         public override void OnRestartLevel()
@@ -166,15 +145,54 @@ namespace Kuantech.Core.HyperCasual
 
         public void Reset()
         {
-            _currentWaypointIndex = 0;
-            _currentTargetAngleIndex = 0;
             _delaying = false;
 
             _previousDisplacement = Vector3.zero;
             _previousAngleChange = 0f;
-            if(MovingPart != null) MovingPart.transform.localPosition = Vector3.zero;
-            if(RotatingPart != null) RotatingPart.localRotation = Quaternion.identity;
             _currentAngle = 0f;
+            
+            if (IsRotation)
+            {
+                if (Angles.Count > 0)
+                {
+                    InitialAngle = Angles[InitialAngleIndex];
+                    _currentTargetAngleIndex = InitialAngleIndex;
+                }
+                _currentAngle = InitialAngle;
+                RotatingPart.localRotation = Quaternion.AngleAxis(_currentAngle, RotationAxis);
+            }
+            else
+            {
+                _currentWaypointIndex = InitialWaypointIndex;
+                if (Waypoints.Count < 2) return;
+                int nextWaypointIndex = (_currentWaypointIndex + 1) % Waypoints.Count;
+                Vector3 diff = Waypoints[nextWaypointIndex].localPosition - Waypoints[_currentWaypointIndex].localPosition;
+                float distance = diff.magnitude * InitialPositionFactor;
+                MovingPart.transform.localPosition =
+                    Waypoints[_currentWaypointIndex].localPosition + diff.normalized * distance;
+            }
+        }
+
+        public void OnChunkGenerated(RunnerChunk chunk)
+        {
+            Reset();
+        }
+
+        public void OnChunkRestart()
+        {
+            Reset();
+        }
+
+        public void OnPlayerEnteredChunk()
+        {
+        }
+
+        public void OnPlayerExitedChunk()
+        {
+        }
+
+        public void OnClearChunk()
+        {
         }
     }
 }

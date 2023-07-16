@@ -126,6 +126,7 @@ namespace Kuantech.Core.HyperCasual
                 LevelChunks[i].gameObject.SetActive(i<LiveChunkCount);
                 LevelChunks[i].OnRestart();
                 _liveChunks.Enqueue(LevelChunks[i] as RunnerChunk);
+                _currentChunkIndex++;
             }
 
             _startChunk = LevelChunks[0] as RunnerChunk;
@@ -236,7 +237,6 @@ namespace Kuantech.Core.HyperCasual
             if (ChunkCount > 0 && _currentChunkIndex >= ChunkCount)
             {
                 //todo: Consider endless runner here
-                Debug.LogError("Already at the end, can't generate more chunks");
                 return null;
             }
             
@@ -247,7 +247,8 @@ namespace Kuantech.Core.HyperCasual
                 chunkType = ChunkType.StartChunk;
             }else if (isFinal)
             {
-                chunkType = ChunkType.EndChunk; //todo: Boss Chunk?
+                bool bossCondition = (LevelIndex+1) >= MergeRunnerConfig.BossChunkFrequency && (LevelIndex+1) % MergeRunnerConfig.BossChunkFrequency == 0;
+                chunkType = bossCondition ? ChunkType.BossChunk : ChunkType.EndChunk; //todo: Boss Chunk?
             }
             
             //Instantiate base chunk

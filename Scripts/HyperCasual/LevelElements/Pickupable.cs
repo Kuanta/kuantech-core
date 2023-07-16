@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Kuantech.Core.HyperCasual
 {
-    public class Pickupable : LevelElement
+    public class Pickupable : MonoBehaviour, IChunkElement
     {
         public float AngulerSpeed = 0f;
         public float FloatSpeed = 0f;
@@ -39,7 +39,7 @@ namespace Kuantech.Core.HyperCasual
             }
         }
         
-        public virtual void OnTriggerEnter(Collider collider)
+        public virtual void OnTriggerEnter(Collider other)
         {
             OnPickup();
         }
@@ -53,9 +53,27 @@ namespace Kuantech.Core.HyperCasual
             if(PickupSound != null) PickupSound.Stop();
         }
 
+        public void OnChunkGenerated(RunnerChunk chunk)
+        {
+            Spawn();
+        }
+
+        public void OnChunkRestart()
+        {
+            Reset();
+        }
+
         public virtual void OnPlayerEnteredChunk()
         {
             
+        }
+
+        public void OnPlayerExitedChunk()
+        {
+        }
+
+        public void OnClearChunk()
+        {
         }
 
         public void Toggle(bool toggle)
@@ -87,30 +105,5 @@ namespace Kuantech.Core.HyperCasual
             Model.transform.localRotation = Quaternion.identity;
         }
 
-        public override void OnPrepareLevel()
-        {
-            Spawn();
-        }
-
-        public override void OnRestartLevel()
-        {
-            Reset();
-        }
-
-        public override void OnLeaveLevel()
-        {
-        }
-
-        public override void OnPlayLevel()
-        {
-        }
-
-        public override void OnPlayerEntered()
-        {
-        }
-
-        public override void OnPlayerExited()
-        {
-        }
     }
 }
