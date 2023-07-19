@@ -7,7 +7,10 @@ namespace Kuantech.Core.HyperCasual
     public class Runner : MonoBehaviour
     {
         public float Speed = 10f;
+        public float MovementLerpFactor = 10;
         private Vector2 _movementVector = Vector2.zero;
+        private Vector2 _currentMovementVector = Vector2.zero; 
+
         public Rigidbody Rigidbody;
 
         public bool FrontMovementBlocked = false;
@@ -25,7 +28,7 @@ namespace Kuantech.Core.HyperCasual
 
         public Vector2 GetMovemenetVector()
         {
-            return _movementVector;
+            return _currentMovementVector;
         }
 
         public void OnPlay()
@@ -51,8 +54,11 @@ namespace Kuantech.Core.HyperCasual
             if (currentLevel == null || currentLevel.CurrentState != LevelState.Playing || MovementLock.IsLocked())
             {
                 _movementVector = Vector2.zero;
+                _currentMovementVector = Vector2.zero;
                 return;
             }
+
+            _currentMovementVector = Vector2.Lerp(_currentMovementVector, _movementVector, MovementLerpFactor);
             ManualMovement();
         }
         
@@ -65,7 +71,7 @@ namespace Kuantech.Core.HyperCasual
                 Rigidbody.velocity = Vector3.zero;
                 return;
             }
-            Vector3 globalDirection = LocalToGlobalDirection(_movementVector);
+            Vector3 globalDirection = LocalToGlobalDirection(_currentMovementVector);
             globalDirection.y = Rigidbody.velocity.y;
             Rigidbody.velocity = globalDirection * Speed;
         }
@@ -73,7 +79,7 @@ namespace Kuantech.Core.HyperCasual
         private void ManualMovement()
         {
             if(Rigidbody != null) return;
-            Vector3 globalDirection = LocalToGlobalDirection(_movementVector);
+            Vector3 globalDirection = LocalToGlobalDirection(_currentMovementVector);
             transform.position += globalDirection.normalized * (Time.deltaTime * Speed);
         }
 
@@ -88,7 +94,7 @@ namespace Kuantech.Core.HyperCasual
                 return;
             }
             diff.Normalize();
-            _movementVector = new Vector2(diff.x, diff.z); //Needed for animations
+            _currentMovementVector = new Vector2(diff.x, diff.z); //Needed for animations
             transform.position += diff * Time.deltaTime * Speed;
 
         }
@@ -97,6 +103,8 @@ namespace Kuantech.Core.HyperCasual
             if (_movingToPoint) return;
             _movementVector = movementVec;
             if (FrontMovementBlocked) _movementVector.y = 0;
+            _currentMovementVector = _movementVector;
+
         }
         public void MoveToPoint(Transform point, UnityAction pointReachedHandler)
         {

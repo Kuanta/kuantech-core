@@ -75,6 +75,7 @@ namespace Kuantech.Core.HyperCasual
             {
                 spawnable.OnRespawn();
             }
+            ReleaseEarnings();
         }
         public virtual void ClearLevel()
         {

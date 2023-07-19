@@ -137,8 +137,7 @@ namespace Kuantech.Core.HyperCasual
             }
             else
             {
-                GameStateModel.Currencies[currencyId].SetAmount(amount);
-
+                GameStateModel.Currencies[currencyId] = GameStateModel.Currencies[currencyId].SetAmount(amount);
             }
 
             Dirtied = true;

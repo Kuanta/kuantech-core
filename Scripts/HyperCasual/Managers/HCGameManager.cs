@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using IngameDebugConsole;
 using Kuantech.Core.FX;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -120,10 +121,10 @@ namespace Kuantech.Core.HyperCasual
             CurrentLevel.ClearLevel();
             ChangeCurrentState(LevelState.Waiting);
         }
-        
         [Button("SetLevel")]
         public virtual void SetLevel(int levelIndex)
         {
+            levelIndex = Mathf.Max(levelIndex, 0);
             if (levelIndex == CurrentLevel.LevelIndex) return;
             if (CurrentLevel != null && CurrentLevel.LevelIndex != levelIndex)
             {
@@ -140,6 +141,12 @@ namespace Kuantech.Core.HyperCasual
             UIManager.Instance.SetCurrentLevel(levelIndex);
         }
 
+        [ConsoleMethod("setLevel", "Sets the level")]
+        public static void SetLevelCC(int levelIndex)
+        {
+            ((HCGameManager)Instance).SetLevel(levelIndex);
+        }
+        
         public virtual void ChangeCurrentState(LevelState newState)
         {
             if (CurrentLevel == null) return;
@@ -155,26 +162,37 @@ namespace Kuantech.Core.HyperCasual
         #endregion
 
         #region Currencies
-        
         [Button("Add Currency")]
         public virtual void AddCurrency(int currencyId, int amount)
         {
             GameState.AddCurrency(currencyId, amount);
             UpdateCurrency(currencyId, GameState.GetCurrency(currencyId).Amount);
         }
-
+        
+        [ConsoleMethod("addCurrency", "Adds Currency")]
+        public static void AddCurrencyCC(int currencyId, int amount)
+        {
+            ((HCGameManager) Instance).AddCurrency(currencyId, amount);
+        }
+            
         public virtual void RemoveCurrency(int currencyId, int amount)
         {
             GameState.RemoveCurrency(currencyId, amount);
             UpdateCurrency(currencyId, GameState.GetCurrency(currencyId).Amount);
         }
-
+        
+        [Button("Set Currency")]
         public virtual void SetCurrency(int currencyId, int amount)
         {
             GameState.SetCurrency(currencyId, amount);
             UpdateCurrency(currencyId, GameState.GetCurrency(currencyId).Amount);
         }
-
+        
+        [ConsoleMethod("setCurrency", "Sets Currency")]
+        public static void SetCurrencyCC(int currencyId, int amount)
+        {
+            ((HCGameManager) Instance).SetCurrency(currencyId, amount);
+        }
         public virtual Currency GetCurrency(int currencyId)
         {
             return GameState.GetCurrency(currencyId);
@@ -211,6 +229,9 @@ namespace Kuantech.Core.HyperCasual
 
             return null; // Return null if no matching submanager is found
         }
+        #endregion
+        
+        #region Console Commands
         #endregion
     }
 }

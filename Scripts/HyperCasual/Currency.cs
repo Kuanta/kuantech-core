@@ -13,10 +13,11 @@ namespace Kuantech.Core.HyperCasual
         public int Amount;
         public int CurrencyId;
 
-        public void SetAmount(int amount)
+        public Currency SetAmount(int amount)
         {
             Amount = amount;
             Amount = Mathf.Max(Amount, 0);
+            return this;
         }
 
         public Currency AddAmount(int amount)
