@@ -100,6 +100,7 @@ namespace Kuantech.Core.HyperCasual
         }
         public virtual void Reset()
         {
+            Enable();
             transform.rotation = Quaternion.identity;
             if (Model == null) return;
             Model.transform.localRotation = Quaternion.identity;
