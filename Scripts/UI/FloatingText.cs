@@ -1,8 +1,6 @@
 ﻿using Kuantech.Core;
 using TMPro;
-using Unity.VisualScripting;
 using UnityEngine;
-using Random = UnityEngine.Random;
 
 namespace Kuantech.UI
 {
@@ -10,6 +8,7 @@ namespace Kuantech.UI
     {
         [SerializeField] private TMP_Text Text;
         [SerializeField] private float LifeTime = 1.5f;
+        [SerializeField] private float FadeDelay = 0f;
         [SerializeField] private Vector3 InitialVelocity = new Vector3(0.1f, 1f, 0f);
 
         private float _timer = 0f;
@@ -65,7 +64,11 @@ namespace Kuantech.UI
             transform.localPosition += displacement;
             _velocity = newVelocity;
             _timer += Time.deltaTime;
-            Text.alpha = Mathf.Clamp01(1 - _timer / LifeTime);
+
+            if (_timer > FadeDelay)
+            {
+                Text.alpha = Mathf.Clamp01(1 - _timer / (LifeTime - FadeDelay));
+            }
         }
 
         public void Stop()

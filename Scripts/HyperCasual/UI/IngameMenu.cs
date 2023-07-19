@@ -1,4 +1,6 @@
-﻿using Kuantech.UI;
+﻿using System.Collections;
+using Kuantech.UI;
+using UnityEngine;
 
 namespace Kuantech.Core.HyperCasual
 {
@@ -6,6 +8,10 @@ namespace Kuantech.Core.HyperCasual
     {
         public LevelCompletePanel LevelCompletePanel;
         public LevelFailedPanel LevelFailedPanel;
+
+        [Header("Delay Timings")] 
+        [SerializeField] private float LevelCompletePanelShowDelay;
+        [SerializeField] private float LevelFailedPanelShowDelay;
 
         public void Initialize()
         {
@@ -19,17 +25,13 @@ namespace Kuantech.Core.HyperCasual
             if(LevelCompletePanel != null) LevelCompletePanel.Close();
             if(LevelFailedPanel != null) LevelFailedPanel.Close();
         }
-        
-        public override void Close()
-        {
-            base.Close();
-        }
+
         
         public void OnStateChange(LevelState newState)
         {
             if (newState == LevelState.Completed && LevelCompletePanel != null)
             {
-                LevelCompletePanel.Show();
+                StartCoroutine(ShowPanelRoutine(LevelCompletePanel, LevelCompletePanelShowDelay));
             }
             else if(LevelCompletePanel != null)
             {
@@ -38,12 +40,18 @@ namespace Kuantech.Core.HyperCasual
 
             if (newState == LevelState.Failed && LevelFailedPanel != null)
             {
-                LevelFailedPanel.Show();
+                StartCoroutine(ShowPanelRoutine( LevelFailedPanel, LevelFailedPanelShowDelay));
             }
             else if(LevelFailedPanel != null)
             {
                 LevelFailedPanel.Close();
             }
+        }
+
+        private IEnumerator ShowPanelRoutine(UIMenu panel, float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            panel.Show();
         }
     }
 }
