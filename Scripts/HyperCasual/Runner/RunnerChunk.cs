@@ -19,6 +19,7 @@ namespace Kuantech.Core.HyperCasual
         [SerializeField] private Transform OriginPoint;
         
         private HashSet<IChunkElement> ChunkElements = new HashSet<IChunkElement>();
+        private Queue<IChunkElement> _elementsToAdd = new Queue<IChunkElement>();
 
         private bool _chunkCompleted = false;
         public bool IsFinalChunk;
@@ -45,8 +46,14 @@ namespace Kuantech.Core.HyperCasual
             {
                 element.OnChunkGenerated(this);
             }
+
+            while (_elementsToAdd.Count > 0)
+            {
+                ChunkElements.Add(_elementsToAdd.Dequeue());
+            }
         }
 
+     
         public override void OnPrepare(Level parentLevel)
         {
             base.OnPrepare(parentLevel);
@@ -68,10 +75,16 @@ namespace Kuantech.Core.HyperCasual
             }
         }
         
+        /// <summary>
+        /// Some IChunkElements may create additional IChunkElements. During the initialize, we have to add these new elements
+        /// to the ChunkElements. Instead of directly altering the array, we store them in a queue and add them to ChunkElements
+        /// after all is done.
+        /// </summary>
+        /// <param name="element"></param>
         public void AddChunkElement(IChunkElement element)
         {
-            if (ChunkElements == null) ChunkElements = new HashSet<IChunkElement>();
-            ChunkElements.Add(element);
+            _elementsToAdd ??= new Queue<IChunkElement>();
+            _elementsToAdd.Enqueue(element);
         }
         private void GenerateChunk(ChunkFormat chunkFormat)
         {
