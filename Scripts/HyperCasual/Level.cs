@@ -147,7 +147,6 @@ namespace Kuantech.Core.HyperCasual
             {
                 ((HCGameManager)HCGameManager.Instance).AddCurrency(pair.Value.CurrencyId, pair.Value.Amount);
             }
-            EarnedCurrencies.Clear();
         }
         
         protected virtual void ReleaseEarnings()
