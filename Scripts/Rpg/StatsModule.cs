@@ -214,6 +214,20 @@ namespace Kuantech.Core
                 RemoveModifier(modifier);
             }    
         }
+
+        public void ClearModifiers()
+        {
+            if (Modifiers == null) return;
+            HashSet<StatModifier> allModifiers = new HashSet<StatModifier>();
+            foreach (var pair in Modifiers)
+            {
+                foreach (var modifier in pair.Value)
+                {
+                    allModifiers.Add(modifier);
+                }
+            }
+            RemoveModifiers(allModifiers.ToList());
+        }
         
         public void RemoveModifier(StatModifier modifier)
         {
