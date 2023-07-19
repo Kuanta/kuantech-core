@@ -38,14 +38,12 @@ namespace Kuantech.Core.Rpg
         public string Description;
         public Sprite Icon;
         public float BaseEnergyCost;
-        public bool IsActive;
-        public StatTypes MainStatType;
         public List<SkillVariable> SkillVariables;
         
         //Timings
         public float CastTime;//This is the time that the actual effects will take place
         public float AnimationTime; //This is the animation time of the skill. Can initiate a global cooldown for this.
-        public SkillVariable Cooldown;
+        public float Cooldown;
     }
     
     public abstract class Skill
@@ -131,7 +129,7 @@ namespace Kuantech.Core.Rpg
         {
             //Get cooldown reduction
             float cdReduction = Mathf.Clamp(caster.Stats.GetStat(StatTypes.CooldownReduction), 0, 1);
-            float baseValue = SkillData.Cooldown.GetValue();
+            float baseValue = SkillData.Cooldown;
             float finalValue = Mathf.Max(baseValue * (1 - cdReduction), 0.1f); //Min cooldown should be 0.1
             return finalValue;
         }

@@ -29,6 +29,15 @@ namespace Kuantech.UI
             Text.alpha = 1f;
         }
 
+        public void Initialize(string text)
+        {
+            _active = true;
+            _timer = 0f;
+            Text.text = text;
+            _velocity = InitialVelocity;
+            Text.alpha = 1f;
+        }
+        
         public void SetText(string text)
         {
             Text.text = text;
