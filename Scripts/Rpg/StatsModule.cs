@@ -231,7 +231,7 @@ namespace Kuantech.Core
         
         public void RemoveModifier(StatModifier modifier)
         {
-            if(Modifiers == null) return;
+            if(Modifiers == null || !Modifiers.ContainsKey(modifier.StatType)) return;
             if (Modifiers[modifier.StatType].Contains(modifier))
             {
                 Modifiers[modifier.StatType].Remove(modifier);
