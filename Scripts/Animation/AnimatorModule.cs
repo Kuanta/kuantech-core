@@ -192,7 +192,7 @@ namespace Kuantech.Core
         public void OnDamageReceive(object sender, float damage)
         {
             if (Animator == null) return;
-            Animator.SetInteger(DamageReceivedIndex, UnityEngine.Random.Range(0,3));
+            Animator.SetInteger(DamageReceivedIndex, 0);
             Animator.SetTrigger(DamageReceived);
         }
         public override void OnDeath(object sender, EventArgs empty)
