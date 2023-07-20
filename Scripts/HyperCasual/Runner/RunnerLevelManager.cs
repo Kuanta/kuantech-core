@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using Kuantech.MergeRunner;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Sirenix.OdinInspector;
@@ -147,8 +148,13 @@ namespace Kuantech.Core.HyperCasual
             }
             if (runnerLevel == null) throw new Exception("Level is null!");
             //todo(gameplay): Get power level and chunk count
-            runnerLevel.OnLevelCreated(GetPowerLevel(levelIndex + 1), 4);
+            runnerLevel.OnLevelCreated(GetPowerLevel(levelIndex + 1), GetChunkCount(levelIndex));
             return runnerLevel;
+        }
+
+        private int GetChunkCount(int levelIndex)
+        {
+            return Mathf.FloorToInt(levelIndex / (float)MergeRunnerConfig.ChunkPerLevel) + 2; //+2 for start and end chunk
         }
         public RunnerLevel GenerateLevel(int levelIndex)
         {
