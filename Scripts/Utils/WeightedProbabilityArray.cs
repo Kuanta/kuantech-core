@@ -84,5 +84,24 @@ namespace Kuantech.Core.Utils
             Elements[elementIndex] = wpaElement;
             return wpaElement.Element;
         }
+
+        public void SetElementWeight(int elementIndex, float weight)
+        {
+            float newTotal = weight;
+            for (int i = 0; i < Elements.Count; ++i)
+            {
+                WPAElement existing = Elements[i];
+                if (i == elementIndex)
+                {
+                    existing.Probability = weight;
+                    Elements[i] = existing;
+                }
+                else
+                {
+                    newTotal += existing.Probability;
+                }
+            }
+            totalWeight = newTotal;
+        }
     }
 }
