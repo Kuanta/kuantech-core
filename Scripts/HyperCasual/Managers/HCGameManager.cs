@@ -30,8 +30,8 @@ namespace Kuantech.Core.HyperCasual
         [SerializeField] private float SaveCheckFrequency = 1f;
         private float _lastCheckTime;
         public List<int> CurrencyIds;
+        [SerializeField] private bool SaveData = true;
         
-
         //Events
         public EventHandler<StateChangeData> StateChangeEvent;
 
@@ -45,7 +45,7 @@ namespace Kuantech.Core.HyperCasual
         protected virtual void LateUpdate()
         {
             if (!(Time.time - _lastCheckTime > SaveCheckFrequency)) return;
-            GameState.SaveData();
+            if(SaveData) GameState.SaveData();
             _lastCheckTime = Time.time;
         }
         
@@ -232,6 +232,13 @@ namespace Kuantech.Core.HyperCasual
         #endregion
         
         #region Console Commands
+
+        [ConsoleMethod("toggleDataSaving", "Sets data saving")]
+        public static void ToggleDataSaving(int toggle)
+        {
+            if (toggle == 0) ((HCGameManager) HCGameManager.Instance).SaveData = false;
+            else ((HCGameManager) HCGameManager.Instance).SaveData = true;
+        }
         #endregion
     }
 }
