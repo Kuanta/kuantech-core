@@ -701,8 +701,7 @@ namespace Kuantech.Core
             ShootProjectile(EquippedWeapon, projectilePrefab, 
                 GetShootPosition(), 
                 transform.forward,
-                true,targetTransform,
-                CurrentAttackPattern.ProjectileRisHeight);
+                true,targetTransform);
         }
         
         /// <summary>
@@ -743,7 +742,7 @@ namespace Kuantech.Core
         {
             Vector3 shootPosition = GetShootPosition();
             Vector3 direction = transform.forward;
-            return ShootProjectile(weapon, projectilePrefab, shootPosition, direction, castSkill, target, riseHeight);
+            return ShootProjectile(weapon, projectilePrefab, shootPosition, direction, castSkill, target);
         }
         
         /// <summary>
@@ -755,8 +754,7 @@ namespace Kuantech.Core
         /// <param name="castSkill"></param>
         /// <param name="shootPosition"></param>
         public Projectile ShootProjectile(Weapon weapon, GameObject projectilePrefab, Vector3 shootPosition, Vector3 direction, bool castSkill,
-            Transform target = null, 
-            float riseHeight = 0f)
+            Transform target = null)
         {
             if (projectilePrefab == null) return null;
             PrefabPool pool = GameManager.Instance.Pool;
@@ -764,7 +762,7 @@ namespace Kuantech.Core
             Quaternion shootRotation = Quaternion.LookRotation(direction);
             if (projectileObj.TryGetComponent(out Projectile projectile))
             {
-                projectile.Initialize(this, weapon, shootPosition, shootRotation, target, riseHeight);
+                projectile.Initialize(this, weapon, shootPosition, shootRotation, target);
  
                 if (CanUseSkill && castSkill)
                 {

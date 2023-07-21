@@ -1,15 +1,16 @@
-﻿using UnityEngine;
+﻿using Cysharp.Threading.Tasks;
+using UnityEngine;
 
 namespace Kuantech.Core.HyperCasual
 {
-    public class RunnerManager : SubManager
+    public class RunnerManager : HCSubManager
     {
         public Runner Runner;
         public RunnerInputHandler RunnerInputHandler;
         
-        public override void Initialize(HCGameManager hcGameManager)
+        public override async UniTask Initialize(GameManager gameManager)
         {
-            base.Initialize(hcGameManager);
+            await base.Initialize(gameManager);
             RunnerInputHandler.Runner = Runner;
             Runner.Initialize();
         }

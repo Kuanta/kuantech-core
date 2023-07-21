@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
@@ -126,6 +127,16 @@ namespace Kuantech.Utils
             return signString + numberString + quantitySuffix;
         }
 
+        public static float TryParseFloat(this string text, float defaultVal)
+        {
+            return float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed) ? parsed : defaultVal;
+        }
+
+        public static int TryParseInt(this string text, int defaultVal)
+        {
+            return int.TryParse(text, out var parsed) ? parsed : defaultVal;
+        }
+        
         public static Vector2 Get2D(this Vector3 vector3)
         {
             return new Vector2(vector3.x, vector3.z);
@@ -184,6 +195,7 @@ namespace Kuantech.Utils
         }
 
         #endregion
+        
         #region Geometry
 
         public static Vector3 GetRelativeRightVector(this Transform parent, Transform target)

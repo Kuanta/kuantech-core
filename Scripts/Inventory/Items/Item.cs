@@ -38,7 +38,7 @@ namespace Kuantech.Inventory.Items
         public float KnockbackTime;
         public float ProjectileSpeed;
         public float ProjectileDrop;
-        public float ProjectileRisHeight;
+        //public float ProjectileRisHeight;
         public bool TargetedProjectile;
         public GameObject ProjectilePrefab;
     }

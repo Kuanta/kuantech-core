@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 namespace Kuantech.Core.HyperCasual
@@ -11,14 +12,14 @@ namespace Kuantech.Core.HyperCasual
         public int CurrencyId;
         public int Price;
     }
-    public class StoreManager : SubManager
+    public class StoreManager : HCSubManager
     {
         private Dictionary<string, BuyableInfo> _buyables;
         [SerializeField] private StoreListing StoreListing;
 
-        public override void Initialize(HCGameManager hcGameManager)
+        public override async UniTask Initialize(GameManager hcGameManager)
         {
-            base.Initialize(hcGameManager);
+            await base.Initialize(hcGameManager);
             
             //todo: We may want to read prices from xml in the future
             if (StoreListing == null || StoreListing.Buyables == null) return;
@@ -33,9 +34,9 @@ namespace Kuantech.Core.HyperCasual
         {
             if (!_buyables.ContainsKey(id)) return false;
             BuyableInfo info = _buyables[id];
-            float availableCurrency = HcGameManager.GetCurrency(info.CurrencyId).Amount;
+            float availableCurrency = ((HCGameManager)ParentManager).GetCurrency(info.CurrencyId).Amount;
             if (availableCurrency < info.Price) return false;
-            HcGameManager.RemoveCurrency(info.CurrencyId, info.Price);
+            ((HCGameManager)ParentManager).RemoveCurrency(info.CurrencyId, info.Price);
             return true;
         }
 

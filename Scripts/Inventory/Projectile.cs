@@ -14,6 +14,7 @@ namespace Kuantech.Combat
         [Header("Properties")]
         public float Speed;
         public float Range;
+        [SerializeField] protected float RiseHeight;
         public float FollowLerpFactor;
         public float Knockback;
         public float KnockbackTime;
@@ -28,6 +29,8 @@ namespace Kuantech.Combat
         
         [Header("Visuals")]
         public GameObject Visual;
+        public TrailRenderer TrailRenderer;
+        
         public Collider Collider;
         private bool _despawned = false;
         public delegate void ImpactOverrideDelegate(Projectile proj, Actor target, GameObject gameObjects);
@@ -39,7 +42,6 @@ namespace Kuantech.Combat
         
         protected float _age = 0f; // Age of the projectile in terms of seconds
         protected float _lifeTime = 0f;
-        protected float _riseHeight;
 
         public List<GameObject> Attachments;
 
@@ -67,7 +69,7 @@ namespace Kuantech.Combat
         /// <param name="shotFrom">Weapon that this projectile is shot from. If null, damage will be calculated from default attack pattern or projectile properties</param>
         /// <param name="target">Target transform. If set to non-null, proectile will follow the target</param>
         /// <param name="riseHeight">To act as pseudo throwable. Projectile will rise to this height and falls down in a sinudoidal fasion.</param>
-        public void Initialize(CombatModule castBy, Weapon shotFrom, Vector3 shootPosition, Quaternion shootRotation, Transform target = null, float riseHeight = 0f)
+        public void Initialize(CombatModule castBy, Weapon shotFrom, Vector3 shootPosition, Quaternion shootRotation, Transform target = null)
         {
             //Set pos and rot
                             
@@ -109,13 +111,13 @@ namespace Kuantech.Combat
                 _lifeTime = Range / Speed;
             }
             
-            _riseHeight = riseHeight;
             _despawned = false;
             _shotPosition = shootPosition;
             if (Collider != null) Collider.enabled = true;
             if(Visual != null) Visual.SetActive(true);
             InitializeEvent?.Invoke(this, EventArgs.Empty);
             _newPosition = transform.position;
+            if(TrailRenderer != null) TrailRenderer.Clear();
         }
 
         private Vector3 _newPosition; //Need a seperate variable that doesn't include rise height values
@@ -161,7 +163,7 @@ namespace Kuantech.Combat
             Vector3 horizontalDiff = (transform.position - _shotPosition);
             horizontalDiff.y = 0f;
             float normalizedHeight = Mathf.Clamp01(horizontalDiff.magnitude / _InitialDistanceToTarget);
-            float throwbleHeightAddition = Mathf.Sin(normalizedHeight * Mathf.PI) * _riseHeight;
+            float throwbleHeightAddition = Mathf.Sin(normalizedHeight * Mathf.PI) * RiseHeight;
             _newPosition += transform.forward * Time.deltaTime * Speed;
             _lastDirection = transform.forward;
             transform.position = _newPosition + Vector3.up * throwbleHeightAddition;

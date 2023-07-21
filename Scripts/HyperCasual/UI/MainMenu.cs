@@ -7,7 +7,6 @@ namespace Kuantech.Core.HyperCasual
     public class MainMenu : UIMenu
     {
         [SerializeField] private Button StartLevelButton;
-
         protected virtual void Start()
         {
             if (StartLevelButton == null) return;

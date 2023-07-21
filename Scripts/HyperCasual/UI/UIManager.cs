@@ -1,17 +1,16 @@
-﻿
-using System;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
 namespace Kuantech.Core.HyperCasual
 {
-    public class UIManager : Singleton<UIManager>
+    public class UIManager : SubManager
     {
         
         //Panels
         public MainMenu MainMenu;
         public IngameMenu IngameMenu;
         public HeaderPanel HeaderPanel;
+        public GameObject LoadingScreen;
 
         private Vector2 _scaledScreenSize;
         public void Initialize()
@@ -21,6 +20,11 @@ namespace Kuantech.Core.HyperCasual
             IngameMenu.Initialize();
         }
 
+        public override void OnSubmanagersInitialized()
+        {
+            if(LoadingScreen != null) LoadingScreen.SetActive(false);
+        }
+        
         public void SetCurrencyAmount(int currencyType, int amount)
         {
             if (HeaderPanel == null) return;

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
 using UnityEngine;
 
@@ -38,7 +40,7 @@ namespace Kuantech.Core.HyperCasual
             Dirtied = true;
         }
         
-        public virtual void LoadData()
+        public virtual async UniTask LoadData()
         {
             string jsonPath = GetSaveFilePath();
             if (!File.Exists(jsonPath))
@@ -46,7 +48,9 @@ namespace Kuantech.Core.HyperCasual
                 CreateStateModel();
                 return;
             }
-            string jsonString = File.ReadAllText(jsonPath);
+            Task<string> readTask = File.ReadAllTextAsync(jsonPath);
+            await readTask;
+            string jsonString = readTask.Result;
             GameStateModel = JsonConvert.DeserializeObject<GameStateModel>(jsonString);
             GameStateModel.Currencies ??= new Dictionary<int, Currency>();
         }

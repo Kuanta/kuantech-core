@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using IngameDebugConsole;
 using Kuantech.Core.FX;
 using Sirenix.OdinInspector;
@@ -14,11 +15,10 @@ namespace Kuantech.Core.HyperCasual
     }
     public class HCGameManager : GameManager
     {
-        //SubManagers
-        [Header("SubManagers")]
+        //Common Submanagers
         public LevelManager LevelManager; //todo: Make LevelManager a subManager
-        private SubManager[] _subManagers;
-        
+        public UIManager UIManager;
+
         //Level
         [Header("Levels")]
         public int CurrentLevelIndex;
@@ -37,13 +37,9 @@ namespace Kuantech.Core.HyperCasual
 
         # region UnityEvents
 
-        protected override void Start()
-        {
-            Initialize();
-        }
-
         protected virtual void LateUpdate()
         {
+            if (GameState == null) return;
             if (!(Time.time - _lastCheckTime > SaveCheckFrequency)) return;
             if(SaveData) GameState.SaveData();
             _lastCheckTime = Time.time;
@@ -53,25 +49,35 @@ namespace Kuantech.Core.HyperCasual
         
         #region Lifecycle
 
-        protected virtual void Initialize()
+        protected override async UniTask Initialize()
         {
-            //todo: Make UIManager a submanager
             GameState ??= new GameState(CurrencyIds);
-            GameState.LoadData();
+            await GameState.LoadData();
+            await base.Initialize();
+        }
+        
+        protected override void OnSubmanagersInitialized()
+        {
+            base.OnSubmanagersInitialized();
+            
             EffectsLibrary.Instance.Initialize();
+
+            UIManager = GetSubManagerByType<UIManager>() as UIManager;
+            LevelManager = GetSubManagerByType<LevelManager>() as LevelManager;
+
             foreach (var currencyId in CurrencyIds)
             {
-                UIManager.Instance.SetCurrencyAmount(currencyId, GameState.GetCurrencyAmount(currencyId));
+                UIManager.SetCurrencyAmount(currencyId, GameState.GetCurrencyAmount(currencyId));
             }
             CurrentLevelIndex = GameState.GetLevelIndex();
-            UIManager.Instance.SetCurrentLevel(CurrentLevelIndex);
+            UIManager.SetCurrentLevel(CurrentLevelIndex);
             _lastCheckTime = Time.time;
             
-            InitializeSubManagers();
-            UIManager.Instance.Initialize(); //Initialize after data loading and store listing
-            LevelManager = GetSubManagerByType<LevelManager>() as LevelManager;
+            UIManager.Initialize(); //Initialize after data loading and store listing
             OnGameStart();
+
         }
+        
         protected virtual void OnGameStart()
         {
             CurrentLevel = LevelManager.GetLevel(CurrentLevelIndex);
@@ -138,7 +144,7 @@ namespace Kuantech.Core.HyperCasual
             levelIndex = CurrentLevel.LevelIndex;
             CurrentLevel.PrepareLevel();
             GameState.SetLevelIndex(levelIndex);
-            UIManager.Instance.SetCurrentLevel(levelIndex);
+            UIManager.SetCurrentLevel(levelIndex);
         }
 
         [ConsoleMethod("setLevel", "Sets the level")]
@@ -200,36 +206,11 @@ namespace Kuantech.Core.HyperCasual
         
         protected virtual void UpdateCurrency(int currencyId, int amount)
         {
-            UIManager.Instance.SetCurrencyAmount(currencyId, amount);
-            //CurrencyChangedEvent?.Invoke(this, GameState.GetCurrency(currencyId));
+            UIManager.SetCurrencyAmount(currencyId, amount);
         }
         #endregion
 
-        #region SubManagers
-
-        public void InitializeSubManagers()
-        {
-            //Initialize SubManagers
-            _subManagers = GetComponentsInChildren<SubManager>();
-            foreach (SubManager subManager in _subManagers)
-            {
-                subManager.Initialize(this);
-            }
-        }
-        
-        public SubManager GetSubManagerByType<T>()
-        {
-            for (int i = 0; i < _subManagers.Length; i++)
-            {
-                if (_subManagers[i] is T)
-                {
-                    return _subManagers[i];
-                }
-            }
-
-            return null; // Return null if no matching submanager is found
-        }
-        #endregion
+    
         
         #region Console Commands
 
