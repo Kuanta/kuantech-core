@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Kuantech.Core;
+using UnityEngine;
 using UnityEngine.Serialization;
 
 namespace Kuantech.UI
@@ -12,18 +13,20 @@ namespace Kuantech.UI
             MainCamera = camera;
         }
 
-        private void Awake()
+        private void Start()
         {
-            MainCamera = Camera.main;
+            MainCamera = GameManager.Instance.MainCamera;
         }
 
         private void OnEnable()
         {
+            if (MainCamera == null) return;
             transform.forward = MainCamera.transform.forward * Direction;
         }
 
         private void Update()
         {
+            if (MainCamera == null) return;
             transform.forward = MainCamera.transform.forward * Direction;
         }
     }

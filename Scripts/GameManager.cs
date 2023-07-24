@@ -11,6 +11,7 @@ namespace Kuantech.Core
     {
         public PrefabPool Pool;
         public bool GameIsPaused = false;
+        public Camera MainCamera;
         
         //Submanagers
         private SubManager[] _subManagers;

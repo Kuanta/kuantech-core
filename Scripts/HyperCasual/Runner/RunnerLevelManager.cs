@@ -154,7 +154,7 @@ namespace Kuantech.Core.HyperCasual
 
         private int GetChunkCount(int levelIndex)
         {
-            return Mathf.FloorToInt(levelIndex / (float)MergeRunnerConfig.ChunkPerLevel) + 2; //+2 for start and end chunk
+            return Mathf.FloorToInt(levelIndex / (float)MergeRunnerConfig.ChunkPerLevel) + 3; //+2 for start and end chunk + 1 for base middle
         }
         public RunnerLevel GenerateLevel(int levelIndex)
         {
