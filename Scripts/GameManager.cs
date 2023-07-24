@@ -12,6 +12,7 @@ namespace Kuantech.Core
         public PrefabPool Pool;
         public bool GameIsPaused = false;
         public Camera MainCamera;
+        protected bool SubManagersInitialized = false; 
         
         //Submanagers
         private SubManager[] _subManagers;
@@ -53,9 +54,11 @@ namespace Kuantech.Core
                 tasks.Add(subManager.Initialize(this));
             }
 
+            SubManagersInitialized = false;
             await UniTask.WhenAll(tasks.ToArray());
             
             OnSubmanagersInitialized();
+            SubManagersInitialized = true;
         }
         
         public SubManager GetSubManagerByType<T>()
