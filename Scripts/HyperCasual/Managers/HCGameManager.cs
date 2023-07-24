@@ -206,6 +206,7 @@ namespace Kuantech.Core.HyperCasual
         
         protected virtual void UpdateCurrency(int currencyId, int amount)
         {
+            if (UIManager == null) return;
             UIManager.SetCurrencyAmount(currencyId, amount);
         }
         #endregion
