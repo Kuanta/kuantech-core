@@ -9,8 +9,10 @@ namespace Kuantech.Core.UI
     {
         public float MaxRadius = 100.0f;
         public float DeadZone = 0.1f;
+        public float LerpFactor = 10f;
 
         private Vector2 _inputVector = Vector2.zero;
+        private Vector2 _targetInputVector = Vector2.zero;
         private Vector2 _startPosition;
         
         private bool _dragging;
@@ -24,12 +26,14 @@ namespace Kuantech.Core.UI
         {
             _startPosition = eventData.position;
             _inputVector = Vector2.zero;
+            _targetInputVector = Vector2.zero;
             OnDrag(eventData);
         }
 
         public void OnPointerUp(PointerEventData eventData)
         {
             _inputVector = Vector2.zero;
+            _targetInputVector = Vector2.zero;
             Dragging = false;
         }
 
@@ -49,14 +53,23 @@ namespace Kuantech.Core.UI
 
             if (distance < DeadZone)
             {
-                _inputVector = Vector2.zero;
+               _targetInputVector = Vector2.zero;
             }
             else
             {
-                _inputVector = direction * ((distance - DeadZone) / (MaxRadius - DeadZone));
+               _targetInputVector = direction * ((distance - DeadZone) / (MaxRadius - DeadZone));
             }
         }
 
+        private void Update()
+        {
+            if (!Dragging)
+            {
+                _inputVector = Vector2.zero;
+                _targetInputVector = Vector2.zero;
+            }
+            _inputVector = Vector2.Lerp(_inputVector, _targetInputVector, Time.deltaTime * LerpFactor);
+        }
         public Vector2 GetInputVector()
         {
             return _inputVector;
