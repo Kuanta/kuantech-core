@@ -1,8 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Kuantech.MergeRunner;
 using Kuantech.Utils;
-using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Kuantech.Core.HyperCasual
@@ -18,8 +16,9 @@ namespace Kuantech.Core.HyperCasual
         
         [Header("Runner")]
         [SerializeField] private Transform RunnerStartPoint;
-        
-        [Header("Chunks")]
+
+        [Header("Chunks")] 
+        public ChunkSet ChunkSet;
         [SerializeField] private int LiveChunkCount = 4;
 
         private Queue<RunnerChunk> _liveChunks = new Queue<RunnerChunk>();
@@ -28,8 +27,7 @@ namespace Kuantech.Core.HyperCasual
         private RunnerChunk _startChunk = null;
 
         private RunnerLevelManager _runnerLevelManager;
-
-        public EnemySet CurrentEnemySet;
+        
         public void SetRunner(Runner runner)
         {
             _currentRunner = runner;
@@ -48,8 +46,7 @@ namespace Kuantech.Core.HyperCasual
         {
             base.OnLevelCreated();
             PowerLevel = powerLevel;
-            CurrentEnemySet = ((MergeRunnerManager) MergeRunnerManager.Instance).GetEnemySet();
-            CurrentEnemySet.SetPowerLevel(powerLevel);
+
             if (Generated)
             {
                 GenerateLevel(chunkCount);
@@ -100,6 +97,17 @@ namespace Kuantech.Core.HyperCasual
                 GenerateAndAtttachNextChunk();
                 _currentChunkIndex++;
             }
+        }
+        /// <summary>
+        /// Returns a list of available chunk contents according to the current level
+        /// </summary>
+        /// <param name="powerLevel">Current power level.</param>
+        /// <returns></returns>
+        private List<GameObject> GetAvailableChunkContents(int powerLevel)
+        {
+            return ChunkSet.ChunkContents
+                .GetAvailableElements(powerLevel);
+
         }
         public override void PrepareLevel()
         {
@@ -214,18 +222,7 @@ namespace Kuantech.Core.HyperCasual
             return nextChunk;
         }
         #region Chunks Generation
-        
-        /// <summary>
-        /// Returns a list of available chunk contents according to the current level
-        /// </summary>
-        /// <param name="powerLevel">Current power level.</param>
-        /// <returns></returns>
-        private List<GameObject> GetAvailableChunkContents(int powerLevel)
-        {
-            return ((MergeRunnerManager) MergeRunnerManager.Instance).GetChunkSet().ChunkContents
-                .GetAvailableElements(powerLevel);
 
-        }
         
         /// <summary>
         /// Generates a chunk given the chunk type
@@ -247,13 +244,11 @@ namespace Kuantech.Core.HyperCasual
                 chunkType = ChunkType.StartChunk;
             }else if (isFinal)
             {
-                bool bossCondition = (LevelIndex+1) >= MergeRunnerConfig.BossChunkFrequency && (LevelIndex+1) % MergeRunnerConfig.BossChunkFrequency == 0;
-                chunkType = bossCondition ? ChunkType.BossChunk : ChunkType.EndChunk; //todo: Boss Chunk?
+                chunkType = ChunkType.EndChunk;
             }
             
             //Instantiate base chunk
-            GameObject baseChunkPrefab = ((MergeRunnerManager)MergeRunnerManager.Instance).
-                GetChunkSet().GetRandomBaseChunk(chunkType);
+            GameObject baseChunkPrefab = ChunkSet.GetRandomBaseChunk(chunkType);
             GameObject baseChunk = Instantiate(baseChunkPrefab);
             RunnerChunk runnerChunk = baseChunk.GetComponent<RunnerChunk>();
             
@@ -306,40 +301,5 @@ namespace Kuantech.Core.HyperCasual
 
         #endregion
         
-        #if UNITY_EDITOR
-        [Header("Editor")] 
-        public ChunkSet ChunkSet;
-
-        #region EditorMethods
-        [Button("Add Chunk")]
-        public void E_AddChunk(ChunkType chunkType)
-        {
-            LevelChunks ??= new List<LevelChunk>();
-            if (ChunkSet == null)
-            {
-                Debug.LogError("Chunk set is null");
-                return;
-            }
-            //Instantiate base chunk
-            GameObject baseChunkPrefab = ((MergeRunnerManager)MergeRunnerManager.Instance).
-                GetChunkSet().GetRandomBaseChunk(chunkType);
-            GameObject baseChunk = Instantiate(baseChunkPrefab);
-            RunnerChunk newChunk = baseChunk.GetComponent<RunnerChunk>();
-            newChunk.transform.SetParent(transform);
-            RunnerChunk _lastAddedChunk = GetLastAddedChunk();
-            if (_lastAddedChunk == null)
-            {
-                newChunk.transform.localPosition = Vector3.zero;
-                newChunk.transform.localRotation = Quaternion.identity;
-            }
-            else
-            {
-                _lastAddedChunk.AttachNewChunk(newChunk);    
-            }
-            LevelChunks.Add(newChunk);
-        }
-        #endregion
-        
-        #endif
     }
 }

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using Kuantech.MergeRunner;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Sirenix.OdinInspector;
@@ -154,7 +153,7 @@ namespace Kuantech.Core.HyperCasual
 
         private int GetChunkCount(int levelIndex)
         {
-            return Mathf.FloorToInt(levelIndex / (float)MergeRunnerConfig.ChunkPerLevel) + 3; //+2 for start and end chunk + 1 for base middle
+            return Mathf.FloorToInt(levelIndex / (float)RunnerConfig.ChunkPerLevel) + 3; //+2 for start and end chunk + 1 for base middle
         }
         public RunnerLevel GenerateLevel(int levelIndex)
         {
