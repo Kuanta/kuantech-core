@@ -14,6 +14,7 @@ namespace Kuantech.Core.HyperCasual
         public Rigidbody Rigidbody;
 
         public bool FrontMovementBlocked = false;
+        public bool ConstantForwardMovement;
         
         //Move to point
         [SerializeField] private float _targetReachThreshold = 0.05f;
@@ -21,7 +22,8 @@ namespace Kuantech.Core.HyperCasual
         private Transform _target;
         private UnityAction _pointReachedHandler;
         public LockVariable MovementLock = new LockVariable();
-        
+
+        private bool _pressedInput = false;
         public void Initialize()
         {
         }
@@ -36,6 +38,7 @@ namespace Kuantech.Core.HyperCasual
         public virtual void OnPlay()
         {
             FrontMovementBlocked = false;
+            _pressedInput = false;
             MovementLock.Reset();
         }
 
@@ -70,7 +73,13 @@ namespace Kuantech.Core.HyperCasual
             _currentMovementVector = Vector2.Lerp(_currentMovementVector, _movementVector, MovementLerpFactor);
             ManualMovement();
         }
-        
+
+        public float GetForwardMovement(Vector2 movementVector)
+        {
+            if (ConstantForwardMovement && !_pressedInput) return 0f;
+            if (ConstantForwardMovement && _pressedInput) return 1f;
+            return movementVector.y;
+        }
         private void RigibodyMovement()
         {
             if(Rigidbody == null) return;
@@ -109,6 +118,8 @@ namespace Kuantech.Core.HyperCasual
         }
         public void SetMovementVector(Vector2 movementVec)
         {
+            if (movementVec.sqrMagnitude > 0) _pressedInput = true;
+            movementVec.y = GetForwardMovement(movementVec);
             if (_movingToPoint) return;
             _movementVector = movementVec;
             if (FrontMovementBlocked) _movementVector.y = 0;
