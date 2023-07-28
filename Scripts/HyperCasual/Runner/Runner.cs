@@ -31,11 +31,20 @@ namespace Kuantech.Core.HyperCasual
             return _currentMovementVector;
         }
 
-        public void OnPlay()
+        #region Lifecycle
+
+        public virtual void OnPlay()
         {
             FrontMovementBlocked = false;
             MovementLock.Reset();
         }
+
+        public virtual void OnMainMenu()
+        {
+            
+        }
+        #endregion
+   
         
         private void FixedUpdate()
         {

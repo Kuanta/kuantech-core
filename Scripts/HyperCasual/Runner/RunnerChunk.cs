@@ -26,8 +26,8 @@ namespace Kuantech.Core.HyperCasual
         public virtual void Initialize(RunnerLevel parentLevel, bool isFinalChunk=false)
         {
             ParentLevel = parentLevel;
-            EnterGateTrigger.OnTriggerEnterEvent += OnEnterGateTriggered;
-            ExitGateTrigger.OnTriggerExitEvent += OnExitGateTriggered;
+            if(EnterGateTrigger != null) EnterGateTrigger.OnTriggerEnterEvent += OnEnterGateTriggered;
+            if(ExitGateTrigger != null) ExitGateTrigger.OnTriggerExitEvent += OnExitGateTriggered;
             _chunkCompleted = false;
             IsFinalChunk = isFinalChunk;
             
@@ -66,8 +66,8 @@ namespace Kuantech.Core.HyperCasual
         public override void OnRestart()
         {
             base.OnRestart();
-            EnterGateTrigger.gameObject.SetActive(true);
-            ExitGateTrigger.gameObject.SetActive(true);
+            if(EnterGateTrigger != null) EnterGateTrigger.gameObject.SetActive(true);
+            if(ExitGateTrigger != null) ExitGateTrigger.gameObject.SetActive(true);
             _chunkCompleted = false;
             foreach (var element in ChunkElements)
             {

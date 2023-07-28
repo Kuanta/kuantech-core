@@ -19,19 +19,20 @@ namespace Kuantech.Core.HyperCasual
         {
             if (stateChangeData.NewState == LevelState.Waiting)
             {
+                Runner.OnMainMenu();
                 Runner.transform.position = Vector3.zero;
                 Runner.transform.rotation = Quaternion.identity;
             }
             if (stateChangeData.NewState == LevelState.Playing)
             {
-                RunnerInputHandler.gameObject.SetActive(true);
+                RunnerInputHandler.enabled = true;
                 Runner.OnPlay();
                 Runner.transform.position = Vector3.zero;
                 Runner.transform.rotation = Quaternion.identity;
             }
             else
             {
-                RunnerInputHandler.gameObject.SetActive(false);
+                RunnerInputHandler.enabled = false;
             }
         }
     }

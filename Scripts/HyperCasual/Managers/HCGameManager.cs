@@ -60,7 +60,7 @@ namespace Kuantech.Core.HyperCasual
         {
             base.OnSubmanagersInitialized();
             
-            EffectsLibrary.Instance.Initialize();
+            EffectsLibrary.Instance.Initialize(); //todo(refactor): Make this a submanager
 
             UIManager = GetSubManagerByType<UIManager>() as UIManager;
             LevelManager = GetSubManagerByType<LevelManager>() as LevelManager;
@@ -220,6 +220,16 @@ namespace Kuantech.Core.HyperCasual
         {
             if (toggle == 0) ((HCGameManager) HCGameManager.Instance).SaveData = false;
             else ((HCGameManager) HCGameManager.Instance).SaveData = true;
+        }
+        #endregion
+
+        #region Static Methods
+
+        public static LevelState GetCurrentLevelState()
+        {
+            Level currentLevel = ((HCGameManager)HCGameManager.Instance).CurrentLevel;
+            if (currentLevel == null) return LevelState.Waiting;
+            return currentLevel.CurrentState;
         }
         #endregion
     }

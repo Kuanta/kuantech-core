@@ -27,7 +27,7 @@ namespace Kuantech.Core.HyperCasual
             Model.transform.RotateAround(transform.position, Vector3.up, Time.deltaTime*AngulerSpeed); 
         }
         
-        protected virtual void OnPickup()
+        protected virtual void OnPickup(Collider other)
         {
             Disable();
             if (PickupSound != null)
@@ -41,7 +41,7 @@ namespace Kuantech.Core.HyperCasual
         
         public virtual void OnTriggerEnter(Collider other)
         {
-            OnPickup();
+            OnPickup(other);
         }
 
         public virtual void Spawn()

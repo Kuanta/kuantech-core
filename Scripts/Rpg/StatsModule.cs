@@ -13,6 +13,7 @@ namespace Kuantech.Core
     [Serializable]
     public enum StatTypes
     {
+        None = 0,
         MaxHealth,
         HealthRegeneration,
         MaxEnergy,
@@ -26,7 +27,6 @@ namespace Kuantech.Core
         RangeBonus,
         CooldownReduction,
         AttackSpeedBonus,
-        None,
     }
 
     public enum ModifierTypes
