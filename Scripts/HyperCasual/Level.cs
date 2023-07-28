@@ -123,12 +123,14 @@ namespace Kuantech.Core.HyperCasual
                     CurrencyId = currencyId,
                     Amount = amount
                 };
-                return;
             }
-            EarnedCurrencies[currencyId] = EarnedCurrencies[currencyId].AddAmount(amount);
+            else
+            {
+                EarnedCurrencies[currencyId] = EarnedCurrencies[currencyId].AddAmount(amount);
+            }
             
             //Uncomment if want to update during level
-            //UIManager.Instance.SetCurrencyAmount(currencyId, GetCurrentCurrencyAmount(currencyId)); 
+            (GameManager.Instance.GetSubManagerByType<UIManager>() as UIManager)?.SetCurrencyAmount(currencyId, GetCurrentCurrencyAmount(currencyId)); 
         }
 
         public virtual Currency GetEarnedCurrency(int currencyId)
@@ -151,7 +153,16 @@ namespace Kuantech.Core.HyperCasual
         
         protected virtual void ReleaseEarnings()
         {
+            List<int> currencyIds = new List<int>();
+            foreach (var currency in EarnedCurrencies)
+            {
+                currencyIds.Add(currency.Value.CurrencyId);
+            }
             EarnedCurrencies.Clear();
+            foreach (var currId in currencyIds)
+            {
+                ((HCGameManager)HCGameManager.Instance).UpdateCurrency(currId);
+            }
         }
 
         #endregion

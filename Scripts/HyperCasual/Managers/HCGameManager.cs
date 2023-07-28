@@ -203,6 +203,12 @@ namespace Kuantech.Core.HyperCasual
         {
             return GameState.GetCurrency(currencyId);
         }
+
+        public virtual void UpdateCurrency(int currencyId)
+        {
+            if (UIManager == null) return;
+            UIManager.SetCurrencyAmount(currencyId, GameState.GetCurrencyAmount(currencyId));
+        }
         
         protected virtual void UpdateCurrency(int currencyId, int amount)
         {
