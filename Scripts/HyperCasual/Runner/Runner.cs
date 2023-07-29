@@ -24,7 +24,7 @@ namespace Kuantech.Core.HyperCasual
         public LockVariable MovementLock = new LockVariable();
 
         private bool _pressedInput = false;
-        public void Initialize()
+        public virtual void Initialize()
         {
         }
 
@@ -44,7 +44,7 @@ namespace Kuantech.Core.HyperCasual
 
         public virtual void OnMainMenu()
         {
-            
+            _pressedInput = false;
         }
         #endregion
    
@@ -54,7 +54,7 @@ namespace Kuantech.Core.HyperCasual
             RigibodyMovement();
         }
 
-        private void Update()
+        protected virtual void Update()
         {
             //Check Current Level
             Level currentLevel = ((HCGameManager) HCGameManager.Instance).CurrentLevel;
@@ -76,6 +76,8 @@ namespace Kuantech.Core.HyperCasual
 
         public float GetForwardMovement(Vector2 movementVector)
         {
+            if (HCGameManager.Instance.GameIsPaused ||
+                HCGameManager.GetCurrentLevelState() != LevelState.Playing) return 0f;
             if (ConstantForwardMovement && !_pressedInput) return 0f;
             if (ConstantForwardMovement && _pressedInput) return 1f;
             return movementVector.y;
