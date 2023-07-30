@@ -96,18 +96,18 @@ namespace Kuantech.Utils
             string signString = number < 0 ? "- " : "";
             string numberString = "";
             string quantitySuffix = "";
-            if (abs > 10E9)
+            if (abs > 1E9)
             {
-                abs /= 10E9f;
-                quantitySuffix = " b";
-            }else if (abs > 10E6)
+                abs /= 1E9f;
+                quantitySuffix = "b";
+            }else if (abs > 1E6)
             {
-                abs /= 10E6f;
-                quantitySuffix = " m";
-            }else if (abs > 10E3)
+                abs /= 1E6f;
+                quantitySuffix = "m";
+            }else if (abs > 1E3)
             {
-                abs /= 10E3f;
-                quantitySuffix = " k";
+                abs /= 1E3f;
+                quantitySuffix = "k";
             }
             else if(roundSmallerToInteger)
             {
@@ -118,11 +118,11 @@ namespace Kuantech.Utils
             if (roundToInteger)
             {
                 abs = (int) abs;
-                numberString = abs.ToString();
+                numberString = abs.ToString(CultureInfo.InvariantCulture);
             }
             else
             {
-                numberString = abs.ToString("F1");
+                numberString = abs.ToString("F1", CultureInfo.InvariantCulture);
             }
             return signString + numberString + quantitySuffix;
         }
