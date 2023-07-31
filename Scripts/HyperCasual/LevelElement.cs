@@ -14,5 +14,7 @@ namespace Kuantech.Core.HyperCasual
         public abstract void OnPlayLevel();
         public abstract void OnPlayerEntered();
         public abstract void OnPlayerExited();
+        
+        public virtual void OnLevelCleared(){}
     }
 }

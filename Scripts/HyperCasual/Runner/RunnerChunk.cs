@@ -74,17 +74,33 @@ namespace Kuantech.Core.HyperCasual
                 element.OnChunkRestart();
             }
         }
-        
+
+        public override void ClearChunk()
+        {
+            base.ClearChunk();
+            foreach (var element in ChunkElements)
+            {
+                element.OnClearChunk();
+            }
+        }
         /// <summary>
         /// Some IChunkElements may create additional IChunkElements. During the initialize, we have to add these new elements
         /// to the ChunkElements. Instead of directly altering the array, we store them in a queue and add them to ChunkElements
         /// after all is done.
         /// </summary>
         /// <param name="element"></param>
-        public void AddChunkElement(IChunkElement element)
+        public void AddChunkElement(IChunkElement element, bool useQueue = true)
         {
-            _elementsToAdd ??= new Queue<IChunkElement>();
-            _elementsToAdd.Enqueue(element);
+            if (useQueue)
+            {
+                _elementsToAdd ??= new Queue<IChunkElement>();
+                _elementsToAdd.Enqueue(element);
+            }
+            else
+            {
+                ChunkElements.Add(element);
+            }
+
         }
         private void GenerateChunk(ChunkFormat chunkFormat)
         {

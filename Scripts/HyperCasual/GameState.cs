@@ -111,7 +111,7 @@ namespace Kuantech.Core.HyperCasual
 
         public virtual void RemoveCurrency(int currencyId, int amount)
         {
-            AddCurrency(currencyId, -amount);
+            AddCurrency(currencyId, -Mathf.Abs(amount));
         }
 
         public virtual Currency GetCurrency(int currencyId)

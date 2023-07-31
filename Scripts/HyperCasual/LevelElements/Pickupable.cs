@@ -13,7 +13,7 @@ namespace Kuantech.Core.HyperCasual
         protected int FloatDirection = 1;
 
         [Header("Components")] 
-        [SerializeField] private GameObject Model;
+        [SerializeField] protected GameObject Model;
         [SerializeField] protected Collider Collider;
         protected bool Available = true;
 
@@ -58,7 +58,7 @@ namespace Kuantech.Core.HyperCasual
             Spawn();
         }
 
-        public void OnChunkRestart()
+        public virtual void OnChunkRestart()
         {
             Reset();
         }
@@ -72,7 +72,7 @@ namespace Kuantech.Core.HyperCasual
         {
         }
 
-        public void OnClearChunk()
+        public virtual void OnClearChunk()
         {
         }
 

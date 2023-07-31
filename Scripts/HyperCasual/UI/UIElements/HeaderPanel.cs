@@ -7,7 +7,7 @@ using UnityEngine.UI;
 namespace Kuantech.Core.HyperCasual
 {
     [Serializable]
-    public class CurrencyDictionary : SerializableDictionary<Currencies, CurrencyIndicator>{}
+    public class CurrencyDictionary : SerializableDictionary<int, CurrencyIndicator>{}
     
     /// <summary>
     /// Header panel is the common panel that will be used on all screens
@@ -37,7 +37,7 @@ namespace Kuantech.Core.HyperCasual
                 }));
             }
         }
-        public void SetCurrencyAmount(Currencies currencyId, int amount)
+        public void SetCurrencyAmount(int currencyId, int amount)
         {
             if (CurrencyDictionary.ContainsKey(currencyId))
             {

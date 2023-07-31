@@ -79,6 +79,11 @@ namespace Kuantech.Core.HyperCasual
 
         public virtual void ClearChunk()
         {
+            foreach (LevelElement levelElement in LevelElements)
+            {
+                if(levelElement == null) continue;
+                levelElement.OnLevelCleared();
+            }
         }
     }
 }

@@ -5,10 +5,10 @@ namespace Kuantech.Core.HyperCasual
 {
     public class CurrencyIndicator : MonoBehaviour
     {
-        public Currencies CurrencyId;
+        public int CurrencyId;
         [SerializeField] private TMP_Text CurrencyAmount;
 
-        public void SetAmount(int amount)
+        public virtual void SetAmount(int amount)
         {
             CurrencyAmount.text = amount.ToString();
         }

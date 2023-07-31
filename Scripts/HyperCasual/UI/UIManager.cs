@@ -28,7 +28,7 @@ namespace Kuantech.Core.HyperCasual
         public void SetCurrencyAmount(int currencyType, int amount)
         {
             if (HeaderPanel == null) return;
-            HeaderPanel.SetCurrencyAmount((Currencies)currencyType, amount);
+            HeaderPanel.SetCurrencyAmount(currencyType, amount);
         }
 
         public void SetCurrentLevel(int levelIndex)
