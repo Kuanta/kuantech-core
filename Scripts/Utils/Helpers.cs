@@ -229,5 +229,16 @@ namespace Kuantech.Utils
             return Vector3.Dot((point - segmentStart), segmentDirection) * segmentDirection + segmentStart;
         }
         #endregion
+
+        #region GameObjects
+
+        public static void DestroyAllChildren(this Transform transform)
+        {
+            for (int i = transform.childCount - 1; i >= 0; i--)
+            {
+                GameObject.Destroy(transform.GetChild(i).gameObject);
+            }
+        }
+        #endregion
     }
 }
