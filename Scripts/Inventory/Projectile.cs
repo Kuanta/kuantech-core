@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Kuantech.Core;
 using Kuantech.Core.FX;
 using Kuantech.Inventory.Items;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -19,6 +18,7 @@ namespace Kuantech.Combat
         public float Knockback;
         public float KnockbackTime;
         public const float ReachThreshold = 0.1f;
+        public bool ZeroYDiff = true;
 
         public bool RawDamage = false;
         public CombatModule CastBy;
@@ -32,7 +32,7 @@ namespace Kuantech.Combat
         public TrailRenderer TrailRenderer;
         
         public Collider Collider;
-        private bool _despawned = false;
+        protected bool Despawned = false;
         public delegate void ImpactOverrideDelegate(Projectile proj, Actor target, GameObject gameObjects);
 
         public ImpactOverrideDelegate ImpactOverride;
@@ -45,14 +45,14 @@ namespace Kuantech.Combat
 
         public List<GameObject> Attachments;
 
-        [Header("Effects")] 
-        public AudioSource StartSound;
-        public AudioSource ImpactSound;
+        [FormerlySerializedAs("StartSound")] [Header("Effects")] 
+        public Effect StartEffect;
+        public Effect ImpactEffect;
 
         private Vector3 _shotPosition;
         
         //Target variables
-        private Transform _target;
+        protected Transform Target;
         private float _targetHeightOffset = 1.5f;
         private float _InitialDistanceToTarget = 0f;
         
@@ -69,7 +69,7 @@ namespace Kuantech.Combat
         /// <param name="shotFrom">Weapon that this projectile is shot from. If null, damage will be calculated from default attack pattern or projectile properties</param>
         /// <param name="target">Target transform. If set to non-null, proectile will follow the target</param>
         /// <param name="riseHeight">To act as pseudo throwable. Projectile will rise to this height and falls down in a sinudoidal fasion.</param>
-        public void Initialize(CombatModule castBy, Weapon shotFrom, Vector3 shootPosition, Quaternion shootRotation, Transform target = null)
+        public virtual void Initialize(CombatModule castBy, Weapon shotFrom, Vector3 shootPosition, Quaternion shootRotation, Transform target = null)
         {
             //Set pos and rot
                             
@@ -90,16 +90,15 @@ namespace Kuantech.Combat
             }
             _age = 0f;
             
-            if (StartSound != null)
+            if (StartEffect != null)
             {
-                StartSound.time = 0f;
-                StartSound.Play();
+                StartEffect.Play();
             }
             
             _InitialDistanceToTarget = Range;
-            _target = target;
-            _targeted = _target != null;
-            if (_target != null)
+            Target = target;
+            _targeted = Target != null;
+            if (Target != null)
             {
                 Vector3 diffToTarget = (target.transform.position - _shotPosition);
                 _lastDirection = diffToTarget;
@@ -111,7 +110,7 @@ namespace Kuantech.Combat
                 _lifeTime = Range / Speed;
             }
             
-            _despawned = false;
+            Despawned = false;
             _shotPosition = shootPosition;
             if (Collider != null) Collider.enabled = true;
             if(Visual != null) Visual.SetActive(true);
@@ -123,8 +122,8 @@ namespace Kuantech.Combat
         private Vector3 _newPosition; //Need a seperate variable that doesn't include rise height values
         protected virtual void Update()
         {
-            if (_despawned) return;
-            if (_targeted && _target == null || Speed == 0f)
+            if (Despawned) return;
+            if (_targeted && Target == null || Speed == 0f)
             {
                 Despawn();
                 return;
@@ -132,27 +131,25 @@ namespace Kuantech.Combat
             Vector3 moveDirection = transform.forward;
             if (_targeted)
             {
-                Vector3 dist = _target.transform.position - transform.position;
-                dist.y = 0;
+                Vector3 dist = Target.transform.position - transform.position;
+                if(ZeroYDiff) dist.y = 0;
                 float dot = Vector3.Dot(dist, _lastDirection);
                 float sqrMag = dist.sqrMagnitude;
-                Vector3 forwardDir = transform.forward;
-                forwardDir.y = 0;
-                _lastDirection.y = 0;
-                bool reachedTarget = dot < 0 || sqrMag <= ReachThreshold*ReachThreshold;
+                if(ZeroYDiff) _lastDirection.y = 0;
+                bool reachedTarget = sqrMag <= ReachThreshold*ReachThreshold;
                 //Check Target Reach Distance
-                if (reachedTarget && _target.gameObject.activeInHierarchy)
+                if (reachedTarget && Target.gameObject.activeInHierarchy)
                 {
-                    HandleOnTriggerEnter(_target.gameObject);
+                    HandleOnTriggerEnter(Target.gameObject);
                     Despawn();
                     return;
                 }
                 
-                if (_target.gameObject.activeInHierarchy)
+                if (Target.gameObject.activeInHierarchy)
                 {
                     if (sqrMag > (ReachThreshold*ReachThreshold))
                     {
-                        moveDirection = dist.normalized;
+                        //moveDirection = dist.normalized;
                         transform.forward = Vector3.Lerp(moveDirection, dist, Time.deltaTime * FollowLerpFactor);
                     }
                 }
@@ -180,7 +177,7 @@ namespace Kuantech.Combat
 
         public void SetTarget(Transform target)
         {
-            _target = target;
+            Target = target;
         }
         
         public void AddAttachment(GameObject component)
@@ -217,9 +214,9 @@ namespace Kuantech.Combat
                 (targetActor.Health <= 0f || 
                  (CastBy != null && targetActor.FactionId == CastBy.Actor.FactionId))) return; //Don't attack actor with same faction
             
-            if (ImpactSound != null)
+            if (ImpactEffect != null)
             {
-                ImpactSound.Play();
+                ImpactEffect.Play();
             }
             
             if (ImpactOverride != null)
@@ -273,7 +270,7 @@ namespace Kuantech.Combat
         
         public virtual void Despawn()
         {
-            _despawned = true;
+            Despawned = true;
             _age = 0f;
             DespawnEvent?.Invoke(this, EventArgs.Empty);
             ClearAttachments();
