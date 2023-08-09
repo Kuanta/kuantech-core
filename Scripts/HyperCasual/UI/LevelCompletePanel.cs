@@ -31,6 +31,7 @@ namespace Kuantech.Core.HyperCasual
             foreach (var indicator in CurrencyIndicators)
             {
                 int earnedCurrency = currentLevel.GetEarnedCurrency((int) indicator.CurrencyId).Amount;
+                indicator.gameObject.SetActive(earnedCurrency > 0);
                 indicator.SetAmount(earnedCurrency);
             }
         }

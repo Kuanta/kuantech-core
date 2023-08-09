@@ -5,7 +5,7 @@ namespace Kuantech.Core.HyperCasual
 {
     public class DiscreteFill : MonoBehaviour
     {
-        [SerializeField] public List<GameObject> FillChunks;
+        public List<GameObject> FillChunks;
 
         public void SetFill(int fillAmount)
         {

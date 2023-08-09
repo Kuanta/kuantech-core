@@ -127,6 +127,12 @@ namespace Kuantech.Utils
             return signString + numberString + quantitySuffix;
         }
 
+        public static string Stringfy(this int number, bool roundToInteger = false,
+            bool roundSmallerToInteger = false)
+        {
+            return ((float) number).Stringfy();
+        }
+        
         public static float TryParseFloat(this string text, float defaultVal)
         {
             return float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed) ? parsed : defaultVal;

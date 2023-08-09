@@ -1,4 +1,5 @@
-﻿using TMPro;
+﻿using Kuantech.Utils;
+using TMPro;
 using UnityEngine;
 
 namespace Kuantech.Core.HyperCasual
@@ -10,7 +11,7 @@ namespace Kuantech.Core.HyperCasual
 
         public virtual void SetAmount(int amount)
         {
-            CurrencyAmount.text = amount.ToString();
+            CurrencyAmount.text = amount.Stringfy();
         }
     }
 }
