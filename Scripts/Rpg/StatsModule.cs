@@ -10,6 +10,7 @@ using UnityEngine;
 
 namespace Kuantech.Core
 {
+    #if !STAT_TYPES_OVERRIDE
     [Serializable]
     public enum StatTypes
     {
@@ -28,7 +29,7 @@ namespace Kuantech.Core
         CooldownReduction,
         AttackSpeedBonus,
     }
-
+    #endif
     public enum ModifierTypes
     {
         Addition,
