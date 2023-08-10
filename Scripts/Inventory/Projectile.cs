@@ -19,6 +19,7 @@ namespace Kuantech.Combat
         public float KnockbackTime;
         public const float ReachThreshold = 0.1f;
         public bool ZeroYDiff = true;
+        public float MaxLifetime = 5f;
 
         public bool RawDamage = false;
         public CombatModule CastBy;
@@ -103,7 +104,7 @@ namespace Kuantech.Combat
                 Vector3 diffToTarget = (target.transform.position - _shotPosition);
                 _lastDirection = diffToTarget;
                 _InitialDistanceToTarget = diffToTarget.magnitude;
-                _lifeTime = 100.0f; //todo: This should be handled better
+                _lifeTime = MaxLifetime; //todo: This should be handled better
             }
             else
             {
@@ -165,16 +166,21 @@ namespace Kuantech.Combat
             _lastDirection = transform.forward;
             transform.position = _newPosition + Vector3.up * throwbleHeightAddition;
             
+             CheckLifetime();
+         
+        }
+        
+        protected void CheckLifetime()
+        {
             //Check lifetime
             _age += Time.deltaTime;
-            if (_age > _lifeTime)
+            if (_age > Mathf.Min(_lifeTime, MaxLifetime))
             {
                 Despawn();
             }
-            
-         
-        }
 
+        }
+        
         public void SetTarget(Transform target)
         {
             Target = target;
@@ -203,7 +209,7 @@ namespace Kuantech.Combat
             HandleOnTriggerEnter(other.gameObject);
         }
 
-        private void HandleOnTriggerEnter(GameObject triggeredObject)
+        protected virtual void HandleOnTriggerEnter(GameObject triggeredObject)
         {
                   
             //todo: Apply knockback
@@ -270,6 +276,10 @@ namespace Kuantech.Combat
         
         public virtual void Despawn()
         {
+            if (Despawned)
+            {
+                return;
+            }
             Despawned = true;
             _age = 0f;
             DespawnEvent?.Invoke(this, EventArgs.Empty);
