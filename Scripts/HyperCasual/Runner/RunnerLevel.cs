@@ -42,7 +42,7 @@ namespace Kuantech.Core.HyperCasual
             }
         }
 
-        public void OnLevelCreated(int powerLevel, int chunkCount)
+        public virtual void OnLevelCreated(int powerLevel, int chunkCount)
         {
             base.OnLevelCreated();
             PowerLevel = powerLevel;
@@ -76,7 +76,7 @@ namespace Kuantech.Core.HyperCasual
             }
         }
 
-        private void GenerateLevel(int chunkCount)
+        protected virtual void GenerateLevel(int chunkCount)
         {
             ChunkCount = Mathf.Max(3,chunkCount); //1 for start 1 for end and 1 for regular
             if (LevelChunks != null)
@@ -249,6 +249,11 @@ namespace Kuantech.Core.HyperCasual
             
             //Instantiate base chunk
             GameObject baseChunkPrefab = ChunkSet.GetRandomBaseChunk(chunkType);
+            return InstantiateNextChunk(baseChunkPrefab, chunkType, isFinal);
+        }
+
+        protected RunnerChunk InstantiateNextChunk(GameObject baseChunkPrefab, ChunkType chunkType, bool isFinal)
+        {
             GameObject baseChunk = Instantiate(baseChunkPrefab);
             RunnerChunk runnerChunk = baseChunk.GetComponent<RunnerChunk>();
             
@@ -274,7 +279,7 @@ namespace Kuantech.Core.HyperCasual
         public void AttachChunk(RunnerChunk newChunk)
         {
             newChunk.transform.SetParent(transform);
-            _liveChunks.Enqueue(newChunk);
+            if(_liveChunks != null) _liveChunks.Enqueue(newChunk);
             RunnerChunk _lastAddedChunk = GetLastAddedChunk();
             if (_lastAddedChunk == null)
             {

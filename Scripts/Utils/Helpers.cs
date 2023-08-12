@@ -1,8 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
+using Random = UnityEngine.Random;
 
 namespace Kuantech.Utils
 {
@@ -56,7 +58,17 @@ namespace Kuantech.Utils
             int n = list.Count;
             return list[Random.Range(0, n)];
         }
+        
+        public static T GetRandomElement<T>(List<T> list)
+    {
+        if (list == null || list.Count == 0)
+        {
+            throw new ArgumentException("List cannot be null or empty.");
+        }
 
+        int index = _rng.Next(list.Count);
+        return list[index];
+    }
         private static readonly float GaussianNormalizationFactor = Mathf.Sqrt(2 * Mathf.PI);
         public static float Gaussian(float x, float mu, float sigma)
         {

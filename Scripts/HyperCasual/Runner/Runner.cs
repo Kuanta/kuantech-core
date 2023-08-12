@@ -1,4 +1,5 @@
-﻿using Kuantech.Core.Rpg;
+﻿using System;
+using Kuantech.Core.Rpg;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -24,6 +25,9 @@ namespace Kuantech.Core.HyperCasual
         public LockVariable MovementLock = new LockVariable();
 
         private bool _pressedInput = false;
+
+        public EventHandler InputPressedEvent;
+        
         public virtual void Initialize()
         {
         }
@@ -120,7 +124,11 @@ namespace Kuantech.Core.HyperCasual
         }
         public void SetMovementVector(Vector2 movementVec)
         {
-            if (movementVec.sqrMagnitude > 0) _pressedInput = true;
+            if (movementVec.sqrMagnitude > 0)
+            {
+                if(_pressedInput == false) InputPressedEvent?.Invoke(this, EventArgs.Empty);
+                _pressedInput = true;
+            }
             movementVec.y = GetForwardMovement(movementVec);
             if (_movingToPoint) return;
             _movementVector = movementVec;
