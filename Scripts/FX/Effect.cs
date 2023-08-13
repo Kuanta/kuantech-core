@@ -1,10 +1,13 @@
 ﻿using System.Collections;
+using System.Collections.Generic;
+using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Core.FX
 {
     public class Effect : MonoBehaviour
     {
+        public string EffectId;
         public AudioSource Sfx;
         public ParticleSystem Vfx;
         public float Duration;
@@ -15,19 +18,26 @@ namespace Kuantech.Core.FX
         public bool EmitEffect = false; //If set to true, effect will be emitted instead of play
         public int EmitCount = 1;
 
-        public void Play()
+        public List<AudioSource> SfxColleciton;
+        
+        public void Play(float effectCooldown = -1)
         {
-            StartCoroutine(PlayRoutine());
+            StartCoroutine(PlayRoutine(effectCooldown));
         }
 
-        private IEnumerator PlayRoutine()
+        private IEnumerator PlayRoutine(float effectCooldown = -1)
         {
             yield return new WaitForSeconds(Delay);
-            PlayEffects();
+            PlayEffects(effectCooldown);
         }
 
-        protected virtual void PlayEffects()
+        protected virtual void PlayEffects(float effectCooldown)
         {
+            if (!EffectsLibrary.CanPlaySound(EffectId, effectCooldown)) return;
+            if (SfxColleciton != null && SfxColleciton.Count > 0)
+            {
+                Sfx = SfxColleciton.GetRandomElement();
+            }
             if(Sfx != null) Sfx.Play();
             if(Vfx != null && !EmitEffect) Vfx.Play();
             else if (Vfx != null && EmitEffect)
@@ -37,9 +47,10 @@ namespace Kuantech.Core.FX
                 Vfx.Emit(EmitCount);
             }
             if(Animator != null) Animator.SetTrigger(Play1);
+            EffectsLibrary.SetLastPlayedTime(EffectId);
         }
         
-        public void Play(Vector3 position, Quaternion rotation, bool local = false)
+        public void Play(Vector3 position, Quaternion rotation, float effectCooldown, bool local = false)
         {
             if (local)
             {
@@ -51,42 +62,42 @@ namespace Kuantech.Core.FX
                 transform.position = position;
                 transform.rotation = rotation;
             }
-            Play();
+            Play(effectCooldown);
         }
 
-        public void Play(Transform parent)
+        public void Play(Transform parent, float effectCooldown)
         {
-            Play(parent, Vector3.zero, Quaternion.identity);
+            Play(parent, Vector3.zero, Quaternion.identity, effectCooldown);
         }
 
-        public void Play(Transform parent, Vector3 position, Quaternion rotation)
+        public void Play(Transform parent, Vector3 position, Quaternion rotation, float effectCooldown)
         {
             transform.SetParent(parent);
-            Play(position, rotation, local:true);
+            Play(position, rotation,effectCooldown, local:true);
         }
 
-        public void PlayTimed()
+        public void PlayTimed(float effectCooldown)
         {
-            Play();
+            Play(effectCooldown);
             StartCoroutine(PoolRoutine(Duration));
             
         }
         
-        public void PlayTimed(float duration, Vector3 position, Quaternion rotation, bool local = false)
+        public void PlayTimed(float duration, Vector3 position, Quaternion rotation, float effectCooldown, bool local = false)
         {
-            Play(position, rotation, local);
+            Play(position, rotation, effectCooldown, local);
             StartCoroutine(PoolRoutine(duration));
         }
                 
-        public void PlayTimed(float duration, Transform parent)
+        public void PlayTimed(float duration, Transform parent, float effectCooldown)
         {
-            Play(parent);
+            Play(parent, effectCooldown);
             StartCoroutine(PoolRoutine(duration));
         }
         
-        public void PlayTimed(float duration, Transform parent, Vector3 position, Quaternion rotation)
+        public void PlayTimed(float duration, Transform parent, Vector3 position, Quaternion rotation, float effectCooldown)
         {
-            Play(parent, position, rotation);
+            Play(parent, position, rotation, effectCooldown);
             StartCoroutine(PoolRoutine(duration));
         }
         
