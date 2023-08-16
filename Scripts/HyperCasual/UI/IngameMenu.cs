@@ -13,7 +13,7 @@ namespace Kuantech.Core.HyperCasual
         [SerializeField] private float LevelCompletePanelShowDelay;
         [SerializeField] private float LevelFailedPanelShowDelay;
 
-        public void Initialize()
+        public virtual void Initialize()
         {
             if(LevelCompletePanel != null) LevelCompletePanel.Initialize();
             if(LevelFailedPanel != null) LevelFailedPanel.Initialize();
