@@ -33,15 +33,7 @@ namespace Kuantech.Core.HyperCasual
             _currentRunner = runner;
             PositionRunner();
         }
-
-        private void Update()
-        {
-            if (Input.GetKeyDown(KeyCode.R))
-            {
-                ((HCGameManager)HCGameManager.Instance).RestartLevel();
-            }
-        }
-
+        
         public virtual void OnLevelCreated(int powerLevel, int chunkCount)
         {
             base.OnLevelCreated();
