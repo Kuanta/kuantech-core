@@ -19,6 +19,7 @@ namespace Kuantech.Core.HyperCasual
         [SerializeField] private List<Transform> Waypoints;
         [SerializeField] private int _currentWaypointIndex;
         private Vector3 _previousDisplacement = Vector3.zero;
+        [SerializeField] private bool RandomizeMovement = false;
         
         [Header("Rotation")] 
         public int InitialAngleIndex;
@@ -163,11 +164,11 @@ namespace Kuantech.Core.HyperCasual
             }
             else
             {
-                _currentWaypointIndex = InitialWaypointIndex;
+                _currentWaypointIndex = RandomizeMovement ? UnityEngine.Random.Range(0,Waypoints.Count) : InitialWaypointIndex;
                 if (Waypoints.Count < 2) return;
                 int nextWaypointIndex = (_currentWaypointIndex + 1) % Waypoints.Count;
                 Vector3 diff = Waypoints[nextWaypointIndex].localPosition - Waypoints[_currentWaypointIndex].localPosition;
-                float distance = diff.magnitude * InitialPositionFactor;
+                float distance = diff.magnitude * (RandomizeMovement ? UnityEngine.Random.Range(0f,1f) : InitialPositionFactor);
                 MovingPart.transform.localPosition =
                     Waypoints[_currentWaypointIndex].localPosition + diff.normalized * distance;
             }

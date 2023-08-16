@@ -10,6 +10,7 @@ namespace Kuantech.Core.HyperCasual
         Playing,
         Failed,
         Completed,
+        Paused,
     }
     
     public class Level : MonoBehaviour
