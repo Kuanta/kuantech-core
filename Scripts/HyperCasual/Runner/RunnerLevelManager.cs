@@ -136,11 +136,9 @@ namespace Kuantech.Core.HyperCasual
             }
             else
             {
-                if (LevelDictionary.Count <= levelIndex)
-                {
-                    levelIndex = LevelDictionary.Count - 1;
-                }
-                runnerLevel = Instantiate(LevelDictionary[levelIndex].gameObject).GetComponent<RunnerLevel>();
+                var levelPrefab = LevelDictionary.Count <= levelIndex ? LevelDictionary[LevelDictionary.Count - 1].gameObject : //Get Last element
+                    LevelDictionary[levelIndex].gameObject;
+                runnerLevel = Instantiate(levelPrefab).GetComponent<RunnerLevel>();
                 runnerLevel.transform.position = Vector3.zero;
                 runnerLevel.transform.rotation = Quaternion.identity;
                 runnerLevel.LevelIndex = levelIndex;
