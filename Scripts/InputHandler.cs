@@ -17,6 +17,12 @@ namespace Kuantech.Core
         protected virtual void Update()
         {
             if (GameManager.Instance.GameIsPaused) return;
+            KeyboardInput();
+            
+        }
+
+        private void KeyboardInput()
+        {
             
             //todo(Remove pc controls)
             if (Input.GetKey(KeyCode.A))
@@ -63,6 +69,10 @@ namespace Kuantech.Core
             }
         }
 
+        private void JoystickInput()
+        {
+            
+        }
         public void Reset()
         {
             SideInput = 0;
