@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using UnityEngine;
 using UnityEngine.Events;
 using Random = UnityEngine.Random;
@@ -257,6 +258,35 @@ namespace Kuantech.Utils
                 GameObject.Destroy(transform.GetChild(i).gameObject);
             }
         }
+        #endregion
+        
+        #region Tricks
+        public static List<Type> GetAllDerivedTypes(AppDomain currentDomain, Type baseType)
+        {
+            return currentDomain.GetAssemblies()
+                .SelectMany(assembly => assembly.GetTypes())
+                .Where(type => type.IsSubclassOf(baseType)).ToList();
+        }
+        
+        /// <summary>
+        /// Gets all the public variables of a type
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static FieldInfo[] GetSerializedFields(Type type)
+        {
+            if (type == null)
+            {
+                return null;
+            }
+            FieldInfo[] publicFields = type.GetFields(BindingFlags.Public | BindingFlags.Instance);
+            FieldInfo[] serializedFields =  type.GetFields(BindingFlags.NonPublic | BindingFlags.Instance)
+                .Where(field => field.GetCustomAttribute<SerializeField>() != null)
+                .ToArray();
+            
+            return publicFields.Concat(serializedFields).ToArray();
+        }
+        
         #endregion
     }
 }
