@@ -53,7 +53,7 @@ namespace Kuantech.Utils
                 (list[k], list[n]) = (list[n], list[k]);
             } 
         }
-        
+            
         public static T GetRandomElement<T>(this IList<T> list) where T:class
         {
             int n = list.Count;
@@ -61,15 +61,53 @@ namespace Kuantech.Utils
         }
         
         public static T GetRandomElement<T>(List<T> list)
-    {
-        if (list == null || list.Count == 0)
         {
-            throw new ArgumentException("List cannot be null or empty.");
-        }
+            if (list == null || list.Count == 0)
+            {
+                throw new ArgumentException("List cannot be null or empty.");
+            }
 
-        int index = _rng.Next(list.Count);
-        return list[index];
-    }
+            int index = _rng.Next(list.Count);
+            return list[index];
+        }
+        
+        /// <summary>
+        /// Removes an item from a queue.
+        /// </summary>
+        /// <typeparam name="T">The type of items in the queue.</typeparam>
+        /// <param name="queue">The queue to process.</param>
+        /// <param name="itemToRemove">The item to remove.</param>
+        /// <returns>Returns true if the item was found and removed, false otherwise.</returns>
+        public static bool RemoveFromQueue<T>(Queue<T> queue, T itemToRemove)
+        {
+            int initialCount = queue.Count;
+            bool found = false;
+
+            // Using a temporary list to hold dequeued items
+            List<T> tempList = new List<T>();
+
+            for (int i = 0; i < initialCount; i++)
+            {
+                T currentItem = queue.Dequeue();
+
+                if (EqualityComparer<T>.Default.Equals(currentItem, itemToRemove))
+                {
+                    found = true;
+                    continue;
+                }
+
+                tempList.Add(currentItem);
+            }
+
+            // Re-enqueue items that aren't removed
+            foreach (T item in tempList)
+            {
+                queue.Enqueue(item);
+            }
+
+            return found;
+        }
+        
         private static readonly float GaussianNormalizationFactor = Mathf.Sqrt(2 * Mathf.PI);
         public static float Gaussian(float x, float mu, float sigma)
         {

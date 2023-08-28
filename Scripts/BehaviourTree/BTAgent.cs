@@ -10,7 +10,7 @@ namespace Kuantech.AI
         public bool AgentRunning;
         public void Initialize()
         {
-            _waitForSeconds = new WaitForSeconds(Random.Range(0.1f, 1f));
+            _waitForSeconds = new WaitForSeconds(Random.Range(0.1f, 0.2f));
         }
 
         public void SetBehaviourTree(BehaviourTree bt)
