@@ -50,6 +50,12 @@ namespace Kuantech.Core.HyperCasual
         {
             _pressedInput = false;
         }
+
+        public void SetInputPressed(bool toggle)
+        {
+            _pressedInput = toggle;
+            if(toggle) InputPressedEvent?.Invoke(this, EventArgs.Empty);
+        }
         #endregion
    
         

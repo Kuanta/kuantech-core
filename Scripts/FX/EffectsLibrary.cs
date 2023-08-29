@@ -17,7 +17,7 @@ namespace Kuantech.Core.FX
         public AudioLibrary AudioLibrary;
         public EffectsDictionary EffectsDictionary;
         public PrefabPool EffectsPool;
-
+        
         private Dictionary<string, float> _effectLastPlayedTimes = new Dictionary<string, float>();
         
         private void Awake()
