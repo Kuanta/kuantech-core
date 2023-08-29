@@ -1,13 +1,54 @@
 ﻿using System;
+using System.Collections.Generic;
 using Kuantech.Core;
 using Kuantech.Core.HyperCasual;
 using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace Kuantech.Merge
 {
+    [Serializable]
+    public class SlotState
+    {
+        public int SlotIndex;
+        public string SlottableId;
+        public int SlottableLevel;
+        public bool Occupied;
+    }
+
+    [Serializable]
+    public class SlottableZoneState
+    {
+        public Dictionary<int, SlotState> Slots ;
+
+        public SlottableZoneState()
+        {
+            Slots = new Dictionary<int, SlotState>();
+        }
+        
+
+        public void SetSlot(string slottableId, int slottableLevel, int index)
+        {
+            Slots ??= new Dictionary<int, SlotState>();
+
+            Slots[index] = new SlotState()
+            {
+                SlottableId = slottableId,
+                SlottableLevel = slottableLevel,
+                SlotIndex = index,
+                Occupied = true,
+            };
+        }
+
+        public void UnSetSlot(int index)
+        {
+            if (Slots == null || !Slots.ContainsKey(index)) return;
+            Slots[index].Occupied = false;
+            Slots[index].SlottableId = "";
+            Slots[index].SlottableLevel = 1;
+        }
+    }
+    
     public class DragManager : SubManager
     {
         public LayerMask DraggableLayer;
