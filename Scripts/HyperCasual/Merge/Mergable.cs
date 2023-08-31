@@ -28,7 +28,7 @@ namespace Kuantech.Merge
         private Vector3 _positionBeforeDrag;
         //private Vector2Int _lastRowCol;
         
-        public void Initialize(MergableTemplate mergableData)
+        public virtual void Initialize(MergableTemplate mergableData)
         {
             Level = 1;
             MergableData = mergableData;
@@ -40,10 +40,10 @@ namespace Kuantech.Merge
             if (HeadUI == null) return;
             HeadUI.gameObject.SetActive(toggle);
         }
-        public void DragStart()
+        public virtual bool DragStart()
         {
             _positionBeforeDrag = transform.position;
-            //_lastRowCol = Vector2Int.one * -1;
+            return true;
         }
 
         public void Drag(Vector3 position)
@@ -76,7 +76,7 @@ namespace Kuantech.Merge
             if (!enabled) return;
             if (_dropZone == null || !_dropZone.OnDrop(this))
             {
-                transform.position = _positionBeforeDrag;
+                //ReturnToPreviousPosition();
             }
             
         }
@@ -100,10 +100,10 @@ namespace Kuantech.Merge
                 // Check each hit
                 foreach (RaycastResult result in results)
                 {
-                    IDropZone sellZone = result.gameObject.GetComponent<IDropZone>();
-                    if (sellZone != null)
+                    IDropZone dropZone = result.gameObject.GetComponent<IDropZone>();
+                    if (dropZone != null)
                     {
-                        return sellZone;
+                        return dropZone;
                     }
                 }
             }
@@ -129,6 +129,10 @@ namespace Kuantech.Merge
             return null;
         }
 
+        public virtual void ReturnToPreviousPosition()
+        {
+            transform.position = _positionBeforeDrag;
+        }
         public void SetLevel(int level)
         {
             Level = level;

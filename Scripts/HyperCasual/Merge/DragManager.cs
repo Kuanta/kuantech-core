@@ -68,7 +68,6 @@ namespace Kuantech.Merge
         {
             mainCamera = Camera.main;
         }
-        public float cameraDepth = 10;
 
         private void Update()
         {
@@ -83,13 +82,12 @@ namespace Kuantech.Merge
                     if (hit.collider.gameObject.CompareTag("RaycastBlocker")) return;
                     // Check if the hit object implements the IDraggable interface
                     _draggedInterface = hit.collider.transform.gameObject.GetComponent<IDraggable>();
-                    if (_draggedInterface != null)
+                    if (_draggedInterface != null && _draggedInterface.DragStart())
                     {
                         draggedObject = hit.collider.transform;
+                        DragCameraDistance = Vector3.Distance(mainCamera.transform.position, draggedObject.position);
                         OnDragStart?.Invoke(this, _draggedInterface); //Invoke event for subscribers
-                        _draggedInterface.DragStart(); //Call drag start on the dragged object
                         _offset = draggedObject.position - hit.point;
-                        _offset.y = 0;
                     }
                 }
             }
@@ -101,7 +99,7 @@ namespace Kuantech.Merge
                     Vector3 mousePosition = Input.mousePosition;
                     mousePosition.z = DragCameraDistance;
                     Vector3 worldPosition = GameManager.Instance.MainCamera.ScreenToWorldPoint(mousePosition);
-                    _draggedInterface.Drag( worldPosition );
+                    _draggedInterface.Drag( worldPosition + _offset);
                 }
             }
             else if (Input.GetMouseButtonUp(0))
@@ -116,8 +114,14 @@ namespace Kuantech.Merge
             }
         }
 
-       
-        
+        public void SetDraggable(IDraggable draggable)
+        {
+            _draggedInterface = draggable;
+            OnDragStart?.Invoke(this, _draggedInterface); //Invoke event for subscribers
+            _draggedInterface.DragStart(); //Call drag start on the dragged object
+            _offset = Vector3.zero;
+            draggedObject = (_draggedInterface as MonoBehaviour).gameObject.transform;
+        }
         private bool CheckGround(out Vector3 targetPosition)
         {
             RaycastHit hit;
@@ -133,6 +137,5 @@ namespace Kuantech.Merge
 
             return false;
         }
-        
     }
 }
