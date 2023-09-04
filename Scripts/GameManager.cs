@@ -81,6 +81,11 @@ namespace Kuantech.Core
                 subManager.OnSubmanagersInitialized();
             }
         }
+
+        public void ToggleSubManager<T>(bool toggle)
+        {
+            GetSubManagerByType<T>().enabled = toggle;
+        }
         #endregion
         
         #region pool

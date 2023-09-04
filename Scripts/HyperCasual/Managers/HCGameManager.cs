@@ -78,7 +78,6 @@ namespace Kuantech.Core.HyperCasual
             
             UIManager.Initialize(); //Initialize after data loading and store listing
             OnGameStart();
-
         }
         
         protected virtual void OnGameStart()

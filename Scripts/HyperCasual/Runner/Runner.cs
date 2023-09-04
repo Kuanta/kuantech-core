@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using Kuantech.Core.Rpg;
 using UnityEngine;
 using UnityEngine.Events;
@@ -8,10 +10,12 @@ namespace Kuantech.Core.HyperCasual
     public class Runner : MonoBehaviour
     {
         public float Speed = 10f;
+        public float SideSpeed = 10f;
         public float MovementLerpFactor = 10;
         private Vector2 _movementVector = Vector2.zero;
-        private Vector2 _currentMovementVector = Vector2.zero; 
+        protected Vector2 CurrentMovementVector = Vector2.zero;
 
+        private Vector3 ForceMovementVector;
         public Rigidbody Rigidbody;
 
         public bool FrontMovementBlocked = false;
@@ -34,7 +38,7 @@ namespace Kuantech.Core.HyperCasual
 
         public Vector2 GetMovemenetVector()
         {
-            return _currentMovementVector;
+            return CurrentMovementVector;
         }
 
         #region Lifecycle
@@ -42,13 +46,13 @@ namespace Kuantech.Core.HyperCasual
         public virtual void OnPlay()
         {
             FrontMovementBlocked = false;
-            _pressedInput = false;
+            Reset();
             MovementLock.Reset();
         }
 
         public virtual void OnMainMenu()
         {
-            _pressedInput = false;
+            Reset();
         }
 
         public void SetInputPressed(bool toggle)
@@ -56,10 +60,19 @@ namespace Kuantech.Core.HyperCasual
             _pressedInput = toggle;
             if(toggle) InputPressedEvent?.Invoke(this, EventArgs.Empty);
         }
+
+        public virtual void Reset()
+        {
+            ForceMovementVector = Vector3.zero;
+            if(_knockbackRoutine != null) StopCoroutine(_knockbackRoutine);
+            _knockbackRoutine = null;
+            _pressedInput = false;
+        }
+
         #endregion
    
         
-        private void FixedUpdate()
+        protected virtual void FixedUpdate()
         {
             RigibodyMovement();
         }
@@ -76,11 +89,11 @@ namespace Kuantech.Core.HyperCasual
             if (currentLevel == null || currentLevel.CurrentState != LevelState.Playing || MovementLock.IsLocked())
             {
                 _movementVector = Vector2.zero;
-                _currentMovementVector = Vector2.zero;
+                CurrentMovementVector = Vector2.zero;
                 return;
             }
 
-            _currentMovementVector = Vector2.Lerp(_currentMovementVector, _movementVector, MovementLerpFactor);
+            CurrentMovementVector = Vector2.Lerp(CurrentMovementVector, _movementVector, MovementLerpFactor);
             ManualMovement();
         }
 
@@ -101,15 +114,22 @@ namespace Kuantech.Core.HyperCasual
                 Rigidbody.velocity = Vector3.zero;
                 return;
             }
-            Vector3 globalDirection = LocalToGlobalDirection(_currentMovementVector);
-            globalDirection.y = Rigidbody.velocity.y;
-            Rigidbody.velocity = globalDirection * Speed;
+
+            if (ForceMovementVector.sqrMagnitude >= 0.1f)
+            {
+                Rigidbody.velocity = ForceMovementVector * Speed;
+                return;
+            }
+
+            Vector3 sideMovement = LocalToGlobalDirection(new Vector2(CurrentMovementVector.x, 0));
+            Vector3 forwardMovement = LocalToGlobalDirection(new Vector2(0, CurrentMovementVector.y));
+            Rigidbody.velocity = sideMovement * SideSpeed + forwardMovement*Speed;
         }
 
         private void ManualMovement()
         {
             if(Rigidbody != null) return;
-            Vector3 globalDirection = LocalToGlobalDirection(_currentMovementVector);
+            Vector3 globalDirection = LocalToGlobalDirection(CurrentMovementVector);
             transform.position += globalDirection.normalized * (Time.deltaTime * Speed);
         }
 
@@ -124,7 +144,7 @@ namespace Kuantech.Core.HyperCasual
                 return;
             }
             diff.Normalize();
-            _currentMovementVector = new Vector2(diff.x, diff.z); //Needed for animations
+            CurrentMovementVector = new Vector2(diff.x, diff.z); //Needed for animations
             transform.position += diff * Time.deltaTime * Speed;
 
         }
@@ -139,7 +159,7 @@ namespace Kuantech.Core.HyperCasual
             if (_movingToPoint) return;
             _movementVector = movementVec;
             if (FrontMovementBlocked) _movementVector.y = 0;
-            _currentMovementVector = _movementVector;
+            CurrentMovementVector = _movementVector;
 
         }
         public void MoveToPoint(Transform point, UnityAction pointReachedHandler)
@@ -158,5 +178,27 @@ namespace Kuantech.Core.HyperCasual
             return globalDirection;
         }
         
+        #region Knockback
+        private IEnumerator _knockbackRoutine = null;
+        private bool _knockbacking = false;
+        public void Knockback(Vector3 direction, float knockback, float knockbackTime)
+        {
+            if (_knockbacking) return;
+            IEnumerator routine = KnockbackRoutine(direction, knockback, knockbackTime);
+            _knockbackRoutine = routine;
+            StartCoroutine(routine);
+        }
+        private IEnumerator KnockbackRoutine(Vector3 direction, float knockback, float knockbackTime)
+        {
+            _knockbacking = true;
+            direction.y = 0f;
+            direction.Normalize();
+            direction *= knockback;
+            ForceMovementVector += direction;
+            yield return new WaitForSeconds(knockbackTime);
+            ForceMovementVector -= direction;
+            _knockbacking = false;
+        }
+        #endregion
     }
 }

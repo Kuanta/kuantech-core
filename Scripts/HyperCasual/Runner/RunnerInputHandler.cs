@@ -7,7 +7,8 @@ namespace Kuantech.Core.HyperCasual
     {
         public Runner Runner;
         [SerializeField] private VirtualJoystick VirtualJoystick;
-        
+        public bool MovementByDistance = false;
+        public float DisplacementFactor = 1f;
         private void Update()
         {
             //todo: Check Game State
@@ -18,9 +19,16 @@ namespace Kuantech.Core.HyperCasual
 
             if (VirtualJoystick != null)
             {
-                Vector2 joystickInput = VirtualJoystick.GetInputVector();
+                if (MovementByDistance)
+                {
+                    side = VirtualJoystick.GetHorizontalDisplacement() * DisplacementFactor;
+                }
+                else
+                {
+                    Vector2 joystickInput = VirtualJoystick.GetInputVector();
+                    side = joystickInput.x;
+                }
                 if (VirtualJoystick.Dragging) forward = 1;
-                side = joystickInput.x;
             }
 
             if (side == 0 && forward == 0)

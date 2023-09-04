@@ -17,7 +17,12 @@ namespace Kuantech.Utils
             Vector3 normalized = to.normalized;
             return Vector3.Dot(vec, normalized) * normalized;
         }
-        
+
+        public static float DotProjection(Vector3 vec, Vector3 to)
+        {
+            Vector3 normalized = to.normalized;
+            return Vector3.Dot(vec, normalized); 
+        }
         /// <summary>
         /// Calculate nth value of the fibonacci sequence using Dynamic Programming
         /// </summary>

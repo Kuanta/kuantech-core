@@ -103,6 +103,7 @@ namespace Kuantech.Core.HyperCasual
         }
         public override void PrepareLevel()
         {
+            base.PrepareLevel();
             PositionRunner();
         }
         

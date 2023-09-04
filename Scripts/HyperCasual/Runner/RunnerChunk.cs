@@ -57,8 +57,8 @@ namespace Kuantech.Core.HyperCasual
         public override void OnPrepare(Level parentLevel)
         {
             base.OnPrepare(parentLevel);
-             EnterGateTrigger.OnTriggerEnterEvent += OnEnterGateTriggered;
-            ExitGateTrigger.OnTriggerExitEvent += OnExitGateTriggered;
+            if(EnterGateTrigger != null) EnterGateTrigger.OnTriggerEnterEvent += OnEnterGateTriggered;
+            if(ExitGateTrigger != null) ExitGateTrigger.OnTriggerExitEvent += OnExitGateTriggered;
             _chunkCompleted = false;
         }
         
