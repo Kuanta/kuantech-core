@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using Kuantech.Core.Utils;
 using UnityEngine;
 using UnityEngine.Events;
 using Random = UnityEngine.Random;
@@ -330,6 +331,31 @@ namespace Kuantech.Utils
             return publicFields.Concat(serializedFields).ToArray();
         }
         
+        #endregion
+
+        #region Custom Attributes
+
+        public static void ResetAttributes(object target)
+        {
+            // Ensure target is not null
+            if (target == null) return;
+
+            // Get all fields of the target object's class
+            FieldInfo[] fields = target.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Instance);
+
+            foreach (FieldInfo field in fields)
+            {
+                // Check if field has the Resettable attribute
+                ResettableAttribute attribute = (ResettableAttribute)Attribute.GetCustomAttribute(field, typeof(ResettableAttribute));
+
+                if (attribute != null)
+                {
+                    // Set field value to its default
+                    field.SetValue(target, attribute.DefaultVal);
+                }
+            }
+        }
+
         #endregion
     }
 }

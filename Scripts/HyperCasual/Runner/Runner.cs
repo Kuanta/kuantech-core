@@ -64,8 +64,14 @@ namespace Kuantech.Core.HyperCasual
         public virtual void Reset()
         {
             ForceMovementVector = Vector3.zero;
-            if(_knockbackRoutine != null) StopCoroutine(_knockbackRoutine);
-            _knockbackRoutine = null;
+            if (_knockbackRoutines != null)
+            {
+                foreach (var routine in _knockbackRoutines)
+                {
+                    StopCoroutine(routine);
+                }
+                _knockbackRoutines.Clear();
+            }
             _pressedInput = false;
         }
 
@@ -179,25 +185,21 @@ namespace Kuantech.Core.HyperCasual
         }
         
         #region Knockback
-        private IEnumerator _knockbackRoutine = null;
-        private bool _knockbacking = false;
+        private HashSet<IEnumerator> _knockbackRoutines = new HashSet<IEnumerator>();
         public void Knockback(Vector3 direction, float knockback, float knockbackTime)
         {
-            if (_knockbacking) return;
             IEnumerator routine = KnockbackRoutine(direction, knockback, knockbackTime);
-            _knockbackRoutine = routine;
+            _knockbackRoutines.Add(routine);
             StartCoroutine(routine);
         }
         private IEnumerator KnockbackRoutine(Vector3 direction, float knockback, float knockbackTime)
         {
-            _knockbacking = true;
             direction.y = 0f;
             direction.Normalize();
             direction *= knockback;
             ForceMovementVector += direction;
             yield return new WaitForSeconds(knockbackTime);
             ForceMovementVector -= direction;
-            _knockbacking = false;
         }
         #endregion
     }
