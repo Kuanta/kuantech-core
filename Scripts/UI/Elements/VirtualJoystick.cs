@@ -1,7 +1,5 @@
-﻿using Kuantech.Core.HyperCasual;
-using Kuantech.Utils;
+﻿using System;
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
 namespace Kuantech.Core.UI
@@ -15,15 +13,26 @@ namespace Kuantech.Core.UI
         private Vector2 _inputVector = Vector2.zero;
         private Vector2 _targetInputVector = Vector2.zero;
         private Vector2 _startPosition;
-
+        
         [Header("Displacement")] [SerializeField]
         private float DeltaSmoothTime = 0.1f;
         private float _deltaX;
         private float _deltaY;
         private float _deltaXSpeed;
         private float _deltaYSpeed;
+
+        [Header("Motions")] 
+        [SerializeField] private float TapTime = 0.1f;
+        [SerializeField] private float SwipeTime = 0.1f;
+        [SerializeField] private float SwipeThreshold = 100f;
+
+        //Events
+        public EventHandler TapEvent;
+        public EventHandler<Vector2> SwipeEvent;
         
+        //Prrivate State Variables
         private bool _dragging;
+        private float _lastTapTime;
         public bool Dragging
         {
             get { return _dragging;}
@@ -35,6 +44,7 @@ namespace Kuantech.Core.UI
             _startPosition = eventData.position;
             _inputVector = Vector2.zero;
             _targetInputVector = Vector2.zero;
+            _lastTapTime = Time.time;
             OnDrag(eventData);
         }
 
@@ -43,6 +53,18 @@ namespace Kuantech.Core.UI
             _inputVector = Vector2.zero;
             _targetInputVector = Vector2.zero;
             Dragging = false;
+            
+            //Check motions
+            Vector2 diffVector = eventData.position - _startPosition;
+            float distanceTraveled = Vector2.Distance(_startPosition, eventData.position);
+            float timeDiff = Time.time - _lastTapTime;
+            if (timeDiff <= TapTime && distanceTraveled < SwipeThreshold)
+            {
+                TapEvent?.Invoke(this, EventArgs.Empty);
+            }else if (timeDiff <= SwipeTime && distanceTraveled > SwipeThreshold)
+            {
+                SwipeEvent?.Invoke(this, diffVector);
+            }
         }
 
         public void OnDrag(PointerEventData eventData)
