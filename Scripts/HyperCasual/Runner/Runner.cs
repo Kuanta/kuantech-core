@@ -9,11 +9,15 @@ namespace Kuantech.Core.HyperCasual
 {
     public class Runner : MonoBehaviour
     {
-        public float Speed = 10f;
+        [Header("Speed")]
+        public float BaseSpeed = 10f;
         public float SideSpeed = 10f;
         public float MovementLerpFactor = 10;
+        public float SpeedLerpFactor = 1f;
         private Vector2 _movementVector = Vector2.zero;
         protected Vector2 CurrentMovementVector = Vector2.zero;
+        private float _currentSpeed;
+        private float _targetSpeed;
 
         private Vector3 ForceMovementVector;
         public Rigidbody Rigidbody;
@@ -36,6 +40,11 @@ namespace Kuantech.Core.HyperCasual
         {
         }
 
+        public void SetSpeed(float speed)
+        {
+            _targetSpeed = speed;
+        }
+        
         public Vector2 GetMovemenetVector()
         {
             return CurrentMovementVector;
@@ -73,6 +82,8 @@ namespace Kuantech.Core.HyperCasual
                 _knockbackRoutines.Clear();
             }
             _pressedInput = false;
+            _currentSpeed = BaseSpeed;
+            _targetSpeed = BaseSpeed;
         }
 
         #endregion
@@ -101,6 +112,8 @@ namespace Kuantech.Core.HyperCasual
 
             CurrentMovementVector = Vector2.Lerp(CurrentMovementVector, _movementVector, MovementLerpFactor);
             ManualMovement();
+
+            _currentSpeed = Mathf.Lerp(_currentSpeed, _targetSpeed, Time.deltaTime * SpeedLerpFactor);
         }
 
         public float GetForwardMovement(Vector2 movementVector)
@@ -123,20 +136,20 @@ namespace Kuantech.Core.HyperCasual
 
             if (ForceMovementVector.sqrMagnitude >= 0.1f)
             {
-                Rigidbody.velocity = ForceMovementVector * Speed;
+                Rigidbody.velocity = ForceMovementVector;
                 return;
             }
 
             Vector3 sideMovement = LocalToGlobalDirection(new Vector2(CurrentMovementVector.x, 0));
             Vector3 forwardMovement = LocalToGlobalDirection(new Vector2(0, CurrentMovementVector.y));
-            Rigidbody.velocity = sideMovement * SideSpeed + forwardMovement*Speed;
+            Rigidbody.velocity = sideMovement * SideSpeed + forwardMovement*_currentSpeed;
         }
 
         private void ManualMovement()
         {
             if(Rigidbody != null) return;
             Vector3 globalDirection = LocalToGlobalDirection(CurrentMovementVector);
-            transform.position += globalDirection.normalized * (Time.deltaTime * Speed);
+            transform.position += globalDirection.normalized * (Time.deltaTime * _currentSpeed);
         }
 
         private void MoveToTarget()
@@ -151,7 +164,7 @@ namespace Kuantech.Core.HyperCasual
             }
             diff.Normalize();
             CurrentMovementVector = new Vector2(diff.x, diff.z); //Needed for animations
-            transform.position += diff * Time.deltaTime * Speed;
+            transform.position += diff * Time.deltaTime * _currentSpeed;
 
         }
         public void SetMovementVector(Vector2 movementVec)

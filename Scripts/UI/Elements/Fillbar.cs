@@ -78,10 +78,9 @@ namespace Kuantech.Core.UI
 
         public void SetValue(float value, float maxValue)
         {
-            if (ValueText != null)
-            {
-                ValueText.text = $"{value.Stringfy()} / {maxValue.Stringfy()}";
-            }
+            if (ValueText == null) return;
+            ValueText.text = $"{value.Stringfy()} / {maxValue.Stringfy()}";
+            SetFill(value/maxValue);
         }
 
         public void SetValue(string value)

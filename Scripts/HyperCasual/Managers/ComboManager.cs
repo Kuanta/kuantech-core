@@ -16,7 +16,6 @@ namespace Kuantech.Core.HyperCasual
         {
             await base.Initialize(gameManager);
             (ParentManager as HCGameManager).StateChangeEvent += OnStateChange;
-            UIManager uiManager = ParentManager.GetSubManagerByType<UIManager>() as UIManager;
         }
         
         public void IncreaseComboCount()
@@ -40,6 +39,7 @@ namespace Kuantech.Core.HyperCasual
         private void UpdateComboUI()
         {
             if (ComboIndicator == null) return;
+            ComboIndicator.gameObject.SetActive(_currentComboCount > 0);
             ComboIndicator.SetComboCounter(_currentComboCount);
         }
 

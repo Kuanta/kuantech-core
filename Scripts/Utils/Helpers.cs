@@ -341,7 +341,7 @@ namespace Kuantech.Utils
             if (target == null) return;
 
             // Get all fields of the target object's class
-            FieldInfo[] fields = target.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Instance);
+            FieldInfo[] fields = target.GetType().GetFields();
 
             foreach (FieldInfo field in fields)
             {
