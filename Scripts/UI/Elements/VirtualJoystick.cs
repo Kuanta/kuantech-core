@@ -27,6 +27,7 @@ namespace Kuantech.Core.UI
         [SerializeField] private float SwipeThreshold = 100f;
 
         //Events
+        public EventHandler OnPointerDownEvent;
         public EventHandler TapEvent;
         public EventHandler<Vector2> SwipeEvent;
         
@@ -46,6 +47,7 @@ namespace Kuantech.Core.UI
             _targetInputVector = Vector2.zero;
             _lastTapTime = Time.time;
             OnDrag(eventData);
+            OnPointerDownEvent?.Invoke(this, EventArgs.Empty);
         }
 
         public void OnPointerUp(PointerEventData eventData)

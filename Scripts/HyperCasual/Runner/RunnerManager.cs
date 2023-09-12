@@ -25,14 +25,9 @@ namespace Kuantech.Core.HyperCasual
             }
             if (stateChangeData.NewState == LevelState.Playing && stateChangeData.OldState == LevelState.Waiting)
             {
-                RunnerInputHandler.enabled = true;
                 Runner.OnPlay();
                 Runner.transform.position = Vector3.zero;
                 Runner.transform.rotation = Quaternion.identity;
-            }
-            else
-            {
-                RunnerInputHandler.enabled = false;
             }
             
             //An ugly but necessary fix

@@ -9,6 +9,7 @@ namespace Kuantech.Core.HyperCasual
         public float ComboMultiplierIncrement = 0.5f;
         public int ComboMultiplierIncreaseThresh = 5; //Every this combo, increase combo multiplier by ComboMultiplier
         private int _currentComboCount;
+        private int _maxComboCount;
         [SerializeField] private ComboIndicator ComboIndicator;
 
         
@@ -21,6 +22,10 @@ namespace Kuantech.Core.HyperCasual
         public void IncreaseComboCount()
         {
             _currentComboCount++;
+            if (_maxComboCount < _currentComboCount)
+            {
+                _maxComboCount = _currentComboCount;
+            }
             UpdateComboUI();
         }
 
@@ -33,6 +38,7 @@ namespace Kuantech.Core.HyperCasual
         public void ResetCombo()
         {
             _currentComboCount = 0;
+            _maxComboCount = 0;
             UpdateComboUI();
         }
 
@@ -45,7 +51,7 @@ namespace Kuantech.Core.HyperCasual
 
         private void OnStateChange(object sender, StateChangeData stateChangeData)
         {
-            if (stateChangeData.NewState != LevelState.Waiting) return;
+            if (stateChangeData.NewState != LevelState.Playing) return;
             ResetCombo();
         }
     }

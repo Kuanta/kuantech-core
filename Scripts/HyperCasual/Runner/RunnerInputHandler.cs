@@ -1,4 +1,5 @@
-﻿using Kuantech.Core.UI;
+﻿using System;
+using Kuantech.Core.UI;
 using UnityEngine;
 
 namespace Kuantech.Core.HyperCasual
@@ -9,10 +10,16 @@ namespace Kuantech.Core.HyperCasual
         [SerializeField] private VirtualJoystick VirtualJoystick;
         public bool MovementByDistance = false;
         public float DisplacementFactor = 1f;
+
+        private void Start()
+        {
+            VirtualJoystick.OnPointerDownEvent += OnPointerDown;
+        }
+
         private void Update()
         {
             //todo: Check Game State
-            if (Runner == null) return;
+            if (Runner == null || HCGameManager.GetCurrentLevelState() != LevelState.Playing) return;
 
             float side = 0;
             float forward = 0;
@@ -49,6 +56,12 @@ namespace Kuantech.Core.HyperCasual
                 }
             }
             Runner.SetMovementVector(new Vector2(side, forward));
+        }
+
+        private void OnPointerDown(object sender, EventArgs args)
+        {
+            if (HCGameManager.GetCurrentLevelState() != LevelState.Waiting) return;
+            (HCGameManager.Instance as HCGameManager).PlayLevel();
         }
     }
 }
