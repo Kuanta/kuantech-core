@@ -28,6 +28,44 @@ namespace Kuantech.Core.HyperCasual
 
         private RunnerLevelManager _runnerLevelManager;
         
+        [Header("Level Limits")]
+        public Vector3 CurrentLevelForward = new Vector3(1,0,0);
+        public float CurrentLevelWidth;
+        public bool LimitRunner = true;
+
+        private void FixedUpdate()
+        {
+            if (CurrentState != LevelState.Playing) return;
+            LimitRunnerPositions();
+        }
+        
+        private void LimitRunnerPositions()
+        {
+            if (_currentRunner == null || !LimitRunner) return;
+            Rigidbody rb = _currentRunner.GetComponent<Rigidbody>();
+
+            float projected = Helpers.DotProjection(_currentRunner.transform.position, CurrentLevelForward);
+            Vector3 currPos = _currentRunner.transform.position;
+            Vector3 newPos = currPos;
+
+            if (projected >= CurrentLevelWidth * 0.5f)
+            {
+                newPos.x = CurrentLevelWidth * 0.5f;
+            }
+            else if (projected <= -CurrentLevelWidth * 0.5f)
+            {
+                newPos.x = -CurrentLevelWidth * 0.5f;
+            }
+
+            if (rb != null)
+            {
+                rb.MovePosition(newPos);
+            }
+            else
+            {
+                _currentRunner.transform.position = newPos;
+            }
+        }
         public void SetRunner(Runner runner)
         {
             _currentRunner = runner;
@@ -66,6 +104,9 @@ namespace Kuantech.Core.HyperCasual
                     }
                 }
             }
+
+            RunnerManager runnerMan = GameManager.Instance.GetSubManagerByType<RunnerManager>() as RunnerManager;
+            SetRunner(runnerMan.Runner);
         }
 
         protected virtual void GenerateLevel(int chunkCount)
