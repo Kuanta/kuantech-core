@@ -7,8 +7,8 @@ namespace Kuantech.Core.HyperCasual
         public RunnerChunk ParentChunk;
         private void OnTriggerEnter(Collider other)
         {
-            if (ParentChunk.ParentLevel.CurrentState != LevelState.Playing) return;
-            if (!other.TryGetComponent(out Runner runner)) return;
+            // if (ParentChunk.ParentLevel.CurrentState != LevelState.Playing) return;
+            // if (!other.TryGetComponent(out Runner runner)) return;
             ParentChunk.ParentLevel.CompleteLevel();
         }
 
