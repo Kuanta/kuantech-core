@@ -9,7 +9,7 @@ namespace Kuantech.Core.HyperCasual
         {
             if (ParentChunk.ParentLevel.CurrentState != LevelState.Playing) return;
             if (!other.TryGetComponent(out Runner runner)) return;
-            ParentChunk.CompleteChunk();
+            ParentChunk.ParentLevel.CompleteLevel();
         }
 
         public void OnChunkGenerated(RunnerChunk chunk)
