@@ -8,6 +8,7 @@ namespace Kuantech.Core.HyperCasual
         public Level ParentLevel;
         public virtual void OnLevelCreate()
         {
+            Reset();
             LevelElements = GetComponentsInChildren<LevelElement>();
             foreach (var element in LevelElements)
             {
@@ -21,6 +22,7 @@ namespace Kuantech.Core.HyperCasual
 
         public virtual void OnPrepare(Level parentLevel)
         {
+            Reset();
             ParentLevel = parentLevel;
             foreach (LevelElement levelElement in LevelElements)
             {
@@ -33,6 +35,7 @@ namespace Kuantech.Core.HyperCasual
 
         public virtual void OnRestart()
         {
+            Reset();
             //Restart level elements
             foreach (LevelElement levelElement in LevelElements)
             {
@@ -84,6 +87,11 @@ namespace Kuantech.Core.HyperCasual
                 if(levelElement == null) continue;
                 levelElement.OnLevelCleared();
             }
+        }
+
+        protected virtual void Reset()
+        {
+            
         }
     }
 }
