@@ -295,6 +295,29 @@ namespace Kuantech.Utils
 
         #region GameObjects
 
+        public static Bounds CalculateBounds(GameObject parentObject)
+        {
+            // Get all renderers of this GameObject and its children
+            Renderer[] renderers = parentObject.GetComponentsInChildren<Renderer>();
+
+            // If there's no renderer, the bounds are undefined
+            if (renderers.Length == 0)
+            {
+                return new Bounds();
+            }
+
+            // Start by setting the complete bounds to the first renderer's bounds
+            Bounds completeBounds = renderers[0].bounds;
+
+            // Go through the other renderers, encapsulating all bounds
+            for (int i = 1; i < renderers.Length; i++)
+            {
+                completeBounds.Encapsulate(renderers[i].bounds);
+            }
+
+            return completeBounds;
+        }
+        
         public static void DestroyAllChildren(this Transform transform)
         {
             for (int i = transform.childCount - 1; i >= 0; i--)
