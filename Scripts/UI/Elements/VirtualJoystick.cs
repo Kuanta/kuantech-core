@@ -13,13 +13,18 @@ namespace Kuantech.Core.UI
         private Vector2 _inputVector = Vector2.zero;
         private Vector2 _targetInputVector = Vector2.zero;
         private Vector2 _startPosition;
+        private Vector2 _dragStartPosition;
         
         [Header("Displacement")] [SerializeField]
         private float DeltaSmoothTime = 0.1f;
+        public float DisplacementFactor = 1f;
+        [SerializeField] private float DisplacementThreshold = 0.01f;
         private float _deltaX;
         private float _deltaY;
         private float _deltaXSpeed;
         private float _deltaYSpeed;
+        public float MaxDragDistancepercentage = 0.5f; // Maximum drag in pixels to equate to "full" input. Used for calculating _deltaX and _deltaY
+
 
         [Header("Motions")] 
         [SerializeField] private float TapTime = 0.1f;
@@ -43,9 +48,11 @@ namespace Kuantech.Core.UI
         public void OnPointerDown(PointerEventData eventData)
         {
             _startPosition = eventData.position;
+            _dragStartPosition = eventData.position;
             _inputVector = Vector2.zero;
             _targetInputVector = Vector2.zero;
             _lastTapTime = Time.time;
+            _lastPosition = Input.mousePosition;
             OnDrag(eventData);
             OnPointerDownEvent?.Invoke(this, EventArgs.Empty);
         }
@@ -68,7 +75,7 @@ namespace Kuantech.Core.UI
                 SwipeEvent?.Invoke(this, diffVector);
             }
         }
-
+        private Vector2 _currentCursorPos;
         public void OnDrag(PointerEventData eventData)
         {
             Dragging = true;
@@ -77,6 +84,7 @@ namespace Kuantech.Core.UI
             Vector2 center = _startPosition;
             Vector2 direction = (position - center).normalized;
             float distance = Vector2.Distance(center, position);
+           _currentCursorPos = position;
 
             if (distance > MaxRadius)
             {
@@ -94,6 +102,7 @@ namespace Kuantech.Core.UI
             }
         }
 
+        private Vector2 _lastPosition;
         private void Update()
         {
             if (!Dragging)
@@ -101,26 +110,49 @@ namespace Kuantech.Core.UI
                 _inputVector = Vector2.zero;
                 _targetInputVector = Vector2.zero;
             }
+
             _inputVector = Vector2.Lerp(_inputVector, _targetInputVector, Time.deltaTime * LerpFactor);
-            
-            _deltaX = Mathf.SmoothDamp(_deltaX, Input.GetAxis("Mouse X"), ref _deltaXSpeed, DeltaSmoothTime);
-            _deltaY = Mathf.SmoothDamp(_deltaY, Input.GetAxis("Mouse Y"), ref _deltaYSpeed, DeltaSmoothTime);
+
+            if (Dragging && (_lastPosition - _currentCursorPos).magnitude <= DisplacementThreshold)
+            {
+                _deltaX = 0;
+                _deltaY = 0;
+                _dragStartPosition = _lastPosition;
+            }
+
+            else if (Dragging)
+            {
+                // The regular drag behavior
+                Vector2 dragDelta = (Vector2)Input.mousePosition - _dragStartPosition;
+                float maxDragDistance = Screen.width * Mathf.Clamp01(MaxDragDistancepercentage);
+                _deltaX = Mathf.Clamp(dragDelta.x / maxDragDistance, -1f, 1f);
+                _deltaY = Mathf.Clamp(dragDelta.y / maxDragDistance, -1f, 1f);
+                _lastPosition = _currentCursorPos; 
+
+            }else{
+                _deltaX = 0f;
+                _deltaY = 0f;
+            }
         }
+
         public Vector2 GetInputVector()
         {
             return _inputVector;
         }
+
         public float GetHorizontalDisplacement()
         {
             if (!_dragging) return 0f;
-            return _deltaX;
+            if(Mathf.Abs(_deltaX) <= DisplacementThreshold) return 0f;
+            return Math.Sign(_deltaX);
         }
         
         public float GetVerticalDisplacement()
         {
             if (!_dragging) return 0f;
-            return _deltaY;
+            if(Mathf.Abs(_deltaY) <= DisplacementThreshold) return 0f;
+            return Math.Sign(_deltaY);
         }
-    }
 
+    }
 }

@@ -31,6 +31,7 @@ namespace Kuantech.Core.HyperCasual
         private Transform _target;
         private UnityAction _pointReachedHandler;
         public LockVariable MovementLock = new LockVariable();
+        public LockVariable InputLock = new LockVariable();
 
         private bool _pressedInput = false;
 
@@ -57,6 +58,7 @@ namespace Kuantech.Core.HyperCasual
             FrontMovementBlocked = false;
             Reset();
             MovementLock.Reset();
+            InputLock.Reset();
         }
 
         public virtual void OnMainMenu()
@@ -169,6 +171,10 @@ namespace Kuantech.Core.HyperCasual
         }
         public void SetMovementVector(Vector2 movementVec)
         {
+            if(InputLock.IsLocked())
+            {
+                return;
+            }
             if (movementVec.sqrMagnitude > 0)
             {
                 if(_pressedInput == false) InputPressedEvent?.Invoke(this, EventArgs.Empty);
