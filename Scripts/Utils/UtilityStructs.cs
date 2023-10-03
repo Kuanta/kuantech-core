@@ -10,6 +10,7 @@ namespace Kuantech.Utils
 
         public Transform Target;
         public Vector3 LocalPosition;
+        public Quaternion LocalRotation;
 
         public Vector3 GetTargetPosition()
         {
