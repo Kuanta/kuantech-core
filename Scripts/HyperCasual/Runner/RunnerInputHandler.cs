@@ -12,13 +12,17 @@ namespace Kuantech.Core.HyperCasual
 
         private void Start()
         {
-            VirtualJoystick.OnPointerDownEvent += OnPointerDown;
+            if(VirtualJoystick != null)
+            {
+                VirtualJoystick.OnPointerDownEvent += OnPointerDown;
+            }
         }
 
         private void Update()
         {
             //todo: Check Game State
-            if (Runner == null || HCGameManager.GetCurrentLevelState() != LevelState.Playing) return;
+            if (Runner == null) return;
+            if(HCGameManager.GetCurrentLevelState() != LevelState.Playing) return;
 
             float side = 0;
             float forward = 0;

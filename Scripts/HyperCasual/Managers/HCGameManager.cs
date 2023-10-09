@@ -73,17 +73,25 @@ namespace Kuantech.Core.HyperCasual
                 UIManager.SetCurrencyAmount(currencyId, GameState.GetCurrencyAmount(currencyId));
             }
             CurrentLevelIndex = GameState.GetLevelIndex();
-            UIManager.SetCurrentLevel(CurrentLevelIndex);
             _lastCheckTime = Time.time;
             
-            UIManager.Initialize(); //Initialize after data loading and store listing
+            if (UIManager != null) 
+            {
+                UIManager.Initialize(); //Initialize after data loading and store listing
+                UIManager.SetCurrentLevel(CurrentLevelIndex);
+            }
             OnGameStart();
         }
-        
         protected virtual void OnGameStart()
         {
-            CurrentLevel = LevelManager.GetLevel(CurrentLevelIndex);
-            CurrentLevel.PrepareLevel();
+            if(LevelManager != null)
+            {
+                CurrentLevel = LevelManager.GetLevel(CurrentLevelIndex);
+                CurrentLevel.PrepareLevel();
+            }else{
+                Debug.LogError("Level Manaer is missing");
+            }
+         
             ChangeCurrentState(LevelState.Waiting);
         }
 

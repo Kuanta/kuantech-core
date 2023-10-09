@@ -57,8 +57,11 @@ namespace Kuantech.Merge
         private Vector3 _offset;
         private IDraggable _draggedInterface;
         public LayerMask GroundLayer;
-        public float DragCameraDistance = 10.0f;
+        public float DragCameraDistanceOffset = 0f;
+        private float _dragCameraDistance;
         public GraphicRaycaster GraphicsRaycaster;
+        public Camera MainCamera;
+        public float RaycastLength = 100;
         
         //Events
         public EventHandler<IDraggable> OnDragStart;
@@ -77,15 +80,14 @@ namespace Kuantech.Merge
                 Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
                 RaycastHit hit;
 
-                if (UnityEngine.Physics.Raycast(ray, out hit, 100, DraggableLayer.value))
+                if (UnityEngine.Physics.Raycast(ray, out hit, RaycastLength, DraggableLayer.value))
                 {
-                    if (hit.collider.gameObject.CompareTag("RaycastBlocker")) return;
                     // Check if the hit object implements the IDraggable interface
                     _draggedInterface = hit.collider.transform.gameObject.GetComponent<IDraggable>();
                     if (_draggedInterface != null && _draggedInterface.DragStart())
                     {
                         draggedObject = hit.collider.transform;
-                        DragCameraDistance = Vector3.Distance(mainCamera.transform.position, draggedObject.position);
+                        _dragCameraDistance = Vector3.Distance(mainCamera.transform.position, draggedObject.position) + DragCameraDistanceOffset;
                         OnDragStart?.Invoke(this, _draggedInterface); //Invoke event for subscribers
                         _offset = draggedObject.position - hit.point;
                     }
@@ -97,9 +99,9 @@ namespace Kuantech.Merge
                 if (draggedObject != null && _draggedInterface != null)
                 {
                     Vector3 mousePosition = Input.mousePosition;
-                    mousePosition.z = DragCameraDistance;
-                    Vector3 worldPosition = GameManager.Instance.MainCamera.ScreenToWorldPoint(mousePosition);
-                    _draggedInterface.Drag( worldPosition + _offset);
+                    mousePosition.z = _dragCameraDistance;
+                    Vector3 worldPosition = MainCamera.ScreenToWorldPoint(mousePosition);
+                    _draggedInterface.Drag( worldPosition);
                 }
             }
             else if (Input.GetMouseButtonUp(0))

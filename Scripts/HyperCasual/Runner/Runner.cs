@@ -221,5 +221,12 @@ namespace Kuantech.Core.HyperCasual
             ForceMovementVector -= direction;
         }
         #endregion
+    
+        #region GateHandlers
+        public virtual void OnMultiplicationGate(GateOperation operationType, float value)
+        {
+
+        }
+        #endregion
     }
 }

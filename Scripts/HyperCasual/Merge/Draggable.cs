@@ -12,6 +12,8 @@ namespace Kuantech.Merge
     {
         private IDropZone _dropZone;
         private Vector3 _positionBeforeDrag;
+
+        protected IDropZone CurrentDropZone;
         
         public virtual bool DragStart()
         {
@@ -21,7 +23,7 @@ namespace Kuantech.Merge
 
         public virtual void Drag(Vector3 position)
         {
-            transform.position = position;
+            SetPosition(position);
             IDropZone newZone = CheckForDragBench();
             if (_dropZone != null && newZone == null)
             {
@@ -29,17 +31,36 @@ namespace Kuantech.Merge
                 //_lastRowCol = Vector2Int.one * -1;
             }
             _dropZone = newZone;
+            Debug.LogError(_dropZone);
             if (_dropZone == null)
             {
                 return;
             }
         }
 
+        protected virtual void SetPosition(Vector3 position)
+        {
+            transform.position = position;
+        }
         public virtual void DragEnd()
         {
-            
+            if(_dropZone == null) ReturnToPreviousPosition();
+            if(!_dropZone.OnDrop(this))
+            {
+                ReturnToPreviousPosition();
+            }
+            LandedOnDropZone(_dropZone);
         }
         
+        protected virtual void LandedOnDropZone(IDropZone dropZone)
+        {
+            if(CurrentDropZone != null) 
+            {
+                CurrentDropZone.ClearSlot(0,0);
+            }
+            CurrentDropZone = dropZone;
+        }
+
         [Header("Ground Checking")] 
         [SerializeField] private LayerMask GroundRayMask;
         
@@ -72,7 +93,7 @@ namespace Kuantech.Merge
           
             
             // Create a ray from the camera through the cursor position
-            Ray ray = GameManager.Instance.MainCamera.ScreenPointToRay(Input.mousePosition);
+            Ray ray = dm.MainCamera.ScreenPointToRay(Input.mousePosition);
 
             // Cast the ray and get the first object hit
             RaycastHit hit;
@@ -95,5 +116,6 @@ namespace Kuantech.Merge
         {
             transform.position = _positionBeforeDrag;
         }
+
     }
 }
