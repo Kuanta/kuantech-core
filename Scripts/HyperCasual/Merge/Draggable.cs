@@ -10,7 +10,7 @@ namespace Kuantech.Merge
     /// </summary>
     public class Draggable : MonoBehaviour, IDraggable
     {
-        private IDropZone _dropZone;
+        [SerializeField] protected IDropZone DropZone;
         private Vector3 _positionBeforeDrag;
 
         protected IDropZone CurrentDropZone;
@@ -25,14 +25,13 @@ namespace Kuantech.Merge
         {
             SetPosition(position);
             IDropZone newZone = CheckForDragBench();
-            if (_dropZone != null && newZone == null)
+            if (DropZone != null && newZone == null)
             {
                 //_dropZone.CancelHighlight();
                 //_lastRowCol = Vector2Int.one * -1;
             }
-            _dropZone = newZone;
-            Debug.LogError(_dropZone);
-            if (_dropZone == null)
+            DropZone = newZone;
+            if (DropZone == null)
             {
                 return;
             }
@@ -44,21 +43,21 @@ namespace Kuantech.Merge
         }
         public virtual void DragEnd()
         {
-            if(_dropZone == null) ReturnToPreviousPosition();
-            if(!_dropZone.OnDrop(this))
+            if(DropZone == null || DropZone == CurrentDropZone || !DropZone.OnDrop(this)) 
             {
                 ReturnToPreviousPosition();
+                return;
             }
-            LandedOnDropZone(_dropZone);
+            LandedOnDropZone(DropZone);
         }
         
         protected virtual void LandedOnDropZone(IDropZone dropZone)
         {
-            if(CurrentDropZone != null) 
+            if(CurrentDropZone != null && CurrentDropZone != dropZone) 
             {
                 CurrentDropZone.ClearSlot(0,0);
+                CurrentDropZone = dropZone;
             }
-            CurrentDropZone = dropZone;
         }
 
         [Header("Ground Checking")] 

@@ -4,6 +4,8 @@ using Kuantech.Core;
 using Kuantech.Core.HyperCasual;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
+
 
 namespace Kuantech.Merge
 {
@@ -52,7 +54,6 @@ namespace Kuantech.Merge
     public class DragManager : SubManager
     {
         public LayerMask DraggableLayer;
-        private Camera mainCamera;
         private Transform draggedObject;
         private Vector3 _offset;
         private IDraggable _draggedInterface;
@@ -62,43 +63,50 @@ namespace Kuantech.Merge
         public GraphicRaycaster GraphicsRaycaster;
         public Camera MainCamera;
         public float RaycastLength = 100;
+        public float DragDelay = 0.25f;
         
         //Events
         public EventHandler<IDraggable> OnDragStart;
         public EventHandler<IDraggable> OnDragEnd;
-        
-        private void Awake()
-        {
-            mainCamera = Camera.main;
-        }
 
+        protected Vector3 _startPosition;
+        protected float _startTime;
+        protected bool _startedClick;
+        
         private void Update()
         {
             if (Input.GetMouseButtonDown(0))
             {
-         
-                Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
-                RaycastHit hit;
-
-                if (UnityEngine.Physics.Raycast(ray, out hit, RaycastLength, DraggableLayer.value))
+                _startedClick = false;
+#if UNITY_IOS || UNITY_ANDROID
+                if (EventSystem.current.IsPointerOverGameObject(0))
                 {
-                    // Check if the hit object implements the IDraggable interface
-                    _draggedInterface = hit.collider.transform.gameObject.GetComponent<IDraggable>();
-                    if (_draggedInterface != null && _draggedInterface.DragStart())
-                    {
-                        draggedObject = hit.collider.transform;
-                        _dragCameraDistance = Vector3.Distance(mainCamera.transform.position, draggedObject.position) + DragCameraDistanceOffset;
-                        OnDragStart?.Invoke(this, _draggedInterface); //Invoke event for subscribers
-                        _offset = draggedObject.position - hit.point;
-                    }
+                    return;
                 }
+#else
+                if (EventSystem.current.IsPointerOverGameObject())
+                {
+                    return;
+                }
+#endif
+                _startedClick = true;
+                _startPosition = Input.mousePosition;
+                _startTime = Time.time;
+                CheckWorld();
             }
             //Dragging
             else if (Input.GetMouseButton(0))
             {
+                if(!_startedClick) return;
+                Vector3 mousePosition = Input.mousePosition;
+
+                if (IsPointerClick())
+                {
+                    return;
+                }
+
                 if (draggedObject != null && _draggedInterface != null)
                 {
-                    Vector3 mousePosition = Input.mousePosition;
                     mousePosition.z = _dragCameraDistance;
                     Vector3 worldPosition = MainCamera.ScreenToWorldPoint(mousePosition);
                     _draggedInterface.Drag( worldPosition);
@@ -106,13 +114,60 @@ namespace Kuantech.Merge
             }
             else if (Input.GetMouseButtonUp(0))
             {
-                if (draggedObject != null && _draggedInterface != null)
-                {
-                    OnDragEnd?.Invoke(this, _draggedInterface);
-                    _draggedInterface.DragEnd();
-                    draggedObject = null;
-                    _draggedInterface = null;
-                }
+                _startedClick = false;
+                OnCursorUp();
+            }
+        }
+
+        /// <summary>
+        /// Checks if the motion is a simple click
+        /// </summary>
+        /// <returns></returns>
+        protected bool IsPointerClick()
+        {
+            Vector3 mousePosition = Input.mousePosition;
+
+            if (mousePosition == _startPosition && Time.time - _startTime < DragDelay)
+            {
+                return true;
+            }
+            return false;
+        }
+        protected virtual void CheckWorld()
+        {
+
+            Ray ray = MainCamera.ScreenPointToRay(Input.mousePosition);
+            RaycastHit hit;
+            if (UnityEngine.Physics.Raycast(ray, out hit, RaycastLength, DraggableLayer.value))
+            {
+                HandleRaycastHit(hit);
+            }
+        }
+
+        protected virtual void OnCursorUp()
+        {
+            if (draggedObject != null && _draggedInterface != null)
+            {
+                OnDragEnd?.Invoke(this, _draggedInterface);
+                _draggedInterface.DragEnd();
+            }
+            draggedObject = null;
+            _draggedInterface = null;
+        }
+        /// <summary>
+        /// Handles the raycast hit
+        /// </summary>
+        /// <param name="hit"></param>
+        protected virtual void HandleRaycastHit(RaycastHit hit)
+        {
+            // Check if the hit object implements the IDraggable interface
+            _draggedInterface = hit.collider.transform.gameObject.GetComponent<IDraggable>();
+            if (_draggedInterface != null && _draggedInterface.DragStart())
+            {
+                draggedObject = hit.collider.transform;
+                _dragCameraDistance = Vector3.Distance(MainCamera.transform.position, draggedObject.position) + DragCameraDistanceOffset;
+                OnDragStart?.Invoke(this, _draggedInterface); //Invoke event for subscribers
+                _offset = draggedObject.position - hit.point;
             }
         }
 
@@ -136,7 +191,6 @@ namespace Kuantech.Merge
                 targetPosition = newPosition;
                 return true;
             }
-
             return false;
         }
     }
