@@ -12,6 +12,7 @@ namespace Kuantech.Core.HyperCasual.Runner
 
         private void Start()
         {
+            VirtualJoystick = FindObjectOfType<VirtualJoystick>();
             if(VirtualJoystick != null)
             {
                 VirtualJoystick.OnPointerDownEvent += OnPointerDown;
@@ -22,7 +23,7 @@ namespace Kuantech.Core.HyperCasual.Runner
         {
             //todo: Check Game State
             if (Runner == null) return;
-            if(HCGameManager.GetCurrentLevelState() != LevelState.Playing) return;
+            if(LevelManager.GetCurrentState() != LevelState.Playing) return;
 
             float side = 0;
             float forward = 0;
@@ -63,8 +64,8 @@ namespace Kuantech.Core.HyperCasual.Runner
 
         private void OnPointerDown(object sender, EventArgs args)
         {
-            if (HCGameManager.GetCurrentLevelState() != LevelState.Waiting) return;
-            (HCGameManager.Instance as HCGameManager).PlayLevel();
+            if (LevelManager.GetCurrentState() != LevelState.Waiting) return;
+            LevelManager.GetContext<LevelManager>().PlayLevel();
         }
     }
 }

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Kuantech.Core.HyperCasual;
+using Kuantech.Core;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -62,7 +62,7 @@ namespace Kuantech.Merge
         public void LoadData(SlottableZoneState data)
         {
             if (data == null) return;
-            MergeManager mergeManager = ((HCGameManager) HCGameManager.Instance).GetSubManagerByType<MergeManager>() as MergeManager;
+            MergeManager mergeManager = (GameManager.Instance).GetSubManagerByType<MergeManager>() as MergeManager;
             List<int> keys = data.Slots.Keys.ToList();
             for(int i=0;i<keys.Count;++i)
             {

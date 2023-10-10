@@ -15,7 +15,7 @@ namespace Kuantech.Core.HyperCasual.UI
 
         private void OnRestartLevelButton()
         {
-            ((HCGameManager)HCGameManager.Instance).RestartLevel();
+            LevelManager.GetContext<LevelManager>().RestartLevel();
         }
     }
 }

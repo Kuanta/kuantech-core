@@ -15,7 +15,7 @@ namespace Kuantech.UI
 
         private void Start()
         {
-            MainCamera = GameManager.Instance.MainCamera;
+            MainCamera = Camera.main;
         }
 
         private void OnEnable()

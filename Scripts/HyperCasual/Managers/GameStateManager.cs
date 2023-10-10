@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+using DTT.Utils.Extensions;
 using IngameDebugConsole;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -9,9 +10,9 @@ namespace Kuantech.Core.HyperCasual
 {
     public class GameStateManager : SubManager
     {
+        public string GameStateType;
         public GameState GameState;
         [SerializeField] private float SaveCheckFrequency = 1f;
-        [SerializeField] private List<int> CurrencyIds;
         [SerializeField] private bool SaveData = true;
         private float _lastCheckTime;
 
@@ -23,7 +24,16 @@ namespace Kuantech.Core.HyperCasual
         /// </summary>
         protected virtual void CreateGameState()
         {
-            GameState ??= new GameState(CurrencyIds);
+            if(GameStateType.IsNullOrEmpty())
+            {
+                GameState ??= new GameState();
+                return;
+            }
+            Type stateType = Type.GetType(GameStateType);
+            if(stateType != null && stateType.IsSubclassOf(typeof(GameState)))
+            {
+                GameState = (GameState)Activator.CreateInstance(stateType);
+            }
         }
 
         public override async UniTask Initialize(GameManager gameManager)
@@ -84,6 +94,11 @@ namespace Kuantech.Core.HyperCasual
             return GameState.GetCurrency(currencyId);
         }
 
+        public static Currency GetCurrencyStatic(int currencyId)
+        {
+            GameStateManager context = GameManager.Instance.GetSubManagerByType<GameStateManager>() as GameStateManager;
+            return context.GetCurrency(currencyId);
+        }   
         /// <summary>
         /// Fires an event, telling that the value of a currency has been updated.
         /// </summary>

@@ -30,7 +30,8 @@ namespace Kuantech.Core.HyperCasual
         public string StateFileName = "/gameState.json";
 
         protected bool Dirtied = false;
-        public GameState(List<int> currencyIds)
+        protected Type GameModelType;
+        public GameState()
         {
             Dirtied = false;
         }
@@ -51,14 +52,20 @@ namespace Kuantech.Core.HyperCasual
             Task<string> readTask = File.ReadAllTextAsync(jsonPath);
             await readTask;
             string jsonString = readTask.Result;
-            GameStateModel = JsonConvert.DeserializeObject<GameStateModel>(jsonString);
+            GameStateModel = (GameStateModel)JsonConvert.DeserializeObject(jsonString, GameModelType);
             GameStateModel.Currencies ??= new Dictionary<int, Currency>();
         }
         
         protected virtual void CreateStateModel()
         {
-            GameStateModel = new GameStateModel();
-            GameStateModel.SetDefaultValues();
+            if(GameModelType != null)
+            {
+                GameStateModel = Activator.CreateInstance(GameModelType) as GameStateModel;
+            }
+            else{
+                GameStateModel = new GameStateModel();
+            }
+            GameStateModel?.SetDefaultValues();
         }
         
         public virtual void SaveData()

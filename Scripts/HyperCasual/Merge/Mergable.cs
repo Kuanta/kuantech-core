@@ -110,7 +110,7 @@ namespace Kuantech.Merge
           
             
             // Create a ray from the camera through the cursor position
-            Ray ray = GameManager.Instance.MainCamera.ScreenPointToRay(Input.mousePosition);
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 
             // Cast the ray and get the first object hit
             RaycastHit hit;

@@ -1,5 +1,6 @@
 ﻿using Cysharp.Threading.Tasks;
 using Kuantech.Core.HyperCasual.UI;
+using Kuantech.Core;
 using UnityEngine;
 
 namespace Kuantech.Core.HyperCasual
@@ -16,7 +17,7 @@ namespace Kuantech.Core.HyperCasual
         public override async UniTask Initialize(GameManager gameManager)
         {
             await base.Initialize(gameManager);
-            (ParentManager as HCGameManager).StateChangeEvent += OnStateChange;
+            //(ParentManager as HCGameManager).StateChangeEvent += OnStateChange;
         }
         
         public void IncreaseComboCount()
@@ -49,10 +50,10 @@ namespace Kuantech.Core.HyperCasual
             ComboIndicator.SetComboCounter(_currentComboCount);
         }
 
-        private void OnStateChange(object sender, StateChangeData stateChangeData)
-        {
-            if (stateChangeData.NewState != LevelState.Playing) return;
-            ResetCombo();
-        }
+        // private void OnStateChange(object sender, StateChangeData stateChangeData)
+        // {
+        //     if (stateChangeData.NewState != LevelState.Playing) return;
+        //     ResetCombo();
+        // }
     }
 }

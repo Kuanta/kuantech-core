@@ -104,31 +104,32 @@ namespace Kuantech.Core.HyperCasual.Runner
         }
         private void GenerateChunk(ChunkFormat chunkFormat)
         {
-            RunnerLevelManager rlm = ((HCGameManager)HCGameManager.Instance).GetSubManagerByType<RunnerLevelManager>() 
-                as RunnerLevelManager;
+            Debug.LogError("DONT CALL THIS NOW");
+            // RunnerLevelManager rlm = ((HCGameManager)HCGameManager.Instance).GetSubManagerByType<RunnerLevelManager>() 
+            //     as RunnerLevelManager;
             
-            //Layers
-            if (chunkFormat.Layers == null) return;
-            foreach (var layerFormat in chunkFormat.Layers)
-            {
-                List<List<string>> slots;
-                List<List<float>> rowOffsets = layerFormat.RowOffsets;
-                List<List<float>> columnOffsets = layerFormat.ColumnOffsets;
-                if (rlm.LevelDesigns.PremadeLayers != null && layerFormat.PremadeKey != null && rlm.LevelDesigns.PremadeLayers.ContainsKey(layerFormat.PremadeKey))
-                {
-                    slots = new List<List<string>>(rlm.LevelDesigns.PremadeLayers[layerFormat.PremadeKey]); //Copy so that premade ones not overriden
-                }
-                else
-                {
-                    slots = layerFormat.Slots;
-                }
+            // //Layers
+            // if (chunkFormat.Layers == null) return;
+            // foreach (var layerFormat in chunkFormat.Layers)
+            // {
+            //     List<List<string>> slots;
+            //     List<List<float>> rowOffsets = layerFormat.RowOffsets;
+            //     List<List<float>> columnOffsets = layerFormat.ColumnOffsets;
+            //     if (rlm.LevelDesigns.PremadeLayers != null && layerFormat.PremadeKey != null && rlm.LevelDesigns.PremadeLayers.ContainsKey(layerFormat.PremadeKey))
+            //     {
+            //         slots = new List<List<string>>(rlm.LevelDesigns.PremadeLayers[layerFormat.PremadeKey]); //Copy so that premade ones not overriden
+            //     }
+            //     else
+            //     {
+            //         slots = layerFormat.Slots;
+            //     }
 
-                if (layerFormat.VerticalScale < 0)
-                {
-                    slots.Reverse();
-                }
-                SetChunkLayer(rlm, slots, rowOffsets:rowOffsets, columnOffsets,layerFormat.CustomParameters, layerFormat.HorizontalScale);
-            }
+            //     if (layerFormat.VerticalScale < 0)
+            //     {
+            //         slots.Reverse();
+            //     }
+            //     SetChunkLayer(rlm, slots, rowOffsets:rowOffsets, columnOffsets,layerFormat.CustomParameters, layerFormat.HorizontalScale);
+            // }
         }
         
          private void SetChunkLayer(RunnerLevelManager rlm, List<List<string>> slots , List<List<float>> rowOffsets, 

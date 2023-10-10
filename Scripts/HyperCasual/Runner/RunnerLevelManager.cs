@@ -145,7 +145,7 @@ namespace Kuantech.Core.HyperCasual.Runner
             }
             if (runnerLevel == null) throw new Exception("Level is null!");
             //todo(gameplay): Get power level and chunk count
-            runnerLevel.OnLevelCreated(GetPowerLevel(levelIndex + 1), GetChunkCount(levelIndex));
+            runnerLevel.OnLevelCreated();
             return runnerLevel;
         }
 

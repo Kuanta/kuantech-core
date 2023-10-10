@@ -27,7 +27,7 @@ namespace Kuantech.Core.HyperCasual.UI
         protected virtual void SetEarnings()
         {
             if (CurrencyIndicators == null) return;
-            Level currentLevel = ((HCGameManager) HCGameManager.Instance).CurrentLevel;
+            Level currentLevel = LevelManager.GetCurrentLevel();
             foreach (var indicator in CurrencyIndicators)
             {
                 int earnedCurrency = currentLevel.GetEarnedCurrency((int) indicator.CurrencyId).Amount;
@@ -38,7 +38,7 @@ namespace Kuantech.Core.HyperCasual.UI
         
         private void OnCompleteLevelButton()
         {
-            ((HCGameManager)GameManager.Instance).CompleteLevel();
+            LevelManager.GetContext<LevelManager>().CompleteLevel();
         }
     }
 }

@@ -39,6 +39,7 @@ namespace Kuantech.Core.HyperCasual.Runner
         
         public virtual void Initialize()
         {
+            
         }
 
         public void SetSpeed(float speed)
@@ -99,7 +100,8 @@ namespace Kuantech.Core.HyperCasual.Runner
         protected virtual void Update()
         {
             //Check Current Level
-            Level currentLevel = ((HCGameManager) HCGameManager.Instance).CurrentLevel;
+            Level currentLevel = LevelManager.GetContext<LevelManager>().CurrentLevel;
+            if(currentLevel == null) return;
             if (_movingToPoint)
             {
                 MoveToTarget();
@@ -120,8 +122,8 @@ namespace Kuantech.Core.HyperCasual.Runner
 
         public float GetForwardMovement(Vector2 movementVector)
         {
-            if (HCGameManager.Instance.GameIsPaused ||
-                HCGameManager.GetCurrentLevelState() != LevelState.Playing) return 0f;
+            if (GameManager.Instance.GameIsPaused ||
+                LevelManager.GetContext<LevelManager>().CurrentLevel.CurrentState != LevelState.Playing) return 0f;
             if (ConstantForwardMovement && !_pressedInput) return 0f;
             if (ConstantForwardMovement && _pressedInput) return 1f;
             return movementVector.y;

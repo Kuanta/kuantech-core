@@ -26,7 +26,7 @@ namespace Kuantech.Core.HyperCasual.Runner
         private Runner _currentRunner;
         private RunnerChunk _startChunk = null;
 
-        private RunnerLevelManager _runnerLevelManager;
+        private LevelManager _runnerLevelManager;
         
         [Header("Level Limits")]
         public Vector3 CurrentLevelForward = new Vector3(1,0,0);
@@ -72,36 +72,27 @@ namespace Kuantech.Core.HyperCasual.Runner
             PositionRunner();
         }
         
-        public virtual void OnLevelCreated(int powerLevel, int chunkCount)
+        public override void OnLevelCreated()
         {
             base.OnLevelCreated();
-            PowerLevel = powerLevel;
-
-            if (Generated)
+            //Get existing chunks
+            LevelChunks = GetComponentsInChildren<LevelChunk>().ToList();
+            if (LevelChunks.Count == 0) Debug.LogError("Premade level has no chunk");
+            _currentChunkIndex = 0;
+            _startChunk = LevelChunks[0] as RunnerChunk;
+            ChunkCount = LevelChunks.Count;
+            for (int i = 0; i < LevelChunks.Count; ++i)
             {
-                GenerateLevel(chunkCount);
-            }
-            else
-            {
-                //Get existing chunks
-                LevelChunks = GetComponentsInChildren<LevelChunk>().ToList();
-                if(LevelChunks.Count == 0) Debug.LogError("Premade level has no chunk");
-                _currentChunkIndex = 0;
-                _startChunk = LevelChunks[0] as RunnerChunk;
-                ChunkCount = LevelChunks.Count;
-                for (int i = 0; i < LevelChunks.Count; ++i)
+                RunnerChunk rc = LevelChunks[i] as RunnerChunk;
+                rc.Initialize(this, rc.IsFinalChunk);
+                if (i < LiveChunkCount)
                 {
-                    RunnerChunk rc = LevelChunks[i] as RunnerChunk;
-                    rc.Initialize(this, rc.IsFinalChunk);
-                    if (i < LiveChunkCount)
-                    {
-                        rc.gameObject.SetActive(true);
-                        _liveChunks.Enqueue(rc);
-                    }
-                    else
-                    {
-                        rc.gameObject.SetActive(false);                        
-                    }
+                    rc.gameObject.SetActive(true);
+                    _liveChunks.Enqueue(rc);
+                }
+                else
+                {
+                    rc.gameObject.SetActive(false);
                 }
             }
 
@@ -122,7 +113,7 @@ namespace Kuantech.Core.HyperCasual.Runner
             }
             LevelChunks = new List<LevelChunk>();
             _availableChunkContents = GetAvailableChunkContents(PowerLevel);
-            _runnerLevelManager = ((HCGameManager)HCGameManager.Instance).GetSubManagerByType<RunnerLevelManager>() as RunnerLevelManager;
+            _runnerLevelManager = (GameManager.Instance).GetSubManagerByType<LevelManager>() as LevelManager;
             _currentChunkIndex = 0;
             int chunksToGenerate = Mathf.Min(LiveChunkCount, chunkCount);
             for (int i = 0; i < chunksToGenerate; ++i)

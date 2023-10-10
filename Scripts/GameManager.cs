@@ -1,9 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
-using Kuantech.Core.HyperCasual;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.SceneManagement;
 
 namespace Kuantech.Core
 {
@@ -11,7 +11,6 @@ namespace Kuantech.Core
     {
         public PrefabPool Pool;
         public bool GameIsPaused = false;
-        public Camera MainCamera;
         protected bool SubManagersInitialized = false;
 
         [Header("Loading Screen")]
@@ -19,20 +18,26 @@ namespace Kuantech.Core
 
         //Submanagers
         private SubManager[] _subManagers;
+        private SubManager[] _sceneSubManagers;
 
         protected virtual void Awake()
         {
             Pool = new PrefabPool(transform, 1000);
+            DontDestroyOnLoad(gameObject);
         }
 
         protected virtual async void Start()
         {
+            //Get and initialize persistent submanagers
+            _subManagers = GetComponentsInChildren<SubManager>();
+            SceneManager.sceneLoaded += OnSceneLoaded;
             await Initialize();
+            OnNewScene();
         }
 
         protected virtual async UniTask Initialize()
         {
-            await InitializeSubManagers();
+            await InitializeSubManagers(_subManagers);
 
         }
         public void PauseGame()
@@ -47,12 +52,10 @@ namespace Kuantech.Core
         
         #region SubManagers
 
-        private async UniTask InitializeSubManagers()
+        private async UniTask InitializeSubManagers(SubManager[] subManagers)
         {
-            //Initialize SubManagers
-            _subManagers = GetComponentsInChildren<SubManager>();
             List<UniTask> tasks = new List<UniTask>();
-            foreach (SubManager subManager in _subManagers)
+            foreach (SubManager subManager in subManagers)
             {
                 tasks.Add(subManager.Initialize(this));
             }
@@ -60,12 +63,13 @@ namespace Kuantech.Core
             SubManagersInitialized = false;
             await UniTask.WhenAll(tasks.ToArray());
             
-            OnSubmanagersInitialized();
+            OnSubmanagersInitialized(subManagers);
             SubManagersInitialized = true;
         }
         
         public SubManager GetSubManagerByType<T>()
         {
+
             for (int i = 0; i < _subManagers.Length; i++)
             {
                 if (_subManagers[i] is T)
@@ -73,13 +77,24 @@ namespace Kuantech.Core
                     return _subManagers[i];
                 }
             }
-
+            if(_sceneSubManagers != null)
+            {
+                for (int i = 0; i < _sceneSubManagers.Length; i++)
+                {
+                    if (_sceneSubManagers[i] is T)
+                    {
+                        return _sceneSubManagers[i];
+                    }
+                }
+            }
+           
+            Debug.LogError($"Trying to get a non existant submanager:{typeof(T).Name}");
             return null; // Return null if no matching submanager is found
         }
 
-        protected virtual void OnSubmanagersInitialized()
+        protected virtual void OnSubmanagersInitialized(SubManager[] subManagers)
         {
-            foreach (var subManager in _subManagers)
+            foreach (var subManager in subManagers)
             {
                 subManager.OnSubmanagersInitialized();
             }
@@ -109,6 +124,36 @@ namespace Kuantech.Core
         }
 
         #endregion
-    
+
+        #region SceneManagement
+        public void ChangeScene(string sceneName)
+        {
+            //Clear existing scene specific sub managers
+            if(_sceneSubManagers != null)
+            {
+                foreach(var sceneSubManager in _sceneSubManagers)
+                {
+                    sceneSubManager.OnSceneLeave();
+                }
+                _sceneSubManagers = null;
+            }
+            
+            //Change scene
+            SceneManager.LoadScene(sceneName);
+        }
+
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            OnNewScene();
+        }
+
+        private async void OnNewScene()
+        {
+            //Check new scene submanagers
+            SceneSubManagerContainer container = FindObjectOfType<SceneSubManagerContainer>();
+            _sceneSubManagers = container.GetSubManagers();
+            await InitializeSubManagers(_sceneSubManagers);
+        }
+        #endregion
     }
 }

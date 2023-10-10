@@ -3,9 +3,16 @@ using System.Collections.Generic;
 using IngameDebugConsole;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using Kuantech.Core;
 
 namespace Kuantech.Core.HyperCasual
 {
+    public struct StateChangeData
+    {
+        public LevelState OldState;
+        public LevelState NewState;
+    }
+
     [Serializable]
     public class LevelDictionary : SerializableDictionary<int, Level>{}
     public class LevelManager : SubManager
@@ -31,7 +38,16 @@ namespace Kuantech.Core.HyperCasual
             SetLevel(levelIndex);
             ChangeCurrentState(LevelState.Waiting);
         }
-
+        public static LevelState GetCurrentState()
+        {
+            LevelManager context = LevelManager.GetContext<LevelManager>();
+            if(context == null || context.CurrentLevel == null) return LevelState.Waiting;
+            return context.CurrentLevel.CurrentState;
+        }
+        public static Level GetCurrentLevel()
+        {
+            return (GameManager.Instance.GetSubManagerByType<LevelManager>() as LevelManager).CurrentLevel;
+        }
         public virtual Level GetLevel(int levelIndex)
         {
             if (LevelDictionary.Count <= levelIndex)

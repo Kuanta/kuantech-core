@@ -10,7 +10,8 @@ namespace Kuantech.Core.HyperCasual.Runner
         protected override void OnPickup(Collider other)
         {
             base.OnPickup(other);
-            ((HCGameManager)HCGameManager.Instance).CurrentLevel.AddCurrency((int)Currency, Amount);
+
+            LevelManager.GetContext<LevelManager>().CurrentLevel.AddCurrency((int)Currency, Amount);
         }
     }
 }

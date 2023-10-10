@@ -22,6 +22,12 @@ namespace Kuantech.Core
                 return _instance;
             }
         }
-        
+
+        public static bool InstanceExists()
+        {
+            if(_instance != null) return true;
+            _instance = FindObjectOfType<T>();
+            return _instance != null;
+        }
     }
 }

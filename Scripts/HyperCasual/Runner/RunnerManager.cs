@@ -1,19 +1,31 @@
-﻿using Cysharp.Threading.Tasks;
+﻿using System;
+using Cinemachine;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 namespace Kuantech.Core.HyperCasual.Runner
 {
-    [RequireComponent(typeof(LevelManager))]
     public class RunnerManager : SubManager
     {
-        public Runner Runner;
-        public RunnerInputHandler RunnerInputHandler;
-        
+        public Runner RunnerPrefab;
+        [NonSerialized] public Runner Runner;
+        [NonSerialized] public RunnerInputHandler RunnerInputHandler;
+
+        [Header("Cameras")]
+        [SerializeField] private CinemachineVirtualCamera MainMenuCamera;
+        [SerializeField] private CinemachineVirtualCamera FollowCamera;
+
         public override async UniTask Initialize(GameManager gameManager)
         {
             await base.Initialize(gameManager);
-            RunnerInputHandler.Runner = Runner;
+            Runner = Instantiate(RunnerPrefab.gameObject).GetComponent<Runner>();
             Runner.Initialize();
+
+            MainMenuCamera.Follow = Runner.transform;
+            FollowCamera.Follow = Runner.transform;
+
+            MainMenuCamera.enabled = true;
+            FollowCamera.enabled = false;
         }
 
         public override void OnSubmanagersInitialized()
@@ -30,19 +42,23 @@ namespace Kuantech.Core.HyperCasual.Runner
                 Runner.OnMainMenu();
                 Runner.transform.position = Vector3.zero;
                 Runner.transform.rotation = Quaternion.identity;
+                MainMenuCamera.enabled = true;
+                FollowCamera.enabled = false;
             }
             if (stateChangeData.NewState == LevelState.Playing && stateChangeData.OldState == LevelState.Waiting)
             {
                 Runner.OnPlay();
                 Runner.transform.position = Vector3.zero;
                 Runner.transform.rotation = Quaternion.identity;
+                MainMenuCamera.enabled = false;
+                FollowCamera.enabled = true;
             }
             
-            //An ugly but necessary fix
-            if (stateChangeData.NewState == LevelState.Playing)
-            {
-                RunnerInputHandler.enabled = true;
-            }
+            // //An ugly but necessary fix
+            // if (stateChangeData.NewState == LevelState.Playing)
+            // {
+            //     RunnerInputHandler.enabled = true;
+            // }
         }
 
         public override void Cleanup()

@@ -94,7 +94,7 @@ namespace Kuantech.Core.HyperCasual
 
         public virtual void CompleteLevel()
         {
-            ((HCGameManager)HCGameManager.Instance).ChangeCurrentState(LevelState.Completed);
+            (GameManager.Instance.GetSubManagerByType<LevelManager>() as LevelManager).ChangeCurrentState(LevelState.Completed);
             SaveEarnings();
         }
         #endregion
@@ -103,7 +103,7 @@ namespace Kuantech.Core.HyperCasual
 
         public int GetCurrentCurrencyAmount(int currencyId)
         {
-            return ((HCGameManager) HCGameManager.Instance).GetCurrency(currencyId).Amount +
+            return GameStateManager.GetCurrencyStatic(currencyId).Amount +
                    EarnedCurrencies[currencyId].Amount;
         }
         
@@ -143,14 +143,16 @@ namespace Kuantech.Core.HyperCasual
         protected virtual void SaveEarnings()
         {
             //Save currencies
+            GameStateManager gsm = (GameManager.Instance.GetSubManagerByType<GameStateManager>() as GameStateManager);
             foreach (var pair in EarnedCurrencies)
             {
-                ((HCGameManager)HCGameManager.Instance).AddCurrency(pair.Value.CurrencyId, pair.Value.Amount);
+                gsm.AddCurrency(pair.Value.CurrencyId, pair.Value.Amount);
             }
         }
         
         protected virtual void ReleaseEarnings()
         {
+            GameStateManager gsm = (GameManager.Instance.GetSubManagerByType<GameStateManager>() as GameStateManager);
             List<int> currencyIds = new List<int>();
             foreach (var currency in EarnedCurrencies)
             {
@@ -159,7 +161,7 @@ namespace Kuantech.Core.HyperCasual
             EarnedCurrencies.Clear();
             foreach (var currId in currencyIds)
             {
-                ((HCGameManager)HCGameManager.Instance).UpdateCurrency(currId);
+                gsm.UpdateCurrency(currId);
             }
         }
 
