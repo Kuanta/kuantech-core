@@ -18,9 +18,6 @@ namespace Kuantech.Core.HyperCasual
         //Common Submanagers
         public LevelManager LevelManager; //todo: Make LevelManager a subManager
         public UIManager UIManager;
-
-        [Header("Loading Screen")] 
-        public GameObject LoadingScreen;
         
         //Level
         [Header("Levels")]
@@ -62,7 +59,6 @@ namespace Kuantech.Core.HyperCasual
         protected override void OnSubmanagersInitialized()
         {
             base.OnSubmanagersInitialized();
-            if(LoadingScreen != null) LoadingScreen.SetActive(false);
             EffectsLibrary.Instance.Initialize(); //todo(refactor): Make this a submanager
 
             UIManager = GetSubManagerByType<UIManager>() as UIManager;

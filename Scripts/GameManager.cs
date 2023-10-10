@@ -12,8 +12,11 @@ namespace Kuantech.Core
         public PrefabPool Pool;
         public bool GameIsPaused = false;
         public Camera MainCamera;
-        protected bool SubManagersInitialized = false; 
-        
+        protected bool SubManagersInitialized = false;
+
+        [Header("Loading Screen")]
+        public GameObject LoadingScreen;
+
         //Submanagers
         private SubManager[] _subManagers;
 
@@ -80,6 +83,7 @@ namespace Kuantech.Core
             {
                 subManager.OnSubmanagersInitialized();
             }
+            if (LoadingScreen != null) LoadingScreen.SetActive(false);
         }
 
         public void ToggleSubManager<T>(bool toggle)
