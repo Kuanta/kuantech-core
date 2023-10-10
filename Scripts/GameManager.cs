@@ -109,5 +109,6 @@ namespace Kuantech.Core
         }
 
         #endregion
+    
     }
 }

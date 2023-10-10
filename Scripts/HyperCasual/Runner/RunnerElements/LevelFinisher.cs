@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace Kuantech.Core.HyperCasual
+namespace Kuantech.Core.HyperCasual.Runner
 {
     public class LevelFinisher : MonoBehaviour, IChunkElement
     {

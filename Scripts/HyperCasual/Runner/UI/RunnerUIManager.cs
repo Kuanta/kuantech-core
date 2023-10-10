@@ -1,41 +1,24 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 
-namespace Kuantech.Core.HyperCasual
+namespace Kuantech.Core.HyperCasual.Runner.UI
 {
-    public class UIManager : SubManager
+    public class RunnerUIManager : SubManager
     {
-        
         //Panels
-        public MainMenu MainMenu;
-        public IngameMenu IngameMenu;
-        public HeaderPanel HeaderPanel;
-        public GameObject LoadingScreen;
+        public RunnerMainMenu MainMenu;
+        public RunnerIngameMenu IngameMenu;
 
         private Vector2 _scaledScreenSize;
-        public void Initialize()
+        public override void OnSubmanagersInitialized()
         {
-            ((HCGameManager)GameManager.Instance).StateChangeEvent += OnStateChange;
+            LevelManager levelMan = GameManager.Instance.GetSubManagerByType<LevelManager>() as LevelManager;
+            if(levelMan == null) return;
+            levelMan.StateChangeEvent += OnStateChange;
             MainMenu.Initialize();
             IngameMenu.Initialize();
         }
 
-        public override void OnSubmanagersInitialized()
-        {
-            if(LoadingScreen != null) LoadingScreen.SetActive(false);
-        }
-        
-        public void SetCurrencyAmount(int currencyType, int amount)
-        {
-            if (HeaderPanel == null) return;
-            HeaderPanel.SetCurrencyAmount(currencyType, amount);
-        }
-
-        public void SetCurrentLevel(int levelIndex)
-        {
-            if (HeaderPanel == null) return;
-            HeaderPanel.SetCurrentLevel(levelIndex);
-        }
         private void OnStateChange(object sender, StateChangeData change)
         {
             IngameMenu.OnStateChange(change.NewState);

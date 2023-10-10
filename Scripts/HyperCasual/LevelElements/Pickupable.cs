@@ -1,7 +1,7 @@
 ﻿using Kuantech.Core.FX;
 using UnityEngine;
 
-namespace Kuantech.Core.HyperCasual
+namespace Kuantech.Core.HyperCasual.Runner
 {
     public class Pickupable : MonoBehaviour, IChunkElement
     {

@@ -2,9 +2,9 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Kuantech.Core.HyperCasual
+namespace Kuantech.Core.HyperCasual.Runner.UI
 {
-    public class MainMenu : UIMenu
+    public class RunnerMainMenu : UIMenu
     {
         [SerializeField] private Button StartLevelButton;
 

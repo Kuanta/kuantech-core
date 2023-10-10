@@ -2,7 +2,7 @@
 using System.Linq;
 using UnityEngine;
 
-namespace Kuantech.Core.HyperCasual
+namespace Kuantech.Core.HyperCasual.Runner
 {
     public abstract class RunnerChunkSlot : MonoBehaviour
     {

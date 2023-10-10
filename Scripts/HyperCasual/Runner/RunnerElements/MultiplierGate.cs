@@ -3,7 +3,7 @@ using Kuantech.Utils;
 using TMPro;
 using UnityEngine;
 
-namespace Kuantech.Core.HyperCasual
+namespace Kuantech.Core.HyperCasual.Runner
 {
     public enum GateOperation
     {

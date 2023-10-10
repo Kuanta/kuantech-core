@@ -2,7 +2,7 @@
 using Kuantech.Core.UI;
 using UnityEngine;
 
-namespace Kuantech.Core.HyperCasual
+namespace Kuantech.Core.HyperCasual.Runner
 {
     public class RunnerInputHandler : MonoBehaviour
     {

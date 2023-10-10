@@ -4,7 +4,7 @@ using System.Linq;
 using Kuantech.Core.Utils;
 using UnityEngine;
 
-namespace Kuantech.Core.HyperCasual
+namespace Kuantech.Core.HyperCasual.Runner
 {
     public class RunnerChunk : LevelChunk
     {

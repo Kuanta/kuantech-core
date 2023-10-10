@@ -1,9 +1,10 @@
 ﻿using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-namespace Kuantech.Core.HyperCasual
+namespace Kuantech.Core.HyperCasual.Runner
 {
-    public class RunnerManager : HCSubManager
+    [RequireComponent(typeof(LevelManager))]
+    public class RunnerManager : SubManager
     {
         public Runner Runner;
         public RunnerInputHandler RunnerInputHandler;
@@ -14,8 +15,15 @@ namespace Kuantech.Core.HyperCasual
             RunnerInputHandler.Runner = Runner;
             Runner.Initialize();
         }
-        
-        protected override void OnStateChange(object sender, StateChangeData stateChangeData)
+
+        public override void OnSubmanagersInitialized()
+        {
+            base.OnSubmanagersInitialized();
+            LevelManager levelMan = GameManager.Instance.GetSubManagerByType<LevelManager>() as LevelManager;
+            levelMan.StateChangeEvent += OnStateChange;
+        }
+
+        private void OnStateChange(object sender, StateChangeData stateChangeData)
         {
             if (stateChangeData.NewState == LevelState.Waiting)
             {
@@ -35,6 +43,13 @@ namespace Kuantech.Core.HyperCasual
             {
                 RunnerInputHandler.enabled = true;
             }
+        }
+
+        public override void Cleanup()
+        {
+            base.Cleanup();
+            LevelManager levelMan = GameManager.Instance.GetSubManagerByType<LevelManager>() as LevelManager;
+            levelMan.StateChangeEvent -= OnStateChange;
         }
     }
 }

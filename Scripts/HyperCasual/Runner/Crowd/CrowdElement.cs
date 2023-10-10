@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace Kuantech.Core.HyperCasual
+namespace Kuantech.Core.HyperCasual.Runner
 {
     public class CrowdElement : MonoBehaviour
     {

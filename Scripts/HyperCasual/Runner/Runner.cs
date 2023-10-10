@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using Kuantech.Core.Rpg;
+using Kuantech.Core.Utils;
 using UnityEngine;
 using UnityEngine.Events;
 
-namespace Kuantech.Core.HyperCasual
+namespace Kuantech.Core.HyperCasual.Runner
 {
     public class Runner : MonoBehaviour
     {

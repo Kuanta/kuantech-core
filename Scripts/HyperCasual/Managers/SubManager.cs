@@ -17,5 +17,13 @@ namespace Kuantech.Core.HyperCasual
         {
             
         }
+
+        /// <summary>
+        /// Called for submanagers that are remvoed during a scene cleanup
+        /// </summary>
+        public virtual void Cleanup()
+        {
+
+        }
     }
 }

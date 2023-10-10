@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using Kuantech.Core.Rpg;
+using Kuantech.Core.Utils;
 using UnityEngine;
 using UnityEngine.Events;
 

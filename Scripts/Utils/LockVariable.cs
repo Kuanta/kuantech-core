@@ -1,4 +1,4 @@
-﻿namespace Kuantech.Core.Rpg
+﻿namespace Kuantech.Core.Utils
 {
     public class LockVariable
     {

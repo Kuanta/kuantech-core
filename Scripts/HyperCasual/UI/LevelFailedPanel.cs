@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Kuantech.Core.HyperCasual
+namespace Kuantech.Core.HyperCasual.UI
 {
     public class LevelFailedPanel : UIMenu
     {

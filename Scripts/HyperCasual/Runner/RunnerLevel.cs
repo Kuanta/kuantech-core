@@ -3,7 +3,7 @@ using System.Linq;
 using Kuantech.Utils;
 using UnityEngine;
 
-namespace Kuantech.Core.HyperCasual
+namespace Kuantech.Core.HyperCasual.Runner
 {
 
     public class RunnerLevel : Level

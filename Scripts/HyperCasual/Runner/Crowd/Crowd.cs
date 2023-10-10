@@ -1,13 +1,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using DG.Tweening;
-using Kuantech.Core;
-using Kuantech.Core.HyperCasual;
-using Kuantech.Utils;
+
 using Sirenix.OdinInspector;
 using UnityEngine;
 
-namespace Kuantech.Core.HyperCasual
+namespace Kuantech.Core.HyperCasual.Runner
 {
     public class Crowd : Runner
     {

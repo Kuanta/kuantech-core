@@ -9,7 +9,7 @@ using UnityEngine;
 using UnityEngine.Scripting;
 using UnityEngine.Serialization;
 
-namespace Kuantech.Core.HyperCasual
+namespace Kuantech.Core.HyperCasual.Runner
 {
     [Serializable]
     public struct ChunkLayerFormat

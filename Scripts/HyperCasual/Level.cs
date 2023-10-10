@@ -129,9 +129,6 @@ namespace Kuantech.Core.HyperCasual
             {
                 EarnedCurrencies[currencyId] = EarnedCurrencies[currencyId].AddAmount(amount);
             }
-            
-            //Uncomment if want to update during level
-            (GameManager.Instance.GetSubManagerByType<UIManager>() as UIManager)?.SetCurrencyAmount(currencyId, GetCurrentCurrencyAmount(currencyId)); 
         }
 
         public virtual Currency GetEarnedCurrency(int currencyId)

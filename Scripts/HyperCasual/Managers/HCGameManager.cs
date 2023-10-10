@@ -17,7 +17,7 @@ namespace Kuantech.Core.HyperCasual
     {
         //Common Submanagers
         public LevelManager LevelManager; //todo: Make LevelManager a subManager
-        public UIManager UIManager;
+       // public UIManager UIManager;
         
         //Level
         [Header("Levels")]
@@ -58,25 +58,25 @@ namespace Kuantech.Core.HyperCasual
         
         protected override void OnSubmanagersInitialized()
         {
-            base.OnSubmanagersInitialized();
-            EffectsLibrary.Instance.Initialize(); //todo(refactor): Make this a submanager
+            // base.OnSubmanagersInitialized();
+            // EffectsLibrary.Instance.Initialize(); //todo(refactor): Make this a submanager
 
-            UIManager = GetSubManagerByType<UIManager>() as UIManager;
-            LevelManager = GetSubManagerByType<LevelManager>() as LevelManager;
+            // UIManager = GetSubManagerByType<UIManager>() as UIManager;
+            // LevelManager = GetSubManagerByType<LevelManager>() as LevelManager;
 
-            foreach (var currencyId in CurrencyIds)
-            {
-                UIManager.SetCurrencyAmount(currencyId, GameState.GetCurrencyAmount(currencyId));
-            }
-            CurrentLevelIndex = GameState.GetLevelIndex();
-            _lastCheckTime = Time.time;
+            // foreach (var currencyId in CurrencyIds)
+            // {
+            //     UIManager.SetCurrencyAmount(currencyId, GameState.GetCurrencyAmount(currencyId));
+            // }
+            // CurrentLevelIndex = GameState.GetLevelIndex();
+            // _lastCheckTime = Time.time;
             
-            if (UIManager != null) 
-            {
-                UIManager.Initialize(); //Initialize after data loading and store listing
-                UIManager.SetCurrentLevel(CurrentLevelIndex);
-            }
-            OnGameStart();
+            // if (UIManager != null) 
+            // {
+            //     UIManager.Initialize(); //Initialize after data loading and store listing
+            //     UIManager.SetCurrentLevel(CurrentLevelIndex);
+            // }
+            // OnGameStart();
         }
         protected virtual void OnGameStart()
         {
@@ -150,7 +150,7 @@ namespace Kuantech.Core.HyperCasual
             levelIndex = CurrentLevel.LevelIndex;
             CurrentLevel.PrepareLevel();
             GameState.SetLevelIndex(levelIndex);
-            UIManager.SetCurrentLevel(levelIndex);
+            //UIManager.SetCurrentLevel(levelIndex);
         }
 
         [ConsoleMethod("setLevel", "Sets the level")]
@@ -212,14 +212,14 @@ namespace Kuantech.Core.HyperCasual
 
         public virtual void UpdateCurrency(int currencyId)
         {
-            if (UIManager == null) return;
-            UIManager.SetCurrencyAmount(currencyId, GameState.GetCurrencyAmount(currencyId));
+            // if (UIManager == null) return;
+            // UIManager.SetCurrencyAmount(currencyId, GameState.GetCurrencyAmount(currencyId));
         }
         
         protected virtual void UpdateCurrency(int currencyId, int amount)
         {
-            if (UIManager == null) return;
-            UIManager.SetCurrencyAmount(currencyId, amount);
+            // if (UIManager == null) return;
+            // UIManager.SetCurrencyAmount(currencyId, amount);
         }
         #endregion
 
