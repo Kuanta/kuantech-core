@@ -57,9 +57,6 @@ namespace Kuantech.Core.HyperCasual.Runner
         public virtual void OnPlay()
         {
             FrontMovementBlocked = false;
-            Reset();
-            MovementLock.Reset();
-            InputLock.Reset();
         }
 
         public virtual void OnMainMenu()
@@ -87,6 +84,8 @@ namespace Kuantech.Core.HyperCasual.Runner
             _pressedInput = false;
             _currentSpeed = BaseSpeed;
             _targetSpeed = BaseSpeed;
+            MovementLock.Reset();
+            InputLock.Reset();
         }
 
         #endregion

@@ -14,6 +14,7 @@ namespace Kuantech.Core.HyperCasual.Runner
         [SerializeField] private CrowdElement CrowdElementPrefab;
 
         [Header("Crowd Formation")]
+        protected int StartingCrowdElementCount = 1;
         [SerializeField] protected Transform CrowdParent; //Crowd will be gathered here
         [SerializeField] private float Radius = 0.5f;
         [SerializeField] private float AgentRadius = 0.3f;
@@ -212,7 +213,7 @@ namespace Kuantech.Core.HyperCasual.Runner
             // Using System.Linq's OrderBy with a random key to shuffle the list
             return crowd.OrderBy(a => UnityEngine.Random.value).ToList();
         }
-        private void ClearCrowd()
+        protected void ClearCrowd()
         {
             List<CrowdElement> crowdAgents = CrowdParent.GetComponentsInChildren<CrowdElement>().ToList();
             _currentCrowdCount = 0;
@@ -241,7 +242,7 @@ namespace Kuantech.Core.HyperCasual.Runner
         {
             base.Reset();
             ClearCrowd();
-            CreateCrowdElements(1);
+            CreateCrowdElements(StartingCrowdElementCount);
         }
     }
 }
