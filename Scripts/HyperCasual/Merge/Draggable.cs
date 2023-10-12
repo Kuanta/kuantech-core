@@ -21,10 +21,22 @@ namespace Kuantech.Merge
             return true;
         }
 
-        public virtual void Drag(Vector3 position)
+        [Header("Offset")]
+        [SerializeField] private float OffsetDistance = 5f;
+        public virtual void Drag(Vector3 cursorPosition)
         {
-            SetPosition(position);
             IDropZone newZone = CheckForDragBench();
+            if(_receivedHitThisFrame)
+            {
+                Transform cameraTransform = DragManager.GetContext<DragManager>().MainCamera.transform;
+                Vector3 diff = cameraTransform.position - _lastHit.point;
+                diff.Normalize();
+                SetPosition(_lastHit.point + diff * OffsetDistance);
+            }
+            else{
+                SetPosition(cursorPosition);
+            }
+
             if (DropZone != null && newZone == null)
             {
                 //_dropZone.CancelHighlight();
@@ -62,7 +74,8 @@ namespace Kuantech.Merge
 
         [Header("Ground Checking")] 
         [SerializeField] private LayerMask GroundRayMask;
-        
+        private RaycastHit _lastHit;
+        private bool _receivedHitThisFrame;
         public IDropZone CheckForDragBench()
         {
             //Check UI elements first
@@ -98,14 +111,18 @@ namespace Kuantech.Merge
             RaycastHit hit;
             if (UnityEngine.Physics.Raycast(ray, out hit, Mathf.Infinity, GroundRayMask))
             {
+                _receivedHitThisFrame = true;
+                _lastHit = hit;
                 // If it hits a DragBench, return it
                 IDropZone hitMergableDropBench = hit.collider.gameObject.GetComponent<IDropZone>();
                 if (hitMergableDropBench != null)
                 {
                     return hitMergableDropBench;
                 }
+            }else{
+                _receivedHitThisFrame = false;
             }
-   
+            
 
             // If no DragBench was hit, return null
             return null;

@@ -109,7 +109,7 @@ namespace Kuantech.Merge
                 {
                     mousePosition.z = _dragCameraDistance;
                     Vector3 worldPosition = MainCamera.ScreenToWorldPoint(mousePosition);
-                    _draggedInterface.Drag( worldPosition);
+                    _draggedInterface.Drag(worldPosition);
                 }
             }
             else if (Input.GetMouseButtonUp(0))
