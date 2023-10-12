@@ -37,7 +37,7 @@ namespace Kuantech.Core.HyperCasual.Runner
 
         public EventHandler InputPressedEvent;
 
-        private RunnerLevel _currentLevel;
+        protected RunnerLevel CurrentLevel;
 
         [Header("Runner Sizes")]
         protected float RunnerWidth = 0f;
@@ -64,7 +64,7 @@ namespace Kuantech.Core.HyperCasual.Runner
             FrontMovementBlocked = false;
             LevelManager levelManager = LevelManager.GetContext<LevelManager>();
             if(levelManager == null) return;
-            _currentLevel = levelManager.CurrentLevel as RunnerLevel;
+            CurrentLevel = levelManager.CurrentLevel as RunnerLevel;
         }
 
         public virtual void OnMainMenu()
@@ -107,13 +107,13 @@ namespace Kuantech.Core.HyperCasual.Runner
         protected virtual void Update()
         {
             //Check Current Level
-            if(_currentLevel == null) return;
+            if(CurrentLevel == null) return;
             if (_movingToPoint)
             {
                 MoveToTarget();
                 return;
             }
-            if (_currentLevel == null || _currentLevel.CurrentState != LevelState.Playing || MovementLock.IsLocked())
+            if (CurrentLevel == null || CurrentLevel.CurrentState != LevelState.Playing || MovementLock.IsLocked())
             {
                 _movementVector = Vector2.zero;
                 CurrentMovementVector = Vector2.zero;
@@ -166,9 +166,9 @@ namespace Kuantech.Core.HyperCasual.Runner
         /// </summary>
         protected virtual void LimitMovement()
         {
-            Vector3 currentCenter = _currentLevel.GetCurrentLaneCenter();
-            float laneWidth = _currentLevel.GetCurrentLaneWidth();
-            Vector3 rightVector = _currentLevel.GetCurrentRight();
+            Vector3 currentCenter = CurrentLevel.GetCurrentLaneCenter();
+            float laneWidth = CurrentLevel.GetCurrentLaneWidth();
+            Vector3 rightVector = CurrentLevel.GetCurrentRight();
 
             //The edge values of the runner
             float runnerMinX = -RunnerWidth * 0.5f + RunnerWidthOffset;

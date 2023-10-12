@@ -9,7 +9,8 @@ namespace Kuantech.Core.HyperCasual.Runner
 {
     public class Crowd : Runner
     {
-
+        
+        [SerializeField] private bool FailLevelOnEmptyCrowd;
         [Header("Element Prefab")]
         [SerializeField] private CrowdElement CrowdElementPrefab;
 
@@ -74,6 +75,12 @@ namespace Kuantech.Core.HyperCasual.Runner
         /// </summary>
         protected virtual void UpdateCrowd()
         {
+            //Fail level if conditions are met on empty crowd
+            if(FailLevelOnEmptyCrowd && GetCrowdSize() == 0 && CurrentLevel != null && CurrentLevel.CurrentState == LevelState.Playing)
+            {
+                LevelManager.GetContext<LevelManager>().FailLevel();
+                return;
+            }
             PositionCrowdElements();
             _crowdNeedsUpdate = false;
         }
