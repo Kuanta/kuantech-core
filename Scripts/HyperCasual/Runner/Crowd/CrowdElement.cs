@@ -17,6 +17,8 @@ namespace Kuantech.Core.HyperCasual.Runner
         public virtual void Spawn(Crowd parentCrowd)
         {
             ParentCrowd = parentCrowd;
+            _currentNormalizeSpeed = 0f;
+            NormalizedSpeed = 0f;
         }
 
         /// <summary>
@@ -40,15 +42,21 @@ namespace Kuantech.Core.HyperCasual.Runner
 
         protected virtual void Update()
         {
-            if(ParentCrowd == null) return;
+            if(ParentCrowd == null) {
+                NormalizedSpeed = 0f;
+                _currentNormalizeSpeed = 0f;
+                return;
+            }
             float forward = ParentCrowd.GetMovemenetVector().y;
             NormalizedSpeed = forward;
             SetWalkingAnimation();
         }
-
+        private float _currentNormalizeSpeed;
+        [SerializeField] private float AnimationLerpSpeed = 10;
         private void SetWalkingAnimation()
         {
-            Animator.SetFloat("MovementSpeed", NormalizedSpeed);
+            _currentNormalizeSpeed = Mathf.Lerp(_currentNormalizeSpeed, NormalizedSpeed, Time.deltaTime * AnimationLerpSpeed);
+            Animator.SetFloat("MovementSpeed", _currentNormalizeSpeed);
         }
     }
 }

@@ -88,12 +88,26 @@ namespace Kuantech.Core.HyperCasual.Runner
             int currentAgentCountForRing = 0;
             float currentDeltaAngle = 0f;
 
+            float minCrowdX = 0f;
+            float maxCrowdX = 0f;
+
             for (int i=0;i<count;++i)
             {
                 float angle = currentAgentCountForRing * currentDeltaAngle;
                 Vector3 newLocalPos = GetCartesianPositionFromPolar(currentRingIndex * Radius, angle);
                 newLocalPos.x += Random.Range(0f, 1f) * NoiseMagnitude;
                 newLocalPos.z += Random.Range(0f, 1f) * NoiseMagnitude;
+                
+                //Set min max
+                if(newLocalPos.x > maxCrowdX)
+                {
+                    maxCrowdX = newLocalPos.x;
+                }
+                if(newLocalPos.x<minCrowdX)
+                {
+                    minCrowdX = newLocalPos.x;
+                }
+
                 CrowdParent.transform.GetChild(i).DOLocalMove(newLocalPos, 1f).SetEase(Ease.OutBack);
                 currentAgentCountForRing++;
                 if(currentAgentCountForRing >= currentMaxAgentForRing)
@@ -107,6 +121,10 @@ namespace Kuantech.Core.HyperCasual.Runner
                     currentAgentCountForRing = 0;
                 }
             }
+
+            //Set crowd edges
+            RunnerWidth = maxCrowdX - minCrowdX;
+            RunnerWidthOffset = (maxCrowdX + minCrowdX) * 0.5f;
         }
 
         private float GetRingPerimeter(int ringIndex)
@@ -235,6 +253,11 @@ namespace Kuantech.Core.HyperCasual.Runner
                 if (agent == CrowdParent.transform) continue;
                 operation(agent);
             }
+        }
+
+        public List<CrowdElement> GetCrowdElements()
+        {
+            return CrowdParent.GetComponentsInChildren<CrowdElement>().ToList();
         }
         #endregion
 
