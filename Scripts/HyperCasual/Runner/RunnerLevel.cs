@@ -23,7 +23,7 @@ namespace Kuantech.Core.HyperCasual.Runner
 
         private Queue<RunnerChunk> _liveChunks = new Queue<RunnerChunk>();
         private int _currentChunkIndex;
-        private Runner _currentRunner;
+        protected Runner CurrentRunner;
         private RunnerChunk _startChunk = null;
 
         private LevelManager _runnerLevelManager;
@@ -31,44 +31,44 @@ namespace Kuantech.Core.HyperCasual.Runner
         [Header("Level Limits")]
         public Vector3 CurrentLevelForward = new Vector3(1,0,0);
         public float CurrentLevelWidth;
-        public bool LimitRunner = true;
+        //public bool LimitRunner = true;
 
-        private void FixedUpdate()
-        {
-            if (CurrentState != LevelState.Playing) return;
-            LimitRunnerPositions();
-        }
+        // private void FixedUpdate()
+        // {
+        //     if (CurrentState != LevelState.Playing) return;
+        //     LimitRunnerPositions();
+        // }
         
-        private void LimitRunnerPositions()
-        {
-            if (_currentRunner == null || !LimitRunner) return;
-            Rigidbody rb = _currentRunner.GetComponent<Rigidbody>();
+        // private void LimitRunnerPositions()
+        // {
+        //     if (CurrentRunner == null || !LimitRunner) return;
+        //     Rigidbody rb = CurrentRunner.GetComponent<Rigidbody>();
 
-            float projected = Helpers.DotProjection(_currentRunner.transform.position, CurrentLevelForward);
-            Vector3 currPos = _currentRunner.transform.position;
-            Vector3 newPos = currPos;
+        //     float projected = Helpers.DotProjection(CurrentRunner.transform.position, CurrentLevelForward);
+        //     Vector3 currPos = CurrentRunner.transform.position;
+        //     Vector3 newPos = currPos;
 
-            if (projected >= CurrentLevelWidth * 0.5f)
-            {
-                newPos.x = CurrentLevelWidth * 0.5f;
-            }
-            else if (projected <= -CurrentLevelWidth * 0.5f)
-            {
-                newPos.x = -CurrentLevelWidth * 0.5f;
-            }
+        //     if (projected >= CurrentLevelWidth * 0.5f)
+        //     {
+        //         newPos.x = CurrentLevelWidth * 0.5f;
+        //     }
+        //     else if (projected <= -CurrentLevelWidth * 0.5f)
+        //     {
+        //         newPos.x = -CurrentLevelWidth * 0.5f;
+        //     }
 
-            if (rb != null)
-            {
-                rb.MovePosition(newPos);
-            }
-            else
-            {
-                _currentRunner.transform.position = newPos;
-            }
-        }
+        //     if (rb != null)
+        //     {
+        //         rb.MovePosition(newPos);
+        //     }
+        //     else
+        //     {
+        //         CurrentRunner.transform.position = newPos;
+        //     }
+        // }
         public void SetRunner(Runner runner)
         {
-            _currentRunner = runner;
+            CurrentRunner = runner;
             PositionRunner();
         }
         
@@ -166,8 +166,8 @@ namespace Kuantech.Core.HyperCasual.Runner
         }
         private void PositionRunner()
         {
-            if (_currentRunner == null) return;
-            Transform runnerTransform = _currentRunner.transform;
+            if (CurrentRunner == null) return;
+            Transform runnerTransform = CurrentRunner.transform;
             if (RunnerStartPoint != null)
             {
                 runnerTransform.position = RunnerStartPoint.position;
@@ -329,6 +329,36 @@ namespace Kuantech.Core.HyperCasual.Runner
             Destroy(chunk.gameObject);
         }
 
+        #endregion
+
+        #region LevelLimits
+        /// <summary>
+        /// Returns the current forward of the lane
+        /// </summary>
+        /// <returns></returns>
+        public Vector3 GetCurrentForward()
+        {
+            return CurrentLevelForward;
+        }
+
+        public Vector3 GetCurrentRight()
+        {
+            return Quaternion.AngleAxis(90f, Vector3.up) * CurrentLevelForward; 
+        }
+
+        /// <summary>
+        /// Returns the center point for lane center
+        /// </summary>
+        /// <returns></returns>
+        public Vector3 GetCurrentLaneCenter()
+        {
+            return transform.position;
+        }
+
+        public float GetCurrentLaneWidth()
+        {
+            return CurrentLevelWidth;
+        }
         #endregion
         
     }

@@ -36,7 +36,12 @@ namespace Kuantech.Core.HyperCasual.Runner
         private bool _pressedInput = false;
 
         public EventHandler InputPressedEvent;
-        
+
+        private RunnerLevel _currentLevel;
+
+        [Header("Runner Sizes")]
+        protected float RunnerWidth = 0f;
+        protected float RunnerWidthOffset = 0f;
         public virtual void Initialize()
         {
             
@@ -57,6 +62,9 @@ namespace Kuantech.Core.HyperCasual.Runner
         public virtual void OnPlay()
         {
             FrontMovementBlocked = false;
+            LevelManager levelManager = LevelManager.GetContext<LevelManager>();
+            if(levelManager == null) return;
+            _currentLevel = levelManager.CurrentLevel as RunnerLevel;
         }
 
         public virtual void OnMainMenu()
@@ -99,23 +107,20 @@ namespace Kuantech.Core.HyperCasual.Runner
         protected virtual void Update()
         {
             //Check Current Level
-            Level currentLevel = LevelManager.GetContext<LevelManager>().CurrentLevel;
-            if(currentLevel == null) return;
+            if(_currentLevel == null) return;
             if (_movingToPoint)
             {
                 MoveToTarget();
                 return;
             }
-            if (currentLevel == null || currentLevel.CurrentState != LevelState.Playing || MovementLock.IsLocked())
+            if (_currentLevel == null || _currentLevel.CurrentState != LevelState.Playing || MovementLock.IsLocked())
             {
                 _movementVector = Vector2.zero;
                 CurrentMovementVector = Vector2.zero;
                 return;
             }
-
             CurrentMovementVector = Vector2.Lerp(CurrentMovementVector, _movementVector, MovementLerpFactor);
             ManualMovement();
-
             _currentSpeed = Mathf.Lerp(_currentSpeed, _targetSpeed, Time.deltaTime * SpeedLerpFactor);
         }
 
@@ -148,13 +153,38 @@ namespace Kuantech.Core.HyperCasual.Runner
             Rigidbody.velocity = sideMovement * SideSpeed + forwardMovement*_currentSpeed;
         }
 
-        private void ManualMovement()
+        protected virtual void ManualMovement()
         {
             if(Rigidbody != null) return;
             Vector3 globalDirection = LocalToGlobalDirection(CurrentMovementVector);
             transform.position += globalDirection.normalized * (Time.deltaTime * _currentSpeed);
+            LimitMovement();
         }
+        
+        /// <summary>
+        /// Limits the position of the Runner
+        /// </summary>
+        protected virtual void LimitMovement()
+        {
+            Vector3 currentCenter = _currentLevel.GetCurrentLaneCenter();
+            float laneWidth = _currentLevel.GetCurrentLaneWidth();
+            Vector3 rightVector = _currentLevel.GetCurrentRight();
 
+            //The edge values of the runner
+            float runnerMinX = -RunnerWidth * 0.5f + RunnerWidthOffset;
+            float runnerMaxX = RunnerWidth*0.5f + RunnerWidthOffset;
+            
+            //Level limits for the runners center
+            float minX = -laneWidth * 0.5f - runnerMinX;
+            float maxX = laneWidth * 0.5f - runnerMaxX;
+
+            //Projection vector of crowd position to the lane's current right
+            Vector3 rightDiff = transform.position - currentCenter;
+            rightDiff = Kuantech.Utils.Helpers.ProjectVector(rightDiff, rightVector);
+            float dotVal = Kuantech.Utils.Helpers.DotProjection(rightDiff, rightVector);
+            dotVal = Mathf.Clamp(dotVal, minX, maxX);
+            transform.position = transform.position - rightDiff + rightVector * dotVal;
+        }
         private void MoveToTarget()
         {
             Vector3 diff = _target.position - transform.position;

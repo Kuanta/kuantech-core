@@ -66,6 +66,7 @@ namespace Kuantech.Core.HyperCasual.Runner
             base.Cleanup();
             LevelManager levelMan = GameManager.Instance.GetSubManagerByType<LevelManager>() as LevelManager;
             levelMan.StateChangeEvent -= OnStateChange;
+            Runner.gameObject.SetActive(false);
         }
     }
 }
