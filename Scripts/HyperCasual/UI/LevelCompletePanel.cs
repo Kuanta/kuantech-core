@@ -30,7 +30,7 @@ namespace Kuantech.Core.HyperCasual.UI
             Level currentLevel = LevelManager.GetCurrentLevel();
             foreach (var indicator in CurrencyIndicators)
             {
-                int earnedCurrency = currentLevel.GetEarnedCurrency((int) indicator.CurrencyId).Amount;
+                int earnedCurrency = currentLevel.GetEarnedCurrency((int) indicator.GetCurrencyId()).Amount;
                 indicator.gameObject.SetActive(earnedCurrency > 0);
                 indicator.SetAmount(earnedCurrency);
             }

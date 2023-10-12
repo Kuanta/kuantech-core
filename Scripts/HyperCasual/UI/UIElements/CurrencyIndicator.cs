@@ -6,11 +6,13 @@ namespace Kuantech.Core.HyperCasual.UI
 {
     public class CurrencyIndicator : MonoBehaviour
     {
-        public int CurrencyId;
+        public bool AutoUpdate = false;
+        [SerializeField] private int CurrencyId;
         [SerializeField] private TMP_Text CurrencyAmount;
 
         private void Start()
         {
+            if(!AutoUpdate) return;
             GameStateManager gsm = (GameManager.Instance.GetSubManagerByType<GameStateManager>() as GameStateManager);
             if(gsm == null) return;
             gsm.CurrencyUpdatedEvent += OnCurrencyChangeEvent;
@@ -21,6 +23,7 @@ namespace Kuantech.Core.HyperCasual.UI
         /// </summary>
         private void OnEnable()
         {
+            if (!AutoUpdate) return;
             //Get the current currency value
             GameStateManager gsm = (GameManager.Instance.GetSubManagerByType<GameStateManager>() as GameStateManager);
             if (gsm == null) return;
@@ -46,9 +49,19 @@ namespace Kuantech.Core.HyperCasual.UI
         /// </summary>
         private void OnDestroy()
         {
+            if (!AutoUpdate) return;
             GameStateManager gsm = (GameManager.Instance.GetSubManagerByType<GameStateManager>() as GameStateManager);
             if (gsm == null) return;
             gsm.CurrencyUpdatedEvent -= OnCurrencyChangeEvent;
+        }
+
+        /// <summary>
+        /// Returns the currency id
+        /// </summary>
+        /// <returns></returns>
+        public virtual int GetCurrencyId()
+        {
+            return CurrencyId;
         }
     }
 }
