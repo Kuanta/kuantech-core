@@ -42,6 +42,10 @@ namespace Kuantech.Core.HyperCasual.Runner
         [Header("Runner Sizes")]
         protected float RunnerWidth = 0f;
         protected float RunnerWidthOffset = 0f;
+
+        [Header("Camera Follow")]
+        [SerializeField] private Transform FollowTarget;
+
         public virtual void Initialize()
         {
             
@@ -57,6 +61,11 @@ namespace Kuantech.Core.HyperCasual.Runner
             return CurrentMovementVector;
         }
 
+        public Transform GetFollowTarget()
+        {
+            if(FollowTarget != null) return FollowTarget;
+            return transform;
+        }
         #region Lifecycle
 
         public virtual void OnPlay()
@@ -108,6 +117,10 @@ namespace Kuantech.Core.HyperCasual.Runner
         {
             //Check Current Level
             if(CurrentLevel == null) return;
+
+            //Set Follow Target position
+
+
             if (_movingToPoint)
             {
                 MoveToTarget();
@@ -124,12 +137,17 @@ namespace Kuantech.Core.HyperCasual.Runner
             _currentSpeed = Mathf.Lerp(_currentSpeed, _targetSpeed, Time.deltaTime * SpeedLerpFactor);
         }
 
+        private void PositionFollowTarget()
+        {
+
+        }
+
         public float GetForwardMovement(Vector2 movementVector)
         {
             if (GameManager.Instance.GameIsPaused ||
                 LevelManager.GetContext<LevelManager>().CurrentLevel.CurrentState != LevelState.Playing) return 0f;
             if (ConstantForwardMovement && !_pressedInput) return 0f;
-            if (ConstantForwardMovement && _pressedInput) return 1f;
+            if (ConstantForwardMovement && _pressedInput && !FrontMovementBlocked) return 1f;
             return movementVector.y;
         }
         private void RigibodyMovement()
@@ -184,6 +202,7 @@ namespace Kuantech.Core.HyperCasual.Runner
             float dotVal = Kuantech.Utils.Helpers.DotProjection(rightDiff, rightVector);
             dotVal = Mathf.Clamp(dotVal, minX, maxX);
             transform.position = transform.position - rightDiff + rightVector * dotVal;
+            if(FollowTarget != null) FollowTarget.position = transform.position - rightDiff;
         }
         private void MoveToTarget()
         {
@@ -204,6 +223,8 @@ namespace Kuantech.Core.HyperCasual.Runner
         {
             if(InputLock.IsLocked())
             {
+                CurrentMovementVector = Vector2.zero;
+                _movementVector = Vector2.zero;
                 return;
             }
             if (movementVec.sqrMagnitude > 0)

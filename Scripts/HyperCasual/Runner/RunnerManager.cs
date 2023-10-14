@@ -21,8 +21,8 @@ namespace Kuantech.Core.HyperCasual.Runner
             Runner = Instantiate(RunnerPrefab.gameObject).GetComponent<Runner>();
             Runner.Initialize();
 
-            MainMenuCamera.Follow = Runner.transform;
-            FollowCamera.Follow = Runner.transform;
+            MainMenuCamera.Follow = Runner.GetFollowTarget();
+            FollowCamera.Follow = Runner.GetFollowTarget();
 
             MainMenuCamera.enabled = true;
             FollowCamera.enabled = false;
