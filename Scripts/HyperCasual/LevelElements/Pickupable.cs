@@ -27,6 +27,15 @@ namespace Kuantech.Core.HyperCasual.Runner
             Model.transform.RotateAround(transform.position, Vector3.up, Time.deltaTime*AngulerSpeed); 
         }
         
+        /// <summary>
+        /// For outside classes
+        /// </summary>
+        /// <param name="other"></param>
+        public void Pickup(Collider other)
+        {
+            OnPickup(other);
+        }
+
         protected virtual void OnPickup(Collider other)
         {
             Disable();
@@ -89,13 +98,13 @@ namespace Kuantech.Core.HyperCasual.Runner
             {
                 Debug.LogError("WTYF");
             }
-            Collider.enabled = true;
+            if(Collider != null) Collider.enabled = true;
             Available = true;
         }
         public virtual void Disable()
         {
             if(Model != null) Model.SetActive(false);
-            Collider.enabled = false;
+            if(Collider != null) Collider.enabled = false;
             Available = false;
         }
         public virtual void Reset()
