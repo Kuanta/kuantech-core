@@ -1,4 +1,5 @@
-﻿using Kuantech.Core.FX;
+﻿using System;
+using Kuantech.Core.FX;
 using UnityEngine;
 
 namespace Kuantech.Core.HyperCasual.Runner
@@ -20,13 +21,15 @@ namespace Kuantech.Core.HyperCasual.Runner
         [Header("Effects")] 
         [SerializeField] private AudioSource PickupSound;
         [SerializeField] protected AudioTypes PickupUISound = AudioTypes.None;
+
+        public EventHandler<Pickupable> PickedEvent;
         
         protected virtual void Update()
         {
             if (!Available || Model == null) return;
             Model.transform.RotateAround(transform.position, Vector3.up, Time.deltaTime*AngulerSpeed); 
         }
-        
+
         /// <summary>
         /// For outside classes
         /// </summary>
@@ -35,7 +38,7 @@ namespace Kuantech.Core.HyperCasual.Runner
         {
             OnPickup(other);
         }
-
+        
         protected virtual void OnPickup(Collider other)
         {
             Disable();
@@ -46,6 +49,8 @@ namespace Kuantech.Core.HyperCasual.Runner
             {
                 EffectsLibrary.Instance.AudioLibrary.PlaySound(PickupUISound);
             }
+
+            PickedEvent?.Invoke(this, this);
         }
         
         public virtual void OnTriggerEnter(Collider other)

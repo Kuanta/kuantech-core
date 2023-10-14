@@ -1,14 +1,25 @@
 using Kuantech.Core.HyperCasual.Runner;
+using UnityEditor.EditorTools;
 using UnityEngine;
 
 namespace Kuantech.Core.HyperCasual
 {
     public class PickupableGroup : MonoBehaviour, IChunkElement
     {
+        [Tooltip("If the group uses a common collider and the closest pickup is selected to impact point")]
+        [SerializeField] private bool ByDistance;
         private Pickupable[] _childPickupables;
+
         public void OnChunkGenerated(RunnerChunk chunk)
         {
             _childPickupables = GetComponentsInChildren<Pickupable>();
+            if(!ByDistance)
+            {
+                foreach (var pickup in _childPickupables)
+                {
+                    pickup.PickedEvent += OnPickupablesPicked;
+                }
+            }
         }
 
         public void OnChunkRestart()
@@ -29,7 +40,7 @@ namespace Kuantech.Core.HyperCasual
 
         private void OnTriggerEnter(Collider other)
         {
-            if(_childPickupables == null || _childPickupables.Length == 0) return;
+            if(!ByDistance || _childPickupables == null || _childPickupables.Length == 0) return;
             //Check the closest pickupable
             
             float minDistance = float.MaxValue;
@@ -50,6 +61,19 @@ namespace Kuantech.Core.HyperCasual
                 pickup.Disable();
             }
             
+        }
+
+        /// <summary>
+        /// A pickup has been picked, disable the others
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="picked"></param>
+        private void OnPickupablesPicked(object sender, Pickupable picked)
+        {
+            foreach (var pickup in _childPickupables)
+            {
+                pickup.Disable();
+            }
         }
     }
 }
