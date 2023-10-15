@@ -103,6 +103,7 @@ namespace Kuantech.Core.HyperCasual.Runner
             _targetSpeed = BaseSpeed;
             MovementLock.Reset();
             InputLock.Reset();
+            if (FollowTarget != null) FollowTarget.localPosition = Vector3.zero;
         }
 
         #endregion
