@@ -20,6 +20,7 @@ namespace Kuantech.Core
         private SubManager[] _subManagers;
         private SubManager[] _sceneSubManagers;
 
+
         protected virtual void Awake()
         {
             Pool = new PrefabPool(transform, 1000);
@@ -62,13 +63,14 @@ namespace Kuantech.Core
 
             SubManagersInitialized = false;
             await UniTask.WhenAll(tasks.ToArray());
-            
+
             OnSubmanagersInitialized(subManagers);
             SubManagersInitialized = true;
         }
         
         public SubManager GetSubManagerByType<T>()
         {
+            if(_subManagers == null) return null;
 
             for (int i = 0; i < _subManagers.Length; i++)
             {
@@ -87,8 +89,6 @@ namespace Kuantech.Core
                     }
                 }
             }
-           
-            Debug.LogError($"Trying to get a non existant submanager:{typeof(T).Name}");
             return null; // Return null if no matching submanager is found
         }
 

@@ -10,12 +10,29 @@ namespace Kuantech.Core.HyperCasual.UI
         [SerializeField] private int CurrencyId;
         [SerializeField] private TMP_Text CurrencyAmount;
 
-        private void Start()
+        protected bool Initialized = false;
+
+        public bool CanGetCurrency()
         {
-            if(!AutoUpdate) return;
+            if (!AutoUpdate || !GameManager.InstanceExists()) return false;
+            // GameStateManager gsm = (GameManager.Instance.GetSubManagerByType<GameStateManager>() as GameStateManager);
+            // if (gsm == null) return false;
+            return true;
+        }
+        protected virtual void Start()
+        {
+            if(CanGetCurrency()) Initialize();
+        }
+
+        protected virtual void Initialize()
+        {
+            if(!CanGetCurrency()) return;
+            if (!AutoUpdate) return;
             GameStateManager gsm = (GameManager.Instance.GetSubManagerByType<GameStateManager>() as GameStateManager);
-            if(gsm == null) return;
+            if (gsm == null) return;
             gsm.CurrencyUpdatedEvent += OnCurrencyChangeEvent;
+            UpdateValue();
+            Initialized = true;
         }
 
         /// <summary>
@@ -23,17 +40,29 @@ namespace Kuantech.Core.HyperCasual.UI
         /// </summary>
         private void OnEnable()
         {
-            if (!AutoUpdate) return;
+            if(!CanGetCurrency()) return;
+            UpdateValue();
+        }
+
+        private void Update()
+        {
+            if (!Initialized)
+            {
+                Initialize();
+                return;
+            }
+        }
+        protected virtual void UpdateValue()
+        {
             //Get the current currency value
             GameStateManager gsm = (GameManager.Instance.GetSubManagerByType<GameStateManager>() as GameStateManager);
             if (gsm == null) return;
-            int amount = gsm.GetCurrency(CurrencyId).Amount;
+            int amount = gsm.GetCurrency(GetCurrencyId()).Amount;
             SetAmount(amount);
         }
-
         private void OnCurrencyChangeEvent(object sender, (int, int) val)
         {
-            if(val.Item1 == CurrencyId)
+            if(val.Item1 == GetCurrencyId())
             {
                 SetAmount(val.Item2);
             }

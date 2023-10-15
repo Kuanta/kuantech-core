@@ -6,7 +6,7 @@ namespace Kuantech.Core.HyperCasual.UI
     /// <summary>
     /// An indicator that shows the current level index. Not useful for games that doesn't have a level system
     /// </summary>
-    public class LevelIndicator
+    public class LevelIndicator : MonoBehaviour
     {
         [SerializeField] private TMP_Text LevelIndexText;
         [SerializeField] private string LevelPrefix = "Level";

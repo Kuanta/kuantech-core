@@ -88,7 +88,7 @@ namespace Kuantech.Core.HyperCasual
         {
             try{
                 (GameManager.Instance.GetSubManagerByType<LevelManager>() as LevelManager).SetLevel(levelIndex);
-            }catch(NullReferenceException e)
+            }catch (NullReferenceException)
             {
                 Debug.LogError("Level Manager is null");
             }
