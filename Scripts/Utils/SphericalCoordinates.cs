@@ -35,7 +35,7 @@ namespace Kuantech.Utils
         }
         public Vector3 ToWorld()
         {
-            return ToWorld(Radius, Yaw, Pitch);
+            return ToWorld(Radius, Yaw * Mathf.Deg2Rad, Pitch * Mathf.Deg2Rad);
         }
         
         /// <summary>

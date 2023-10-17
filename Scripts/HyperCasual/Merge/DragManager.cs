@@ -193,5 +193,10 @@ namespace Kuantech.Merge
             }
             return false;
         }
+
+        public bool IsDraggingObject()
+        {
+            return _draggedInterface != null;
+        }
     }
 }

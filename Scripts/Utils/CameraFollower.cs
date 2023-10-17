@@ -46,8 +46,8 @@ namespace Kuantech.Core
         [SerializeField] private float RotationSlerpFactor = 1f;
         [SerializeField] private float ZoomLerpFactor = 10f;
         
-        private Vector3 _desiredPosition;
-        private Quaternion _desiredRotation;
+        protected Vector3 TargetPosition;
+        protected Quaternion TargetRotation;
 
         private float _yawAccel = 0f;
         private float _pitchAccel = 0f;
@@ -75,7 +75,7 @@ namespace Kuantech.Core
         {
             _deltaY = deltaY;
         }
-        private void Update()
+        protected virtual void Update()
         {
             if (Transitioning)
             {
@@ -116,10 +116,10 @@ namespace Kuantech.Core
         /// <returns></returns>
         protected virtual Vector3 GetDesiredPosition()
         {
-            if (Target == null) return _desiredPosition;
+            if (Target == null) return TargetPosition;
             
-            _desiredPosition = GetDesiredPositionForObject(Target);
-            return _desiredPosition;
+            TargetPosition = GetDesiredPositionForObject(Target);
+            return TargetPosition;
         }
         
         /// <summary>
@@ -132,7 +132,7 @@ namespace Kuantech.Core
             {
                 return Quaternion.Euler(CameraParameters.LookAtAngles);
             }
-            if (target == null) return _desiredRotation;
+            if (target == null) return TargetRotation;
             return GetDesiredRotationForObject(target, position);
         }
 
@@ -169,6 +169,7 @@ namespace Kuantech.Core
             return sphericalPos;
         }
         
+       
         /// <summary>
         /// Returns the focus point for an object. Simply adds the position offset according to the focus object's rotation
         /// </summary>
@@ -208,12 +209,12 @@ namespace Kuantech.Core
         /// <param name="desiredPosition"></param>
         public void SetDesiredPosition(Vector3 desiredPosition)
         {
-            _desiredPosition = desiredPosition;
+            TargetPosition = desiredPosition;
         }
 
         public void SetDesiredPositionForTarget(Transform target)
         {
-            _desiredPosition = GetDesiredPositionForObject(target);
+            TargetPosition = GetDesiredPositionForObject(target);
         }
         
         /// <summary>
@@ -222,7 +223,7 @@ namespace Kuantech.Core
         /// <param name="desiredRotation"></param>
         public void SetDesiredRotation(Quaternion desiredRotation)
         {
-            _desiredRotation = desiredRotation;
+            TargetRotation = desiredRotation;
         }
 
         public void SetTarget(Transform target)
@@ -241,11 +242,11 @@ namespace Kuantech.Core
         /// <param name="setTarget"></param>
         public void WarpCamera(Transform target, bool setTarget = true)
         {
-            _desiredPosition = GetDesiredPositionForObject(target);
-            _desiredRotation = GetDesiredRotation(target, _desiredPosition);
+            TargetPosition = GetDesiredPositionForObject(target);
+            TargetRotation = GetDesiredRotation(target, TargetPosition);
 
-            transform.position = _desiredPosition;
-            transform.rotation = _desiredRotation;
+            transform.position = TargetPosition;
+            transform.rotation = TargetRotation;
             if(setTarget) Target = target;
         }
 
