@@ -33,7 +33,8 @@ namespace Kuantech.Core.HyperCasual
             GameStateManager gsm = (GameManager.Instance.GetSubManagerByType<GameStateManager>() as GameStateManager);
             if (gsm != null)
             {
-                levelIndex = gsm.GetGameState().GetLevelIndex();
+                var module = gsm.GetModule<HyperCasualGameModel>();
+                levelIndex = module.GetLevelIndex();
             }
             SetLevel(levelIndex);
             ChangeCurrentState(LevelState.Waiting);
@@ -134,7 +135,8 @@ namespace Kuantech.Core.HyperCasual
             GameStateManager gsm = (GameManager.Instance.GetSubManagerByType<GameStateManager>() as GameStateManager);
             if(gsm != null)
             {
-                gsm.GetGameState().SetLevelIndex(CurrentLevelIndex);
+                var module = gsm.GetModule<HyperCasualGameModel>();
+                module.SetLevelIndex(CurrentLevelIndex);
             }
             ChangeCurrentState(LevelState.Waiting);
         }

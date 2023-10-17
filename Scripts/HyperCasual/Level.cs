@@ -24,7 +24,7 @@ namespace Kuantech.Core.HyperCasual
         public List<ISpawnable> Spawns;
         
         //Earnings
-        protected Dictionary<int, Currency> EarnedCurrencies = new Dictionary<int, Currency>();
+        protected Dictionary<string, Currency> EarnedCurrencies = new Dictionary<string, Currency>();
     
         #region Level Lifecycke
         public virtual void StartLevel()
@@ -101,7 +101,7 @@ namespace Kuantech.Core.HyperCasual
         
         #region Earnings
 
-        public int GetCurrentCurrencyAmount(int currencyId)
+        public int GetCurrentCurrencyAmount(string currencyId)
         {
             return GameStateManager.GetCurrencyStatic(currencyId).Amount +
                    EarnedCurrencies[currencyId].Amount;
@@ -114,9 +114,9 @@ namespace Kuantech.Core.HyperCasual
         /// </summary>
         /// <param name="currencyId"></param>
         /// <param name="amount"></param>
-        public virtual void AddCurrency(int currencyId, int amount)
+        public virtual void AddCurrency(string currencyId, int amount)
         {
-            EarnedCurrencies ??= new Dictionary<int, Currency>();
+            EarnedCurrencies ??= new Dictionary<string, Currency>();
             if (!EarnedCurrencies.ContainsKey(currencyId))
             {
                 EarnedCurrencies[currencyId] = new Currency
@@ -131,7 +131,7 @@ namespace Kuantech.Core.HyperCasual
             }
         }
 
-        public virtual Currency GetEarnedCurrency(int currencyId)
+        public virtual Currency GetEarnedCurrency(string currencyId)
         {
             if (EarnedCurrencies.ContainsKey(currencyId)) return EarnedCurrencies[currencyId];
             return new Currency
@@ -152,17 +152,17 @@ namespace Kuantech.Core.HyperCasual
         
         protected virtual void ReleaseEarnings()
         {
-            GameStateManager gsm = (GameManager.Instance.GetSubManagerByType<GameStateManager>() as GameStateManager);
-            List<int> currencyIds = new List<int>();
+            GameStateManager gsm = GameStateManager.GetContext<GameStateManager>();
+            List<string> currencyIds = new List<string>();
             foreach (var currency in EarnedCurrencies)
             {
                 currencyIds.Add(currency.Value.CurrencyId);
             }
             EarnedCurrencies.Clear();
-            foreach (var currId in currencyIds)
-            {
-                gsm.UpdateCurrency(currId);
-            }
+            // foreach (var currId in currencyIds)
+            // {
+            //     gsm.UpdateCurrency(currId);
+            // }
         }
 
         #endregion

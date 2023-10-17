@@ -10,7 +10,7 @@ namespace Kuantech.Core.HyperCasual
     public struct BuyableInfo
     {
         public string Id;
-        public int CurrencyId;
+        public string CurrencyId;
         public int Price;
     }
     public class StoreManager : SubManager

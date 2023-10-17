@@ -7,7 +7,7 @@ namespace Kuantech.Core.HyperCasual.UI
     public class CurrencyIndicator : MonoBehaviour
     {
         public bool AutoUpdate = false;
-        [SerializeField] private int CurrencyId;
+        [SerializeField] private string CurrencyId;
         [SerializeField] private TMP_Text CurrencyAmount;
 
         protected bool Initialized = false;
@@ -60,7 +60,7 @@ namespace Kuantech.Core.HyperCasual.UI
             int amount = gsm.GetCurrency(GetCurrencyId()).Amount;
             SetAmount(amount);
         }
-        private void OnCurrencyChangeEvent(object sender, (int, int) val)
+        private void OnCurrencyChangeEvent(object sender, (string, int) val)
         {
             if(val.Item1 == GetCurrencyId())
             {
@@ -88,7 +88,7 @@ namespace Kuantech.Core.HyperCasual.UI
         /// Returns the currency id
         /// </summary>
         /// <returns></returns>
-        public virtual int GetCurrencyId()
+        public virtual string GetCurrencyId()
         {
             return CurrencyId;
         }
