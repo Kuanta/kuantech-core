@@ -151,8 +151,10 @@ namespace Kuantech.Core
         {
             //Check new scene submanagers
             SceneSubManagerContainer container = FindObjectOfType<SceneSubManagerContainer>();
+            if(container == null) return;
             _sceneSubManagers = container.GetSubManagers();
             await InitializeSubManagers(_sceneSubManagers);
+            container.ActivateManagerDependentSceneObjects();
         }
         #endregion
     }

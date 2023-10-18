@@ -10,8 +10,8 @@ namespace Kuantech.Core.HyperCasual
         // A unique identifier for this module.
         public override string ModuleID => typeof(HyperCasualGameModel).ToString();
 
-        public int LevelIndex {get;set;}
-        public Dictionary<string, Currency> Currencies { get; set; } = new Dictionary<string, Currency>();
+        public int LevelIndex;
+        public Dictionary<string, Currency> Currencies;
 
         public override void SetDefaultValues()
         {
