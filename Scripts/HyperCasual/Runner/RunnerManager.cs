@@ -22,7 +22,9 @@ namespace Kuantech.Core.HyperCasual.Runner
             Runner.Initialize();
 
             MainMenuCamera.Follow = Runner.GetFollowTarget();
+            MainMenuCamera.LookAt = Runner.GetFollowTarget();
             FollowCamera.Follow = Runner.GetFollowTarget();
+            FollowCamera.LookAt = Runner.GetFollowTarget();
 
             MainMenuCamera.enabled = true;
             FollowCamera.enabled = false;
