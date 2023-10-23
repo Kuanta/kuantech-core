@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
-using Kuantech.Core;
 
 namespace Kuantech.Core.HyperCasual
 {
@@ -10,8 +9,23 @@ namespace Kuantech.Core.HyperCasual
     public struct BuyableInfo
     {
         public string Id;
-        public string CurrencyId;
-        public int Price;
+        public List<string> CurrencyIds;
+        public List<int> Prices;
+
+        public int GetPrice(string CurrencyId)
+        {
+            if(CurrencyIds == null){
+                return 0;
+            }
+            for(int i=0;i<CurrencyIds.Count;++i)
+            {
+                if(CurrencyIds[i] == CurrencyId)
+                {
+                    return Prices[i];
+                }
+            }
+            return 0;
+        }
     }
     public class StoreManager : SubManager
     {
@@ -33,20 +47,40 @@ namespace Kuantech.Core.HyperCasual
         
         public bool BuyItem(string id)
         {
-            if (!_buyables.ContainsKey(id)) return false;
+            if (!_buyables.ContainsKey(id)) return true; //If doesn't have entry, it means its free
             BuyableInfo info = _buyables[id];
             GameStateManager gsm = GameManager.Instance.GetSubManagerByType<GameStateManager>() as GameStateManager;
-            float availableCurrency = (GameStateManager.GetCurrencyStatic(info.CurrencyId).Amount);
-            if (availableCurrency < info.Price) return false;
-            gsm.RemoveCurrency(info.CurrencyId, info.Price);
+            bool hasCurrency = true;
+            for(int i=0;i< info.CurrencyIds.Count;++i)
+            {
+                string currencyId = info.CurrencyIds[i];
+                float availableCurrency = gsm.GetCurrency(currencyId).Amount;
+                if (availableCurrency < info.Prices[i])
+                {
+                    hasCurrency = false;
+                    break;
+                }
+            }
+            if(!hasCurrency) return false;
+
+            for (int i = 0; i < info.CurrencyIds.Count; ++i)
+            {
+                string currencyId = info.CurrencyIds[i];
+                gsm.RemoveCurrency(currencyId, info.Prices[i]);
+                Debug.LogError($"Removing {info.Prices[i]} {info.CurrencyIds[i]}");
+            }
             return true;
         }
 
-        public int GetPrice(string id)
+        public BuyableInfo GetBuyableInfo(string buyableId)
         {
-            if (!_buyables.ContainsKey(id)) return -1;
-            return _buyables[id].Price;
+            if(!_buyables.ContainsKey(buyableId))
+            {
+                return new BuyableInfo{
+                    
+                };
+            }
+            return _buyables[buyableId]; 
         }
-        
     }
 }
