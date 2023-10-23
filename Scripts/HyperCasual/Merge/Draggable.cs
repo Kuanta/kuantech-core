@@ -133,5 +133,9 @@ namespace Kuantech.Merge
             transform.position = _positionBeforeDrag;
         }
 
+        public virtual bool CanBeDragged()
+        {
+            return true;
+        }
     }
 }

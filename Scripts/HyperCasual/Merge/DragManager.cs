@@ -57,13 +57,16 @@ namespace Kuantech.Merge
         private Transform draggedObject;
         private Vector3 _offset;
         private IDraggable _draggedInterface;
+        private IDraggable _draggedUnderCursor;
         public LayerMask GroundLayer;
         public float DragCameraDistanceOffset = 0f;
         private float _dragCameraDistance;
         public GraphicRaycaster GraphicsRaycaster;
         public Camera MainCamera;
         public float RaycastLength = 100;
-        public float DragDelay = 0.25f;
+        public float MaxTapTime = 0.25f; //Taps should be quicker than this
+        public float DragStartTime = 0f; //A single touch should persist at least this amount
+        public float DragRemainErrorThreshold = 1f;
         
         //Events
         public EventHandler<IDraggable> OnDragStart;
@@ -72,17 +75,20 @@ namespace Kuantech.Merge
         protected Vector3 _startPosition;
         protected float _startTime;
         protected bool _startedClick;
+        protected bool _dragging = false;
         
         private void Update()
         {
             if (Input.GetMouseButtonDown(0))
             {
                 _startedClick = false;
-#if UNITY_IOS || UNITY_ANDROID
+                _dragging = false;
+#if (UNITY_IOS || UNITY_ANDROID) && !UNITY_EDITOR
                 if (EventSystem.current.IsPointerOverGameObject(0))
                 {
                     return;
                 }
+             
 #else
                 if (EventSystem.current.IsPointerOverGameObject())
                 {
@@ -105,8 +111,19 @@ namespace Kuantech.Merge
                     return;
                 }
 
+                if(Time.time - _startTime < DragStartTime)
+                {
+                    //Check if the finger is moved
+                    if(Vector3.Distance(mousePosition, _startPosition) > DragRemainErrorThreshold)
+                    {
+                        Release();
+                    }
+
+                    return;
+                }
                 if (draggedObject != null && _draggedInterface != null)
                 {
+                    _dragging = true;
                     mousePosition.z = _dragCameraDistance;
                     Vector3 worldPosition = MainCamera.ScreenToWorldPoint(mousePosition);
                     _draggedInterface.Drag(worldPosition);
@@ -114,11 +131,21 @@ namespace Kuantech.Merge
             }
             else if (Input.GetMouseButtonUp(0))
             {
-                _startedClick = false;
+                Debug.LogError("Released:"+_startedClick);
+                if(!_startedClick) return;
                 OnCursorUp();
+                Release();
             }
         }
 
+        /// <summary>
+        /// Releases the dragging state
+        /// </summary>
+        protected virtual void Release()
+        {
+            _startedClick = false;
+            _dragging = false;
+        }
         /// <summary>
         /// Checks if the motion is a simple click
         /// </summary>
@@ -127,7 +154,7 @@ namespace Kuantech.Merge
         {
             Vector3 mousePosition = Input.mousePosition;
 
-            if (mousePosition == _startPosition && Time.time - _startTime < DragDelay)
+            if (mousePosition == _startPosition && Time.time - _startTime < MaxTapTime)
             {
                 return true;
             }
@@ -166,6 +193,14 @@ namespace Kuantech.Merge
             {
                 draggedObject = hit.collider.transform;
                 _dragCameraDistance = Vector3.Distance(MainCamera.transform.position, draggedObject.position) + DragCameraDistanceOffset;
+
+                //Does _draggedInterface wants to be dragged?
+                bool canBeDragged = _draggedInterface.CanBeDragged();
+                if(!canBeDragged)
+                {
+                    _draggedInterface = null;
+                    return;
+                }
                 OnDragStart?.Invoke(this, _draggedInterface); //Invoke event for subscribers
                 _offset = draggedObject.position - hit.point;
             }
@@ -196,7 +231,7 @@ namespace Kuantech.Merge
 
         public bool IsDraggingObject()
         {
-            return _draggedInterface != null;
+            return _dragging;
         }
     }
 }

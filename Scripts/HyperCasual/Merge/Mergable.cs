@@ -157,6 +157,11 @@ namespace Kuantech.Merge
             if (HeadUI == null) return;
             HeadUI.SetText($"{Level}");
         }
+
+        public bool CanBeDragged()
+        {
+            return true;
+        }
         #endregion
     }
 }
