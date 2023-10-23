@@ -21,7 +21,7 @@ namespace Kuantech.Core.HyperCasual
         public List<Level> LevelDictionary = new List<Level>();
         public Level CurrentLevel;
         public int CurrentLevelIndex;
-
+        public int RepeatLastLevels = 0;
 
         //Events
         public EventHandler<StateChangeData> StateChangeEvent;
@@ -53,7 +53,14 @@ namespace Kuantech.Core.HyperCasual
         {
             if (LevelDictionary.Count <= levelIndex)
             {
-                levelIndex = LevelDictionary.Count - 1;
+                if(RepeatLastLevels > 0)
+                {
+                    int modulus = RepeatLastLevels - (levelIndex+1 - LevelDictionary.Count) % RepeatLastLevels;
+                    levelIndex = LevelDictionary.Count - 1 - modulus;
+                }else
+                {
+                    levelIndex = LevelDictionary.Count - 1;
+                }
             }
             Level level = Instantiate(LevelDictionary[levelIndex].gameObject).GetComponent<Level>();
             level.transform.position = Vector3.zero;
@@ -71,6 +78,7 @@ namespace Kuantech.Core.HyperCasual
         public void SetLevel(int levelIndex)
         {
             levelIndex = Mathf.Max(levelIndex, 0);
+            LevelSetEvent?.Invoke(this, CurrentLevelIndex);
             if (CurrentLevel != null && levelIndex == CurrentLevel.LevelIndex) return; //Don't destroy and create the same level
             if (CurrentLevel != null && CurrentLevel.LevelIndex != levelIndex)
             {
@@ -132,7 +140,7 @@ namespace Kuantech.Core.HyperCasual
             CurrentLevelIndex = CurrentLevel.LevelIndex;
 
             //Save the level index
-            GameStateManager gsm = (GameManager.Instance.GetSubManagerByType<GameStateManager>() as GameStateManager);
+            GameStateManager gsm = GameStateManager.GetContext<GameStateManager>();
             if(gsm != null)
             {
                 var module = gsm.GetModule<HyperCasualGameModel>();
