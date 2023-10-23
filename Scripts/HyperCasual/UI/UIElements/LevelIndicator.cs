@@ -29,10 +29,9 @@ namespace Kuantech.Core.HyperCasual.UI
 
         private void OnEnable()
         {
-            LevelManager levelMan = (GameManager.Instance.GetSubManagerByType<LevelManager>()
-                        as LevelManager);
-            if (levelMan == null) return;
-            SetLevelIndex(levelMan.CurrentLevelIndex);
+            GameStateManager gsm = GameStateManager.GetContext<GameStateManager>();
+            if (gsm == null) return;
+            SetLevelIndex(gsm.GetModule<HyperCasualGameModel>().GetLevelIndex());
         }
 
         private void SetLevelIndex(int levelIndex)
