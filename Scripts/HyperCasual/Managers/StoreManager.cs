@@ -45,7 +45,7 @@ namespace Kuantech.Core.HyperCasual
             }
         }
         
-        public bool BuyItem(string id)
+        public virtual bool BuyItem(string id)
         {
             if (!_buyables.ContainsKey(id)) return true; //If doesn't have entry, it means its free
             BuyableInfo info = _buyables[id];

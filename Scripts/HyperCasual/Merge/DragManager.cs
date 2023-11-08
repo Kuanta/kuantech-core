@@ -131,7 +131,6 @@ namespace Kuantech.Merge
             }
             else if (Input.GetMouseButtonUp(0))
             {
-                Debug.LogError("Released:"+_startedClick);
                 if(!_startedClick) return;
                 OnCursorUp();
                 Release();

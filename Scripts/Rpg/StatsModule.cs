@@ -28,6 +28,9 @@ namespace Kuantech.Core
         RangeBonus,
         CooldownReduction,
         AttackSpeedBonus,
+        Damage,
+        Range,
+        FireRate,
     }
     #endif
     public enum ModifierTypes
@@ -299,7 +302,7 @@ namespace Kuantech.Core
                     statType = DirtiedStats.Dequeue();
                 }
             }
-            if(GetStat(StatTypes.MaxHealth) <= 0f) Actor.Kill();
+            //if(GetStat(StatTypes.MaxHealth) <= 0f) Actor.Kill();
             
         }
 

@@ -40,8 +40,8 @@ namespace Kuantech.Core.HyperCasual.Runner
         protected RunnerLevel CurrentLevel;
 
         [Header("Runner Sizes")]
-        protected float RunnerWidth = 0f;
-        protected float RunnerWidthOffset = 0f;
+        public float RunnerWidth = 0f;
+        public float RunnerWidthOffset = 0f;
 
         [Header("Camera Follow")]
         [SerializeField] private Transform FollowTarget;
@@ -56,6 +56,10 @@ namespace Kuantech.Core.HyperCasual.Runner
             _targetSpeed = speed;
         }
         
+        public float GetSpeed()
+        {
+            return _currentSpeed;
+        }
         public Vector2 GetMovemenetVector()
         {
             return CurrentMovementVector;
@@ -136,11 +140,6 @@ namespace Kuantech.Core.HyperCasual.Runner
             CurrentMovementVector = Vector2.Lerp(CurrentMovementVector, _movementVector, MovementLerpFactor);
             ManualMovement();
             _currentSpeed = Mathf.Lerp(_currentSpeed, _targetSpeed, Time.deltaTime * SpeedLerpFactor);
-        }
-
-        private void PositionFollowTarget()
-        {
-
         }
 
         public float GetForwardMovement(Vector2 movementVector)

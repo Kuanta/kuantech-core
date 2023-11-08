@@ -325,6 +325,15 @@ namespace Kuantech.Utils
                 GameObject.Destroy(transform.GetChild(i).gameObject);
             }
         }
+
+        public static void AttachToParent(this GameObject gameObject, Transform parent)
+        {
+            gameObject.transform.SetParent(parent);
+            gameObject.transform.localPosition = Vector3.zero;
+            gameObject.transform.localRotation = Quaternion.identity;
+            gameObject.transform.localScale = Vector3.one;
+        }
+
         #endregion
         
         #region Tricks

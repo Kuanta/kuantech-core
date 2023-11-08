@@ -60,6 +60,12 @@ namespace Kuantech.Core.HyperCasual
             return GameState.GetModule<T>();
         }
 
+        public static T GetModuleStatic<T>() where T : StateModule
+        {
+            GameStateManager context = GameStateManager.GetContext<GameStateManager>();
+            if(context == null) return null;
+            return context.GetGameState()?.GetModule<T>();
+        }
         #region Currencies
         [Button("Add Currency")]
         public virtual void AddCurrency(string currencyId, int amount)

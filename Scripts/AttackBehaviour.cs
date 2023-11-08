@@ -3,11 +3,12 @@ using UnityEngine;
 
 public class AttackBehaviour : StateMachineBehaviour
 {
-
+    public string TargetTimeKey
+    ;
     // OnStateEnter is called when a transition starts and the state machine starts to evaluate this state
     public override void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
-        float targetTime = animator.GetFloat(AnimatorModule.TargetTime);
+        float targetTime = animator.GetFloat(TargetTimeKey);
         if (targetTime == 0f) targetTime = 1f;
         float speedMultiplier = stateInfo.length * stateInfo.speedMultiplier / targetTime;
         animator.SetFloat(AnimatorModule.AttackSpeed, speedMultiplier);

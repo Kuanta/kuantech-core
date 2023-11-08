@@ -6,7 +6,7 @@ namespace Kuantech.Core.UI
     public class TabGroup : MonoBehaviour {
         
         [SerializeField] private List<TabGroupButton> TabGroupButtons;
-        [SerializeField] private List<GameObject> Tabs;
+        [SerializeField] private List<TabGroupTab> Tabs;
 
         private int _currentTabIndex = 0;
 
@@ -21,6 +21,11 @@ namespace Kuantech.Core.UI
             ToggleTab(0);
         }
 
+        public int GetCurrentTabIndex()
+        {
+            return _currentTabIndex;
+        }
+
         private void OnTabButtonClicked(object sender, int index)
         {
             if(index == _currentTabIndex) return;
@@ -33,7 +38,12 @@ namespace Kuantech.Core.UI
             for (int i = 0; i < TabGroupButtons.Count; ++i)
             {
                 TabGroupButtons[i].Toggle(i == index);
-                Tabs[i].SetActive(i == index);
+                if(i == index)
+                {
+                    Tabs[i].Show();
+                }else{
+                    Tabs[i].Close();
+                }
             }
         }
     }

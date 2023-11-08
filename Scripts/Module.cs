@@ -3,14 +3,13 @@ using UnityEngine;
 
 namespace Kuantech.Core
 {   
-    [RequireComponent(typeof(Actor))]
     public class Module : MonoBehaviour
     {
         public Actor Actor;
 
         protected virtual void Awake()
         {
-            if (Actor == null) Actor = GetComponent<Actor>();
+            if (Actor == null) return;
             Actor.OnModulesInitialized += OnModulesInitialized;
         }
 

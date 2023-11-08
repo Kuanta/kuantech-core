@@ -53,7 +53,7 @@ namespace Kuantech.Core.HyperCasual
 
         public Currency GetCurrency(string currencyId)
         {
-            if (Currencies.ContainsKey(currencyId))
+            if (Currencies != null && Currencies.ContainsKey(currencyId))
             {
                 return Currencies[currencyId];
             }

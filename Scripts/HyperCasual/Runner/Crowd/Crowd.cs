@@ -1,7 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using DG.Tweening;
-
+using Kuantech.DemolutionRunner;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -9,22 +10,42 @@ namespace Kuantech.Core.HyperCasual.Runner
 {
     public class Crowd : Runner
     {
-        
         [SerializeField] private bool FailLevelOnEmptyCrowd;
         [Header("Element Prefab")]
         [SerializeField] private CrowdElement CrowdElementPrefab;
 
         [Header("Crowd Formation")]
+        public CrowdFormationData FormationData;
+        [NonSerialized] public CrowdFormation CrowdFormation;
         protected int StartingCrowdElementCount = 1;
-        [SerializeField] protected Transform CrowdParent; //Crowd will be gathered here
-        [SerializeField] private float Radius = 0.5f;
-        [SerializeField] private float AgentRadius = 0.3f;
-        [SerializeField] private float NoiseMagnitude = 0f;
+        public Transform CrowdParent; //Crowd will be gathered here
 
         //States
         private int _currentCrowdCount = 1;
         private bool _crowdNeedsUpdate;
 
+        public override void Initialize()
+        {
+            base.Initialize();
+            SetupFormation();
+        }
+
+        private void SetupFormation()
+        {
+            switch (FormationData.FormationType)
+            {
+                case FormationType.Triangular:
+                    CrowdFormation = new TriangularFormation(FormationData);
+                    break;
+                case FormationType.Rectangular:
+                    CrowdFormation = new RectangularFormation(FormationData);
+                    break;
+                case FormationType.Circular:
+                default:
+                    CrowdFormation = new CircularFormation(FormationData);
+                    break;
+            }
+        }
         protected override void Update()
         {
             base.Update();
@@ -56,7 +77,6 @@ namespace Kuantech.Core.HyperCasual.Runner
         /// </summary>
         protected virtual CrowdElement CreateCrowdElement()
         {
-        
             CrowdElement crowdElement = GameManager.Instance.Pool.GetObject(CrowdElementPrefab.gameObject).GetComponent<CrowdElement>();
 
             crowdElement.transform.SetParent(CrowdParent);
@@ -89,72 +109,10 @@ namespace Kuantech.Core.HyperCasual.Runner
         [Button("Recalculate Positions")]
         private void PositionCrowdElements()
         {
-            int count = CrowdParent.childCount;
-            int currentRingIndex = 0;
-            int currentMaxAgentForRing = 0;
-            int currentAgentCountForRing = 0;
-            float currentDeltaAngle = 0f;
-
-            float minCrowdX = 0f;
-            float maxCrowdX = 0f;
-
-            for (int i=0;i<count;++i)
-            {
-                float angle = currentAgentCountForRing * currentDeltaAngle;
-                Vector3 newLocalPos = GetCartesianPositionFromPolar(currentRingIndex * Radius, angle);
-                newLocalPos.x += Random.Range(0f, 1f) * NoiseMagnitude;
-                newLocalPos.z += Random.Range(0f, 1f) * NoiseMagnitude;
-                
-                //Set min max
-                if(newLocalPos.x > maxCrowdX)
-                {
-                    maxCrowdX = newLocalPos.x;
-                }
-                if(newLocalPos.x<minCrowdX)
-                {
-                    minCrowdX = newLocalPos.x;
-                }
-
-                CrowdParent.transform.GetChild(i).DOLocalMove(newLocalPos, 1f).SetEase(Ease.OutBack);
-                currentAgentCountForRing++;
-                if(currentAgentCountForRing >= currentMaxAgentForRing)
-                {
-                    //We are in the next ring
-                    int remainingWorkers = count - i - 1;
-                    if(remainingWorkers == 0) break;
-                    currentRingIndex++;
-                    currentMaxAgentForRing = Mathf.Min(GetMaxAgentCountForRing(currentRingIndex), remainingWorkers);
-                    currentDeltaAngle = GetDeltaAngleForRing(currentMaxAgentForRing);
-                    currentAgentCountForRing = 0;
-                }
-            }
-
-            //Set crowd edges
-            RunnerWidth = maxCrowdX - minCrowdX;
-            RunnerWidthOffset = (maxCrowdX + minCrowdX) * 0.5f;
-        }
-
-        private float GetRingPerimeter(int ringIndex)
-        {
-            return 2 * (ringIndex * Radius * 2) * Mathf.PI; // R = ringIndex*RadiusPerRing*2
-        }
-
-        private int GetMaxAgentCountForRing(int ringIndex)
-        {
-            return Mathf.FloorToInt(GetRingPerimeter(ringIndex) /AgentRadius);
-        }
-        
-        private Vector3 GetCartesianPositionFromPolar(float radius, float angle)
-        {
-            return new Vector3(Mathf.Cos(Mathf.Deg2Rad * angle)*radius, 0, Mathf.Sin(Mathf.Deg2Rad * angle) * radius);
-        }
-        /// <summary>
-        /// Amount of angle change to position agents in that ring
-        /// </summary>
-        /// <returns></returns>
-        private float GetDeltaAngleForRing(int amountOfWorkers)
-        {
-            return 360.0f / Mathf.Max(amountOfWorkers, 1);
+            if(CrowdFormation == null) SetupFormation();
+            CrowdFormation.SetCrowdFormation(CrowdParent);
+            RunnerWidth = CrowdFormation.GetCrowdWidth();
+            RunnerWidthOffset = CrowdFormation.GetCrowdWidthOffset();
         }
 
         public void SetCrowdNeedsUpdate()

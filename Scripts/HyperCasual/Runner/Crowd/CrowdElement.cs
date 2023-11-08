@@ -55,6 +55,7 @@ namespace Kuantech.Core.HyperCasual.Runner
         [SerializeField] private float AnimationLerpSpeed = 10;
         private void SetWalkingAnimation()
         {
+            if(Animator == null) return;
             _currentNormalizeSpeed = Mathf.Lerp(_currentNormalizeSpeed, NormalizedSpeed, Time.deltaTime * AnimationLerpSpeed);
             Animator.SetFloat("MovementSpeed", _currentNormalizeSpeed);
         }

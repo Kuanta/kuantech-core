@@ -43,6 +43,7 @@ namespace Kuantech.Combat
         
         protected float _age = 0f; // Age of the projectile in terms of seconds
         protected float _lifeTime = 0f;
+        protected float CurrentSpeed;
 
         public List<GameObject> Attachments;
 
@@ -70,7 +71,7 @@ namespace Kuantech.Combat
         /// <param name="shotFrom">Weapon that this projectile is shot from. If null, damage will be calculated from default attack pattern or projectile properties</param>
         /// <param name="target">Target transform. If set to non-null, proectile will follow the target</param>
         /// <param name="riseHeight">To act as pseudo throwable. Projectile will rise to this height and falls down in a sinudoidal fasion.</param>
-        public virtual void Initialize(CombatModule castBy, Weapon shotFrom, Vector3 shootPosition, Quaternion shootRotation, Transform target = null)
+        public virtual void Initialize(CombatModule castBy, Weapon shotFrom, Vector3 shootPosition, Quaternion shootRotation, Transform target = null, float relativeSpeed = 0.0f)
         {
             //Set pos and rot
                             
@@ -81,6 +82,8 @@ namespace Kuantech.Combat
             ShotFrom = shotFrom;
             ImpactOverride = null;
             DestroyOnImpact = true;
+            CurrentSpeed = Speed + relativeSpeed;
+            
             if (castBy != null)
             {
                 Targets = castBy.Targets;
@@ -108,7 +111,7 @@ namespace Kuantech.Combat
             }
             else
             {
-                _lifeTime = Range / Speed;
+                _lifeTime = Range / CurrentSpeed;
             }
             
             Despawned = false;
@@ -124,7 +127,7 @@ namespace Kuantech.Combat
         protected virtual void Update()
         {
             if (Despawned) return;
-            if (_targeted && Target == null || Speed == 0f)
+            if (_targeted && Target == null || CurrentSpeed == 0f)
             {
                 Despawn();
                 return;
@@ -162,7 +165,7 @@ namespace Kuantech.Combat
             horizontalDiff.y = 0f;
             float normalizedHeight = Mathf.Clamp01(horizontalDiff.magnitude / _InitialDistanceToTarget);
             float throwbleHeightAddition = Mathf.Sin(normalizedHeight * Mathf.PI) * RiseHeight;
-            _newPosition += transform.forward * Time.deltaTime * Speed;
+            _newPosition += transform.forward * Time.deltaTime * CurrentSpeed;
             _lastDirection = transform.forward;
             transform.position = _newPosition + Vector3.up * throwbleHeightAddition;
             
@@ -250,7 +253,7 @@ namespace Kuantech.Combat
                 Despawn();
             }
         }
-        private void Impact(GameObject impacted)
+        protected virtual void Impact(GameObject impacted)
         {
             Actor target = impacted.GetComponent<Actor>();
             
