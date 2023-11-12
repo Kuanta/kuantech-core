@@ -1,12 +1,14 @@
 ﻿using Kuantech.Utils;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Kuantech.Core.HyperCasual.UI
 {
     public class CurrencyIndicator : MonoBehaviour
     {
         public bool AutoUpdate = false;
+        [SerializeField] private Image CurrencyIcon;
         [SerializeField] private string CurrencyId;
         [SerializeField] private TMP_Text CurrencyAmount;
 
@@ -21,12 +23,20 @@ namespace Kuantech.Core.HyperCasual.UI
         }
         protected virtual void Start()
         {
-            if(CanGetCurrency()) Initialize();
+            //Set currency icon
+            Sprite currIcon = UIResourcesManager.GetCurrencyIcon(CurrencyId);
+            if (currIcon != null && CurrencyIcon != null)
+            {
+                CurrencyIcon.sprite = currIcon;
+            }
+
+            if (CanGetCurrency()) Initialize();
         }
 
         protected virtual void Initialize()
         {
-            if(!CanGetCurrency()) return;
+            if (!CanGetCurrency()) return;
+
             if (!AutoUpdate) return;
             GameStateManager gsm = (GameManager.Instance.GetSubManagerByType<GameStateManager>() as GameStateManager);
             if (gsm == null) return;
