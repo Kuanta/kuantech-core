@@ -59,6 +59,17 @@ namespace Kuantech.Core.HyperCasual.Runner
             SetupFormation();
         }
 
+        /// <summary>
+        /// Sets the formation of the crowd
+        /// </summary>
+        /// <param name="data"></param>
+        public void SetCrowdFormation(CrowdFormationData data)
+        {
+            FormationData = data;
+            SetupFormation();
+            _crowdNeedsUpdate.FormationNeedUpdate = true;
+        }
+
         private void SetupFormation()
         {
             switch (FormationData.FormationType)
