@@ -153,15 +153,15 @@ namespace Kuantech.Utils
             string signString = number < 0 ? "- " : "";
             string numberString = "";
             string quantitySuffix = "";
-            if (abs > 1E9)
+            if (abs >= 1E9)
             {
                 abs /= 1E9f;
                 quantitySuffix = "b";
-            }else if (abs > 1E6)
+            }else if (abs >= 1E6)
             {
                 abs /= 1E6f;
                 quantitySuffix = "m";
-            }else if (abs > 1E3)
+            }else if (abs >= 1E3)
             {
                 abs /= 1E3f;
                 quantitySuffix = "k";

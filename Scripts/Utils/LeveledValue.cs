@@ -13,8 +13,8 @@ namespace Kuantech.Core.Utils
 
         public float GetValue(int level = 0)
         {
-            level = Mathf.FloorToInt(level / LevelIntervals);
-            return BaseValue + (ValuePerLevel * BaseValue);
+            if (LevelIntervals > 0) level = Mathf.FloorToInt(level / LevelIntervals);
+            return BaseValue + (ValuePerLevel * level);
         }
     }
 

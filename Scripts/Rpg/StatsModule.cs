@@ -235,7 +235,7 @@ namespace Kuantech.Core
             {
                 foreach (var modifier in pair.Value)
                 {
-                    if (clearByTag && modifier.ModifierTag == tagToCompare) continue;
+                    if (clearByTag && modifier.ModifierTag != tagToCompare) continue;
                     allModifiers.Add(modifier);
                 }
             }

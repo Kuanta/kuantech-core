@@ -61,7 +61,6 @@ namespace Kuantech.Core.HyperCasual
             if(bsm == null) return;
             foreach(var pair in _boostsMap)
             {
-                Debug.LogError("Setting level");
                 pair.Value.SetLevel(bsm.GetBoostLevel(pair.Key));
             }
         }
@@ -122,7 +121,7 @@ namespace Kuantech.Core.HyperCasual
                 GameStateManager.GetModuleStatic<HyperCasualGameModel>()?.RemoveCurrency(currencyId, price);
                 UpgradeBoost(boosterId);
                 return true;
-            }   
+            }
             return false;
         }
 
