@@ -1,13 +1,42 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using DG.Tweening;
 using Kuantech.DemolutionRunner;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Kuantech.Core.HyperCasual.Runner
 {
+    /// <summary>
+    /// A class to hold which aspects to update of a crowd.
+    /// </summary>
+    public class CrowdUpdates
+    {
+        public bool StatsNeedUpdate;
+        public bool FormationNeedUpdate;
+
+        public CrowdUpdates()
+        {
+            SetAsUpdated();
+        }
+        public bool CrowdNeedsUpdate()
+        {
+            return StatsNeedUpdate || FormationNeedUpdate;
+        }
+
+        public void RequireAll()
+        {
+            StatsNeedUpdate = true;
+            FormationNeedUpdate = true;
+        }
+
+        public void SetAsUpdated()
+        {
+            StatsNeedUpdate = false;
+            FormationNeedUpdate = false;
+        }
+    }
+
     public class Crowd : Runner
     {
         [SerializeField] private bool FailLevelOnEmptyCrowd;
@@ -22,7 +51,7 @@ namespace Kuantech.Core.HyperCasual.Runner
 
         //States
         private int _currentCrowdCount = 1;
-        private bool _crowdNeedsUpdate;
+        private CrowdUpdates _crowdNeedsUpdate = new CrowdUpdates();
 
         public override void Initialize()
         {
@@ -50,7 +79,7 @@ namespace Kuantech.Core.HyperCasual.Runner
         {
             base.Update();
             //if(HCGameManager.GetCurrentLevelState() != LevelState.Playing) return;
-            if(_crowdNeedsUpdate) UpdateCrowd();
+            if(_crowdNeedsUpdate.CrowdNeedsUpdate()) UpdateCrowd();
         }
 
         #region Crowd Control
@@ -85,7 +114,7 @@ namespace Kuantech.Core.HyperCasual.Runner
 
             crowdElement.Spawn(this);
             _currentCrowdCount++;
-            _crowdNeedsUpdate = true;
+            _crowdNeedsUpdate.RequireAll();
 
             return crowdElement;
         }
@@ -101,8 +130,8 @@ namespace Kuantech.Core.HyperCasual.Runner
                 LevelManager.GetContext<LevelManager>().FailLevel();
                 return;
             }
-            PositionCrowdElements();
-            _crowdNeedsUpdate = false;
+            if(_crowdNeedsUpdate.FormationNeedUpdate) PositionCrowdElements();
+            _crowdNeedsUpdate.SetAsUpdated();
         }
 
         //Called when there is a change in crowd elements
@@ -115,9 +144,10 @@ namespace Kuantech.Core.HyperCasual.Runner
             RunnerWidthOffset = CrowdFormation.GetCrowdWidthOffset();
         }
 
-        public void SetCrowdNeedsUpdate()
+        public void SetCrowdNeedsUpdate(bool formationNeedUpdate=true)
         {
-            _crowdNeedsUpdate = true;
+            _crowdNeedsUpdate.StatsNeedUpdate = true;
+            _crowdNeedsUpdate.FormationNeedUpdate = formationNeedUpdate;
         }
         #endregion
 
@@ -187,7 +217,7 @@ namespace Kuantech.Core.HyperCasual.Runner
             {
                 GameManager.Instance.Pool.PoolObject(crowdList[i].gameObject);
             }
-            _crowdNeedsUpdate = true;
+            _crowdNeedsUpdate.RequireAll();
         }
 
         // Example SortHandler to randomize the crowd

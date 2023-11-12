@@ -6,6 +6,7 @@ namespace Kuantech.Core.HyperCasual.Runner
     public class CrowdElement : MonoBehaviour
     {
         [Range(0, 1)] public float NormalizedSpeed;
+        public bool RequireFormationUpdateOnDespawn;
 
         [Header("Components")]
         public Animator Animator;
@@ -29,7 +30,7 @@ namespace Kuantech.Core.HyperCasual.Runner
             Cleanup();
             if(ParentCrowd != null)
             {
-                ParentCrowd.SetCrowdNeedsUpdate();
+                ParentCrowd.SetCrowdNeedsUpdate(RequireFormationUpdateOnDespawn);
             }
             GameManager.Instance.Pool.PoolObject(gameObject);
         }
