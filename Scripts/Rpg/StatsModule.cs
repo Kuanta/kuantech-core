@@ -43,6 +43,7 @@ namespace Kuantech.Core
     public struct StatModifierData
     {
         public StatTypes StatType;
+        public string ModifierTag;
         public float BaseValue;
         public float LevelToValueFactor;
         public ModifierTypes ModifierType;
@@ -58,6 +59,7 @@ namespace Kuantech.Core
     public class StatModifier
     {
         public int Level = 0; //Required for items
+        public string ModifierTag = "";
         public StatTypes StatType;
         public float BaseValue;
         public float LevelToValueFactor = 1;
@@ -67,6 +69,7 @@ namespace Kuantech.Core
         {
             _data = data;
             BaseValue = data.BaseValue;
+            ModifierTag = data.ModifierTag;
             LevelToValueFactor = data.LevelToValueFactor;
             ModifierType = data.ModifierType;
             StatType = data.StatType;
@@ -219,7 +222,12 @@ namespace Kuantech.Core
             }    
         }
 
-        public void ClearModifiers()
+        /// <summary>
+        /// Clears all modifiers. A tag can be given to filter out desired modifiers.
+        /// </summary>
+        /// <param name="clearByTag">If set to true, modifiers with the given tag will be removed only</param>
+        /// <param name="tagToCompare"></param>
+        public void ClearModifiers(bool clearByTag = false, string tagToCompare="")
         {
             if (Modifiers == null) return;
             HashSet<StatModifier> allModifiers = new HashSet<StatModifier>();
@@ -227,6 +235,7 @@ namespace Kuantech.Core
             {
                 foreach (var modifier in pair.Value)
                 {
+                    if (clearByTag && modifier.ModifierTag == tagToCompare) continue;
                     allModifiers.Add(modifier);
                 }
             }
