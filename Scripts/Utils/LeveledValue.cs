@@ -9,10 +9,11 @@ namespace Kuantech.Core.Utils
     {
         [SerializeField] private float BaseValue;
         [SerializeField] private float ValuePerLevel;
-
+        [SerializeField] private int LevelIntervals;
 
         public float GetValue(int level = 0)
         {
+            level = Mathf.FloorToInt(level / LevelIntervals);
             return BaseValue + (ValuePerLevel * BaseValue);
         }
     }
@@ -20,13 +21,14 @@ namespace Kuantech.Core.Utils
     [Serializable]
     public class LeveledValueInt
     {
-        [SerializeField] private int BaseValue;
-        [SerializeField] private int ValuePerLevel;
-
+        [SerializeField] private float BaseValue;
+        [SerializeField] private float ValuePerLevel;
+        [SerializeField] private int LevelIntervals = 0;
 
         public int GetValue(int level = 0)
         {
-            return BaseValue + (ValuePerLevel * level);
+            if(LevelIntervals > 0) level = Mathf.FloorToInt(level / LevelIntervals);
+            return Mathf.FloorToInt(BaseValue + (ValuePerLevel * level));
         }
     }
 }
