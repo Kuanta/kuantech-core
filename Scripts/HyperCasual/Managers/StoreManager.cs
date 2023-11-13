@@ -67,7 +67,6 @@ namespace Kuantech.Core.HyperCasual
             {
                 string currencyId = info.CurrencyIds[i];
                 gsm.RemoveCurrency(currencyId, info.Prices[i]);
-                Debug.LogError($"Removing {info.Prices[i]} {info.CurrencyIds[i]}");
             }
             return true;
         }

@@ -7,6 +7,11 @@ namespace Kuantech.Core.FX
     public class Sound
     {
         public AudioSource AudioSource;
-
+        
+        public void Play()
+        {
+            if(AudioSource == null) return;
+            AudioSource.Play();
+        }
     }
 }
