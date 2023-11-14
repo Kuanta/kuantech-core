@@ -145,6 +145,7 @@ namespace Kuantech.Merge
             _startedClick = false;
             _dragging = false;
         }
+
         /// <summary>
         /// Checks if the motion is a simple click
         /// </summary>

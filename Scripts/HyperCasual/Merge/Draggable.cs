@@ -60,16 +60,20 @@ namespace Kuantech.Merge
                 ReturnToPreviousPosition();
                 return;
             }
-            LandedOnDropZone(DropZone);
+            if(!LandedOnDropZone(DropZone))
+            {
+                ReturnToPreviousPosition();
+            }
         }
         
-        protected virtual void LandedOnDropZone(IDropZone dropZone)
+        protected virtual bool LandedOnDropZone(IDropZone dropZone)
         {
             if(CurrentDropZone != null && CurrentDropZone != dropZone) 
             {
                 CurrentDropZone.ClearSlot(0,0);
                 CurrentDropZone = dropZone;
             }
+            return true;
         }
 
         [Header("Ground Checking")] 
