@@ -50,6 +50,7 @@ namespace Kuantech.Core.HyperCasual.Runner
         public Transform CrowdParent; //Crowd will be gathered here
 
         //States
+        protected List<CrowdElement> CrowdElements;
         private int _currentCrowdCount = 1;
         private CrowdUpdates _crowdNeedsUpdate = new CrowdUpdates();
 
@@ -129,14 +130,15 @@ namespace Kuantech.Core.HyperCasual.Runner
 
             return crowdElement;
         }
-
         /// <summary>
         /// Updates the crowd related informations, like positioning.
         /// </summary>
         protected virtual void UpdateCrowd()
         {
+            CrowdElements = GetCrowdElements();
+
             //Fail level if conditions are met on empty crowd
-            if(FailLevelOnEmptyCrowd && GetCrowdSize() == 0 && CurrentLevel != null && CurrentLevel.CurrentState == LevelState.Playing)
+            if (FailLevelOnEmptyCrowd && GetCrowdSize() == 0 && CurrentLevel != null && CurrentLevel.CurrentState == LevelState.Playing)
             {
                 LevelManager.GetContext<LevelManager>().FailLevel();
                 return;
@@ -240,6 +242,7 @@ namespace Kuantech.Core.HyperCasual.Runner
         protected void ClearCrowd()
         {
             List<CrowdElement> crowdAgents = CrowdParent.GetComponentsInChildren<CrowdElement>().ToList();
+            if(CrowdElements != null) CrowdElements.Clear();
             _currentCrowdCount = 0;
             foreach (CrowdElement agent in crowdAgents)
             {
@@ -253,8 +256,8 @@ namespace Kuantech.Core.HyperCasual.Runner
         public delegate void CrowdElementOperation(CrowdElement crowdElement);
         public void ApplyOperationToCrowd(CrowdElementOperation operation)
         {
-            List<CrowdElement> crowdAgents = CrowdParent.GetComponentsInChildren<CrowdElement>().ToList();
-            foreach (CrowdElement agent in crowdAgents)
+            if(CrowdElements == null) return;
+            foreach (CrowdElement agent in CrowdElements)
             {
                 if (agent == CrowdParent.transform) continue;
                 operation(agent);

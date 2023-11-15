@@ -39,6 +39,7 @@ namespace Kuantech.Core.HyperCasual
     {
         public List<BoostData> BoostsList;
         private Dictionary<string, BoostData> _boostsMap;
+        public EventHandler<BoostData> OnBoostUpgrade;
 
         public async override UniTask Initialize(GameManager parentManager)
         {
@@ -139,6 +140,8 @@ namespace Kuantech.Core.HyperCasual
             BoosterStateModule bsm = GameStateManager.GetModuleStatic<BoosterStateModule>();
             if(bsm == null) return;
             bsm.SetBoostLevel(boostId, data.CurrentLevel);
+
+            OnBoostUpgrade?.Invoke(this, data);
         }
     }
 }
