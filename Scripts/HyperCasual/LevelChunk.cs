@@ -6,6 +6,7 @@ namespace Kuantech.Core.HyperCasual
     {
         public LevelElement[] LevelElements;
         public Level ParentLevel;
+
         public virtual void OnLevelCreate()
         {
             Reset();
@@ -19,7 +20,7 @@ namespace Kuantech.Core.HyperCasual
         }
         
         #region Lifecycle
-
+        
         public virtual void OnPrepare(Level parentLevel)
         {
             Reset();
@@ -93,5 +94,6 @@ namespace Kuantech.Core.HyperCasual
         {
             
         }
+
     }
 }

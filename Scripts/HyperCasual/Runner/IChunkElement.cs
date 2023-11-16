@@ -2,6 +2,8 @@
 {
     public interface IChunkElement
     {
+        public void OnPreChunkGenerated(RunnerChunk chunk){}
+
         public void OnChunkGenerated(RunnerChunk chunk);
 
         public void OnChunkRestart();

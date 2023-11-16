@@ -42,6 +42,7 @@ namespace DTT.Utils.Extensions
                 int randomIndex = Random.Range(i, list.Count);
                 Swap(list, randomIndex, i);
             }
+
         }
         
         /// <summary>

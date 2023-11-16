@@ -62,6 +62,7 @@ namespace Kuantech.Utils
             
         public static T GetRandomElement<T>(this IList<T> list) where T:class
         {
+            if(list.Count == 0) return null;
             int n = list.Count;
             return list[Random.Range(0, n)];
         }

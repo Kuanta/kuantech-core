@@ -31,41 +31,6 @@ namespace Kuantech.Core.HyperCasual.Runner
         [Header("Level Limits")]
         public Vector3 CurrentLevelForward = new Vector3(1,0,0);
         public float CurrentLevelWidth;
-        //public bool LimitRunner = true;
-
-        // private void FixedUpdate()
-        // {
-        //     if (CurrentState != LevelState.Playing) return;
-        //     LimitRunnerPositions();
-        // }
-        
-        // private void LimitRunnerPositions()
-        // {
-        //     if (CurrentRunner == null || !LimitRunner) return;
-        //     Rigidbody rb = CurrentRunner.GetComponent<Rigidbody>();
-
-        //     float projected = Helpers.DotProjection(CurrentRunner.transform.position, CurrentLevelForward);
-        //     Vector3 currPos = CurrentRunner.transform.position;
-        //     Vector3 newPos = currPos;
-
-        //     if (projected >= CurrentLevelWidth * 0.5f)
-        //     {
-        //         newPos.x = CurrentLevelWidth * 0.5f;
-        //     }
-        //     else if (projected <= -CurrentLevelWidth * 0.5f)
-        //     {
-        //         newPos.x = -CurrentLevelWidth * 0.5f;
-        //     }
-
-        //     if (rb != null)
-        //     {
-        //         rb.MovePosition(newPos);
-        //     }
-        //     else
-        //     {
-        //         CurrentRunner.transform.position = newPos;
-        //     }
-        // }
         public void SetRunner(Runner runner)
         {
             CurrentRunner = runner;
@@ -100,39 +65,6 @@ namespace Kuantech.Core.HyperCasual.Runner
             SetRunner(runnerMan.Runner);
         }
 
-        protected virtual void GenerateLevel(int chunkCount)
-        {
-            ChunkCount = Mathf.Max(3,chunkCount); //1 for start 1 for end and 1 for regular
-            if (LevelChunks != null)
-            {
-                foreach (var levelChunk in LevelChunks)
-                {
-                    Destroy(levelChunk.gameObject);
-                }
-                LevelChunks.Clear();
-            }
-            LevelChunks = new List<LevelChunk>();
-            _availableChunkContents = GetAvailableChunkContents(PowerLevel);
-            _runnerLevelManager = (GameManager.Instance).GetSubManagerByType<LevelManager>() as LevelManager;
-            _currentChunkIndex = 0;
-            int chunksToGenerate = Mathf.Min(LiveChunkCount, chunkCount);
-            for (int i = 0; i < chunksToGenerate; ++i)
-            {
-                GenerateAndAtttachNextChunk();
-                _currentChunkIndex++;
-            }
-        }
-        /// <summary>
-        /// Returns a list of available chunk contents according to the current level
-        /// </summary>
-        /// <param name="powerLevel">Current power level.</param>
-        /// <returns></returns>
-        private List<GameObject> GetAvailableChunkContents(int powerLevel)
-        {
-            return ChunkSet.ChunkContents
-                .GetAvailableElements(powerLevel);
-
-        }
         public override void PrepareLevel()
         {
             base.PrepareLevel();
