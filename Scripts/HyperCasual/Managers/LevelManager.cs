@@ -22,6 +22,7 @@ namespace Kuantech.Core.HyperCasual
         public Level CurrentLevel;
         public int CurrentLevelIndex;
         public int RepeatLastLevels = 0;
+        public int MaxPowerLevel = -1;
 
         //Events
         public EventHandler<StateChangeData> StateChangeEvent;
@@ -51,18 +52,19 @@ namespace Kuantech.Core.HyperCasual
         }
         public virtual Level GetLevel(int levelIndex)
         {
+            int levelArrayIndex = levelIndex;
             if (LevelDictionary.Count <= levelIndex)
             {
                 if(RepeatLastLevels > 0)
                 {
-                    int modulus = RepeatLastLevels - (levelIndex+1 - LevelDictionary.Count) % RepeatLastLevels;
-                    levelIndex = LevelDictionary.Count - 1 - modulus;
+                    int modulus = RepeatLastLevels - (levelArrayIndex + 1 - LevelDictionary.Count) % RepeatLastLevels;
+                    levelArrayIndex = LevelDictionary.Count - 1 - modulus;
                 }else
                 {
-                    levelIndex = LevelDictionary.Count - 1;
+                    levelArrayIndex = LevelDictionary.Count - 1;
                 }
             }
-            Level level = Instantiate(LevelDictionary[levelIndex].gameObject).GetComponent<Level>();
+            Level level = Instantiate(LevelDictionary[levelArrayIndex].gameObject).GetComponent<Level>();
             level.transform.position = Vector3.zero;
             level.transform.rotation = Quaternion.identity;
             level.LevelIndex = levelIndex;
@@ -78,6 +80,7 @@ namespace Kuantech.Core.HyperCasual
         public void SetLevel(int levelIndex)
         {
             levelIndex = Mathf.Max(levelIndex, 0);
+            CurrentLevelIndex = levelIndex;
             LevelSetEvent?.Invoke(this, CurrentLevelIndex);
             if (CurrentLevel != null && levelIndex == CurrentLevel.LevelIndex) return; //Don't destroy and create the same level
             if (CurrentLevel != null && CurrentLevel.LevelIndex != levelIndex)
@@ -86,12 +89,16 @@ namespace Kuantech.Core.HyperCasual
                 Destroy(CurrentLevel.gameObject);
                 CurrentLevel = null;
             }
-            CurrentLevelIndex = levelIndex;
             CurrentLevel = GetLevel(CurrentLevelIndex);
+
+            //Set power level
+            int powerLevel = levelIndex;
+            CurrentLevel.PowerLevel = MaxPowerLevel > 0 ? Mathf.Min(MaxPowerLevel, powerLevel) : powerLevel;
+
             CurrentLevel.PrepareLevel();
             LevelSetEvent?.Invoke(this, CurrentLevelIndex);
         }
-
+        
         [ConsoleMethod("setLevel", "Sets the level")]
         public static void SetLevelCC(int levelIndex)
         {

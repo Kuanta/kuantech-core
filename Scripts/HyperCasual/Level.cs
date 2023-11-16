@@ -50,7 +50,6 @@ namespace Kuantech.Core.HyperCasual
             foreach (ISpawnable spawnable in Spawns)
             {
                 spawnable.OnSpawn();
-                
             }
         }
         
@@ -64,6 +63,7 @@ namespace Kuantech.Core.HyperCasual
                 chunk.OnPrepare(this);
             }
             ReleaseEarnings();
+            Debug.LogError("Power Level:" + PowerLevel);
         }
 
         public virtual void RestartLevel()
