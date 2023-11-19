@@ -19,9 +19,7 @@ namespace Kuantech.Makeshift.Utils
         public GameObject _currentPart;
         private Quaternion OldRotation;
         
-
         [Header("Zoom")]
-        public CinemachineVirtualCamera VirtualCam;
 
         public float MaxSize = 10;
         public float MinSize = 1;
@@ -85,7 +83,6 @@ namespace Kuantech.Makeshift.Utils
             Debug.LogError($"MaxSize:{maxSize}");
             maxSize = Mathf.Clamp(maxSize, MinSize, MaxSize);
             float zPos = (maxSize - MinSize) / (MaxSize - MinSize) * (MaxZDist - MinZDist) + MinZDist;
-            //VirtualCam.GetCinemachineComponent<CinemachineTransposer>().m_FollowOffset.z = zPos;
         }
         
         
