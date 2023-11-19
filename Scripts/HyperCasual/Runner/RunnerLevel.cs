@@ -36,7 +36,6 @@ namespace Kuantech.Core.HyperCasual.Runner
             CurrentRunner = runner;
             PositionRunner();
         }
-        
         public override void OnLevelCreated()
         {
             base.OnLevelCreated();
