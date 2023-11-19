@@ -67,7 +67,8 @@ namespace Kuantech.Core.HyperCasual
             yield return new WaitForSeconds(HideDelay);
             DestroyedObject.SetActive(false);
         }
-        
+
+        [Button("Reset")]
         public void Reset()
         {
             if (_pieces == null) return;
@@ -97,15 +98,25 @@ namespace Kuantech.Core.HyperCasual
             for(int i=0;i<DestroyedObject.transform.childCount;++i)
             {
                 GameObject child = DestroyedObject.transform.GetChild(i).gameObject;
-                if(child.GetComponent<DestructiblePiece>() == null)
+                DestructiblePiece destructiblePiece = child.GetComponent<DestructiblePiece>();
+                if (destructiblePiece == null)
                 {
-                    child.AddComponent<DestructiblePiece>();
+                    destructiblePiece = child.AddComponent<DestructiblePiece>();
                 }
-                if (child.GetComponent<Rigidbody>() == null)
+                Rigidbody childRigidbody = child.GetComponent<Rigidbody>();
+                if (childRigidbody == null)
                 {
-                    child.AddComponent<Rigidbody>();
+                    childRigidbody = child.AddComponent<Rigidbody>();
                 }
+                destructiblePiece.Rigidbody = childRigidbody;
             }  
+        }
+
+        [Button("Test Destruction")]
+        private void TestDestruction(Vector3 localHitPoint)
+        {
+            Initialize();
+            Destruct(transform.position + localHitPoint);
         }
     }
 }
