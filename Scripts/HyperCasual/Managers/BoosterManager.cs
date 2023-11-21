@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+using IngameDebugConsole;
 using Kuantech.Core.Utils;
 using UnityEngine;
 
@@ -40,6 +41,7 @@ namespace Kuantech.Core.HyperCasual
         public List<BoostData> BoostsList;
         private Dictionary<string, BoostData> _boostsMap;
         public EventHandler<BoostData> OnBoostUpgrade;
+        public EventHandler OnBoostsReset;
 
         public async override UniTask Initialize(GameManager parentManager)
         {
@@ -106,12 +108,19 @@ namespace Kuantech.Core.HyperCasual
         /// </summary>
         /// <param name="boosterId"></param>
         /// <returns></returns>
-        public bool BuyBooster(string boosterId )
+        public virtual bool BuyBooster(string boosterId )
         {
             //Get the price
-            if(_boostsMap == null || !_boostsMap.ContainsKey(boosterId) || !CanBeUpgraded(boosterId)) return false;
+            if(_boostsMap == null || !_boostsMap.ContainsKey(boosterId) || !CanBeUpgraded(boosterId)) {
+                PlayErrorSound();
+                return false;
+            }
             BoostData boostData = _boostsMap[boosterId];
-            if(boostData.CurrentLevel >= boostData.MaxLevel) return false;
+            if(boostData.CurrentLevel >= boostData.MaxLevel) 
+            {
+                PlayErrorSound();
+                return false;
+            }
             int price = boostData.GetUpgradePrice();
             
             //Check the wallet
@@ -119,10 +128,11 @@ namespace Kuantech.Core.HyperCasual
             int currentHeldAmount = GameStateManager.GetCurrencyStatic(currencyId).Amount;
             if(price <= currentHeldAmount)
             {
-                GameStateManager.GetModuleStatic<HyperCasualGameModel>()?.RemoveCurrency(currencyId, price);
+                GameStateManager.GetContext<GameStateManager>().RemoveCurrency(currencyId, price);
                 UpgradeBoost(boosterId);
                 return true;
             }
+            PlayErrorSound();
             return false;
         }
 
@@ -140,8 +150,42 @@ namespace Kuantech.Core.HyperCasual
             BoosterStateModule bsm = GameStateManager.GetModuleStatic<BoosterStateModule>();
             if(bsm == null) return;
             bsm.SetBoostLevel(boostId, data.CurrentLevel);
-
+            PlayBoughtSound();
             OnBoostUpgrade?.Invoke(this, data);
         }
+
+        [ConsoleMethod("resetUpgrades", "Resets All Upgrades")]
+        public static void ResetBoosts()
+        {
+            BoosterManager context = BoosterManager.GetContext<BoosterManager>();
+            BoosterStateModule bsm = GameStateManager.GetModuleStatic<BoosterStateModule>();
+            if (bsm == null) return;
+            foreach(var boost in context.BoostsList)
+            {
+                bsm.SetBoostLevel(boost.BoostId, 0);
+                BoostData data = context._boostsMap[boost.BoostId];
+                data.CurrentLevel = 0;
+                context._boostsMap[boost.BoostId] = data; 
+            }
+            context.OnBoostsReset?.Invoke(context, EventArgs.Empty);
+        }
+
+        #region Sound Effects
+        [Header("Sounds")]
+        [SerializeField] private AudioSource BoughtSound;
+        [SerializeField] private AudioSource ErrorSound;
+        public void PlayBoughtSound()
+        {
+            if(BoughtSound == null) return;
+            BoughtSound.Play();
+        }
+
+        public void PlayErrorSound()
+        {
+            Debug.LogError("Playing Error Sound!");
+            if(ErrorSound == null) return;
+            ErrorSound.Play();
+        }
+        #endregion
     }
 }

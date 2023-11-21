@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -15,10 +16,10 @@ namespace Kuantech.Core.HyperCasual
     
     public class Level : MonoBehaviour
     {
-        public LevelState CurrentState;
-        public int LevelIndex;
-        public int PowerLevel = 1;
-        public List<LevelChunk> LevelChunks;
+        [NonSerialized] public LevelState CurrentState;
+        [NonSerialized] public int LevelIndex;
+        [NonSerialized] public int PowerLevel = 1;
+        [NonSerialized] public List<LevelChunk> LevelChunks;
         
         //Spawnables
         public List<ISpawnable> Spawns;

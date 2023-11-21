@@ -1,3 +1,4 @@
+using System;
 using Kuantech.Utils;
 using TMPro;
 using UnityEngine;
@@ -20,9 +21,15 @@ namespace Kuantech.Core.HyperCasual.UI
             {
                 button.onClick.AddListener(OnButtonPressed);
             }
-            Setup();
+            Initialize();
         }
 
+        public void Initialize()
+        {
+            BoosterManager bm = BoosterManager.GetContext<BoosterManager>();
+            bm.OnBoostsReset += OnBoostsReset;
+            Setup();
+        }
         /// <summary>
         /// Sets the state of the button. Updates price, indicates if its maxed out or not.
         /// </summary>
@@ -52,6 +59,11 @@ namespace Kuantech.Core.HyperCasual.UI
             BoosterManager bm = BoosterManager.GetContext<BoosterManager>();
             if (bm == null) return;
             if (!bm.BuyBooster(BoosterId)) return;
+            Setup();
+        }
+
+        private void OnBoostsReset(object sender, EventArgs empty)
+        {
             Setup();
         }
     }

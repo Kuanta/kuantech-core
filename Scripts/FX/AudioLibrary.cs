@@ -22,6 +22,8 @@ namespace Kuantech.Core.FX
         UpgradeItemSound,
         ErrorSound,
         DamageReceivedSound,
+        PurchaseSound,
+        UpgradeSound,
     }
     
     [Serializable]
@@ -68,7 +70,7 @@ namespace Kuantech.Core.FX
             Audios[audioType].Play();
         }
         
-        /// <summary>
+        /// <summary> 
         /// Sets the music volume
         /// </summary>
         /// <param name="value">Normalized volume value</param>
