@@ -29,8 +29,6 @@ namespace Kuantech.Makeshift.Utils
         [Header("Screenshot")]
         public int captureWidth = 1024;
         public int captureHeight = 1024;
-        public Color OutlineColor;
-        public int OutlineWidth;
         public Color TransparencyColor;
         public bool SwapTransparent = true;
         
@@ -54,9 +52,7 @@ namespace Kuantech.Makeshift.Utils
             PartParent.transform.rotation = Quaternion.identity;
             Invoke(nameof(PlaceGameObject), 0.01f);
             Invoke(nameof(RevertRotation), 0.01f);
-            Outline outline = _currentPart.AddComponent<Outline>();
-            outline.OutlineColor = OutlineColor;
-            outline.OutlineWidth = OutlineWidth;
+
         }
 
         private void RevertRotation()
@@ -142,14 +138,14 @@ namespace Kuantech.Makeshift.Utils
             Camera.main.targetTexture = rt;
             Camera.main.Render();
 
-            // If there's an additional camera (like one for outlines), render its view.
-            // Make sure this camera doesn't clear the color/depth.
-            Camera outlineCamera = Camera.main; // Replace with your outline camera if you have one.
-            if(outlineCamera != null)
-            {
-                outlineCamera.targetTexture = rt;
-                outlineCamera.Render();
-            }
+            // // If there's an additional camera (like one for outlines), render its view.
+            // // Make sure this camera doesn't clear the color/depth.
+            // Camera outlineCamera = Camera.main; // Replace with your outline camera if you have one.
+            // if(outlineCamera != null)
+            // {
+            //     outlineCamera.targetTexture = rt;
+            //     outlineCamera.Render();
+            // }
 
             RenderTexture.active = rt;
             Texture2D screenshot = new Texture2D(captureWidth, captureHeight, TextureFormat.ARGB32, false);
