@@ -20,6 +20,11 @@ namespace Kuantech.Core
             {
                 Modules[module.GetType()] = module;
                 module.Actor = this;
+            }
+
+            //Initialize modules after getting them all so that they can require each other in their initialize methods
+            foreach(var module in Modules.Values)
+            {
                 module.Initialize();
             }
 
@@ -42,6 +47,12 @@ namespace Kuantech.Core
             return null;
         }
         
+        public T GetModule<T>() where T : ActorModule
+        {
+            if(Modules.ContainsKey(typeof(T))) return Modules[typeof(T)] as T;
+            return null;
+        }
+
         protected virtual void Update()
         {
 
