@@ -1,5 +1,5 @@
 ﻿using System;
-using Kuantech.Core;
+using Kuantech.Rpg;
 using UnityEngine;
 
 namespace Kuantech.ActionSequencer
@@ -11,7 +11,7 @@ namespace Kuantech.ActionSequencer
         public string TargetVariableName = "Target";
         public bool AttackWithoutTarget;
 
-        private Actor _target;
+        private RpgActor _target;
 
         public AttackAction(AttackTypes attackType, bool attackWithoutTarget)
         {
@@ -40,7 +40,7 @@ namespace Kuantech.ActionSequencer
 
             if (Sequencer != null)
             {
-                _target = Sequencer.VariableTable.GetVariable<Actor>(TargetVariableName);
+                _target = Sequencer.VariableTable.GetVariable<RpgActor>(TargetVariableName);
             }
         }
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Kuantech.Rpg;
 using Sirenix.Utilities;
 using UnityEngine;
 
@@ -8,7 +9,7 @@ namespace Kuantech.Core.FX
     /// <summary>
     /// This module handles the effects that are attached to the character
     /// </summary>
-    public class EffectsModule : Module
+    public class EffectsModule : RpgActorModule
     {
         [SerializeField] private List<Effect> AttackEffects = new List<Effect>(); //Dependent on the weapon
         [SerializeField] private List<Effect> AlternativeAttackEffects = new List<Effect>();
@@ -22,18 +23,18 @@ namespace Kuantech.Core.FX
         public override void Initialize()
         {
             base.Initialize();
-            Actor.OnDamageReceived += OnReceiveDamage;
-            Actor.OnDeath += OnDeath;
+            (Actor as RpgActor).OnDamageReceived += OnReceiveDamage;
+            (Actor as RpgActor).OnDeath += OnDeath;
         }
 
         public override void OnModulesInitialized(object sender, EventArgs args)
         {
             base.OnModulesInitialized(sender, args);
-            CombatModule cm = (CombatModule)Actor.GetModuleByType(typeof(CombatModule));
+            CombatModule cm = (CombatModule)(Actor as RpgActor).GetModuleByType(typeof(CombatModule));
             cm.AttackStartEvent+= OnAttack;
             cm.MeleeImpactEvent += OnMeleeImpact;
-            if(Actor.MovementModule != null) Actor.MovementModule.OnJumpEvent += OnJump;
-            if(Actor.MovementModule != null) Actor.MovementModule.OnDodgeEvent += OnDodge;
+            if((Actor as RpgActor).MovementModule != null) (Actor as RpgActor).MovementModule.OnJumpEvent += OnJump;
+            if((Actor as RpgActor).MovementModule != null) (Actor as RpgActor).MovementModule.OnDodgeEvent += OnDodge;
         }
 
         public void SetAttackEffects(List<EffectTypes> effectTypes)
@@ -105,7 +106,7 @@ namespace Kuantech.Core.FX
             }
         }
 
-        private void OnMeleeImpact(object sender, Actor target)
+        private void OnMeleeImpact(object sender, RpgActor target)
         {
             if (_impact == null) return;
             _impact.transform.position = target.transform.position;

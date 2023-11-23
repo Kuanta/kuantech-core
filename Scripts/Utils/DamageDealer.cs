@@ -1,5 +1,5 @@
 ﻿using System;
-using Kuantech.Core;
+using Kuantech.Rpg;
 using UnityEngine;
 
 namespace Kuantech.Core.Utils
@@ -7,7 +7,7 @@ namespace Kuantech.Core.Utils
     public class DamageDealer : MonoBehaviour
     {
         public SphereCollider SphereCollider;
-        public EventHandler<Actor> DamageEvent;
+        public EventHandler<RpgActor> DamageEvent;
         private float _damage;
         private float _range;
         private float _knockback;
@@ -40,7 +40,7 @@ namespace Kuantech.Core.Utils
         private void OnTriggerEnter(Collider collider)
         {
             if (_combatModule == null) return;
-            if (collider.TryGetComponent(out Actor actor) && actor != _combatModule.Actor)
+            if (collider.TryGetComponent(out RpgActor actor) && actor != _combatModule.Actor)
             {
                 actor.ReceiveDamage(_combatModule.Actor, _damage);
             }

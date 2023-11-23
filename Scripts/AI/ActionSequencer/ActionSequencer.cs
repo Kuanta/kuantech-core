@@ -83,42 +83,6 @@ namespace Kuantech.ActionSequencer
             }
             Sequence[_currentSequenceIndex].Execute();
         }
-        
-        [Button(ButtonSizes.Large)]
-        public void AddAction()
-        {
-            switch (ActionDropdown)
-            {
-                case ActionTypes.None:
-                    break;
-                case ActionTypes.Move:
-                    MoveAction ma = new MoveAction();
-                    ma.Parent = gameObject;
-                    Sequence.Add(ma);
-                    ma.Sequencer = this;
-                    break;
-                case ActionTypes.Attack:
-                    AttackAction aa = new AttackAction(AttackTypes.Linear, true);
-                    aa.Parent = gameObject;
-                    aa.CombatModule = GetComponent<CombatModule>();
-                    Sequence.Add(aa);
-                    aa.Sequencer = this;
-                    break;
-                case ActionTypes.Delay:
-                    DelayAction da = new DelayAction();
-                    da.Parent = gameObject;
-                    Sequence.Add(da);
-                    da.Sequencer = this;
-                    break;
-                case ActionTypes.Rotate:
-                    RotateAction ra = new RotateAction();
-                    ra.Parent = gameObject;
-                    Sequence.Add(ra);
-                    ra.Sequencer = this;
-                    break;
-            }
-        }
-
         public void Reset()
         {
             if (Sequence == null || Sequence.Count == 0) return;

@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Kuantech.Rpg;
+using UnityEngine;
 
 namespace Kuantech.Core.HyperCasual
 {
@@ -10,12 +11,12 @@ namespace Kuantech.Core.HyperCasual
         [SerializeField] private bool RawDamage = true;
         private void OnTriggerEnter(Collider other)
         {
-            if (!other.TryGetComponent(out Actor actor)) return;
+            if (!other.TryGetComponent(out RpgActor actor)) return;
             if (actor.FactionId == FactionId) return;
             DealDamage(actor);
         }
 
-        protected virtual void DealDamage(Actor actor)
+        protected virtual void DealDamage(RpgActor actor)
         {
             float damage = 0;
             if (PercentageDamage)

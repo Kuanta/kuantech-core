@@ -1,7 +1,6 @@
-﻿using Kuantech.Combat;
-using UnityEngine;
+﻿using UnityEngine;
 
-namespace Kuantech.Core.Rpg
+namespace Kuantech.Rpg
 {
     /// <summary>
     /// Attack skills are passive effects that are triggered on certain points during the lifetime of the combat modules
@@ -41,7 +40,7 @@ namespace Kuantech.Core.Rpg
         }
         
         protected virtual void OnProjectileShot(object sender, ProjecitleShotInfo shotInfo){}
-        protected virtual void OnMeleeImpact(object sender, Actor impacted){}
+        protected virtual void OnMeleeImpact(object sender, RpgActor impacted){}
         protected virtual void OnRangedImpact(object sender, ProjectileImpactInfo impactInfo){}
         protected virtual void OnAttack(object sender, int attackIndex){}
         
@@ -66,7 +65,7 @@ namespace Kuantech.Core.Rpg
             Cancel();
         }
 
-        public override bool Cast(Actor caster)
+        public override bool Cast(RpgActor caster)
         {
             //Calculate
             float energyCost = GetEnergyCost();
@@ -84,7 +83,7 @@ namespace Kuantech.Core.Rpg
             if (IsChanneled) IsBeingCast = true;
             
             //Apply global cooldown
-            float globalCooldownTime = Mathf.Max(Config.GLOBAL_COOLDOWN_TIME, SkillData.AnimationTime);
+            float globalCooldownTime = Mathf.Max(RpgConfig.GLOBAL_COOLDOWN_TIME, SkillData.AnimationTime);
             CombatModule.GlobalCooldown.StartCooldown(IsChanneled
                 ? ChannelDuration.GetValue(Rank)
                 : globalCooldownTime);

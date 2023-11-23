@@ -1,7 +1,5 @@
 ﻿
-using UnityEngine;
-
-namespace Kuantech.Core
+namespace Kuantech.Rpg
 {
     public class ModifierStatusEffect : StatusEffect
     {

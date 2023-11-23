@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using Kuantech.Core.Utils;
+using Kuantech.Rpg;
 using UnityEngine;
 
 namespace Kuantech.Core.HyperCasual.Runner
@@ -11,7 +12,7 @@ namespace Kuantech.Core.HyperCasual.Runner
         [SerializeField] protected CollisionEventsRelayer TrapTrigger;
         [SerializeField] protected float ApplyEffectFrequency = 0f;
         protected float ApplyCounter = 0f;
-        private Actor _enteredActor = null;
+        private RpgActor _enteredActor = null;
 
 
         [SerializeField] protected AudioSource EnableSfx;
@@ -111,7 +112,7 @@ namespace Kuantech.Core.HyperCasual.Runner
         /// <summary>
         /// Applies any effect that the trap is supposed to do
         /// </summary>
-        protected virtual void ApplyTrapEffect(Actor actor)
+        protected virtual void ApplyTrapEffect(RpgActor actor)
         {
             //Defautl behaviour is to damage target
         }
@@ -137,7 +138,7 @@ namespace Kuantech.Core.HyperCasual.Runner
         
         protected virtual void OnActorEnter(object sender, Collider other)
         {
-            Actor actor = other.gameObject.GetComponent<Actor>();
+            RpgActor actor = other.gameObject.GetComponent<RpgActor>();
             if (actor == null) return;
             _enteredActor = actor;
             
@@ -146,7 +147,7 @@ namespace Kuantech.Core.HyperCasual.Runner
 
         protected virtual void OnActorExit(object sender, Collider other)
         {
-            Actor actor = other.gameObject.GetComponent<Actor>();
+            RpgActor actor = other.gameObject.GetComponent<RpgActor>();
             if (actor == _enteredActor)
             {
                 _enteredActor = null;

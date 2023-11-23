@@ -1,5 +1,5 @@
 ﻿using System;
-using Kuantech.Core;
+using Kuantech.Rpg;
 using UnityEngine;
 
 namespace Kuantech.ActionSequencer
@@ -13,12 +13,12 @@ namespace Kuantech.ActionSequencer
         [SerializeField] private Transform Waypoint;
         [SerializeField] private float Threshold = 0.1f;
 
-        private Actor _actor;
+        private RpgActor _actor;
         private MovementModule _mm;
         public override void Execute()
         {
             base.Execute();
-            if(_actor == null) _actor = Parent.GetComponent<Actor>();
+            if(_actor == null) _actor = Parent.GetComponent<RpgActor>();
             _mm = _actor.MovementModule;
             if (_mm != null) return;
             IsComplete = true;

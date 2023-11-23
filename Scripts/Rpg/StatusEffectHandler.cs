@@ -2,7 +2,7 @@
 using DTT.Utils.Extensions;
 using UnityEngine;
 
-namespace Kuantech.Core
+namespace Kuantech.Rpg
 {
     public class StatusEffectHandler
     {

@@ -1,6 +1,6 @@
 ﻿using System;
 using DG.Tweening;
-using Kuantech.Core;
+using Kuantech.Rpg;
 using UnityEngine;
 
 namespace Kuantech.ActionSequencer
@@ -12,7 +12,7 @@ namespace Kuantech.ActionSequencer
         [SerializeField] private float Duration = 1f;
         private Tween _tween;
         public string TargetVariableName = "Target";
-        private Actor _target;
+        private RpgActor _target;
         public override void Execute()
         {
             base.Execute();
@@ -24,7 +24,7 @@ namespace Kuantech.ActionSequencer
 
             if (Sequencer != null)
             {
-                _target = Sequencer.VariableTable.GetVariable<Actor>(TargetVariableName);
+                _target = Sequencer.VariableTable.GetVariable<RpgActor>(TargetVariableName);
             }
 
             Vector3 eulerAngles;

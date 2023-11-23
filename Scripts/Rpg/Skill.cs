@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Kuantech.Core.Rpg
+namespace Kuantech.Rpg
 {
     /// <summary>
     /// Skill variable that can be skilled by a stat
@@ -17,7 +17,7 @@ namespace Kuantech.Core.Rpg
         public float StatMultiplier;
         public float RankMultiplier;
         [NonSerialized] public Func<float> RankCalculation;
-        public float GetValue(int rank = 0, Actor actor = null)
+        public float GetValue(int rank = 0, RpgActor actor = null)
         {
             float baseValue = 0;
             baseValue = RankCalculation?.Invoke() ?? DefaultRankCalculation(rank);
@@ -51,7 +51,7 @@ namespace Kuantech.Core.Rpg
         public int Rank = 1;
         protected Dictionary<string, SkillVariable> SkillVariables = new Dictionary<string, SkillVariable>();
         protected SkillData SkillData;
-        protected Actor Caster;
+        protected RpgActor Caster;
         protected float LastCastTime = 0f; //For active skills
         public Skill(SkillData data)
         {
@@ -65,7 +65,7 @@ namespace Kuantech.Core.Rpg
 
         public virtual void AddToActor(CombatModule combatModule)
         {
-            Caster = combatModule.Actor;
+            Caster = combatModule.Actor as RpgActor;
         }
 
         public virtual void RemoveFromActor()
@@ -78,11 +78,11 @@ namespace Kuantech.Core.Rpg
             
         }
 
-        public bool IsOffCooldown(Actor caster)
+        public bool IsOffCooldown(RpgActor caster)
         {
             return Time.time - LastCastTime > GetCooldown(caster);
         }
-        public virtual bool Cast(Actor caster)
+        public virtual bool Cast(RpgActor caster)
         {
             if (caster.CombatModule == null || !caster.CombatModule.CanCastSkill()) return false;
             if (!IsOffCooldown(caster)) return false;
@@ -96,14 +96,14 @@ namespace Kuantech.Core.Rpg
             caster.StartCoroutine(CastRoutine(caster));
             return true;
         }
-        protected virtual void InitiateCooldown(Actor caster)
+        protected virtual void InitiateCooldown(RpgActor caster)
         {
             LastCastTime = Time.time;
             //Apply global cooldown
-            float globalCooldownTime = Mathf.Max(Config.GLOBAL_COOLDOWN_TIME, SkillData.AnimationTime);
+            float globalCooldownTime = Mathf.Max(RpgConfig.GLOBAL_COOLDOWN_TIME, SkillData.AnimationTime);
             caster.CombatModule.GlobalCooldown.StartCooldown(globalCooldownTime);
         }
-        private IEnumerator CastRoutine(Actor caster)
+        private IEnumerator CastRoutine(RpgActor caster)
         {
             yield return new WaitForSeconds(SkillData.CastTime);
             if (Time.time - LastCastTime < GetCooldown(caster));
@@ -115,7 +115,7 @@ namespace Kuantech.Core.Rpg
         /// This will be called on Cast. Skills can make preparations with this method.
         /// </summary>
         /// <param name="caster"></param>
-        protected virtual void OnCast(Actor caster)
+        protected virtual void OnCast(RpgActor caster)
         {
             
         }
@@ -125,7 +125,7 @@ namespace Kuantech.Core.Rpg
         /// </summary>
         protected abstract void ApplySkillEffect();
 
-        public virtual float GetCooldown(Actor caster)
+        public virtual float GetCooldown(RpgActor caster)
         {
             //Get cooldown reduction
             float cdReduction = Mathf.Clamp(caster.Stats.GetStat(StatTypes.CooldownReduction), 0, 1);

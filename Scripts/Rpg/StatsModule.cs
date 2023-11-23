@@ -3,12 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using DTT.Utils.Extensions;
 using Kuantech.Data;
-using Kuantech.Inventory;
-using Kuantech.Inventory.Items;
+using Kuantech.Rpg.Inventory;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
-namespace Kuantech.Core
+namespace Kuantech.Rpg
 {
     #if !STAT_TYPES_OVERRIDE
     [Serializable]
@@ -110,7 +109,7 @@ namespace Kuantech.Core
     public class ArmorModifierDictionary : SerializableDictionary<Enums.ArmorType, List<StatTypes>>{}
 
     [Serializable]
-    public class StatsModule : Module
+    public class StatsModule : RpgActorModule
     {
         public int Level = 0;
         public int OverflowExperience = 0; //Overflow experience is TotalExperience - ExperienceToCurrentLevel
@@ -120,14 +119,14 @@ namespace Kuantech.Core
         
         public StatDictionary Stats = new StatDictionary()
         {
-            [StatTypes.Strength] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
-            [StatTypes.Intelligence] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
-            [StatTypes.Dexterity] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
-            [StatTypes.EnergyRegeneration] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
-            [StatTypes.HealthRegeneration] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
-            [StatTypes.EnergyRegeneration] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
-            [StatTypes.MaxEnergy] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
-            [StatTypes.MaxHealth] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
+            [StatTypes.Strength] = new Stat(){BaseValue = 0, LevelMultiplier = RpgConfig.DEFAULT_LEVEL_TO_STAT_FACTOR},
+            [StatTypes.Intelligence] = new Stat(){BaseValue = 0, LevelMultiplier = RpgConfig.DEFAULT_LEVEL_TO_STAT_FACTOR},
+            [StatTypes.Dexterity] = new Stat(){BaseValue = 0, LevelMultiplier = RpgConfig.DEFAULT_LEVEL_TO_STAT_FACTOR},
+            [StatTypes.EnergyRegeneration] = new Stat(){BaseValue = 0, LevelMultiplier = RpgConfig.DEFAULT_LEVEL_TO_STAT_FACTOR},
+            [StatTypes.HealthRegeneration] = new Stat(){BaseValue = 0, LevelMultiplier = RpgConfig.DEFAULT_LEVEL_TO_STAT_FACTOR},
+            [StatTypes.EnergyRegeneration] = new Stat(){BaseValue = 0, LevelMultiplier = RpgConfig.DEFAULT_LEVEL_TO_STAT_FACTOR},
+            [StatTypes.MaxEnergy] = new Stat(){BaseValue = 0, LevelMultiplier = RpgConfig.DEFAULT_LEVEL_TO_STAT_FACTOR},
+            [StatTypes.MaxHealth] = new Stat(){BaseValue = 0, LevelMultiplier = RpgConfig.DEFAULT_LEVEL_TO_STAT_FACTOR},
             [StatTypes.MovementSpeed] = new Stat(){BaseValue = 0, LevelMultiplier = 0},
             [StatTypes.Armor] = new Stat(){BaseValue = 0, LevelMultiplier = 0},
             [StatTypes.RangeBonus] = new Stat(){BaseValue = 0, LevelMultiplier = 0},
@@ -343,7 +342,7 @@ namespace Kuantech.Core
 
         public float GetWeightFactor(float minValue = 0f)
         {
-            float value = 1f - GetEncumbrance() / Config.MAX_ENCUMBRANCE;
+            float value = 1f - GetEncumbrance() / RpgConfig.MAX_ENCUMBRANCE;
             value = Mathf.Clamp(value, minValue, 1f);
             return value;
         }
@@ -491,7 +490,7 @@ namespace Kuantech.Core
         
         public static int GetExperienceForLevel(int level)
         {
-            return (int)Mathf.Floor(Mathf.Pow((level) / Config.LEVEL_FORMULA_X, 2));
+            return (int)Mathf.Floor(Mathf.Pow((level) / RpgConfig.LEVEL_FORMULA_X, 2));
         }
 
         public static void GetExperienceEarnResults(int currentLevel, int currentOverflowExperience, int earnedExperience, out int resultingLevel,
@@ -526,14 +525,14 @@ namespace Kuantech.Core
         {
             Stats = new StatDictionary()
             {
-                [StatTypes.Strength] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
-                [StatTypes.Intelligence] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
-                [StatTypes.Dexterity] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
-                [StatTypes.EnergyRegeneration] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
-                [StatTypes.HealthRegeneration] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
-                [StatTypes.EnergyRegeneration] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
-                [StatTypes.MaxEnergy] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
-                [StatTypes.MaxHealth] = new Stat(){BaseValue = 0, LevelMultiplier = Config.DEFAULT_LEVEL_TO_STAT_FACTOR},
+                [StatTypes.Strength] = new Stat(){BaseValue = 0, LevelMultiplier = RpgConfig.DEFAULT_LEVEL_TO_STAT_FACTOR},
+                [StatTypes.Intelligence] = new Stat(){BaseValue = 0, LevelMultiplier = RpgConfig.DEFAULT_LEVEL_TO_STAT_FACTOR},
+                [StatTypes.Dexterity] = new Stat(){BaseValue = 0, LevelMultiplier = RpgConfig.DEFAULT_LEVEL_TO_STAT_FACTOR},
+                [StatTypes.EnergyRegeneration] = new Stat(){BaseValue = 0, LevelMultiplier = RpgConfig.DEFAULT_LEVEL_TO_STAT_FACTOR},
+                [StatTypes.HealthRegeneration] = new Stat(){BaseValue = 0, LevelMultiplier = RpgConfig.DEFAULT_LEVEL_TO_STAT_FACTOR},
+                [StatTypes.EnergyRegeneration] = new Stat(){BaseValue = 0, LevelMultiplier = RpgConfig.DEFAULT_LEVEL_TO_STAT_FACTOR},
+                [StatTypes.MaxEnergy] = new Stat(){BaseValue = 0, LevelMultiplier = RpgConfig.DEFAULT_LEVEL_TO_STAT_FACTOR},
+                [StatTypes.MaxHealth] = new Stat(){BaseValue = 0, LevelMultiplier = RpgConfig.DEFAULT_LEVEL_TO_STAT_FACTOR},
                 [StatTypes.MovementSpeed] = new Stat(){BaseValue = 0, LevelMultiplier = 0},
                 [StatTypes.Armor] = new Stat(){BaseValue = 0, LevelMultiplier = 0},
                 [StatTypes.RangeBonus] = new Stat(){BaseValue = 0, LevelMultiplier = 0},

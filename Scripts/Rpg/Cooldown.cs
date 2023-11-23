@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace Kuantech.Core.Rpg
+namespace Kuantech.Rpg
 {
     public class Cooldown
     {

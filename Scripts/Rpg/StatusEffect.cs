@@ -1,12 +1,12 @@
 ﻿using System;
 using UnityEngine;
 
-namespace Kuantech.Core
+namespace Kuantech.Rpg
 {
     [Serializable]
     public abstract class StatusEffect
     {
-        public Actor Target;
+        public RpgActor Target;
         public float Duration;
         public float TickPeriod;
         
@@ -14,7 +14,7 @@ namespace Kuantech.Core
         public float LastTickTime;
         public bool ToBeRemoved;
         
-        public virtual void Init(Actor actor)
+        public virtual void Init(RpgActor actor)
         {
             Target = actor;
         }
