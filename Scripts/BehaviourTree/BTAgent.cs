@@ -1,16 +1,21 @@
 ﻿using System.Collections;
+using Kuantech.Core;
 using UnityEngine;
 
 namespace Kuantech.AI
 {
-    public class BTAgent : MonoBehaviour
+    public class BTAgent : ActorModule
     {
         private BehaviourTree Bt;
+        [SerializeField] private BehaviourTreeBlueprint DefaultBtBlueprint;
         private WaitForSeconds _waitForSeconds;
         public bool AgentRunning;
-        public void Initialize()
+
+        public override void Initialize()
         {
+            //todo: Can we remove this?
             _waitForSeconds = new WaitForSeconds(Random.Range(0.1f, 0.2f));
+            SetBehaviourTree(DefaultBtBlueprint.CreateBehaviourTree());
         }
 
         public void SetBehaviourTree(BehaviourTree bt)
@@ -21,6 +26,11 @@ namespace Kuantech.AI
             Bt = bt;
         }
         
+        public BehaviourTree GetBehaviourTree()
+        {
+            return Bt;
+        }
+
         private IEnumerator _behaveRoutine = null;
         public void StartAgent()
         {
@@ -51,6 +61,10 @@ namespace Kuantech.AI
             Bt.VariableTable ??= new BTVariableTable();
             Bt.VariableTable.RegisterVariable(key, variable);
         }
-        
+
+        public override void Reset()
+        {
+            StopAgent();
+        }
     }
 }
