@@ -1,4 +1,5 @@
 ﻿using System;
+using UnityEngine;
 
 namespace Kuantech.Core.Utils
 {
@@ -11,4 +12,6 @@ namespace Kuantech.Core.Utils
             DefaultVal = defaultVal;
         }
     }
+
+    public class KTTagAttribute : PropertyAttribute{}
 }
