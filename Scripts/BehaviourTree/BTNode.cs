@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using Sirenix.OdinInspector;
@@ -116,6 +117,7 @@ namespace Kuantech.AI
             foreach (var keyValuePair in nodeData.ActionClassVariables)
             {
                 FieldInfo fieldInfo = type.GetField(keyValuePair.Key, flags);
+                Type fieldType = fieldInfo.FieldType;
                 if (fieldInfo != null)
                 {
                     if (fieldInfo.FieldType == typeof(int))
@@ -150,6 +152,26 @@ namespace Kuantech.AI
                         {
                             Debug.LogError($"Failed to parse enum value {keyValuePair.Value} for type {fieldInfo.FieldType.Name}: {e.Message}");
                         }
+                    }else if(fieldInfo.FieldType.IsGenericType && fieldInfo.FieldType.GetGenericTypeDefinition() == typeof(List<>))
+                    {
+                        string encodedData = keyValuePair.Value;
+                        Type itemType = fieldInfo.FieldType.GetGenericArguments()[0];
+                        IList list = (IList)Activator.CreateInstance(fieldInfo.FieldType);
+                        string[] encodedItems = encodedData.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                        foreach (string encodedItem in encodedItems)
+                        {
+                            object listItem = Convert.ChangeType(encodedItem, itemType);
+                            list.Add(listItem);
+                        }
+                        fieldInfo.SetValue(_leafAction, list);
+                    }
+                    else if(fieldType == typeof(GameObject) || typeof(Component).IsAssignableFrom(fieldType))
+                    {
+                        Debug.LogWarning("Couldn't find a way to handle this for now");
+                    }
+                    else if(typeof(ScriptableObject).IsAssignableFrom(fieldType))
+                    {
+                        Debug.LogWarning("Couldn't find a way to handle this for now");
                     }
                     // ... Add more types as necessary ...
                 }

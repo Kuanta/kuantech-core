@@ -20,7 +20,6 @@ namespace Kuantech.Core
         private SubManager[] _subManagers;
         private SubManager[] _sceneSubManagers;
 
-
         protected virtual void Awake()
         {
             Pool = new PrefabPool(transform, 1000);

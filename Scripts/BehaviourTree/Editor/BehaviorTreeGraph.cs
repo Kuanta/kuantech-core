@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -498,29 +499,21 @@ namespace Kuantech.Editor
             {
                 VisualElement fieldElement = pair.Value;
                 string fieldName = pair.Key;
-
-                string encodedData = null;
-                if (fieldElement is IntegerField intField)
-                {
-                    encodedData = intField.value.ToString();
-                }
-                else if (fieldElement is FloatField floatField)
-                {
-                    encodedData = floatField.value.ToString(CultureInfo.InvariantCulture);
-                }else if (fieldElement is TextField textField)
-                {
-                    encodedData = textField.value;
-                }
-                else if (fieldElement is EnumField enumField)
-                {
-                    encodedData = enumField.value.ToString();
-                }
-
+                string encodedData = Kuantech.Editor.EditorUtilities.SerializeVisualField(fieldElement);
                 data.ActionClassVariables[fieldName] = encodedData;
             }
             return data;
         }
 
+        private bool IsListContainer(VisualElement element)
+        {
+            return element is ListVisualElement;
+        }
+
+        private string SerializeListData(List<string> listData)
+        {
+            return string.Join(",", listData);
+        }
         public override void LoadSaveData(BtGraphNodeData data)
         {
             base.LoadSaveData(data);
@@ -541,36 +534,11 @@ namespace Kuantech.Editor
             {
                 if(!data.ActionClassVariables.ContainsKey(fieldKey)) continue;
                 string encodedValue = data.ActionClassVariables[fieldKey];
-                    
-                if (fields[fieldKey] is IntegerField intField)
-                {
-                    int decodedValue;
-                    if (int.TryParse(encodedValue, out decodedValue))
-                    {
-                        intField.value = decodedValue;
-                    }
-                }
-                else if (fields[fieldKey] is FloatField floatField)
-                {
-                    float decodedValue;
-                    if (float.TryParse(encodedValue, out decodedValue))
-                    {
-                        floatField.value = decodedValue;
-                    }
-                }else if (fields[fieldKey] is TextField textField)
-                {
-                    textField.value = encodedValue;
-                }
-                else if (fields[fieldKey] is EnumField enumField)
-                {
-                    Type enumType = enumField.value.GetType();
-                    object enumValue = Enum.Parse(enumType, encodedValue);
-                    enumField.value = (Enum)enumValue;
-                }
+                EditorUtilities.LoadFieldData(fields[fieldKey], encodedValue);
             }
             Refresh();
         }
-        
+
         private void DisplayParametersForAction(Type selectedAction)
         {
             // Get the fields
@@ -579,55 +547,11 @@ namespace Kuantech.Editor
             foreach (FieldInfo field in allFields)
             {
                 Type fieldType = field.FieldType;
-                if (fieldType == typeof(int))
-                {
-                    // Add IntegerField
-                    IntegerField intField = new IntegerField(field.Name);
-                    _parametersContainer.Add(intField);
-                    fields[field.Name] = intField;
-                }
-                else if (fieldType == typeof(float))
-                {
-                    // Add FloatField
-                    FloatField floatField = new FloatField(field.Name);
-                    _parametersContainer.Add(floatField);
-                    fields[field.Name] = floatField;
-                }else if (fieldType == typeof(string))
-                {
-                    TextField textField = new TextField(field.Name);
-                    _parametersContainer.Add(textField);
-                    fields[field.Name] = textField;
-                }
-                else if (fieldType.IsEnum)
-                {
-                    EnumField enumField = CreateEnumDropdownForType(fieldType);
-                    enumField.label = field.Name;
-                    _parametersContainer.Add(enumField);
-                    fields[field.Name] = enumField;
-                }
-                // ... handle other types similarly
-
-                // You might also want to handle complex types or enums.
-                // Enums, for instance, can be handled with EnumField.
+                VisualElement visualField = null;
+                visualField = EditorUtilities.CreateFieldForType(fieldType, field.Name);
+                _parametersContainer.Add(visualField);
+                fields[field.Name] = visualField;
             }
-        }
-
-        EnumField CreateEnumDropdownForType(Type enumType)
-        {
-            if (!enumType.IsEnum) throw new ArgumentException("Type provided must be an enum.");
-
-            // Initialize with the first value (or any other default value if you have in mind)
-            var firstEnumValue = Enum.GetValues(enumType).GetValue(0);
-            EnumField enumField = new EnumField((Enum)firstEnumValue);
-
-            // If you wish to be notified when the dropdown selection changes:
-            enumField.RegisterValueChangedCallback(evt =>
-            {
-                // Handle any logic if needed. Maybe update some model data, etc.
-                // Here, you don't have an instance to set, so you might handle other logic if required.
-            });
-
-            return enumField;
         }
         
         private void ClearPreviousParameters()
