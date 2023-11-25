@@ -147,7 +147,7 @@ namespace Kuantech.Utils
                 handler(child.gameObject);
             }
         }
-
+        #region String
         public static string Stringfy(this float number, bool roundToInteger = false, bool roundSmallerToInteger = false)
         {
             float abs = Mathf.Abs(number);
@@ -200,6 +200,10 @@ namespace Kuantech.Utils
         {
             return int.TryParse(text, out var parsed) ? parsed : defaultVal;
         }
+
+        public static bool IsNullOrEmpty<T>(this IEnumerable<T> enumerable) => enumerable == null || !enumerable.Any();
+
+        #endregion
         
         public static Vector2 Get2D(this Vector3 vector3)
         {

@@ -31,6 +31,12 @@ namespace Kuantech.Core
             OnModulesInitialized?.Invoke(this, EventArgs.Empty);
             Reset();
             _initialized = true;
+            PostModulesInitialized();
+        }
+
+        protected virtual void PostModulesInitialized()
+        {
+
         }
 
         /// <summary>

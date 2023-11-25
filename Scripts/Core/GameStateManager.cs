@@ -1,12 +1,11 @@
 using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
-using DTT.Utils.Extensions;
 using IngameDebugConsole;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
-namespace Kuantech.Core.HyperCasual
+namespace Kuantech.Core
 {
     public class GameStateManager : SubManager
     {
@@ -70,23 +69,23 @@ namespace Kuantech.Core.HyperCasual
         [Button("Add Currency")]
         public virtual void AddCurrency(string currencyId, int amount)
         {
-            HyperCasualGameModel hcGameModel = GameState.GetModule<HyperCasualGameModel>();
-            if(hcGameModel == null) return;
-            hcGameModel.AddCurrency(currencyId, amount);
-            UpdateCurrency(currencyId, hcGameModel.GetCurrencyAmount(currencyId));
+            CurrencyModel currencyModel = GameState.GetModule<CurrencyModel>();
+            if(currencyModel == null) return;
+            currencyModel.AddCurrency(currencyId, amount);
+            UpdateCurrency(currencyId, currencyModel.GetCurrencyAmount(currencyId));
         }
         [ConsoleMethod("addCurrency", "Adds Currency")]
         public static void AddCurrencyCC(string currencyId, int amount)
         {
             GameState gameState = GameStateManager.GetContext<GameStateManager>().GameState;
-            HyperCasualGameModel hcGameModel = gameState.GetModule<HyperCasualGameModel>();
+            CurrencyModel hcGameModel = gameState.GetModule<CurrencyModel>();
             if (hcGameModel == null) return;
             hcGameModel.AddCurrency(currencyId, amount);
         }
 
         public virtual void RemoveCurrency(string currencyId, int amount)
         {
-            HyperCasualGameModel hcGameModel = GameState.GetModule<HyperCasualGameModel>();
+            CurrencyModel hcGameModel = GameState.GetModule<CurrencyModel>();
             if (hcGameModel == null) return;
 
             hcGameModel.RemoveCurrency(currencyId, amount);
@@ -96,7 +95,7 @@ namespace Kuantech.Core.HyperCasual
         [Button("Set Currency")]
         public virtual void SetCurrency(string currencyId, int amount)
         {
-            HyperCasualGameModel hcGameModel = GameState.GetModule<HyperCasualGameModel>();
+            CurrencyModel hcGameModel = GameState.GetModule<CurrencyModel>();
             if (hcGameModel == null) return;
 
             hcGameModel.SetCurrency(currencyId, amount);
@@ -107,14 +106,14 @@ namespace Kuantech.Core.HyperCasual
         public static void SetCurrencyCC(string currencyId, int amount)
         {
             GameStateManager context = GameStateManager.GetContext<GameStateManager>();
-            HyperCasualGameModel hcGameModel = context.GameState.GetModule<HyperCasualGameModel>();
+            CurrencyModel hcGameModel = context.GameState.GetModule<CurrencyModel>();
             if(hcGameModel == null) return;
             hcGameModel.SetCurrency(currencyId, amount);
             (GameManager.Instance.GetSubManagerByType<GameStateManager>() as GameStateManager).SetCurrency(currencyId, amount);
         }
         public virtual Currency GetCurrency(string currencyId)
         {
-            HyperCasualGameModel hcGameModel = GameState.GetModule<HyperCasualGameModel>();
+            CurrencyModel hcGameModel = GameState.GetModule<CurrencyModel>();
             if (hcGameModel == null)
             {
                 return new Currency
@@ -129,7 +128,7 @@ namespace Kuantech.Core.HyperCasual
         public static Currency GetCurrencyStatic(string currencyId)
         {
             GameStateManager context = GameStateManager.GetContext<GameStateManager>();
-            HyperCasualGameModel hcGameModel = context.GameState.GetModule<HyperCasualGameModel>();
+            CurrencyModel hcGameModel = context.GameState.GetModule<CurrencyModel>();
             if (hcGameModel == null)
             {
                 return new Currency
