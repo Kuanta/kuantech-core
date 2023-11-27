@@ -7,15 +7,15 @@ namespace Kuantech.Core
     public class Actor : MonoBehaviour
     {
         protected Dictionary<Type, ActorModule> Modules = new Dictionary<Type, ActorModule>();
-        private bool _initialized;
+        protected bool Initialized;
 
         //Events
         public EventHandler OnModulesInitialized;
 
         public virtual void Initialize()
         {
-            if (_initialized) return;
-            ActorModule[] modules = GetComponents<ActorModule>();
+            if (Initialized) return;
+            ActorModule[] modules = GetComponentsInChildren<ActorModule>();
             foreach (ActorModule module in modules)
             {
                 Modules[module.GetType()] = module;
@@ -30,13 +30,16 @@ namespace Kuantech.Core
 
             OnModulesInitialized?.Invoke(this, EventArgs.Empty);
             Reset();
-            _initialized = true;
+            Initialized = true;
             PostModulesInitialized();
         }
 
         protected virtual void PostModulesInitialized()
         {
-
+            foreach (var module in Modules.Values)
+            {
+                module.OnModulesInitialized();
+            }
         }
 
         /// <summary>
@@ -55,7 +58,14 @@ namespace Kuantech.Core
         
         public T GetModule<T>() where T : ActorModule
         {
-            if(Modules.ContainsKey(typeof(T))) return Modules[typeof(T)] as T;
+            foreach (var module in Modules.Values)
+            {
+                if (module is T)
+                {
+                    return module as T;
+                }
+            }
+
             return null;
         }
 

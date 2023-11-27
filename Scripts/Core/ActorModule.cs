@@ -6,7 +6,8 @@ namespace Kuantech.Core
     public abstract class ActorModule : MonoBehaviour {
         [NonSerialized] public Actor Actor;
         [NonSerialized] public bool Initialized;
-        public abstract void Initialize();
-        public abstract void Reset();
+        public virtual void Initialize(){}
+        public virtual void OnModulesInitialized(){}
+        public virtual void Reset(){}
     }
 }
