@@ -11,7 +11,7 @@ namespace Kuantech.Core
     [Serializable]
     public abstract class StateModule : ScriptableObject
     {
-        public abstract string ModuleID {get;}
+        public virtual string ModuleID => GetType().FullName;
         public virtual void Load(string savedData)
         {
             var loadedObject = JsonConvert.DeserializeObject(savedData, this.GetType());
@@ -119,78 +119,6 @@ namespace Kuantech.Core
         protected string GetSaveFilePath()
         {
             return Application.persistentDataPath + StateFileName;
-        }
-
-        // #region Level
-        // public virtual void SetLevelIndex(int levelIndex)
-        // {
-        //     GameStateModel.LevelIndex = levelIndex;
-        //     Dirtied = true;
-        //     //PlayerPrefs.SetInt("LevelIndex", levelIndex);
-        // }
-
-        // public virtual int GetLevelIndex()
-        // {
-        //     return GameStateModel.LevelIndex;
-        // }
-        // #endregion
-        
-        // #region Currencies
-        // public virtual void AddCurrency(int currencyId, int amount)
-        // {
-        //     if (!GameStateModel.Currencies.ContainsKey(currencyId))
-        //     {
-        //         GameStateModel.Currencies[currencyId] = new Currency
-        //         {
-        //             CurrencyId = currencyId,
-        //             Amount = amount,
-        //         };
-        //     }
-        //     else
-        //     {
-        //         GameStateModel.Currencies[currencyId] = GameStateModel.Currencies[currencyId].AddAmount(amount);
-        //     }
-
-        //     Dirtied = true;
-        // }
-
-        // public virtual void RemoveCurrency(int currencyId, int amount)
-        // {
-        //     AddCurrency(currencyId, -Mathf.Abs(amount));
-        // }
-
-        // public virtual Currency GetCurrency(int currencyId)
-        // {
-        //     if (!GameStateModel.Currencies.ContainsKey(currencyId)) return new Currency
-        //     {
-        //         CurrencyId = currencyId,
-        //         Amount = 0,
-        //     };
-        //     return GameStateModel.Currencies[currencyId];
-        // }
-        // public virtual int GetCurrencyAmount(int currencyId)
-        // {
-        //     GameStateModel.Currencies ??= new Dictionary<int, Currency>();
-        //     return !GameStateModel.Currencies.ContainsKey(currencyId) ? 0 : GameStateModel.Currencies[currencyId].Amount;
-        // }
-
-        // public virtual void SetCurrency(int currencyId, int amount)
-        // {
-        //     if (!GameStateModel.Currencies.ContainsKey(currencyId))
-        //     {
-        //         GameStateModel.Currencies[currencyId] = new Currency
-        //         {
-        //             CurrencyId = currencyId,
-        //             Amount = amount,
-        //         };
-        //     }
-        //     else
-        //     {
-        //         GameStateModel.Currencies[currencyId] = GameStateModel.Currencies[currencyId].SetAmount(amount);
-        //     }
-
-        //     Dirtied = true;
-        // }
-        //#endregion
+        }    
     }
 }

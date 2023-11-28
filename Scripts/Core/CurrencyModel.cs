@@ -27,8 +27,6 @@ namespace Kuantech.Core
     [CreateAssetMenu(menuName = "Kuantech/StateModules/CurrencyModule")]
     public class CurrencyModel : StateModule
     {
-        // A unique identifier for this module.
-        public override string ModuleID => typeof(CurrencyModel).ToString();
 
         public Dictionary<string, Currency> Currencies;
 

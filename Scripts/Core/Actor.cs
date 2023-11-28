@@ -1,25 +1,35 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Core
 {
     public class Actor : MonoBehaviour
     {
+        public string Id;
+        protected List<ActorModule> ActorModulesList;
         protected Dictionary<Type, ActorModule> Modules = new Dictionary<Type, ActorModule>();
+        protected Dictionary<string, ActorModule> ModulesById = new Dictionary<string, ActorModule>();
         protected bool Initialized;
 
         //Events
         public EventHandler OnModulesInitialized;
 
-        public virtual void Initialize()
+        [NonSerialized] public ActorState CurrentState;
+        [NonSerialized] public StateModule StateModel;
+
+        public virtual void Initialize(string actorState = null)
         {
             if (Initialized) return;
-            ActorModule[] modules = GetComponentsInChildren<ActorModule>();
-            foreach (ActorModule module in modules)
+            ActorModulesList = GetComponentsInChildren<ActorModule>().ToList();
+            ModulesById = new Dictionary<string, ActorModule>();
+            foreach (ActorModule module in ActorModulesList)
             {
                 Modules[module.GetType()] = module;
                 module.Actor = this;
+                if(!module.ModuleId.IsNullOrEmpty()) ModulesById[module.ModuleId] = module;
             }
 
             //Initialize modules after getting them all so that they can require each other in their initialize methods
@@ -27,14 +37,23 @@ namespace Kuantech.Core
             {
                 module.Initialize();
             }
+            CreateActorState();
+            if(actorState != null)
+            {
+                //Load the data to the state
+                LoadActorState(actorState);
+            }else {
+                SetDefaultStateValues();
+            }
 
             OnModulesInitialized?.Invoke(this, EventArgs.Empty);
-            Reset();
             Initialized = true;
-            PostModulesInitialized();
+
+            //Call reset method
+            Reset();
         }
 
-        protected virtual void PostModulesInitialized()
+        public virtual void PostInitialize()
         {
             foreach (var module in Modules.Values)
             {
@@ -82,5 +101,70 @@ namespace Kuantech.Core
             }
         }
 
+        #region State
+        /// <summary>
+        /// The method that should be overriden for actors that needs their o
+        /// </summary>
+        /// <returns></returns>
+        public virtual ActorState InstantiateActorState()
+        {
+            return new ActorState();
+        }
+        public void CreateActorState()
+        {
+            CurrentState = InstantiateActorState();
+            CurrentState.EncodedModuleStates = new Dictionary<string, string>();
+            CurrentState.ModuleStates = new Dictionary<string, ActorModuleState>();
+            foreach (var pair in ModulesById)
+            {
+                CurrentState.ModuleStates[pair.Key] = pair.Value.CurrentState;
+            }
+        }
+        public virtual void DirtyState()
+        {
+            if(StateModel == null) return;
+            StateModel.Dirtied = true;
+        }
+
+        /// <summary>
+        /// Sets the default values for the actor state
+        /// </summary>
+        public virtual void SetDefaultStateValues()
+        {
+    
+        }
+
+        /// <summary>
+        /// Loads the actor state
+        /// </summary>
+        /// <param name="actorState"></param>
+        public virtual void LoadActorState(string encodedState)
+        {
+            CreateActorState();
+            if(encodedState == null)
+            {
+                SetDefaultStateValues();
+                return;
+            }
+            CurrentState.DecodeState(encodedState);
+            foreach (var pair in CurrentState.EncodedModuleStates)
+            {
+                if(pair.Key.IsNullOrEmpty()) continue;
+                if(!ModulesById.ContainsKey(pair.Key))
+                {
+                    Debug.LogError("Id is missing:"+pair.Key);
+                    continue;
+                }
+                ActorModule module = ModulesById[pair.Key];
+                module.LoadState(pair.Value);
+                CurrentState.ModuleStates[pair.Key] = module.CurrentState;
+            }
+        }
+
+        public virtual string SaveActorState()
+        {
+            return CurrentState.EncodeState();
+        }
+        #endregion
     }
 }
