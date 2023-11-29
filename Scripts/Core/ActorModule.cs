@@ -10,8 +10,11 @@ namespace Kuantech.Core
         public bool IsSaveable;
         public virtual void Initialize()
         {
+            if(Initialized) return;
+            Initialized = true;
             CreateModuleState();
             CurrentState.ModuleId = ModuleId;
+            
         }
         public virtual void OnModulesInitialized(){}
         public virtual void Reset(){}
