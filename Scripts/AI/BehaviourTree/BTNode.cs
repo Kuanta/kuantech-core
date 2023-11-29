@@ -187,7 +187,12 @@ namespace Kuantech.AI
                 RequiresStart = false;
             }
             if (_leafAction == null) return NodeStatus.SUCCESS;
-            return _leafAction.Tick(Owner);
+            NodeStatus nodeStatus = _leafAction.Tick(Owner);
+            if(nodeStatus != NodeStatus.SUCCESS)
+            {
+                _leafAction.ExitNode();
+            }
+            return nodeStatus;
         }
         
     }

@@ -25,6 +25,17 @@ namespace Kuantech.AI
         {
             return GetCurrentChild().Process();
         }
+        // Get a variable. Note that the caller should know the type and cast accordingly.
+        public object GetVariable(string key)
+        {
+            return VariableTable.GetVariable(key);
+        }
+
+        // Helper method to get a variable and cast to a specific type.
+        public T GetVariable<T>(string key)
+        {
+           return VariableTable.GetVariable<T>(key);
+        }
     }
 
     public class BTVariableTable

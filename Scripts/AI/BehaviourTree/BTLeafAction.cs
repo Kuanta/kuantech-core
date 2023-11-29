@@ -11,5 +11,10 @@ namespace Kuantech.AI
         {
             return BTNode.NodeStatus.SUCCESS;
         }
+
+        public virtual void ExitNode()
+        {
+
+        }
     }
 }
