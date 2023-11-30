@@ -7,7 +7,6 @@ namespace Kuantech.Core
         [NonSerialized] public Actor Actor;
         [NonSerialized] public bool Initialized;
         public string ModuleId;
-        public bool IsSaveable;
         public virtual void Initialize()
         {
             if(Initialized) return;
