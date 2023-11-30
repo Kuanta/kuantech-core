@@ -17,8 +17,8 @@ namespace Kuantech.Core
         //Events
         public EventHandler OnModulesInitialized;
 
-        [NonSerialized] public ActorState CurrentState;
-        [NonSerialized] public StateModule StateModel;
+        [NonSerialized] public ActorState CurrentState; //ActorState holds informationabout actor
+        [NonSerialized] public StateModule StateModel; //StateModel is a general module tha holds information about various game features
 
         public virtual void Initialize(string actorState = null)
         {
@@ -122,8 +122,9 @@ namespace Kuantech.Core
         }
         public virtual void DirtyState()
         {
-            if(StateModel == null) return;
-            StateModel.Dirtied = true;
+            CurrentState.Dirtied = true; //This is the state of the actor
+            if (StateModel == null) return;
+            StateModel.Dirtied = true; //This is the state model this actor belongs to
         }
 
         /// <summary>

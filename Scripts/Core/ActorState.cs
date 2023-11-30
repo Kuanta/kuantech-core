@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Kuantech.Utils;
 using Newtonsoft.Json;
 
 namespace Kuantech.Core
@@ -49,6 +48,7 @@ namespace Kuantech.Core
         public override string EncodeState()
         {
             base.EncodeState();
+            Dirtied = false;
             foreach(var pair in ModuleStates)
             {
                 EncodedModuleStates[pair.Key] = pair.Value.EncodeState();

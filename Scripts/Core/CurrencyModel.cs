@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace Kuantech.Core
 {
+    [Serializable]
     public struct Currency
     {
         public int Amount;
@@ -29,10 +30,16 @@ namespace Kuantech.Core
     {
 
         public Dictionary<string, Currency> Currencies;
+        public List<Currency> DefaultCurrencies;
 
         public override void SetDefaultValues()
         {
             Currencies = new Dictionary<string, Currency>();
+            if(DefaultCurrencies == null) return;
+            foreach(var defaultCurr in DefaultCurrencies)
+            {
+                Currencies[defaultCurr.CurrencyId] = defaultCurr;
+            }
         }
 
         public void AddCurrency(string currencyId, int amount)

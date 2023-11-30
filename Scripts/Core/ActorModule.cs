@@ -14,8 +14,8 @@ namespace Kuantech.Core
             Initialized = true;
             CreateModuleState();
             CurrentState.ModuleId = ModuleId;
-            
         }
+
         public virtual void OnModulesInitialized(){}
         public virtual void Reset(){}
         public ActorModuleState CurrentState;
