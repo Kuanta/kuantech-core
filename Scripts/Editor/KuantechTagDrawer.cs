@@ -12,26 +12,35 @@ namespace Kuantech.Editor
 
             if (property.propertyType == SerializedPropertyType.Integer)
             {
+                KTTagAttribute tagAttribute = attribute as KTTagAttribute;
                 // Try loading the TagSettings ScriptableObject
                 var tagSettings = AssetDatabase.LoadAssetAtPath<KTTagsList>(TagsListPath);
-
-                string[] tags;
-                if (tagSettings != null)
+                int fallbackCount = 10; // Or any reasonable number
+                string[] tags = new string[fallbackCount];
+                bool foundGroup = false;
+                foreach (var group in tagSettings.tagGroups)
                 {
-                    // If found, use the tags from TagSettings
-                    tags = tagSettings.tags.ToArray();
+                    if(group.TagGroupName != tagAttribute.TagGroup) continue;
+
+                    if (tagSettings != null)
+                    {
+                        // If found, use the tags from TagSettings
+                        tags = group.tags.ToArray();
+                    }
+                    foundGroup = true;
+                    break;
                 }
-                else
+
+
+                if(!foundGroup)
                 {
                     // If not found, fallback to displaying indices
-                    int fallbackCount = 10; // Or any reasonable number
                     tags = new string[fallbackCount];
                     for (int i = 0; i < fallbackCount; i++)
                     {
                         tags[i] = $"Index {i}";
                     }
                 }
-
                 // Display the dropdown and update the property's value
                 property.intValue = EditorGUI.Popup(position, label.text, property.intValue, tags);
             }

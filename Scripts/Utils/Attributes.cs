@@ -13,5 +13,13 @@ namespace Kuantech.Core.Utils
         }
     }
 
-    public class KTTagAttribute : PropertyAttribute{}
+    public class KTTagAttribute : PropertyAttribute
+    {
+        public string TagGroup {get; private set;}
+
+        public KTTagAttribute(string tagGroup)
+        {
+            TagGroup = tagGroup;
+        }
+    }
 }
