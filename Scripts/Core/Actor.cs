@@ -11,12 +11,11 @@ namespace Kuantech.Core
         public string Id;
         protected List<ActorModule> ActorModulesList;
         protected Dictionary<Type, ActorModule> Modules = new Dictionary<Type, ActorModule>();
-        protected Dictionary<string, ActorModule> ModulesById = new Dictionary<string, ActorModule>();
+        public Dictionary<string, ActorModule> ModulesById = new Dictionary<string, ActorModule>();
         protected bool Initialized;
 
         //Events
         public EventHandler OnModulesInitialized;
-
         [NonSerialized] public ActorState CurrentState; //ActorState holds informationabout actor
         [NonSerialized] public StateModule StateModel; //StateModel is a general module tha holds information about various game features
 
@@ -108,17 +107,13 @@ namespace Kuantech.Core
         /// <returns></returns>
         public virtual ActorState InstantiateActorState()
         {
-            return new ActorState();
+            return new ActorState(){Actor = this};
         }
         public void CreateActorState()
         {
             CurrentState = InstantiateActorState();
             CurrentState.EncodedModuleStates = new Dictionary<string, string>();
-            CurrentState.ModuleStates = new Dictionary<string, ActorModuleState>();
-            foreach (var pair in ModulesById)
-            {
-                CurrentState.ModuleStates[pair.Key] = pair.Value.CurrentState;
-            }
+            CurrentState.Actor = this;
         }
         public virtual void DirtyState()
         {
@@ -158,8 +153,8 @@ namespace Kuantech.Core
                 }
                 ActorModule module = ModulesById[pair.Key];
                 module.LoadState(pair.Value);
-                CurrentState.ModuleStates[pair.Key] = module.CurrentState;
             }
+            CurrentState.Actor = this; //Needed somehow
         }
 
         public virtual string SaveActorState()

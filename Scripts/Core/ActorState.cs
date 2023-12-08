@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using Newtonsoft.Json;
+using UnityEngine;
 
 namespace Kuantech.Core
 {  
@@ -16,10 +18,19 @@ namespace Kuantech.Core
         {
             if(savedData == null) return;
             var loadedObject = JsonConvert.DeserializeObject(savedData, this.GetType());
+            if(loadedObject == null) return;
             foreach (var property in this.GetType().GetFields())
             {
-                var loadedValue = property.GetValue(loadedObject);
-                property.SetValue(this, loadedValue);
+                if(property.IsDefined(typeof(NonSerializedAttribute), false)) continue;
+                try{
+                    var loadedValue = property.GetValue(loadedObject);
+                    property.SetValue(this, loadedValue);
+                }catch(TargetException targetExp)
+                {
+                    Debug.LogError(targetExp.Message);
+                    break;
+                }
+                
             }
         }
     }
@@ -27,19 +38,8 @@ namespace Kuantech.Core
     [Serializable]
     public class ActorState : SaveDataState
     {
-        public string ActorId;
+        [NonSerialized] public Actor Actor;
         public Dictionary<string, string> EncodedModuleStates;
-        [NonSerialized] public Dictionary<string, ActorModuleState> ModuleStates; 
-
-        /// <summary>
-        /// Loads the state of the actor
-        /// </summary>
-        /// <param name="savedData"></param>
-        public override void DecodeState(string savedData)
-        {
-            base.DecodeState(savedData);
-            ModuleStates = new Dictionary<string, ActorModuleState>();
-        }
         
         /// <summary>
         /// Saves the state of the actor
@@ -49,9 +49,15 @@ namespace Kuantech.Core
         {
             base.EncodeState();
             Dirtied = false;
-            foreach(var pair in ModuleStates)
+            if(Actor == null)
             {
-                EncodedModuleStates[pair.Key] = pair.Value.EncodeState();
+                Debug.LogError("Actor is null you fok face!");
+                return "";
+            }
+            foreach(var pair in Actor.ModulesById)
+            {
+                if(!pair.Value.CurrentState.Dirtied) continue;
+                EncodedModuleStates[pair.Key] = pair.Value.CurrentState.EncodeState();
             }
             return JsonConvert.SerializeObject(this);
         }

@@ -46,14 +46,6 @@ namespace Kuantech.Core.FX
 
         public void Initialize()
         {
-            // foreach (var sound in Audios.Values)
-            // {
-            //     sound.AudioSource = gameObject.AddComponent<AudioSource>();
-            //     sound.AudioSource.clip = sound.Clip;
-            //     sound.AudioSource.volume = sound.Volume;
-            //     sound.AudioSource.pitch = sound.Pitch;
-            // }
-            
             //Load music values
             float musicVolume = PlayerPrefs.GetFloat("MusicVolume", defaultValue:1f);
             float sfxVolume = PlayerPrefs.GetFloat("SfxVolume", defaultValue: 1f);
