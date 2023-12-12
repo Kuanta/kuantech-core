@@ -14,12 +14,13 @@ namespace Kuantech.Core
         public Dictionary<string, ActorModule> ModulesById = new Dictionary<string, ActorModule>();
         protected bool Initialized;
 
+        //Flag to notify about the dirty state
+        [NonSerialized] public bool Dirtied = false;
+
         //Events
         public EventHandler OnModulesInitialized;
-        [NonSerialized] public ActorState CurrentState; //ActorState holds informationabout actor
-        [NonSerialized] public StateModule StateModel; //StateModel is a general module tha holds information about various game features
 
-        public virtual void Initialize(string actorState = null)
+        public virtual void Initialize(ActorState actorState = null)
         {
             if (Initialized) return;
             ActorModulesList = GetComponentsInChildren<ActorModule>().ToList();
@@ -36,7 +37,6 @@ namespace Kuantech.Core
             {
                 module.Initialize();
             }
-            CreateActorState();
             if(actorState != null)
             {
                 //Load the data to the state
@@ -101,25 +101,29 @@ namespace Kuantech.Core
         }
 
         #region State
+    
         /// <summary>
         /// The method that should be overriden for actors that needs their o
         /// </summary>
         /// <returns></returns>
-        public virtual ActorState InstantiateActorState()
+        protected virtual ActorState InstantiateActorState()
         {
-            return new ActorState(){Actor = this};
+            return new ActorState()
+            {
+                ActorId = Id,
+            };
         }
-        public void CreateActorState()
+
+        private ActorState CreateActorState()
         {
-            CurrentState = InstantiateActorState();
-            CurrentState.EncodedModuleStates = new Dictionary<string, string>();
-            CurrentState.Actor = this;
+            ActorState actorState = InstantiateActorState();
+            actorState.ActorId = Id;
+            return actorState;
         }
+
         public virtual void DirtyState()
         {
-            CurrentState.Dirtied = true; //This is the state of the actor
-            if (StateModel == null) return;
-            StateModel.Dirtied = true; //This is the state model this actor belongs to
+            Dirtied = true;
         }
 
         /// <summary>
@@ -134,32 +138,43 @@ namespace Kuantech.Core
         /// Loads the actor state
         /// </summary>
         /// <param name="actorState"></param>
-        public virtual void LoadActorState(string encodedState)
+        public virtual void LoadActorState(ActorState actorState)
         {
-            CreateActorState();
-            if(encodedState == null)
+            if(actorState == null)
             {
                 SetDefaultStateValues();
                 return;
             }
-            CurrentState.DecodeState(encodedState);
-            foreach (var pair in CurrentState.EncodedModuleStates)
+            LoadModuleState(actorState.ModuleStates);
+        }
+        public virtual void LoadModuleState(Dictionary<string, ActorModuleState> moduleStates)
+        {
+            foreach(var pair in moduleStates)
             {
-                if(pair.Key.IsNullOrEmpty()) continue;
-                if(!ModulesById.ContainsKey(pair.Key))
+                if (pair.Key.IsNullOrEmpty()) continue;
+                if (!ModulesById.ContainsKey(pair.Key))
                 {
-                    Debug.LogError("Id is missing:"+pair.Key);
+                    Debug.LogError("Id is missing:" + pair.Key);
                     continue;
                 }
                 ActorModule module = ModulesById[pair.Key];
                 module.LoadState(pair.Value);
             }
-            CurrentState.Actor = this; //Needed somehow
         }
-
-        public virtual string SaveActorState()
+        /// <summary>
+        /// Gets the actor stat
+        /// </summary>
+        /// <returns></returns>
+        public virtual ActorState GetActorState()
         {
-            return CurrentState.EncodeState();
+            ActorState actorState = CreateActorState();
+            actorState.ModuleStates = new Dictionary<string, ActorModuleState>();
+            foreach(var pair in ModulesById)
+            {
+                if(pair.Value.ModuleId.IsNullOrEmpty()) continue;
+                actorState.ModuleStates[pair.Value.ModuleId] = pair.Value.CreateModuleState();
+            }
+            return actorState;
         }
         #endregion
     }

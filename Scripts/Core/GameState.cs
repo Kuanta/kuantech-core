@@ -14,7 +14,11 @@ namespace Kuantech.Core
         public virtual string ModuleID => GetType().FullName;
         public virtual void Load(string savedData)
         {
-            var loadedObject = JsonConvert.DeserializeObject(savedData, this.GetType());
+            var settings = new JsonSerializerSettings
+            {
+                TypeNameHandling = TypeNameHandling.Objects
+            };
+            var loadedObject = JsonConvert.DeserializeObject(savedData, this.GetType(), settings);
             foreach (var property in this.GetType().GetFields())
             {
                 var loadedValue = property.GetValue(loadedObject);
@@ -24,8 +28,13 @@ namespace Kuantech.Core
 
         public virtual string Save()
         {
-            return JsonConvert.SerializeObject(this);
+            var settings = new JsonSerializerSettings
+            {
+                TypeNameHandling = TypeNameHandling.Objects
+            };
+            return JsonConvert.SerializeObject(this, Formatting.Indented, settings);
         }
+
         [NonSerialized] public bool Dirtied = false;
 
         public abstract void SetDefaultValues();

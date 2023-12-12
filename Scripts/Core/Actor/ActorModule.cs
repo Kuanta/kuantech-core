@@ -7,17 +7,16 @@ namespace Kuantech.Core
         [NonSerialized] public Actor Actor;
         [NonSerialized] public bool Initialized;
         public string ModuleId;
+        [NonSerialized] public bool Dirtied = false;
         public virtual void Initialize()
         {
             if(Initialized) return;
             Initialized = true;
             CreateModuleState();
-            CurrentState.ModuleId = ModuleId;
         }
 
         public virtual void OnModulesInitialized(){}
         public virtual void Reset(){}
-        public ActorModuleState CurrentState;
 
         #region State
         /// <summary>
@@ -26,7 +25,7 @@ namespace Kuantech.Core
         public virtual void DirtyState()
         {
             if(Actor == null) return;
-            CurrentState.Dirtied = true;
+            Dirtied = true;
             Actor.DirtyState();
         }
 
@@ -37,23 +36,23 @@ namespace Kuantech.Core
         {
 
         }
-        public virtual ActorModuleState InstantiateState()
+        protected virtual ActorModuleState InstantiateState()
         {
             return new ActorModuleState();
         }
-        public virtual void CreateModuleState()
+        public virtual ActorModuleState CreateModuleState()
         {
-            CurrentState = InstantiateState();
-            CurrentState.ModuleId = ModuleId;
+            ActorModuleState actorState = InstantiateState();
+            actorState.ModuleId = ModuleId;
+            return actorState;
         }
         /// <summary>
         /// Loads the state for this module
         /// </summary>
         /// <param name="state"></param>
-        public virtual void LoadState(string encodedState)
+        public virtual void LoadState(ActorModuleState state)
         {
-            CreateModuleState();
-            CurrentState.DecodeState(encodedState);
+
         }
         #endregion
     }
