@@ -54,7 +54,7 @@ namespace Kuantech.Core
 
         public virtual void PostInitialize()
         {
-            foreach (var module in Modules.Values)
+            foreach (var module in ActorModulesList)
             {
                 module.OnModulesInitialized();
             }
@@ -76,7 +76,7 @@ namespace Kuantech.Core
         
         public T GetModule<T>() where T : ActorModule
         {
-            foreach (var module in Modules.Values)
+            foreach (var module in ActorModulesList)
             {
                 if (module is T)
                 {
@@ -94,12 +94,19 @@ namespace Kuantech.Core
 
         public virtual void Reset()
         {
-            foreach (var key in Modules.Keys)
+            foreach (var module in ActorModulesList)
             {
-                Modules[key].Reset();
+                module.Reset();
             }
         }
 
+        public virtual void Cleanup()
+        {
+            foreach (var module in ActorModulesList)
+            {
+                module.Cleanup();
+            }
+        }
         #region State
     
         /// <summary>

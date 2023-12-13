@@ -1,15 +1,16 @@
-﻿using Kuantech.Utils;
+﻿using Kuantech.Core;
+using Kuantech.Utils;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Kuantech.Core.HyperCasual.UI
+namespace Kuantech.HyperCasual.UI
 {
     public class CurrencyIndicator : MonoBehaviour
     {
         public bool AutoUpdate = false;
         [SerializeField] private Image CurrencyIcon;
-        [SerializeField] private string CurrencyId;
+        [SerializeField] private CurrencyData CurrencyData;
         [SerializeField] private TMP_Text CurrencyAmount;
 
         protected bool Initialized = false;
@@ -17,22 +18,26 @@ namespace Kuantech.Core.HyperCasual.UI
         public bool CanGetCurrency()
         {
             if (!AutoUpdate || !GameManager.InstanceExists()) return false;
-            // GameStateManager gsm = (GameManager.Instance.GetSubManagerByType<GameStateManager>() as GameStateManager);
-            // if (gsm == null) return false;
             return true;
         }
         protected virtual void Start()
         {
             //Set currency icon
-            Sprite currIcon = UIResourcesManager.GetCurrencyIcon(CurrencyId);
+            SetCurrency(CurrencyData);
+            if (CanGetCurrency()) Initialize();
+        }
+
+        public void SetCurrency(CurrencyData currencyData)
+        {
+            if(currencyData == null) return;
+            CurrencyData = currencyData;
+            Sprite currIcon = CurrencyData.CurrencyIcon;
             if (currIcon != null && CurrencyIcon != null)
             {
                 CurrencyIcon.sprite = currIcon;
             }
-
-            if (CanGetCurrency()) Initialize();
         }
-
+        
         protected virtual void Initialize()
         {
             if (!CanGetCurrency()) return;
@@ -100,7 +105,7 @@ namespace Kuantech.Core.HyperCasual.UI
         /// <returns></returns>
         public virtual string GetCurrencyId()
         {
-            return CurrencyId;
+            return CurrencyData.CurrencyId;
         }
     }
 }

@@ -1,9 +1,10 @@
+using Kuantech.Core.HyperCasual;
 using Kuantech.Utils;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Kuantech.Core.HyperCasual.UI
+namespace Kuantech.HyperCasual.UI
 {
     public class PriceTag : MonoBehaviour
     {

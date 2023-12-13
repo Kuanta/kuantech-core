@@ -1,7 +1,10 @@
-﻿using UnityEngine;
+﻿using Kuantech.Core;
+using Kuantech.Core.HyperCasual;
+using Kuantech.Core.HyperCasual.Runner.UI;
+using UnityEngine;
 using UnityEngine.UI;
 
-namespace Kuantech.Core.HyperCasual.Runner.UI
+namespace Kuantech.HyperCasual.Runner.UI
 {
     public class RunnerUIManager : SubManager
     {

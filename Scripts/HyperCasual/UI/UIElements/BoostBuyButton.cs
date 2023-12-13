@@ -4,7 +4,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Kuantech.Core.HyperCasual.UI
+namespace Kuantech.HyperCasual.UI
 {
     public class BoostBuyButton : MonoBehaviour {
         public string BoosterId;
@@ -26,8 +26,8 @@ namespace Kuantech.Core.HyperCasual.UI
 
         public void Initialize()
         {
-            BoosterManager bm = BoosterManager.GetContext<BoosterManager>();
-            bm.OnBoostsReset += OnBoostsReset;
+            UpgradeManager bm = UpgradeManager.GetContext<UpgradeManager>();
+            bm.OnUpgradesReset += OnBoostsReset;
             Setup();
         }
         /// <summary>
@@ -35,18 +35,18 @@ namespace Kuantech.Core.HyperCasual.UI
         /// </summary>
         protected virtual void Setup()
         {
-            BoosterManager bm = BoosterManager.GetContext<BoosterManager>();
+            UpgradeManager bm = UpgradeManager.GetContext<UpgradeManager>();
             if(bm == null) return;
             bool maxedOut = bm.IsMaxedOut(BoosterId);
             bool canBeUpgraded = bm.CanBeUpgraded(BoosterId); //Maxed out and canBeUpgraded are different. Some boosters may require additional conditions
             MaxedOutIndicator?.SetActive(maxedOut);
             CanBeUpgradedVisuals?.SetActive(canBeUpgraded);
 
-            int price = bm.GetBoostPrice(BoosterId);
-            int currentLevel = bm.GetBoostLevel(BoosterId);
+            int price = bm.GetUpgradePrice(BoosterId);
+            int currentLevel = bm.GetCurrentUpgradeLevel(BoosterId);
             LevelText.text = $"{LevelPrefix}{(currentLevel + 1).Stringfy()}";
             PriceTag.text = price.Stringfy();
-            Sprite icon = UIResourcesManager.GetCurrencyIcon(bm.GetBoostCurrencyId(BoosterId));
+            Sprite icon = UIResourcesManager.GetCurrencyIcon(bm.GetUpgradeCurrencyId(BoosterId));
             if(icon == null) return;
             CurrencyIcon.sprite = icon;
         }
@@ -56,9 +56,9 @@ namespace Kuantech.Core.HyperCasual.UI
         }
         private void OnButtonPressed()
         {
-            BoosterManager bm = BoosterManager.GetContext<BoosterManager>();
+            UpgradeManager bm = UpgradeManager.GetContext<UpgradeManager>();
             if (bm == null) return;
-            if (!bm.BuyBooster(BoosterId)) return;
+            if (!bm.BuyUpgrade(BoosterId)) return;
             Setup();
         }
 

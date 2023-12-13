@@ -109,7 +109,7 @@ namespace Kuantech.Rpg
     public class ArmorModifierDictionary : SerializableDictionary<Enums.ArmorType, List<StatTypes>>{}
 
     [Serializable]
-    public class StatsModule : RpgActorModule
+    public class OldStatsModule : RpgActorModule
     {
         public int Level = 0;
         public int OverflowExperience = 0; //Overflow experience is TotalExperience - ExperienceToCurrentLevel
@@ -136,7 +136,7 @@ namespace Kuantech.Rpg
         [NonSerialized] private Dictionary<StatTypes, HashSet<StatModifier>> Modifiers;
         [NonSerialized] private Queue<StatTypes> DirtiedStats = new Queue<StatTypes>();
 
-        public void CopyFrom(StatsModule statsModule)
+        public void CopyFrom(OldStatsModule statsModule)
         {
             Level = statsModule.Level;
             OverflowExperience = statsModule.OverflowExperience;

@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+using Kuantech.Core;
 using UnityEngine;
 
-namespace Kuantech.Core.HyperCasual.UI
+namespace Kuantech.HyperCasual.UI
 {
     [Serializable]
     public struct CurrencyIconsData

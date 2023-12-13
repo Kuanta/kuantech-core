@@ -19,7 +19,7 @@ namespace Kuantech.Rpg
         [Header("Components")] 
         public Rigidbody Rigidbody;
         public Collider Collider;
-        public StatsModule Stats;
+        public OldStatsModule Stats;
         public StatusEffectHandler StatusEffectHandler;
         public CombatModule CombatModule;
         public MovementModule MovementModule;
@@ -68,7 +68,7 @@ namespace Kuantech.Rpg
                 module.Initialize();
             }
             //Quick references
-            Stats = (StatsModule) GetModuleByType(typeof(StatsModule));
+            Stats = (OldStatsModule) GetModuleByType(typeof(OldStatsModule));
             AnimatorModule = (AnimatorModule) GetModuleByType(typeof(AnimatorModule));
             MovementModule = (MovementModule) GetModuleByType(typeof(MovementModule));
             CombatModule = (CombatModule) GetModuleByType(typeof(CombatModule));

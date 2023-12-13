@@ -1,9 +1,11 @@
 ﻿using System.Collections;
+using Kuantech.Core.HyperCasual;
 using Kuantech.Core.HyperCasual.UI;
+using Kuantech.HyperCasual.UI;
 using Kuantech.UI;
 using UnityEngine;
 
-namespace Kuantech.Core.HyperCasual.Runner.UI
+namespace Kuantech.HyperCasual.Runner.UI
 {
     public class RunnerIngameMenu : UIMenu
     {

@@ -1,10 +1,11 @@
 ﻿using System.Collections.Generic;
 using Kuantech.Core.FX;
+using Kuantech.Core.HyperCasual;
 using Kuantech.UI;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Kuantech.Core.HyperCasual.UI
+namespace Kuantech.HyperCasual.UI
 {
     public class LevelCompletePanel : UIMenu
     {

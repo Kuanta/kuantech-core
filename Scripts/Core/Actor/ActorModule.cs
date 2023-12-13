@@ -18,6 +18,8 @@ namespace Kuantech.Core
         public virtual void OnModulesInitialized(){}
         public virtual void Reset(){}
 
+        public virtual void Cleanup(){}
+
         #region State
         /// <summary>
         /// Dirties the state of parent actor
@@ -29,13 +31,6 @@ namespace Kuantech.Core
             Actor.DirtyState();
         }
 
-        /// <summary>
-        /// Sets the default values for the module's state
-        /// </summary>
-        public virtual void SetDefaultStateValues()
-        {
-
-        }
         protected virtual ActorModuleState InstantiateState()
         {
             return new ActorModuleState();
