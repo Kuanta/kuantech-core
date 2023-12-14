@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace Kuantech.Core
 {
+    [RequireComponent(typeof(Actor))]
     public abstract class ActorModule : MonoBehaviour {
         [NonSerialized] public Actor Actor;
         [NonSerialized] public bool Initialized;
