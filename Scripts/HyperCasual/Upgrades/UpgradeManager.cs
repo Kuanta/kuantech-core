@@ -44,6 +44,7 @@ namespace Kuantech.HyperCasual
                 pair.Value.SetLevel(bsm.GetUpgradeLevel(pair.Key));
             }
         }
+        
         public bool IsMaxedOut(string upgradeId)
         {
             if (_upgradesMap == null || !_upgradesMap.ContainsKey(upgradeId)) return false;
