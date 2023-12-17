@@ -68,12 +68,14 @@ namespace Kuantech.HyperCasual
             return _upgradesMap[upgradeId].GetValue();
         }
 
-        public int GetCurrentUpgradeLevel(string upgradeId)
+        public static int GetCurrentUpgradeLevel(string upgradeId)
         {
-            if (_upgradesMap == null || !_upgradesMap.ContainsKey(upgradeId)) {
+            UpgradeManager context = UpgradeManager.GetContext<UpgradeManager>();
+            if(context == null) return 0;
+            if (context._upgradesMap == null || !context._upgradesMap.ContainsKey(upgradeId)) {
                 return 0;
             }
-            return _upgradesMap[upgradeId].CurrentLevel;
+            return context._upgradesMap[upgradeId].CurrentLevel;
         }
 
         public string GetUpgradeCurrencyId(string boostId)

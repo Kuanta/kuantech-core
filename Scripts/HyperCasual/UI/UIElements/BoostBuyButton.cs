@@ -43,7 +43,7 @@ namespace Kuantech.HyperCasual.UI
             CanBeUpgradedVisuals?.SetActive(canBeUpgraded);
 
             int price = bm.GetUpgradePrice(BoosterId);
-            int currentLevel = bm.GetCurrentUpgradeLevel(BoosterId);
+            int currentLevel = UpgradeManager.GetCurrentUpgradeLevel(BoosterId);
             LevelText.text = $"{LevelPrefix}{(currentLevel + 1).Stringfy()}";
             PriceTag.text = price.Stringfy();
             Sprite icon = UIResourcesManager.GetCurrencyIcon(bm.GetUpgradeCurrencyId(BoosterId));
