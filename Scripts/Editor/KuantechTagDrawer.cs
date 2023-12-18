@@ -1,4 +1,4 @@
-using Kuantech.Core.Utils;
+using Kuantech.Utils;
 using UnityEditor;
 using UnityEngine;
 

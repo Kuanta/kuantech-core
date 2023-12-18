@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace Kuantech.Core.Utils
+namespace Kuantech.Utils
 {
     public class ResettableAttribute : Attribute
     {

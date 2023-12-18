@@ -3,7 +3,7 @@ using UnityEditor;
 using System.Collections.Generic;
 using Kuantech.AI.Utils;
 
-[CustomEditor(typeof(NavmeshTargetZone))]
+[CustomEditor(typeof(WorldZone))]
 public class PNavmeshTargetZoneViewer : Editor
 {
     SerializedProperty pointsProperty;
@@ -22,7 +22,7 @@ public class PNavmeshTargetZoneViewer : Editor
 
     void OnSceneGUI()
     {
-        NavmeshTargetZone polygon = (NavmeshTargetZone)target;
+        WorldZone polygon = (WorldZone)target;
 
         for (int i = 0; i < polygon.Points.Count; i++)
         {
