@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Kuantech.AI.Utils
 {
-    public class NavmeshTargetZone : MonoBehaviour {
+    public class WorldZone : MonoBehaviour {
         public List<Vector3> Points = new List<Vector3>();
 
         public WorldPoint SampleWorldPoint()
