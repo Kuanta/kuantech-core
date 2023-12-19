@@ -94,6 +94,8 @@ namespace Kuantech.AI
         // public delegate NodeStatus Tick();
         // public Tick ProcessMethod;
         private BTLeafAction _leafAction;
+        private bool _earlySuccess = false; //Has the node success during EnterNode?
+        private bool _earlyFailure = false; //Has the node failed during EnterNode?
         
         public BTLeaf(){}
 
@@ -101,6 +103,7 @@ namespace Kuantech.AI
         {
             Name = name;
             _leafAction = leafAction;
+            _leafAction.ParentNode = this;
         }
 
         public void ParseNodeData(BtGraphNodeData nodeData)
@@ -181,11 +184,17 @@ namespace Kuantech.AI
         
         public override NodeStatus Process()
         {
+            //Check if EnterNode is needed
             if (RequiresStart)
             {
+                _earlyFailure = false;
+                _earlySuccess = false;
                 _leafAction.EnterNode(Owner);
                 RequiresStart = false;
+                if (_earlyFailure) return NodeStatus.FAILURE;
+                if (_earlySuccess) return NodeStatus.SUCCESS;
             }
+
             if (_leafAction == null) return NodeStatus.SUCCESS;
             NodeStatus nodeStatus = _leafAction.Tick(Owner);
             if(nodeStatus != NodeStatus.SUCCESS)
@@ -193,6 +202,17 @@ namespace Kuantech.AI
                 _leafAction.ExitNode();
             }
             return nodeStatus;
+        }
+
+        public void CompleteNode()
+        {
+            _earlySuccess = true;
+            _earlyFailure = false;
+        }
+        public void FailNode()
+        {
+            _earlyFailure = true;
+            _earlySuccess = false;
         }
         
     }

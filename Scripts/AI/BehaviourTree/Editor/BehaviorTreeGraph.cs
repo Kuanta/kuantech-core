@@ -302,7 +302,8 @@ namespace Kuantech.Editor
             _graphView = parentGraphView;
             NodeName = "Node";
             title = NodeName;
-            
+
+            //Create input and outpıt layouts
        
             //Properties
             // Create and configure the TextField for the node name
@@ -335,13 +336,17 @@ namespace Kuantech.Editor
             _removeOutputButton = new Button(() => { RemoveOutputPort(); }) { text = "Remove Output" };
             titleContainer.Add(_addOutputButton);
             titleContainer.Add(_removeOutputButton);
-            
+
+            inputContainer.style.alignItems = Align.FlexStart;
+            inputContainer.style.flexDirection = FlexDirection.Column;
+            outputContainer.style.alignItems = Align.FlexEnd;
+            outputContainer.style.flexDirection = FlexDirection.Column;
             AddInputPort();
         }
 
         public Port AddOutputPort()
         {
-            Port port = InstantiatePort(Orientation.Vertical, Direction.Output, Port.Capacity.Multi, typeof(bool));
+            Port port = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Multi, typeof(bool));
             var connector = new EdgeConnector<Edge>(new SimpleEdgeConnectorListener(_graphView));
             port.AddManipulator(connector);
             port.portName = "Output " + (outputContainer.childCount + 1);
@@ -352,7 +357,7 @@ namespace Kuantech.Editor
 
         public Port AddInputPort()
         {
-            Port inputPort = InstantiatePort(Orientation.Vertical, Direction.Input, Port.Capacity.Multi, typeof(bool));
+            Port inputPort = InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Single, typeof(bool));
             var connector = new EdgeConnector<Edge>(new SimpleEdgeConnectorListener(_graphView));
             inputPort.AddManipulator(connector);
             inputPort.portName = "Input";
