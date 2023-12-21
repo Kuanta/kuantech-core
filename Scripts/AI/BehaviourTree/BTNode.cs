@@ -26,12 +26,23 @@ namespace Kuantech.AI
         [SerializeField] public List<BTNode> Children = new List<BTNode>();
         private int _currentChildIndex = 0;
         public string Name;
-        protected bool RequiresStart;
+        public bool DebugNode = false;
+        protected bool RequiresStart = true;
         public BTNode(string n = "")
         {
             Name = n;
         }
 
+        public void OnEnter()
+        {
+            RequiresStart = true;
+            _currentChildIndex = 0;
+        }
+
+        public void OnExit()
+        {
+            RequiresStart = true;
+        }
         public void AddChild(BTNode n)
         {
             n.SetOwner(Owner);
@@ -50,9 +61,9 @@ namespace Kuantech.AI
         
         public void SetChildIndex(int childIndex)
         {
-            Children[childIndex].RequiresStart = true;
+            Children[childIndex].OnExit();
             _currentChildIndex = childIndex;
-            Children[_currentChildIndex].RequiresStart = true;
+            Children[_currentChildIndex].OnEnter();
         }
 
         public virtual NodeStatus Process()

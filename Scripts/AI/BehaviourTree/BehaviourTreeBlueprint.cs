@@ -42,7 +42,7 @@ namespace Kuantech.AI
                     leafNode.ParseNodeData(nodeData);
                     return leafNode;
             }
-
+            node.DebugNode = nodeData.Debuggable;
             if (node == null)
             {
                 throw new Exception("'How could this happen' - Heavy");
@@ -64,6 +64,7 @@ namespace Kuantech.AI
     {
         //General  structure
         public string NodeName;
+        public bool Debuggable;
         public AI.BTNode.NodeTypes NodeType;
         public Vector2 NodePosition;
         public Vector2 NodeSize;

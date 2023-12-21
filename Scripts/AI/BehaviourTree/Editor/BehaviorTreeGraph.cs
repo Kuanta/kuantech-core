@@ -291,7 +291,9 @@ namespace Kuantech.Editor
     public class BtGraphNode : Node
     {
         public string NodeName;
+        public bool Debuggable;
         private TextField _nodeNameField;
+        private Toggle _debuggableToggle;
         private Button _addOutputButton;
         private Button _removeOutputButton;
         public AI.BTNode.NodeTypes NodeType;
@@ -308,6 +310,7 @@ namespace Kuantech.Editor
             //Properties
             // Create and configure the TextField for the node name
             _nodeNameField = new TextField("Node Name:");
+            _debuggableToggle = new Toggle("Debuggable");
             _nodeNameField.value = NodeName;
             _nodeNameField.RegisterValueChangedCallback(evt =>
             {
@@ -327,6 +330,7 @@ namespace Kuantech.Editor
             // Add the TextField and EnumField to the node's main container
             mainContainer.Add(_nodeNameField);
             mainContainer.Add(_nodeTypeField);
+            mainContainer.Add(_debuggableToggle);
             
             //Buttons
             _addOutputButton = new Button(() => { AddOutputPort(); }) { text = "Add Output" };
@@ -417,6 +421,7 @@ namespace Kuantech.Editor
             return new BtGraphNodeData
             {
                 NodeName = NodeName,
+                Debuggable = _debuggableToggle.value,
                 NodeType = NodeType,
                 NodePosition = position,
                 NodeSize = size,
@@ -431,6 +436,7 @@ namespace Kuantech.Editor
             // Update the UI elements
             _nodeNameField.value = NodeName;
             _nodeTypeField.value = NodeType;
+            _debuggableToggle.value = data.Debuggable;
             
             SetPosition(new Rect()
             {
