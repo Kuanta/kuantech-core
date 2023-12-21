@@ -9,6 +9,7 @@ namespace Kuantech.AI
         public BTLeaf ParentNode;
         public virtual BTNode.NodeStatus Tick(BehaviourTree ownerTree)
         {
+            //Non overriden Ticks should return successs
             return BTNode.NodeStatus.SUCCESS;
         }
 

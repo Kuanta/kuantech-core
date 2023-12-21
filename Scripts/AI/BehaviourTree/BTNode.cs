@@ -103,7 +103,6 @@ namespace Kuantech.AI
         {
             Name = name;
             _leafAction = leafAction;
-            _leafAction.ParentNode = this;
         }
 
         public void ParseNodeData(BtGraphNodeData nodeData)
@@ -187,6 +186,7 @@ namespace Kuantech.AI
             //Check if EnterNode is needed
             if (RequiresStart)
             {
+                _leafAction.ParentNode = this;
                 _earlyFailure = false;
                 _earlySuccess = false;
                 _leafAction.EnterNode(Owner);

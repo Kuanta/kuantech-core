@@ -145,6 +145,7 @@ namespace Kuantech.Editor
         {
             if (fieldType == typeof(int))
             {
+                //todo: Handle KTTags here
                 // Add IntegerField
                 return new IntegerField(fieldName);
 

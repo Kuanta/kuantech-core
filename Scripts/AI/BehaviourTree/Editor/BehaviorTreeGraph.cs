@@ -357,6 +357,10 @@ namespace Kuantech.Editor
 
         public Port AddInputPort()
         {
+            if(inputContainer.childCount > 0)
+            {
+                return inputContainer.GetFirstOfType<Port>();
+            }
             Port inputPort = InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Single, typeof(bool));
             var connector = new EdgeConnector<Edge>(new SimpleEdgeConnectorListener(_graphView));
             inputPort.AddManipulator(connector);
