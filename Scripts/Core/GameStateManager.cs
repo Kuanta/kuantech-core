@@ -49,6 +49,10 @@ namespace Kuantech.Core
             _lastCheckTime = Time.time;
         }
 
+        private void OnApplicationQuit() {
+            if (SaveData && GameState != null) GameState.SaveData();
+        }
+
         public GameState GetGameState()
         {
             return GameState;
