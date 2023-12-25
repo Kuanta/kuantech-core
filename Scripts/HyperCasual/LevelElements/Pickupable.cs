@@ -1,5 +1,6 @@
 ﻿using System;
 using Kuantech.Core.FX;
+using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Core.HyperCasual.Runner
@@ -20,7 +21,8 @@ namespace Kuantech.Core.HyperCasual.Runner
 
         [Header("Effects")] 
         [SerializeField] private AudioSource PickupSound;
-        [SerializeField] protected AudioTypes PickupUISound = AudioTypes.None;
+        [KTTag("AudioClipTag")]
+        [SerializeField] protected int PickupUISound;
 
         public EventHandler<Pickupable> PickedEvent;
         
@@ -45,7 +47,7 @@ namespace Kuantech.Core.HyperCasual.Runner
             if (PickupSound != null)
             {
                 PickupSound.Play();
-            }else if (PickupUISound != AudioTypes.None)
+            }else
             {
                 EffectsLibrary.Instance.AudioLibrary.PlaySound(PickupUISound);
             }

@@ -197,7 +197,7 @@ namespace Kuantech.Rpg
             component.transform.localRotation = Quaternion.identity;
         }
 
-        public void AddEffect(EffectTypes effectType)
+        public void AddEffect(int effectType)
         {
             Effect effect = EffectsLibrary.Instance.PlayEffect(effectType, Vector3.zero, Quaternion.identity);
             AddAttachment(effect.gameObject);

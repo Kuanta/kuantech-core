@@ -37,7 +37,7 @@ namespace Kuantech.Core.FX
             if((Actor as RpgActor).MovementModule != null) (Actor as RpgActor).MovementModule.OnDodgeEvent += OnDodge;
         }
 
-        public void SetAttackEffects(List<EffectTypes> effectTypes)
+        public void SetAttackEffects(List<int> effectTypes)
         {
             RemoveCurrentAttackEffects();
             
@@ -51,7 +51,7 @@ namespace Kuantech.Core.FX
             }
         }
 
-        public void SetAlternativesEffects(List<EffectTypes> effectTypes)
+        public void SetAlternativesEffects(List<int> effectTypes)
         {
             RemoveCurrentAlternativeAttackEffects();
             foreach (var effectType in effectTypes)

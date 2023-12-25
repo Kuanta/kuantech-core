@@ -1,21 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
+using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Core.FX
 {
-    public enum EffectTypes
-    {
-        None,
-    }
-    
     [Serializable]
-    public class EffectsDictionary : SerializableDictionary<int, Effect>{}
+   public struct EffectEntry
+   {
+        [KTTag("EffectTag")]
+        public int EffectId;
+        public Effect Effect;
+   }
     
     public class EffectsLibrary : Singleton<EffectsLibrary>
     {
         public AudioLibrary AudioLibrary;
-        public EffectsDictionary EffectsDictionary;
+        public Dictionary<int, Effect> _effects;
         public PrefabPool EffectsPool;
         
         private Dictionary<string, float> _effectLastPlayedTimes = new Dictionary<string, float>();
@@ -30,19 +31,19 @@ namespace Kuantech.Core.FX
             if(AudioLibrary != null) AudioLibrary.Initialize();
         }
         
-        public Effect GetEffect(EffectTypes effectType)
+        public Effect GetEffect(int effectType)
         {
-            if (EffectsDictionary == null || !EffectsDictionary.ContainsKey((int)effectType)) return null;
-            GameObject obj = EffectsPool.GetObject(EffectsDictionary[(int)effectType].gameObject);
+            if (_effects == null || !_effects.ContainsKey(effectType)) return null;
+            GameObject obj = EffectsPool.GetObject(_effects[effectType].gameObject);
             return obj.GetComponent<Effect>();
         }
 
-        public void PlayAudio(AudioTypes audioType)
+        public void PlayAudio(int audioType)
         {
             AudioLibrary.PlaySound(audioType);
         }
         
-        public Effect PlayEffect(EffectTypes effectType, Transform parent, float effectCooldown)
+        public Effect PlayEffect(int effectType, Transform parent, float effectCooldown)
         {
             Effect effect = GetEffect(effectType);
             if (effect == null) return null;
@@ -50,7 +51,7 @@ namespace Kuantech.Core.FX
             return effect;
         }
         
-        public Effect PlayEffect(EffectTypes effectType, Transform parent, Vector3 localPosition, Quaternion localRotation, float effectCooldown)
+        public Effect PlayEffect(int effectType, Transform parent, Vector3 localPosition, Quaternion localRotation, float effectCooldown)
         {
             Effect effect = GetEffect(effectType);
             if (effect == null) return null;
@@ -58,7 +59,7 @@ namespace Kuantech.Core.FX
             return effect;
         }
 
-        public Effect PlayEffect(EffectTypes effectType, Vector3 localPosition, Quaternion localRotation, float effectCooldown = -1)
+        public Effect PlayEffect(int effectType, Vector3 localPosition, Quaternion localRotation, float effectCooldown = -1)
         {
             Effect effect = GetEffect(effectType);
             if (effect == null) return null;
@@ -66,7 +67,7 @@ namespace Kuantech.Core.FX
             return effect;
         }
         
-        public Effect PlayTimedEffect(EffectTypes effectType, Transform parent, float duration = -1, float effectCooldown = -1)
+        public Effect PlayTimedEffect(int effectType, Transform parent, float duration = -1, float effectCooldown = -1)
         {
             Effect effect = GetEffect(effectType);
             if (effect == null) return null;
@@ -74,7 +75,7 @@ namespace Kuantech.Core.FX
             return effect;
         }
         
-        public Effect PlayTimedEffect(EffectTypes effectType, Transform parent, Vector3 localPosition, Quaternion localRotation, float duration = -1, float effectCooldown = -1)
+        public Effect PlayTimedEffect(int effectType, Transform parent, Vector3 localPosition, Quaternion localRotation, float duration = -1, float effectCooldown = -1)
         {
             Effect effect = GetEffect(effectType);
             if (effect == null) return null;
@@ -82,17 +83,12 @@ namespace Kuantech.Core.FX
             return effect;
         }
 
-        public Effect PlayTimedEffect(EffectTypes effectType, Vector3 position, Quaternion rotation, float duration = -1, float effectCooldown = -1)
+        public Effect PlayTimedEffect(int effectType, Vector3 position, Quaternion rotation, float duration = -1, float effectCooldown = -1)
         {
             Effect effect = GetEffect(effectType);
             if (effect == null) return null;
             effect.PlayTimed(duration >= 0 ? duration : effect.Duration, position, rotation, effectCooldown);
             return effect;
-        }
-
-        public EffectTypes GetEffectType(int i)
-        {
-            return (EffectTypes) i;
         }
 
         public static bool CanPlaySound(string effectId, float effectCooldown = -1)

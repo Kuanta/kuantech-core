@@ -58,7 +58,6 @@ namespace Kuantech.Merge
             //Check if they are the same thing
             if (to.MergableData.Id != from.MergableData.Id) return null;
             to.Upgrade();
-            EffectsLibrary.Instance.AudioLibrary.PlaySound(AudioTypes.UpgradeItemSound);
             if (destroyExistings)
             {
                 from.enabled = false;

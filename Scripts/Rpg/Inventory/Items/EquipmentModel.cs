@@ -22,9 +22,10 @@ namespace Kuantech.Rpg.Inventory
         public Dictionary<Enums.BoneTypes, TransformStruct> Placements = new Dictionary<Enums.BoneTypes, TransformStruct>();
 
         [Header("Effects")] 
-        public List<EffectTypes> AttackEffects = new List<EffectTypes>();
-
-        public List<EffectTypes> AlternativeEffects = new List<EffectTypes>();
+        [KTTag("EffectTag")]
+        public List<int> AttackEffects = new List<int>();
+        [KTTag("EffectTag")]
+        public List<int> AlternativeEffects = new List<int>();
         public List<float> AttackEffectsDelays = new List<float>();
         public Effect ImpactEffectPrefab; //Should be an emitted effect
 

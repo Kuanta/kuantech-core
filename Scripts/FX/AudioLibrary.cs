@@ -1,44 +1,26 @@
 ﻿using System;
+using System.Collections.Generic;
+using Kuantech.Utils;
 using UnityEngine;
 using UnityEngine.Audio;
 
 namespace Kuantech.Core.FX
 {
-    public enum AudioTypes
-    {
-        None,
-        CoinPickup,
-        CloseButton,
-        ClickSound,
-        CoinEarnedSound, //For selling and getting coin from enemies
-        WinStinger,
-        LoseStinger,
-        PositiveEffect,
-        NegativeEffect,
-        FireDamageEffect,
-        ItemPickupSound,
-        EquipItemSound,
-        UnequipItemSound,
-        UpgradeItemSound,
-        ErrorSound,
-        DamageReceivedSound,
-        PurchaseSound,
-        UpgradeSound,
-    }
-    
     [Serializable]
-    public class AudioClipDictionary : SerializableDictionary<AudioTypes, AudioSource>
+    public struct AudioClipEntry
     {
+        [KTTag("AudioClipTag")]
+        public int ClipId;
+        public AudioSource AudioSource;
     }
-
     public class AudioLibrary : MonoBehaviour
     {
-        [Header("Adudio Mix")]
+        [Header("Audio Mix")]
         [SerializeField] private AudioMixer MasterMixer;
         
         [SerializeField] private AudioMixerSnapshot Unpaused;
-        
-        public AudioClipDictionary Audios;
+        public List<AudioClipEntry> Clips;
+        public Dictionary<int, AudioClipEntry> _audios;
         
         [Header("Music")] 
         public AudioSource MainMenuMusic;
@@ -53,13 +35,19 @@ namespace Kuantech.Core.FX
             int toggleSfx = PlayerPrefs.GetInt("ToggleSfx", defaultValue: 1);
             SetMusicVolume(toggleMusic == 1 ? musicVolume : 0.0001f);
             SetSfxVolume(toggleSfx == 1 ? sfxVolume : 0.0001f);
+
+            _audios  = new Dictionary<int, AudioClipEntry>();
+            foreach(var clip in Clips)
+            {
+                _audios[clip.ClipId] = clip;
+            }
         }
         
-        public void PlaySound(AudioTypes audioType)
+        public void PlaySound(int audioType)
         {
-            if (audioType == AudioTypes.None || Audios == null || !Audios.ContainsKey(audioType)) return;
-            if(Audios[audioType] == null) return;
-            Audios[audioType].Play();
+            if (_audios == null || !_audios.ContainsKey(audioType)) return;
+            if (_audios[audioType].AudioSource == null) return;
+            _audios[audioType].AudioSource.Play();
         }
         
         /// <summary> 
