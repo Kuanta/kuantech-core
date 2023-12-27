@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using Kuantech.Utils;
 using UnityEngine;
 
@@ -13,21 +14,24 @@ namespace Kuantech.Core.FX
         public Effect Effect;
    }
     
-    public class EffectsLibrary : Singleton<EffectsLibrary>
+    public class EffectsLibrary : SubManager
     {
         public AudioLibrary AudioLibrary;
+        public List<EffectEntry> EffectsList;
         public Dictionary<int, Effect> _effects;
         public PrefabPool EffectsPool;
         
         private Dictionary<string, float> _effectLastPlayedTimes = new Dictionary<string, float>();
-        
-        private void Awake()
+
+        public override async UniTask Initialize(GameManager gameManager)
         {
             EffectsPool = new PrefabPool(transform, 1000);
-        }
 
-        public void Initialize()
-        {
+            _effects = new Dictionary<int, Effect>();
+            foreach(var entry in EffectsList)
+            {
+                _effects[entry.EffectId] = entry.Effect;
+            }
             if(AudioLibrary != null) AudioLibrary.Initialize();
         }
         
@@ -38,9 +42,12 @@ namespace Kuantech.Core.FX
             return obj.GetComponent<Effect>();
         }
 
-        public void PlayAudio(int audioType)
+        public static void PlayAudio(int audioType)
         {
-            AudioLibrary.PlaySound(audioType);
+            EffectsLibrary context = GetContext<EffectsLibrary>();
+            if(context == null) return;
+            if(context.AudioLibrary == null) return;
+            context.AudioLibrary.PlaySound(audioType);
         }
         
         public Effect PlayEffect(int effectType, Transform parent, float effectCooldown)
@@ -93,7 +100,7 @@ namespace Kuantech.Core.FX
 
         public static bool CanPlaySound(string effectId, float effectCooldown = -1)
         {
-            EffectsLibrary context = EffectsLibrary.Instance;
+            EffectsLibrary context = EffectsLibrary.GetContext<EffectsLibrary>();
             if (effectCooldown < 0) return true;
             if (!context._effectLastPlayedTimes.ContainsKey(effectId)) return true;
             float lastPlayedTime = context._effectLastPlayedTimes[effectId];
@@ -102,7 +109,7 @@ namespace Kuantech.Core.FX
 
         public static void SetLastPlayedTime(string effectId)
         {
-            EffectsLibrary context = EffectsLibrary.Instance;
+            EffectsLibrary context = EffectsLibrary.GetContext<EffectsLibrary>();
             if (context._effectLastPlayedTimes == null)
                 context._effectLastPlayedTimes = new Dictionary<string, float>();
             context._effectLastPlayedTimes[effectId] = Time.time;

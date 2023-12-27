@@ -43,7 +43,7 @@ namespace Kuantech.Core.FX
             
             foreach (var effectType in effectTypes)
             {
-                Effect effect = EffectsLibrary.Instance.GetEffect(effectType);
+                Effect effect = EffectsLibrary.GetContext<EffectsLibrary>().GetEffect(effectType);
                 AttackEffects.Add(effect);
                 effect.transform.SetParent(transform);
                 effect.transform.localPosition = Vector3.zero;
@@ -56,7 +56,7 @@ namespace Kuantech.Core.FX
             RemoveCurrentAlternativeAttackEffects();
             foreach (var effectType in effectTypes)
             {
-                Effect effect = EffectsLibrary.Instance.GetEffect(effectType);
+                Effect effect = EffectsLibrary.GetContext<EffectsLibrary>().GetEffect(effectType);
                 AlternativeAttackEffects.Add(effect);
                 effect.transform.SetParent(transform);
                 effect.transform.localPosition = Vector3.zero;
@@ -74,7 +74,7 @@ namespace Kuantech.Core.FX
             //Clear existing ones
             foreach (var effect in AttackEffects)
             {
-                EffectsLibrary.Instance.EffectsPool.PoolObject(effect.gameObject);
+                EffectsLibrary.GetContext<EffectsLibrary>().EffectsPool.PoolObject(effect.gameObject);
             }
             AttackEffects.Clear();
         }
@@ -84,7 +84,7 @@ namespace Kuantech.Core.FX
             //Clear existing ones
             foreach (var effect in AlternativeAttackEffects)
             {
-                EffectsLibrary.Instance.EffectsPool.PoolObject(effect.gameObject);
+                EffectsLibrary.GetContext<EffectsLibrary>().EffectsPool.PoolObject(effect.gameObject);
             }
             AlternativeAttackEffects.Clear();
         }

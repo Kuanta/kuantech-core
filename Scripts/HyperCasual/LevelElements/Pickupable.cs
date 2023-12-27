@@ -49,7 +49,7 @@ namespace Kuantech.Core.HyperCasual.Runner
                 PickupSound.Play();
             }else
             {
-                EffectsLibrary.Instance.AudioLibrary.PlaySound(PickupUISound);
+                EffectsLibrary.GetContext<EffectsLibrary>().AudioLibrary.PlaySound(PickupUISound);
             }
 
             PickedEvent?.Invoke(this, this);

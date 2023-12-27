@@ -1,5 +1,4 @@
 ﻿using System;
-using Kuantech.Core;
 using Kuantech.Core.FX;
 using Kuantech.UI;
 using UnityEngine;
@@ -50,26 +49,26 @@ namespace Kuantech.Core.HyperCasual
         {
             PlayerPrefs.SetFloat("MusicVolume",value);
             value = ToggleMusicButton.State ? value : 0.0001f;
-            EffectsLibrary.Instance.AudioLibrary.SetMusicVolume(value);
+            EffectsLibrary.GetContext<EffectsLibrary>().AudioLibrary.SetMusicVolume(value);
         }
 
         private void OnSfxVolumeChange(float value)
         {
             PlayerPrefs.SetFloat("SfxVolume", value);
             value = ToggleSfxButton.State ? value : 0.0001f;
-            EffectsLibrary.Instance.AudioLibrary.SetSfxVolume(value);
+            EffectsLibrary.GetContext<EffectsLibrary>().AudioLibrary.SetSfxVolume(value);
         }
 
         private void OnMusicToggle(bool toggle)
         {
             PlayerPrefs.SetInt("ToggleMusic", toggle ? 1 : 0 );
-            EffectsLibrary.Instance.AudioLibrary.SetMusicVolume(toggle ? MusicVolume.value : 0.0001f);
+            EffectsLibrary.GetContext<EffectsLibrary>().AudioLibrary.SetMusicVolume(toggle ? MusicVolume.value : 0.0001f);
         }
 
         private void OnSfxToggle(bool toggle)
         {
             PlayerPrefs.SetInt("ToggleSfx", toggle ? 1 : 0 );
-            EffectsLibrary.Instance.AudioLibrary.SetSfxVolume(toggle ? SfxVolume.value : 0.0001f);
+            EffectsLibrary.GetContext<EffectsLibrary>().AudioLibrary.SetSfxVolume(toggle ? SfxVolume.value : 0.0001f);
         }
     }
 }

@@ -129,7 +129,7 @@ namespace Kuantech.Core.FX
             
             if(Vfx != null) Vfx.Stop();
             if(Sfx != null) Sfx.Stop();
-            EffectsLibrary.Instance.EffectsPool.PoolObject(gameObject);
+            EffectsLibrary.GetContext<EffectsLibrary>().EffectsPool.PoolObject(gameObject);
         }
 
         #region FadeInOut

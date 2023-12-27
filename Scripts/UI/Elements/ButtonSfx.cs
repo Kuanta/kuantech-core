@@ -20,7 +20,7 @@ namespace Kuantech.Core.UI
 
         private void ButtonPressHandler()
         {
-            EffectsLibrary.Instance.AudioLibrary.PlaySound(AudioType);
+            EffectsLibrary.GetContext<EffectsLibrary>().AudioLibrary.PlaySound(AudioType);
         }
     }
 }

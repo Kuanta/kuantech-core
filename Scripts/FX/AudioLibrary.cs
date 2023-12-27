@@ -20,7 +20,7 @@ namespace Kuantech.Core.FX
         
         [SerializeField] private AudioMixerSnapshot Unpaused;
         public List<AudioClipEntry> Clips;
-        public Dictionary<int, AudioClipEntry> _audios;
+        public Dictionary<int, AudioSource> _audios;
         
         [Header("Music")] 
         public AudioSource MainMenuMusic;
@@ -36,18 +36,18 @@ namespace Kuantech.Core.FX
             SetMusicVolume(toggleMusic == 1 ? musicVolume : 0.0001f);
             SetSfxVolume(toggleSfx == 1 ? sfxVolume : 0.0001f);
 
-            _audios  = new Dictionary<int, AudioClipEntry>();
+            _audios  = new Dictionary<int, AudioSource>();
             foreach(var clip in Clips)
             {
-                _audios[clip.ClipId] = clip;
+                _audios[clip.ClipId] = clip.AudioSource;
             }
         }
         
         public void PlaySound(int audioType)
         {
             if (_audios == null || !_audios.ContainsKey(audioType)) return;
-            if (_audios[audioType].AudioSource == null) return;
-            _audios[audioType].AudioSource.Play();
+            if (_audios[audioType] == null) return;
+            _audios[audioType].Play();
         }
         
         /// <summary> 

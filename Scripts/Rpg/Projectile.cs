@@ -199,7 +199,7 @@ namespace Kuantech.Rpg
 
         public void AddEffect(int effectType)
         {
-            Effect effect = EffectsLibrary.Instance.PlayEffect(effectType, Vector3.zero, Quaternion.identity);
+            Effect effect = EffectsLibrary.GetContext<EffectsLibrary>().PlayEffect(effectType, Vector3.zero, Quaternion.identity);
             AddAttachment(effect.gameObject);
             effect.gameObject.transform.localPosition = Vector3.zero;
             effect.gameObject.transform.localRotation = Quaternion.identity;
