@@ -46,7 +46,7 @@ namespace Kuantech.Core.FX
         public void PlaySound(int audioType)
         {
             if (_audios == null || !_audios.ContainsKey(audioType)) return;
-            if (_audios[audioType] == null) return;
+            if (_audios[audioType] == null || _audios[audioType].isPlaying) return;
             _audios[audioType].Play();
         }
         
