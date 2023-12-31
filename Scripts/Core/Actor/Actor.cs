@@ -138,7 +138,10 @@ namespace Kuantech.Core
         /// </summary>
         public virtual void SetDefaultStateValues()
         {
-    
+            foreach (var module in ActorModulesList)
+            {
+                module.SetDefaultValues();
+            }
         }
 
         /// <summary>
@@ -158,7 +161,10 @@ namespace Kuantech.Core
         {
             foreach(var pair in moduleStates)
             {
-                if (pair.Key.IsNullOrEmpty()) continue;
+                if (pair.Key.IsNullOrEmpty()) 
+                {
+                    continue;
+                }
                 if (!ModulesById.ContainsKey(pair.Key))
                 {
                     Debug.LogError("Id is missing:" + pair.Key);
