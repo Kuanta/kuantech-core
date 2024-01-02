@@ -9,8 +9,9 @@ namespace Kuantech.HyperCasual.UI
     public class CurrencyIndicator : MonoBehaviour
     {
         public bool AutoUpdate = false;
+        public CurrencyData CurrencyData;
+
         [SerializeField] private Image CurrencyIcon;
-        [SerializeField] private CurrencyData CurrencyData;
         [SerializeField] private TMP_Text CurrencyAmount;
 
         protected bool Initialized = false;
