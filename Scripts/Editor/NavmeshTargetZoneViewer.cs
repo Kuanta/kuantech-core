@@ -26,9 +26,10 @@ public class PNavmeshTargetZoneViewer : Editor
 
         for (int i = 0; i < polygon.Points.Count; i++)
         {
+            Vector3 localPoint = polygon.Points[i];
+            localPoint.y = 0;
             // Handle for each point
-            Vector3 point = polygon.transform.TransformPoint(polygon.Points[i]);
-            point.y = 0;
+            Vector3 point = polygon.transform.TransformPoint(localPoint);
             // You can change the handle type here. For example, use DotHandleCap for a dot.
             float handleSize = HandleUtility.GetHandleSize(point) * 0.1f;
             point = Handles.FreeMoveHandle(point, handleSize, Vector3.zero, Handles.DotHandleCap);
