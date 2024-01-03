@@ -68,6 +68,11 @@ namespace Kuantech.HyperCasual
             return _upgradesMap[upgradeId].GetValue();
         }
 
+        public static int GetCurrentUpgradeLevel(UpgradeData data)
+        {
+            return GetCurrentUpgradeLevel(data.UpgradeId);
+        }
+
         public static int GetCurrentUpgradeLevel(string upgradeId)
         {
             UpgradeManager context = UpgradeManager.GetContext<UpgradeManager>();
@@ -114,11 +119,17 @@ namespace Kuantech.HyperCasual
             int price = boostData.GetUpgradePrice();
             
             //Check the wallet
-            string currencyId = _upgradesMap[boosterId].CurrencyData.CurrencyId;
-            int currentHeldAmount = GameStateManager.GetCurrencyStatic(currencyId).Amount;
-            if(price <= currentHeldAmount)
+            bool canBuy = true;
+            if(_upgradesMap[boosterId].CurrencyData != null)
             {
-                GameStateManager.GetContext<GameStateManager>().RemoveCurrency(currencyId, price);
+                string currencyId = _upgradesMap[boosterId].CurrencyData.CurrencyId;
+                int currentHeldAmount = GameStateManager.GetCurrencyStatic(currencyId).Amount;
+                canBuy = price <= currentHeldAmount;
+                if(canBuy) GameStateManager.GetContext<GameStateManager>().RemoveCurrency(currencyId, price);
+            }
+            
+            if(canBuy)
+            {
                 PurchaseUpgrade(boosterId);
                 return true;
             }
