@@ -16,6 +16,7 @@ namespace Kuantech.AI
             SELECTOR,
             SEQUENCE,
             LEAF,
+            SUB_GRAPH,
         }
         public enum NodeStatus
         {

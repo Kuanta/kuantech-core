@@ -41,6 +41,17 @@ namespace Kuantech.AI
                     BTLeaf leafNode = new BTLeaf(nodeData.NodeName);
                     leafNode.ParseNodeData(nodeData);
                     return leafNode;
+                case BTNode.NodeTypes.SUB_GRAPH:
+                    if(nodeData.SubTree == null || nodeData.SubTree.RootNodeData == null)
+                    {
+                        return null;
+                    }
+                    BtGraphNodeData subTreeData = nodeData.SubTree.RootNodeData;
+                    return ProcessNode(subTreeData);
+                default:
+                    //What to do?
+                    node = new BTSequence(nodeData.NodeName);
+                    break;
             }
             node.DebugNode = nodeData.Debuggable;
             if (node == null)
@@ -73,6 +84,9 @@ namespace Kuantech.AI
         //Leaf Nodes
         public string ActionClassName;
         public LeafActionVariablesDict ActionClassVariables;
+
+        //Child Graph
+        public BehaviourTreeBlueprint SubTree;
     }
 
 }
