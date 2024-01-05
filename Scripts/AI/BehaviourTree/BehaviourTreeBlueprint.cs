@@ -48,6 +48,9 @@ namespace Kuantech.AI
                     }
                     BtGraphNodeData subTreeData = nodeData.SubTree.RootNodeData;
                     return ProcessNode(subTreeData);
+                case BTNode.NodeTypes.RANDOM_SELECTOR:
+                    node = new BTRandomSelector(nodeData.NodeName);
+                    break;
                 default:
                     //What to do?
                     node = new BTSequence(nodeData.NodeName);

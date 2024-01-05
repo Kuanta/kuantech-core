@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
+using DTT.Utils.Extensions;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -17,6 +18,7 @@ namespace Kuantech.AI
             SEQUENCE,
             LEAF,
             SUB_GRAPH,
+            RANDOM_SELECTOR,
         }
         public enum NodeStatus
         {
@@ -34,13 +36,13 @@ namespace Kuantech.AI
             Name = n;
         }
 
-        public void OnEnter()
+        public virtual void OnEnter()
         {
             RequiresStart = true;
             _currentChildIndex = 0;
         }
 
-        public void OnExit()
+        public virtual void OnExit()
         {
             RequiresStart = true;
         }
@@ -83,8 +85,13 @@ namespace Kuantech.AI
                     AddChild(new BTSequence(nodeName));
                     break;
                 case NodeTypes.LEAF:
+                    Debug.LogError("Leaf?");
                     BTLeafAction action = (BTLeafAction) Assembly.GetExecutingAssembly().CreateInstance(actionName);
                     AddChild(new BTLeaf(nodeName, action));
+                    break;
+                case NodeTypes.RANDOM_SELECTOR:
+                    Debug.LogError("YEs?");
+                    AddChild(new BTRandomSelector(nodeName));
                     break;
                 default:
                     break;
@@ -285,6 +292,53 @@ namespace Kuantech.AI
                     return NodeStatus.FAILURE;
                 }
                 SetChildIndex(GetChildIndex()+1);
+                return NodeStatus.RUNNING;
+            }
+            return NodeStatus.RUNNING;
+        }
+    }
+
+    [Serializable]
+    public class BTRandomSelector : BTNode
+    {
+        private List<int> _shuffledIncides;
+        private int _listIndex = 0;
+
+        public BTRandomSelector(string name = "RandomSelector")
+        {
+            Name = name;
+        }
+        public override void OnEnter()
+        {
+            base.OnEnter();
+            _shuffledIncides = new List<int>();
+            for(int i=0;i<Children.Count;++i)
+            {
+                _shuffledIncides.Add(i);
+            }
+            _shuffledIncides.Shuffle();
+            _listIndex = 0;
+            SetChildIndex(_shuffledIncides[_listIndex]);
+        }
+        public override NodeStatus Process()
+        {
+            if (Children.Count == 0) return NodeStatus.SUCCESS;
+            NodeStatus childStatus = GetCurrentChild().Process();
+            if (childStatus == NodeStatus.RUNNING) return childStatus;
+            if (childStatus == NodeStatus.SUCCESS)
+            {
+                SetChildIndex(0);
+                return NodeStatus.SUCCESS;
+            }
+
+            if (childStatus == NodeStatus.FAILURE)
+            {
+                if (GetChildIndex() >= Children.Count - 1)
+                {
+                    return NodeStatus.FAILURE;
+                }
+                _listIndex++;
+                SetChildIndex(_shuffledIncides[_listIndex]);
                 return NodeStatus.RUNNING;
             }
             return NodeStatus.RUNNING;

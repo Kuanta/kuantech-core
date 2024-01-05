@@ -33,7 +33,7 @@ namespace Kuantech.Core
             }
 
             //Initialize modules after getting them all so that they can require each other in their initialize methods
-            foreach(var module in Modules.Values)
+            foreach(var module in ActorModulesList)
             {
                 module.Initialize();
             }
