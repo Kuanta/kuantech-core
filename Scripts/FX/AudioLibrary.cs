@@ -17,8 +17,6 @@ namespace Kuantech.Core.FX
     {
         [Header("Audio Mix")]
         [SerializeField] private AudioMixer MasterMixer;
-        
-        [SerializeField] private AudioMixerSnapshot Unpaused;
         public List<AudioClipEntry> Clips;
         public Dictionary<int, AudioSource> _audios;
         
@@ -46,7 +44,7 @@ namespace Kuantech.Core.FX
         public void PlaySound(int audioType)
         {
             if (_audios == null || !_audios.ContainsKey(audioType)) return;
-            if (_audios[audioType] == null || _audios[audioType].isPlaying) return;
+            if (_audios[audioType] == null) return;
             _audios[audioType].Play();
         }
         

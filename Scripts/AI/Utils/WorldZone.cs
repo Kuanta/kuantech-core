@@ -42,6 +42,8 @@ namespace Kuantech.AI.Utils
                 Target = transform,
                 LocalPosition = localPoint,
                 LocalRotation = Quaternion.identity,
+                Position = transform.TransformPoint(localPoint),
+                Rotation = transform.rotation,
             };
         }
 #if UNITY_EDITOR
