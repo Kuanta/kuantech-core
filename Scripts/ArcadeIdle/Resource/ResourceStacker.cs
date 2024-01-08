@@ -1,0 +1,89 @@
+﻿using Kuantech.Utils;
+using UnityEditor;
+using UnityEngine;
+
+namespace Kuantech.ArcadeIdle
+{
+    public class ResourceStacker : MonoBehaviour
+    {
+        [Header("Properties")] 
+        [SerializeField] private Vector3 CellSize;
+        [SerializeField] private Vector2 AnchorPoints = new Vector2(0, 0);
+        [SerializeField] private int ColumnCount;
+        [SerializeField] private int RowCount;
+        [SerializeField] protected Transform AnchorPoint;
+
+        public void StackObject(ResourceVisual visual, int index, bool flyToPosition = false)
+        {
+            WorldPoint point = GetLocalPosition(index);
+            Transform parent = AnchorPoint != null ? AnchorPoint : transform;
+            point.Target = parent;
+
+            if (flyToPosition)
+            {
+                visual.FlyToTarget(point);
+            }else{
+                visual.transform.SetParent(parent);
+                visual.transform.localPosition = point.LocalPosition;
+                visual.transform.localRotation = point.LocalRotation;
+            }
+        }
+
+        public WorldPoint GetWorldPosition(int index)
+        {
+            WorldPoint localPoint = GetLocalPosition(index);
+            Vector3 worldPoint = AnchorPoint.transform.TransformPoint(localPoint.LocalPosition);
+            Quaternion worldRotation = AnchorPoint.rotation * localPoint.LocalRotation;
+
+            return new WorldPoint
+            {
+                Position = worldPoint,
+                Rotation = worldRotation,
+            };
+        }
+
+        public WorldPoint GetLocalPosition(int index)
+        {
+            int currentIndex = index;
+            int heightIndex = Mathf.FloorToInt(currentIndex / (float)(ColumnCount * RowCount));
+
+            int rowColFlatIndex = currentIndex - heightIndex * ColumnCount * RowCount;
+
+            int rowIndex = Mathf.FloorToInt(rowColFlatIndex / (float) ColumnCount);
+            int columnIndex = rowColFlatIndex - rowIndex * ColumnCount;
+
+            Vector3 colPos = new Vector3(1,0,0) * (CellSize.x * 0.5f + columnIndex * CellSize.x - AnchorPoints.x * CellSize.x*ColumnCount);
+            Vector3 rowPos = new Vector3(0,0,1) * (CellSize.z * 0.5f + rowIndex * CellSize.z - AnchorPoints.y*CellSize.z*RowCount);
+            Vector3 heightPos = new Vector3(0,1,0) * (heightIndex * CellSize.y);
+            
+            return new WorldPoint
+            {
+                LocalPosition = colPos + rowPos + heightPos,
+                LocalRotation = Quaternion.identity,
+            };
+        }
+
+#if UNITY_EDITOR
+        public bool AlwaysShow = false;
+        void OnDrawGizmos()
+        {
+            if(AnchorPoint == null && !AlwaysShow) return;
+            if(Selection.activeGameObject != gameObject) return;
+            Gizmos.color = Color.yellow; // Set the color of the gizmos
+            ColumnCount = Mathf.Max(ColumnCount, 1);
+            RowCount = Mathf.Max(RowCount, 1);
+            Vector3 size = new Vector3(CellSize.x, CellSize.y, CellSize.z);
+            // Loop through each cell and draw it
+            for (int i = 0; i < ColumnCount * RowCount; i++)
+            {
+                WorldPoint point = GetLocalPosition(i);
+                // Get the rotated size
+                Vector3 rotatedSize = AnchorPoint.rotation * size;
+
+                // Draw a wire cube at each cell position
+                Gizmos.DrawWireCube(AnchorPoint.TransformPoint(point.LocalPosition), rotatedSize);
+            }
+        }
+#endif
+    }
+}
