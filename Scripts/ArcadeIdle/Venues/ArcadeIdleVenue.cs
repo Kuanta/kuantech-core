@@ -414,11 +414,16 @@ namespace Kuantech.ArcadeIdle
                 {
                     //Filter by actor tags
                     if (actor.IsLocked() || tags != null && tags.Count > 0 && !tags.Contains(actor.VenueTag)) continue;
-                    T interactable = actor.GetModule<T>();
-                    if (interactable == null || interactable.Disabled) continue;
-                    //Apply filter
-                    if (filter != null && !filter(interactable)) continue;
-                    interactables.Add(interactable);
+                    List<T> interactablesInActor = actor.GetModules<T>();
+                    if(interactablesInActor == null) continue;
+                    foreach(T interactable in interactablesInActor)
+                    {
+                        if (interactable == null || interactable.Disabled) continue;
+                        //Apply filter
+                        if (filter != null && !filter(interactable)) continue;
+                        interactables.Add(interactable);
+                    }
+                 
                 }
             }
 
@@ -449,16 +454,22 @@ namespace Kuantech.ArcadeIdle
             Dictionary<ResourceData, HashSet<ResourceDispenser>> map = new Dictionary<ResourceData, HashSet<ResourceDispenser>>();
             foreach(var actor in actors)
             {
-                ResourceDispenser dispenser = actor.GetModule<ResourceDispenser>();
-                if(dispenser == null) continue;
-                foreach(var resource in dispenser.DispensedResources)
+                List<ResourceDispenser> dispensers = actor.GetModules<ResourceDispenser>();
+                if(dispensers == null) 
                 {
-                    if (!map.ContainsKey(resource))
+                    continue;
+                }
+                foreach(var dispenser in dispensers)
+                {
+                    foreach (var resource in dispenser.DispensedResources)
                     {
-                        map[resource] = new HashSet<ResourceDispenser>();
-                    }
-                    map[resource].Add(dispenser);
+                        if (!map.ContainsKey(resource))
+                        {
+                            map[resource] = new HashSet<ResourceDispenser>();
+                        }
+                        map[resource].Add(dispenser);
 
+                    }
                 }
             }
             _resourceToDispensers = map;

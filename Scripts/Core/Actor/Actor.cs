@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kuantech.Utils;
+using Unity.VisualScripting;
 using UnityEngine;
 
 namespace Kuantech.Core
@@ -10,7 +11,7 @@ namespace Kuantech.Core
     {
         public string Id;
         protected List<ActorModule> ActorModulesList;
-        protected Dictionary<Type, ActorModule> Modules = new Dictionary<Type, ActorModule>();
+        protected Dictionary<Type, List<ActorModule>> Modules = new Dictionary<Type, List<ActorModule>>();
         public Dictionary<string, ActorModule> ModulesById = new Dictionary<string, ActorModule>();
         protected bool Initialized;
 
@@ -27,7 +28,11 @@ namespace Kuantech.Core
             ModulesById = new Dictionary<string, ActorModule>();
             foreach (ActorModule module in ActorModulesList)
             {
-                Modules[module.GetType()] = module;
+                if(!Modules.ContainsKey(module.GetType()))
+                {
+                    Modules[module.GetType()] = new List<ActorModule>();
+                }
+                Modules[module.GetType()].Add(module);
                 module.Actor = this;
                 if(!module.ModuleId.IsNullOrEmpty()) ModulesById[module.ModuleId] = module;
             }
@@ -67,24 +72,46 @@ namespace Kuantech.Core
         /// <returns></returns>
         public ActorModule GetModule(Type type)
         {
-            if(Modules.ContainsKey(type))
+            if(Modules.ContainsKey(type) && Modules[type].Count > 0)
             {
-                return Modules[type];
+                return Modules[type][0];
             }
             return null;
         }
         
+        /// <summary>
+        /// Returns the first instance of a given mopdule type. Should only be used when searched for an explicit type and made sure that there is only a single instance of that component
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
         public T GetModule<T>() where T : ActorModule
         {
-            foreach (var module in ActorModulesList)
+            foreach (var pair in Modules)
             {
-                if (module is T)
+                if (pair.Value.Count > 0 && pair.Value[0] is T)
                 {
-                    return module as T;
+                    return pair.Value[0] as T;
                 }
             }
-
             return null;
+        }
+        
+        /// <summary>
+        /// Returns all modules that match the given type
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public List<T> GetModules<T>() where T : ActorModule
+        {
+            List<T> result = new List<T>();
+            foreach (var pair in Modules)
+            {
+                if (pair.Value.Count > 0 && pair.Value[0] is T)
+                {
+                    result.AddRange(pair.Value);
+                }
+            }
+            return result;
         }
 
         protected virtual void Update()

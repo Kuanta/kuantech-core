@@ -3,9 +3,17 @@ using UnityEngine;
 
 namespace Kuantech.ArcadeIdle
 {
+    public struct DispensedResourceInventoryPair
+    {
+        public ResourceData Resource;
+        public ResourceInventory SourceInventory;
+    }
+
     public class ResourceDispenser : VenueInteractable
     {
         [Header("Properties")] 
+        public List<DispensedResourceInventoryPair> ResourceToInventoryList;
+        private Dictionary<ResourceData, ResourceInventory> _resourceToInventoryMap = new Dictionary<ResourceData, ResourceInventory>();
         public ResourceInventory SourceInventory;
         
         [Tooltip("Resource to dispence. If null, dispenser will try to get an available resource")]
