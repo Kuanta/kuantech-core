@@ -93,12 +93,10 @@ namespace Kuantech.ArcadeIdle
         public void Toggle(bool toggle)
         {
             gameObject.SetActive(toggle);
-            if(Blockers != null) 
+            if (Blockers == null) return;
+            foreach (var block in Blockers)
             {
-                foreach(var blocker in Blockers)
-                {
-                    blocker.SetActive(!toggle);
-                }
+                block.SetActive(!toggle);
             }
         }
     }

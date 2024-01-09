@@ -22,8 +22,9 @@ namespace Kuantech.ArcadeIdle
         public ArcadeIdleNpc DequeueActor()
         {
             if (_queue == null || _queue.Count == 0) return null;
+            ArcadeIdleNpc dequed = _queue.Dequeue();
             RepositionActors();
-            return _queue.Dequeue();
+            return dequed;
         }
         
         /// <summary>
