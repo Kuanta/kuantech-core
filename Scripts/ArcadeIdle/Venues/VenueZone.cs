@@ -11,7 +11,7 @@ namespace Kuantech.ArcadeIdle
         [KTTag("ZoneTags")]
         public int ZoneTag;
         public string ZoneId;
-        [SerializeField] private GameObject Blocker;
+        [SerializeField] private List<GameObject> Blockers;
         [NonSerialized] public List<VenueActor> VenueActors;
         [NonSerialized] public ArcadeIdleVenue ParentVenue;
         public bool UnlockedByDefault;
@@ -93,7 +93,13 @@ namespace Kuantech.ArcadeIdle
         public void Toggle(bool toggle)
         {
             gameObject.SetActive(toggle);
-            if(Blocker != null) Blocker.gameObject.SetActive(!toggle);
+            if(Blockers != null) 
+            {
+                foreach(var blocker in Blockers)
+                {
+                    blocker.SetActive(!toggle);
+                }
+            }
         }
     }
 }

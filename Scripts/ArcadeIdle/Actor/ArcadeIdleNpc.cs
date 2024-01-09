@@ -14,8 +14,8 @@ namespace Kuantech.ArcadeIdle
         public static float AGENT_ANGLE_THRESHOLD = 1f;
 
         [Header("AI")]
-        [SerializeField] private BTAgent BtAgent;
-        [SerializeField] private NavMeshAgent NavMeshAgent;
+        [SerializeField] protected BTAgent BtAgent;
+        [SerializeField] protected NavMeshAgent NavMeshAgent;
 
         public ArcadeIdleVenue CurrentVenue;
         public EventHandler DespawnEvent;
@@ -23,7 +23,7 @@ namespace Kuantech.ArcadeIdle
         //Movement
         public float MaxSpeed = 5f; //Keep this since not every npc may have stats module
         public float AgentRotationSpeed = 120f;
-        private WorldPoint _currentWorldPoint;
+        protected WorldPoint _currentWorldPoint;
         private float _remainingSqrDistanceToTarget = 0;
         private float _remainingAngleToTarget = 0;
 
@@ -50,9 +50,9 @@ namespace Kuantech.ArcadeIdle
             if(NavMeshAgent != null)
             {
                 if (aiAnimator != null) aiAnimator.SetSpeed(NavMeshAgent.velocity.magnitude);
-                if (NavMeshAgent.isStopped || _currentWorldPoint == null) return;
-                NavMeshAgent.SetDestination(GetTargetPosition());
-                CalculateRemainingDistanceAndRotation();
+                // if (NavMeshAgent.isStopped || _currentWorldPoint == null) return;
+                // NavMeshAgent.SetDestination(GetTargetPosition());
+                // CalculateRemainingDistanceAndRotation();
             }
 
 
@@ -61,6 +61,10 @@ namespace Kuantech.ArcadeIdle
                 Quaternion targetRotation = GetTargetRotation();
                 transform.rotation =
                     Quaternion.Slerp(transform.rotation, targetRotation, AgentRotationSpeed * Time.deltaTime);
+            }else{
+                Vector3 dirVec = NavMeshAgent.velocity.normalized;
+                dirVec.y=0;
+                if(dirVec.sqrMagnitude > 0.01f) transform.rotation = Quaternion.LookRotation(dirVec);
             }
         }
 

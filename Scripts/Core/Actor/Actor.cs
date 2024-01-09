@@ -13,13 +13,21 @@ namespace Kuantech.Core
         protected Dictionary<Type, ActorModule> Modules = new Dictionary<Type, ActorModule>();
         public Dictionary<string, ActorModule> ModulesById = new Dictionary<string, ActorModule>();
         protected bool Initialized;
+        [Tooltip("If set to true, actor will initialize itself on start")]
+        public bool InitializeOnStart;
 
         //Flag to notify about the dirty state
         [NonSerialized] public bool Dirtied = false;
 
         //Events
         public EventHandler OnModulesInitialized;
-
+        private void Start()
+        {
+            if(InitializeOnStart)
+            {
+                Initialize(null);
+            }
+        }
         public virtual void Initialize(ActorState actorState = null)
         {
             if (Initialized) return;

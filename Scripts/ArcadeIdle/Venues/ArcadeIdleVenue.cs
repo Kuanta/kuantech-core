@@ -83,7 +83,8 @@ namespace Kuantech.ArcadeIdle
         #region Npc
         public int GetMaxNpcCount()
         {
-            return MaxNpc.GetValue(UpgradeManager.GetCurrentUpgradeLevel(MaxNpcUpgrade));
+            int level = MaxNpcUpgrade != null ? UpgradeManager.GetCurrentUpgradeLevel(MaxNpcUpgrade) : 0;
+            return MaxNpc.GetValue(level);
         }
         protected virtual bool CanSpawnNpc()
         {

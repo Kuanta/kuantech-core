@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace Kuantech.ArcadeIdle
@@ -21,6 +20,7 @@ namespace Kuantech.ArcadeIdle
         [Header("Visualization")]
         [SerializeField] private ResourceVisualizationMethod VisualizationMethod;
         [SerializeField] private ResourceStacker ResourceStacker;
+        [SerializeField] private ResourcePercentageViewer PercentageViewer;
         [SerializeField] private List<Transform> ResourcePositions;
 
         private List<ResourceVisual> _displayedResources;
@@ -33,6 +33,7 @@ namespace Kuantech.ArcadeIdle
         
         public bool AcceptsResource(ResourceData data)
         {
+            if(VisualizationMethod == ResourceVisualizationMethod.Percentage) return false;
             if(data.IsCurrency() && !DisplaysCurrencies) return false;
             if (RejectedResources == null) return true;
             return !RejectedResources.Contains(data);
@@ -72,6 +73,14 @@ namespace Kuantech.ArcadeIdle
         
         public ResourceVisual RemoveResourceVisual(string resourceId)
         {
+            switch (VisualizationMethod)
+            {
+                case ResourceVisualizationMethod.Stacking:
+                case ResourceVisualizationMethod.Percentage:
+                    return null;
+                default:
+                    break;
+            }
             if (_displayedResources == null)
             {
                 Debug.LogError("???");
@@ -112,6 +121,14 @@ namespace Kuantech.ArcadeIdle
             for (int i = 0; i < _displayedResources.Count; ++i)
             {
                 ResourceStacker.StackObject(_displayedResources[i], i, _displayedResources[i].IsMoving);
+            }
+        }
+
+        public void OnResourceCountChanged()
+        {
+            if(VisualizationMethod == ResourceVisualizationMethod.Percentage && PercentageViewer != null)
+            {
+                PercentageViewer.UpdateView();
             }
         }
     }

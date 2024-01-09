@@ -1,4 +1,5 @@
 ﻿using System;
+using DG.Tweening;
 using Kuantech.Core;
 using Kuantech.Core.FX;
 using Kuantech.Utils;
@@ -14,7 +15,7 @@ namespace Kuantech.ArcadeIdle
         [NonSerialized] public WorldPoint TargetPoint;
         public float Speed = 5f;  // Speed at which the resource should fly
         public float InitialRiseSpeed = 25.0f;
-        [NonSerialized] public float MaxRiseHeight = 2.0f;
+         public float MaxRiseHeight = 3.0f;
         public float ReachThresh = 0.1f;
 
         [Header("Effects")]
@@ -39,7 +40,7 @@ namespace Kuantech.ArcadeIdle
         
         private void Update()
         {
-            if (!IsMoving) return;
+            if (!IsMoving || TargetPoint == null) return;
 
             // Calculate the desired position with offset
             Vector3 targetPosition = TargetPoint.GetTargetPosition();
@@ -48,10 +49,7 @@ namespace Kuantech.ArcadeIdle
 
             // Apply initial rise speed and decay it
             _currentRiseHeight += _currentRiseDir * Time.deltaTime * _currentRiseSpeed;
-            if(_currentRiseHeight > MaxRiseHeight && _currentRiseDir > 0)
-            {
-                _currentRiseDir = -1;
-            }
+          
             _currentRiseHeight = Mathf.Max(0, _currentRiseHeight);
             targetPosition.y += _currentRiseHeight;
 
@@ -59,7 +57,10 @@ namespace Kuantech.ArcadeIdle
             transform.position = Vector3.MoveTowards(transform.position,
                 targetPosition, normalizedSpeed * Speed * Time.deltaTime);
 
-
+            if (_currentRiseHeight > MaxRiseHeight && _currentRiseDir > 0)
+            {
+                _currentRiseDir = -1;
+            }
             // If the resource is close enough to the target, you can stop moving and perform other actions if necessary
             if (!(distance < ReachThresh) || _currentRiseDir > 0) return;
             
@@ -74,17 +75,24 @@ namespace Kuantech.ArcadeIdle
             OnReachedTarget();
         }
         
-    public void FlyToTarget(WorldPoint targetPoint)
-        {
-            TargetPoint = targetPoint;
-            IsMoving = true;
-            transform.SetParent(null, true);
-            Vector3 targetPosition = TargetPoint.GetTargetPosition();
-            _currentRiseSpeed = InitialRiseSpeed;
-            _currentRiseHeight = 0;
-            _currentRiseDir = 1;
-    }
+        public void FlyToTarget(WorldPoint targetPoint)
+            {
+                TargetPoint = targetPoint;
+                IsMoving = true;
+                transform.SetParent(null, true);
+                Vector3 targetPosition = TargetPoint.GetTargetPosition();
+                _currentRiseSpeed = InitialRiseSpeed;
+                _currentRiseHeight = 0;
+                _currentRiseDir = 1;
+        }
 
+        public void FlyToTargetWithDoJump(WorldPoint targetPoint, float jumpForce, float duration)
+        {
+            IsMoving = true;
+            transform.DOJump(targetPoint.GetTargetPosition(), jumpForce, 1, duration, false).SetEase(Ease.Linear).OnComplete(()=>{
+                IsMoving = false;
+            });
+        }
         private void OnReachedTarget()
         {
             EffectsLibrary.PlayAudio(OnReachedAudio);

@@ -43,13 +43,9 @@ namespace Kuantech.ArcadeIdle
             HeldResources = new Dictionary<string, int>();
             foreach (var inv in DefaultInventory)
             {
-                HeldResources.Add(inv.Key.ResourceId, inv.Value);
                 for(int i=0;i<inv.Value;++i)
                 {
-                    string resourceId = inv.Key.ResourceId;
-                    ResourceData data = ArcadeIdleManager.GetResourceData(resourceId);
-                    ResourceVisual visual = data.GetResourceVisual();
-                    AddVisual(data, visual, false);
+                    AddResource(inv.Key, null, false);
                 }
             }
 
@@ -206,6 +202,7 @@ namespace Kuantech.ArcadeIdle
                 HeldPendingResources[resourceData.ResourceId] = 0;
             }
             DirtyState();
+            if(ResourceDisplayer != null) ResourceDisplayer.OnResourceCountChanged();
 
             //Logical addition...
             IncreaseResourceCount(resourceData, 1, flying); //todo: Get amount
@@ -230,6 +227,9 @@ namespace Kuantech.ArcadeIdle
                     }
                     HeldPendingResources[resourceData.ResourceId] -= 1;
                 };
+            }else if(result == null && flying)
+            {
+                //Since we can't add the ReachedTargethandler
             }
         }
 
@@ -256,7 +256,10 @@ namespace Kuantech.ArcadeIdle
 
             if(!flying && !displayerAcceptsResource)
             {
-                visual.Despawn();
+                if(visual != null) 
+                {
+                    visual.Despawn();
+                }
                 return visual;
             }
             if (displayerAcceptsResource && visual != null)
@@ -308,7 +311,6 @@ namespace Kuantech.ArcadeIdle
                 }
             }
  
-
             ResourceVisual removedVisual = null;
             if (ResourceDisplayer != null)
             {
@@ -316,6 +318,7 @@ namespace Kuantech.ArcadeIdle
             }
             HeldResources[resourceId] = Mathf.Max(0, HeldResources[resourceId] - amount);
             OnResourceRemoved?.Invoke((resourceData, 1));
+            if (ResourceDisplayer != null) ResourceDisplayer.OnResourceCountChanged();
             return removedVisual;
         }
 

@@ -2,22 +2,15 @@ using UnityEngine;
 
 namespace Kuantech.ArcadeIdle
 {
-    public class PickupableResource : MonoBehaviour {
+    public class PickupableResource : ResourceVisual {
         [SerializeField] private ResourceData ResourceData;
-        [SerializeField] private  ResourceVisual Visual;
         [SerializeField] private Collider Collider;
         public bool Available = true;
         public bool DestroyOnPickup = true;
 
-        public void Initialize()
+        public override void Spawn()
         {
-            if(Visual == null)
-            {
-                Visual = ResourceData.GetResourceVisual();
-                Visual.transform.SetParent(transform);
-                Visual.transform.localPosition = Vector3.zero;
-                Visual.transform.localRotation = Quaternion.identity;
-            }
+            base.Spawn();
             Available = true;
             Collider.enabled = true;
         }
@@ -31,22 +24,28 @@ namespace Kuantech.ArcadeIdle
             }
         }
 
+        private void OnTriggerStay(Collider other)
+        {
+            if (!Available) return;
+            if (other.gameObject.TryGetComponent(out ArcadeIdleCharacter character))
+            {
+                HandlePickup(character);
+            }
+        }
+
         private void HandlePickup(ArcadeIdleCharacter character)
         {
+            if(IsMoving) return;
             if(character.CharacterInventory == null) return;
-            
+
             //Clear the parent of the visual just in case since the pickup can be destroyed
-            if(Visual != null)
-            {
-                Visual.ResourceId = ResourceData.ResourceId;
-                Visual.transform.SetParent(null, true);
-            }
+            ResourceId = ResourceData.ResourceId;
 
             //Check inventory space
-            if(!character.CharacterInventory.CanAcceptResource(ResourceData)) return;
+            if (!character.CharacterInventory.CanAcceptResource(ResourceData)) return;
 
             //Send the resource flying
-            character.CharacterInventory.AddResource(ResourceData, Visual, Visual != null ? true : false);
+            character.CharacterInventory.AddResource(ResourceData, this, true);
 
             Toggle(false);
             if(DestroyOnPickup)
