@@ -29,6 +29,7 @@ namespace Kuantech.ArcadeIdle
         [NonSerialized] public ActorQueue AssignedQueue = null;
         [NonSerialized] public ResourceInventory CharacterInventory;
         [NonSerialized] public float InteractStartTime;
+        [NonSerialized] public float LastInteractTime;
         [NonSerialized] public bool StartedInteracting = false;
 
         [Header("Attributes")]
@@ -43,6 +44,7 @@ namespace Kuantech.ArcadeIdle
         private static readonly int InteractHash = Animator.StringToHash("Interacting");
         private static readonly int InteractIndexHash = Animator.StringToHash("InteractionIndex");
         private static readonly int CarryingHash = Animator.StringToHash("Carrying");
+        private static readonly int InteractTriggerHash = Animator.StringToHash("Interact");
 
         protected StatsModule StatsModule;
 
@@ -146,9 +148,20 @@ namespace Kuantech.ArcadeIdle
             StartedInteracting = true;
 
             //Start animation if index is a valid one
-            if (_animModule != null && AssignedSlot.InteractionAnimationIndex >= 0)
+            if (_animModule != null && AssignedSlot.InteractionAnimationIndex >= 0 && AssignedSlot.LoopingAnimation)
             {
                 _animModule.Animator.SetBool(InteractHash, true);
+                _animModule.Animator.SetInteger(InteractIndexHash, AssignedSlot.InteractionAnimationIndex);
+            }
+        }
+
+        public void OnHandleActor()
+        {
+            LastInteractTime = Time.time;
+            //Start animation if index is a valid one
+            if (_animModule != null && AssignedSlot.InteractionAnimationIndex >= 0 && !AssignedSlot.LoopingAnimation)
+            {
+                _animModule.Animator.SetTrigger(InteractTriggerHash);
                 _animModule.Animator.SetInteger(InteractIndexHash, AssignedSlot.InteractionAnimationIndex);
             }
         }

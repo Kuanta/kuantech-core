@@ -110,6 +110,7 @@ namespace Kuantech.Core.FX
         public static void SetLastPlayedTime(string effectId)
         {
             EffectsLibrary context = EffectsLibrary.GetContext<EffectsLibrary>();
+            if(context == null) return;
             if (context._effectLastPlayedTimes == null)
                 context._effectLastPlayedTimes = new Dictionary<string, float>();
             context._effectLastPlayedTimes[effectId] = Time.time;

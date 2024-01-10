@@ -50,9 +50,9 @@ namespace Kuantech.ArcadeIdle
             if(NavMeshAgent != null)
             {
                 if (aiAnimator != null) aiAnimator.SetSpeed(NavMeshAgent.velocity.magnitude);
-                // if (NavMeshAgent.isStopped || _currentWorldPoint == null) return;
-                // NavMeshAgent.SetDestination(GetTargetPosition());
-                // CalculateRemainingDistanceAndRotation();
+                if (NavMeshAgent.isStopped || _currentWorldPoint == null) return;
+                NavMeshAgent.SetDestination(GetTargetPosition());
+                CalculateRemainingDistanceAndRotation();
             }
 
 

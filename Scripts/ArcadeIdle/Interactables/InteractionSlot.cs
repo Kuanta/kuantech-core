@@ -32,6 +32,8 @@ namespace Kuantech.ArcadeIdle
 
         [Header("Animation Parameters")]
         public int InteractionAnimationIndex = -1;
+        [Tooltip("If set to true, animation will start on interaction start. Otherwise, animation will be triggered every  HandleActor cycle")]
+        public bool LoopingAnimation = false;
 
         /// <summary>
         /// Checks if the slot is occupied, meaning that it is at full capacity.

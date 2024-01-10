@@ -10,9 +10,10 @@ namespace Kuantech.ArcadeIdle
         public int InteractablePriority = 0;
         [SerializeField] private List<InteractionSlot> InteractionPoints;
         public bool Disabled = false;
+        [SerializeField] private List<InteractableComponent> _interactableComponents;
 
-        private List<InteractableComponent> _interactableComponents;
-
+        [Header("Periodic Interaction")]
+        [SerializeField] private float InteractionPeriod;
         public override void Initialize()
         {
             base.Initialize();
@@ -83,10 +84,17 @@ namespace Kuantech.ArcadeIdle
                         continue;
                     }
 
-                    HandleActor(attachedCharacter);
+                    if(Time.time - attachedCharacter.LastInteractTime >= InteractionPeriod)
+                    {
+                        attachedCharacter.OnHandleActor();
+                        HandleActor(attachedCharacter);
+
+                    }
                     //Check if character is interacting and not on its way towards the slot
-                    if (attachedCharacter.StartedInteracting) { }
-                    _interactingChacaters++;
+                    if (attachedCharacter.StartedInteracting) 
+                    {
+                        _interactingChacaters++;
+                    }
                 }
 
             }
@@ -345,6 +353,7 @@ namespace Kuantech.ArcadeIdle
         /// <param name="character"></param>
         public virtual void OnActorReachedInteractable(ArcadeIdleCharacter character)
         {
+            character.LastInteractTime = 0;
             character.AssignedSlot.OnCharacterStartInteraction(character);
             foreach (var comp in _interactableComponents)
             {
