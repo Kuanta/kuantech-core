@@ -30,7 +30,7 @@ namespace Kuantech.Core.FX
         public override void OnModulesInitialized(object sender, EventArgs args)
         {
             base.OnModulesInitialized(sender, args);
-            CombatModule cm = (CombatModule)(Actor as RpgActor).GetModuleByType(typeof(CombatModule));
+            RpgCombatModule cm = (RpgCombatModule)(Actor as RpgActor).GetModuleByType(typeof(RpgCombatModule));
             cm.AttackStartEvent+= OnAttack;
             cm.MeleeImpactEvent += OnMeleeImpact;
             if((Actor as RpgActor).MovementModule != null) (Actor as RpgActor).MovementModule.OnJumpEvent += OnJump;

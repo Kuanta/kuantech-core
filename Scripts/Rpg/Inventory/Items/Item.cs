@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Kuantech.Core;
+using Kuantech.Core.Combat;
 using Kuantech.Data;
 using Kuantech.Utils;
 using UnityEngine;

@@ -1,9 +1,17 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Core
 {
+    [Serializable]
+    public class StatDictionary : SerializableDictionary<StatAttribute, Stat> { }
+
+    [Serializable]
+    public class ModifierDataDictionary : SerializableDictionary<StatAttribute, StatModifierData> { }
+
     [Serializable]
     public class StatsState : ActorModuleState
     {
@@ -28,6 +36,8 @@ namespace Kuantech.Core
         public float ValuePerLevel;
         [Tooltip("Lower and upper boundaries for the attribute")]
 
+        public float MultiplicationModifier;
+        public float AdditionModifier;
         public Vector2 Limits;
         public int Rank;
         
@@ -62,6 +72,9 @@ namespace Kuantech.Core
         //Events
         public EventHandler<int> LevelUpEvent;
         public EventHandler ExperienceEarnedEvent;
+
+        [NonSerialized] private Dictionary<StatAttribute, HashSet<StatModifier>> Modifiers;
+        [NonSerialized] private Queue<StatAttribute> DirtiedStats = new Queue<StatAttribute>();
 
         public override void Initialize()
         {
@@ -151,6 +164,127 @@ namespace Kuantech.Core
         {
             int currentRank = GetAttributeRank(attributeId);
             SetAttributeRank(attributeId, currentRank + amountToIncrease);
+        }
+        #endregion
+
+        #region Modifiers
+        public void AddModifiers(List<StatModifier> modifiers)
+        {
+            foreach (var modifier in modifiers)
+            {
+                AddModifier(modifier);
+            }
+        }
+
+        public void AddModifier(StatModifier modifier)
+        {
+            Modifiers ??= new Dictionary<StatAttribute, HashSet<StatModifier>>();
+
+            if (!Modifiers.ContainsKey(modifier.Stat))
+            {
+                Modifiers.Add(modifier.Stat, new HashSet<StatModifier>());
+            }
+
+            Modifiers[modifier.Stat].Add(modifier);
+            DirtyStat(modifier.Stat);
+
+        }
+
+        public void RemoveModifiers(List<StatModifier> modifiers)
+        {
+            foreach (var modifier in modifiers)
+            {
+                RemoveModifier(modifier);
+            }
+        }
+
+        /// <summary>
+        /// Clears all modifiers. A tag can be given to filter out desired modifiers.
+        /// </summary>
+        /// <param name="clearByTag">If set to true, modifiers with the given tag will be removed only</param>
+        /// <param name="tagToCompare"></param>
+        public void ClearModifiers(bool clearByTag = false, string tagToCompare = "")
+        {
+            if (Modifiers == null) return;
+            HashSet<StatModifier> allModifiers = new HashSet<StatModifier>();
+            foreach (var pair in Modifiers)
+            {
+                foreach (var modifier in pair.Value)
+                {
+                    if (clearByTag && modifier.ModifierTag != tagToCompare) continue;
+                    allModifiers.Add(modifier);
+                }
+            }
+            RemoveModifiers(allModifiers.ToList());
+        }
+
+        public void RemoveModifier(StatModifier modifier)
+        {
+            if (Modifiers == null || !Modifiers.ContainsKey(modifier.Stat)) return;
+            if (Modifiers[modifier.Stat].Contains(modifier))
+            {
+                Modifiers[modifier.Stat].Remove(modifier);
+                DirtyStat(modifier.Stat);
+            }
+        }
+
+        public void DirtyStat(StatAttribute statType)
+        {
+            DirtiedStats.Enqueue(statType);
+        }
+
+        /// <summary>
+        /// Updates the modifier value of dirtied stats
+        /// </summary>
+        public void UpdateStatModifiers()
+        {
+            if (DirtiedStats == null || DirtiedStats.Count == 0) return;
+            StatAttribute statType = DirtiedStats.Dequeue();
+            while (statType != null)
+            {
+                float additionMultipliersSum = 0;
+                float multiplicationModifiersSum = 0;
+                //Handle Stat type
+                foreach (var statModifier in Modifiers[statType])
+                {
+                    if (statModifier.ModifierType == ModifierTypes.Addition)
+                    {
+                        additionMultipliersSum += statModifier.GetValue();
+                    }
+                    else if (statModifier.ModifierType == ModifierTypes.Multiplication)
+                    {
+                        multiplicationModifiersSum += statModifier.GetValue();
+                    }
+
+                }
+
+                try
+                {
+                    if (!_statMap.ContainsKey(statType.Id))
+                    {
+                        Debug.LogWarning($"Trying to set value of {statType.ToString()} while {name} doesn't have a field for it");
+                    }
+                    else
+                    {
+                        Stat currStat = _statMap[statType.Id];
+                        currStat.AdditionModifier = additionMultipliersSum;
+                        currStat.MultiplicationModifier = multiplicationModifiersSum;
+                        _statMap[statType.Id] = currStat;
+                    }
+
+                    if (DirtiedStats.IsNullOrEmpty())
+                    {
+                        break;
+                    }
+                    statType = DirtiedStats.Dequeue();
+                }
+                catch (KeyNotFoundException e)
+                {
+                    Debug.LogError($"Key {statType} somehow not in stats");
+                    statType = DirtiedStats.Dequeue();
+                }
+            }
+
         }
         #endregion
 

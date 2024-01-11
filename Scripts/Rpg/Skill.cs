@@ -63,7 +63,7 @@ namespace Kuantech.Rpg
             }
         }
 
-        public virtual void AddToActor(CombatModule combatModule)
+        public virtual void AddToActor(RpgCombatModule combatModule)
         {
             Caster = combatModule.Actor as RpgActor;
         }

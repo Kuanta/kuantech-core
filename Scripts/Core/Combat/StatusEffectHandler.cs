@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
-using DTT.Utils.Extensions;
+using Kuantech.Utils;
 using UnityEngine;
 
-namespace Kuantech.Rpg
+namespace Kuantech.Core.Combat
 {
     public class StatusEffectHandler
     {

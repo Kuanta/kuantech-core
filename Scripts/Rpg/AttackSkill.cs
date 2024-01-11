@@ -7,7 +7,7 @@ namespace Kuantech.Rpg
     /// </summary>
     public class AttackSkill : Skill
     {
-        protected CombatModule CombatModule;
+        protected RpgCombatModule CombatModule;
         
         //Channel Casts
         public bool IsChanneled = false;
@@ -44,7 +44,7 @@ namespace Kuantech.Rpg
         protected virtual void OnRangedImpact(object sender, ProjectileImpactInfo impactInfo){}
         protected virtual void OnAttack(object sender, int attackIndex){}
         
-        public override void AddToActor(CombatModule combatModule)
+        public override void AddToActor(RpgCombatModule combatModule)
         {
             base.AddToActor(combatModule);
             CombatModule = combatModule;

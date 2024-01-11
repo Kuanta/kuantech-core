@@ -22,7 +22,7 @@ namespace Kuantech.Rpg
         public float MaxLifetime = 5f;
 
         public bool RawDamage = false;
-        public CombatModule CastBy;
+        public RpgCombatModule CastBy;
         public Weapon ShotFrom = null;
         public bool DestroyOnImpact = true;
         public LayerMask Targets;
@@ -71,7 +71,7 @@ namespace Kuantech.Rpg
         /// <param name="shotFrom">Weapon that this projectile is shot from. If null, damage will be calculated from default attack pattern or projectile properties</param>
         /// <param name="target">Target transform. If set to non-null, proectile will follow the target</param>
         /// <param name="riseHeight">To act as pseudo throwable. Projectile will rise to this height and falls down in a sinudoidal fasion.</param>
-        public virtual void Initialize(CombatModule castBy, Weapon shotFrom, Vector3 shootPosition, Quaternion shootRotation, Transform target = null, float relativeSpeed = 0.0f)
+        public virtual void Initialize(RpgCombatModule castBy, Weapon shotFrom, Vector3 shootPosition, Quaternion shootRotation, Transform target = null, float relativeSpeed = 0.0f)
         {
             //Set pos and rot
                             
@@ -257,7 +257,7 @@ namespace Kuantech.Rpg
         {
             RpgActor target = impacted.GetComponent<RpgActor>();
             
-            CombatModule.KnockbackActor(CastBy, target, transform.forward, Knockback, KnockbackTime);
+            RpgCombatModule.KnockbackActor(CastBy, target, transform.forward, Knockback, KnockbackTime);
 
             if (CastBy == null)
             {

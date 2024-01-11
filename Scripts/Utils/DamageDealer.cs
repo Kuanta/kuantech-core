@@ -12,11 +12,11 @@ namespace Kuantech.Core.Utils
         private float _range;
         private float _knockback;
         private float _angle;
-        private CombatModule _combatModule;
+        private RpgCombatModule _combatModule;
         public float Frequency;
         private float _lastAttackTime;
         
-        public void Initialize(CombatModule combatModule, float damage, float range, float knockback, float angle)
+        public void Initialize(RpgCombatModule combatModule, float damage, float range, float knockback, float angle)
         {
             if (combatModule == null) return;
             _combatModule = combatModule;
@@ -33,7 +33,7 @@ namespace Kuantech.Core.Utils
             if (_combatModule == null) return;
             if (Time.time - _lastAttackTime >= Frequency)
             {
-                CombatModule.DealCircularAreaDamage(_combatModule, _damage, _range, _knockback, 0f, false,false, _angle);
+                RpgCombatModule.DealCircularAreaDamage(_combatModule, _damage, _range, _knockback, 0f, false,false, _angle);
                 _lastAttackTime = Time.time;
             }
         }

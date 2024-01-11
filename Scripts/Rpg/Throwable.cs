@@ -26,7 +26,7 @@ namespace Kuantech.Rpg
         /// <param name="direction"></param>
         /// <param name="acceleration"></param>
         /// <param name="initialHeight"></param>
-        public void Throw(CombatModule combatModule, Weapon shotFrom, Vector3 shootPosition, Quaternion shootRotation, float horizontalDistance, float horizontalSpeed, Vector2 direction,
+        public void Throw(RpgCombatModule combatModule, Weapon shotFrom, Vector3 shootPosition, Quaternion shootRotation, float horizontalDistance, float horizontalSpeed, Vector2 direction,
             float acceleration = -9.8f, float initialHeight = 0f)
         {
             Initialize(combatModule, shotFrom, shootPosition, shootRotation);

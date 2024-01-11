@@ -1,4 +1,5 @@
 ﻿using System;
+using Kuantech.Core.Combat;
 using Kuantech.Rpg;
 using UnityEngine;
 
@@ -6,7 +7,7 @@ namespace Kuantech.ActionSequencer
 {
     public class AttackAction : SequenceAction
     {
-        [NonSerialized] public CombatModule CombatModule;
+        [NonSerialized] public RpgCombatModule CombatModule;
         public AttackTypes AttackType;
         public string TargetVariableName = "Target";
         public bool AttackWithoutTarget;
@@ -21,7 +22,7 @@ namespace Kuantech.ActionSequencer
         public override void Initialize(GameObject parent)
         {
             base.Initialize(parent);
-            CombatModule = parent.GetComponent<CombatModule>();
+            CombatModule = parent.GetComponent<RpgCombatModule>();
         }
         public override void Execute()
         {

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Kuantech.Core;
+using Kuantech.Core.Combat;
 using Kuantech.Rpg.Inventory;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -21,7 +22,7 @@ namespace Kuantech.Rpg
         public Collider Collider;
         public OldStatsModule Stats;
         public StatusEffectHandler StatusEffectHandler;
-        public CombatModule CombatModule;
+        public RpgCombatModule CombatModule;
         public MovementModule MovementModule;
         public AnimatorModule AnimatorModule;
         public InventoryModule InventoryModule;
@@ -71,7 +72,7 @@ namespace Kuantech.Rpg
             Stats = (OldStatsModule) GetModuleByType(typeof(OldStatsModule));
             AnimatorModule = (AnimatorModule) GetModuleByType(typeof(AnimatorModule));
             MovementModule = (MovementModule) GetModuleByType(typeof(MovementModule));
-            CombatModule = (CombatModule) GetModuleByType(typeof(CombatModule));
+            CombatModule = (RpgCombatModule) GetModuleByType(typeof(RpgCombatModule));
             InventoryModule = (InventoryModule) GetModuleByType(typeof(InventoryModule));
             OnModulesInitialized?.Invoke(this, EventArgs.Empty);
             Reset();
@@ -229,11 +230,11 @@ namespace Kuantech.Rpg
         [Button("Add Modifier Effect")]
         public void AddModifierStatusEffect(StatModifier modifier, float Duration)
         {
-            ModifierStatusEffect modifierStatusEffect = new ModifierStatusEffect(modifier);
-            modifierStatusEffect.Duration = Duration;
-            modifierStatusEffect.TickPeriod = -1;
-            modifierStatusEffect.Init(this);
-            StatusEffectHandler.AddStatusEffect(modifierStatusEffect);
+            // ModifierStatusEffect modifierStatusEffect = new ModifierStatusEffect(modifier);
+            // modifierStatusEffect.Duration = Duration;
+            // modifierStatusEffect.TickPeriod = -1;
+            // modifierStatusEffect.Init(this);
+            // StatusEffectHandler.AddStatusEffect(modifierStatusEffect);
         }
 
         public void ChangeCharacterBody(CharacterBody newBody)

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using DTT.Utils.Extensions;
+using Kuantech.Core;
 using Kuantech.Data;
 using Kuantech.Rpg.Inventory;
 using Sirenix.OdinInspector;
@@ -32,11 +33,7 @@ namespace Kuantech.Rpg
         FireRate,
     }
     #endif
-    public enum ModifierTypes
-    {
-        Addition,
-        Multiplication,
-    }
+ 
 
     [Serializable]
     public struct StatModifierData

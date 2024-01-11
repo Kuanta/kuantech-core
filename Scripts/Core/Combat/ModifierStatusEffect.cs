@@ -1,5 +1,4 @@
-﻿
-namespace Kuantech.Rpg
+﻿namespace Kuantech.Core.Combat
 {
     public class ModifierStatusEffect : StatusEffect
     {
@@ -13,14 +12,15 @@ namespace Kuantech.Rpg
         {
             base.OnAdd();
             if (Modifier == null) return;
-            Target.Stats.AddModifier(Modifier);
+            Target.Actor.GetModule<StatsModule>().AddModifier(Modifier);
         }
         
         public override void OnRemove()
         {
             base.OnRemove();
             if (Modifier == null) return;
-            Target.Stats.RemoveModifier(Modifier);
+            StatsModule statModule = Target.Actor.GetModule<StatsModule>();
+            statModule.RemoveModifier(Modifier);
         }
     }
 }

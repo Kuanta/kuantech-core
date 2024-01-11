@@ -9,21 +9,10 @@ using UnityEngine;
 using UnityEngine.Events;
 using Kuantech.Rpg.Inventory;
 using Kuantech.Core;
+using Kuantech.Core.Combat;
 
 namespace Kuantech.Rpg
 {
-    public enum AttackTypes
-    {
-        None = 0,
-        Linear,
-        Arc,
-        Circle,
-        Ranged, //For projecitle based attacks, like arrow and fireball
-        RangedRaycast, //For raycast based attacks
-        Target,
-        TargetProjectile,
-    }
-    
     //Event Infos
     public struct ProjecitleShotInfo
     {
@@ -44,7 +33,7 @@ namespace Kuantech.Rpg
         public bool IsAlternativeAttack;
         public bool PlayEffect;
     }
-    public class CombatModule : RpgActorModule
+    public class RpgCombatModule : RpgActorModule
     {
         //Components
         public LineTelemetry LineAttackTelemetry;
@@ -97,7 +86,7 @@ namespace Kuantech.Rpg
         //AttackSkill
         [SerializeReference] private Dictionary<Type, Skill> Skills = new Dictionary<Type, Skill>();
         public float ManaCost = 0;
-        public bool CanUseSkill = false;
+        public bool  CanUseSkill = false;
         public bool IsResistantToKnockback = false;
         
         //Events
@@ -601,7 +590,7 @@ namespace Kuantech.Rpg
             return attackables;
         }
         
-        public static void DealCircularAreaDamage(CombatModule from, float damage, float range, float knockback, float knockbackTime, bool useSkill, bool checkObstacle, float angle=0f)
+        public static void DealCircularAreaDamage(RpgCombatModule from, float damage, float range, float knockback, float knockbackTime, bool useSkill, bool checkObstacle, float angle=0f)
         {
             List<RpgActor> attackables =
                 from.GetCircularAreaEnemies(from.transform.position, range, checkObstacle, angle);
@@ -612,7 +601,7 @@ namespace Kuantech.Rpg
             }
         }
 
-        public static void DealCircularAreaDamageAtPosition(CombatModule from, Vector3 position, float damage, float range, float knockback, float knockbackTime, bool useSkill, bool checkObstacle, float angle=0f)
+        public static void DealCircularAreaDamageAtPosition(RpgCombatModule from, Vector3 position, float damage, float range, float knockback, float knockbackTime, bool useSkill, bool checkObstacle, float angle=0f)
         {
             List<RpgActor> attackables =
                 from.GetCircularAreaEnemies(position, range, checkObstacle, angle);
@@ -650,7 +639,7 @@ namespace Kuantech.Rpg
             }
             return attackables;
         }
-        public static void DealLinearAreaDamage(CombatModule from, float damage, float range, float width, float knockback, float knockbackTime, bool checkObstacle)
+        public static void DealLinearAreaDamage(RpgCombatModule from, float damage, float range, float width, float knockback, float knockbackTime, bool checkObstacle)
         {
             List<RpgActor> attackables = from.GetLinearAreaEnemies(range, width, checkObstacle);
             foreach (var target in attackables)
@@ -830,7 +819,7 @@ namespace Kuantech.Rpg
         /// <param name="target">Actor to apply knockback</param>
         /// <param name="knockback">Amount of knockback force</param>
         /// <param name="knockbackTime">Duration of knockback</param>
-        public static void KnockbackActor(CombatModule applier, RpgActor target, Vector3 direction, float knockback, float knockbackTime)
+        public static void KnockbackActor(RpgCombatModule applier, RpgActor target, Vector3 direction, float knockback, float knockbackTime)
         {
             if (knockback == 0) return;
             //todo: calculate knockback from main stat
