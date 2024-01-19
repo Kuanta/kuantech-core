@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Kuantech.Core;
-using Kuantech.Core.FX;
-using Kuantech.Core.HyperCasual;
 using UnityEngine;
 
 namespace Kuantech.Merge

@@ -283,21 +283,10 @@ namespace Kuantech.Merge
 
         #region Drag Events
 
-        public void OnDragStart()
-        {
-        }
-
-        public void OnDrag()
-        {
-        }
-
-        public void OnDragEnd()
-        {
-        }
-
         public bool OnDrop(IDraggable dropped)
         {
-            Mergable droppedMergable = ((Mergable) dropped);
+            MonoBehaviour monoBeh = (dropped as MonoBehaviour);
+            Mergable  droppedMergable = monoBeh.gameObject.GetComponent<Mergable>();
             if (droppedMergable == null) return false;
             if (droppedMergable.Slottable == null) return false;
             Vector2Int rowColIndices = GetRowColIndices(droppedMergable.gameObject);

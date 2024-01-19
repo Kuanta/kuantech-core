@@ -2,9 +2,6 @@
 {
     public interface IDropZone
     {
-        public void OnDragStart();
-        public void OnDrag();
-        public void OnDragEnd();
         /// <summary>
         /// Handles dropping. Should return true if draggable is dropped here
         /// </summary>
