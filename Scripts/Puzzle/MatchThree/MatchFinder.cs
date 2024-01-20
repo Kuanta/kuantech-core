@@ -14,7 +14,7 @@ namespace Kuantech.Puzzle.MatchThree
             Board = parentBoard;
         }
 
-        public bool FindAllMatches()
+        public HashSet<MatchThreeElement> FindAllMatches()
         {
             _elementsToBeMatched = new HashSet<MatchThreeElement>();
             for(int r=0;r<Board.RowCount;++r)
@@ -46,18 +46,7 @@ namespace Kuantech.Puzzle.MatchThree
                 }
             }
 
-            if(_elementsToBeMatched.Count == 0) return false;
-            foreach (var el in _elementsToBeMatched)
-            {
-                if(el == null)
-                {
-                    Debug.LogError("Null element?");
-                    continue;
-                }
-                el.Despawn();
-            }
-            _elementsToBeMatched.Clear();
-            return true;
+            return _elementsToBeMatched;
         }
 
         /// <summary>

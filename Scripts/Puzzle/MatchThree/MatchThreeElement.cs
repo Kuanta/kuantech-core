@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using DG.Tweening;
 using Kuantech.Core;
+using Kuantech.Core.FX;
 using Kuantech.Utils;
 using UnityEngine;
 
@@ -13,30 +14,35 @@ namespace Kuantech.Puzzle.MatchThree
         [KTTag("GemType")]
         public int Type;
         public GameObject Visual;
-
+        public Effect DespawnEffect;
     }
+
     public class MatchThreeElement : GridTile
     {
         [Header("Element Types")]
         public List<MatchThreeElementData> Datas;
         private int _currentDataIndex;
-
-        [Header("Properties")]
-        [SerializeField] private float TweenDuration = 0.1f; 
-
         [HideInInspector] public int Type;
 
         //State
         [NonSerialized] public bool ToBeDestroyed;
-  
+        private MatchThreeBoard _parentMatchThreeBoard;
+
+        private bool _initialized = false;
+        private void Update()
+        {
+            if(!_initialized) return;
+            transform.localPosition = Vector3.Lerp(transform.position, _targetLocalPosition, _parentMatchThreeBoard.TileSpeed * Time.deltaTime);
+        }
         public void SetBoard(MatchThreeBoard board, int row, int col)
         {
+            _parentMatchThreeBoard = board;
             ParentBoard = board;
-            Row = row;
-            Column = col;
+            SetRowCol(row, col);
         }
         public void SetElement(int id)
         {
+            _initialized = true; 
             Type = id;
             _currentDataIndex = -1;
             for(int i=0;i<Datas.Count;++i)
@@ -49,6 +55,11 @@ namespace Kuantech.Puzzle.MatchThree
             }
         }
 
+        public override void SetRowCol(int row, int col)
+        {
+            base.SetRowCol(row, col);
+            UpdateTargetPosition();
+        }
         /// <summary>
         /// Changes the type. Used to prevent initial mathces
         /// </summary>
@@ -94,11 +105,10 @@ namespace Kuantech.Puzzle.MatchThree
         #endregion
 
         #region Moving
-        private bool _moving = false;
-        private Tween _moveTween = null;
+
         private void CheckMovement(float angle)
         {
-            if(_moving) return;
+            //if(_moving) return;
             Vector2Int direction = new Vector2Int();
             if(angle <= 45.0f && angle >= -45.0f)
             {
@@ -129,16 +139,10 @@ namespace Kuantech.Puzzle.MatchThree
                 (ParentBoard as MatchThreeBoard).MakeAMove(this, otherElement);
             }
         }
-
-        public void MoveTile(Vector3 newLocalPosition)
+        private Vector3 _targetLocalPosition;
+        public void UpdateTargetPosition()
         {
-            if(_moveTween != null)
-            {
-                _moveTween.Kill();
-            }
-            _moveTween = transform.DOLocalMove(newLocalPosition, TweenDuration).OnComplete(()=>{
-                _moveTween = null;
-            });
+            _targetLocalPosition = ParentBoard.GetLocalPosition(Row, Column);
         }
         #endregion
 
@@ -149,6 +153,11 @@ namespace Kuantech.Puzzle.MatchThree
 
         public void Despawn()
         {
+            _initialized = false;
+            if(_currentDataIndex > 0 && Datas[_currentDataIndex].DespawnEffect != null)
+            {
+                Datas[_currentDataIndex].DespawnEffect.Play();
+            }
             GameManager.Instance.Pool.PoolObject(gameObject);
         }
     }
