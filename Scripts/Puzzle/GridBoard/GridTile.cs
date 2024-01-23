@@ -12,8 +12,8 @@ namespace Kuantech.Puzzle
 
     public class GridTile : MonoBehaviour {
         [NonSerialized] public GridBoard ParentBoard;
-        [NonSerialized] public int Row;
-        [NonSerialized] public int Column; 
+        [HideInInspector] public int Row;
+        [HideInInspector] public int Column; 
 
         public virtual void SetRowCol(int row, int col)
         {

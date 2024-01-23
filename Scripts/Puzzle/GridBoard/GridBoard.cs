@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Kuantech.Puzzle
@@ -12,6 +13,7 @@ namespace Kuantech.Puzzle
         public float CellHeight = 1f;
 
         public GridTile[,] Tiles;
+        [HideInInspector] public List<GridTile> ExistingTiles;
 
         public delegate void TileOperation(GridTile tile);
         public void CreateBoard()
@@ -24,19 +26,39 @@ namespace Kuantech.Puzzle
                     Tiles[r,c] = null;
                 }
             }
-        } 
 
+            //Load existing tiles
+            foreach(var existingTile in ExistingTiles)
+            {
+                if(IsTileOccupied(existingTile.Row, existingTile.Column))
+                {
+                    Destroy(existingTile.gameObject);
+                    continue;
+                }
+                SetTile(existingTile, existingTile.Row, existingTile.Column);
+            }
+        }
+
+        #region Query Methods
         public void SetTile(GridTile gridTile, int row, int col)
         {
-            if(!IsCoordinateValid(row, col)) return;
+            if (!IsCoordinateValid(row, col)) return;
             Tiles[row, col] = gridTile;
         }
 
         public GridTile GetTile(int row, int col)
         {
-            if(!IsCoordinateValid(row, col)) return null;
+            if (!IsCoordinateValid(row, col)) return null;
             return Tiles[row, col];
         }
+        
+        public bool IsTileOccupied(int row, int col)
+        {
+            if(!IsCoordinateValid(row, col)) return false;
+            return Tiles[row, col] != null;
+        }
+        #endregion
+
 
 
         #region Utility Methods
@@ -94,6 +116,15 @@ namespace Kuantech.Puzzle
                                 row * CellHeight - CellHeight * RowCount * 0.5f + CellHeight * 0.5f);
         }
 
+        public float GetWidth()
+        {
+            return (ColumnCount) * CellWidth;
+        }
+
+        public float GetDepth()
+        {
+            return (RowCount) * CellHeight;
+        }
         #endregion
     }
 }

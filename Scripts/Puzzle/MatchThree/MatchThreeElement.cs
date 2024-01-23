@@ -22,7 +22,9 @@ namespace Kuantech.Puzzle.MatchThree
         [Header("Element Types")]
         public List<MatchThreeElementData> Datas;
         private int _currentDataIndex;
-        [HideInInspector] public int Type;
+
+        [KTTag("GemType")]
+        public int Type;
 
         //State
         [NonSerialized] public bool ToBeDestroyed;

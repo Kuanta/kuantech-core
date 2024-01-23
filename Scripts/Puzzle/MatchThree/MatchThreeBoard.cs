@@ -35,6 +35,7 @@ namespace Kuantech.Puzzle.MatchThree
             {
                 for(int c=0;c<ColumnCount;++c)
                 {
+                    if(IsTileOccupied(r,c)) continue;
                     //Create 
                     Vector3 pos = GetLocalPosition(r,c);
                     GameObject tileBg = Instantiate(BgTilePrefab);
