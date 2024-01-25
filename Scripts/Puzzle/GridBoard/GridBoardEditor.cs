@@ -36,16 +36,11 @@ namespace Kuantech.Puzzle
                     GridBoard = GetComponent<GridBoard>();
                     if (GridBoard == null) return;
                 }
-                Vector3 pointOnGrid = GetPointOnPlane();
-                Vector3 botLeftPoint = GridBoard.transform.position - new Vector3(GridBoard.GetWidth()*0.5f, 0, GridBoard.GetDepth() * 0.5f);
-                Vector3 diff = pointOnGrid - botLeftPoint;
-
-                float horDist = Utils.Helpers.DotProjection(diff, GridBoard.transform.right);
-                float depthDist = Utils.Helpers.DotProjection(diff, GridBoard.transform.forward);
-
-                int col = Mathf.FloorToInt(horDist/GridBoard.CellWidth);
-                int row = Mathf.FloorToInt(depthDist/GridBoard.CellHeight);
-
+                
+                Ray ray = HandleUtility.GUIPointToWorldRay(Event.current.mousePosition);
+                Vector3 pointOnGrid = GridBoard.GetPointOnPlane(ray);
+                GridBoard.GetRowColFromPointOnBoard(pointOnGrid, out int row, out int col);
+                
                 // Consume the event to prevent other actions
                 Event.current.Use();
                 
@@ -53,6 +48,9 @@ namespace Kuantech.Puzzle
                 {
                     case EditorMode.Draw:
                         PaintTile(row, col);
+                        break;
+                    case EditorMode.Delete:
+                        DeleteTile(row, col);
                         break;
                     default:
                         break;
@@ -102,7 +100,7 @@ namespace Kuantech.Puzzle
         {
             if(CurrentMode != EditorMode.Draw || CurrentlySelectedTile == null) return;
             if(GridBoard.ExistingTiles == null) GridBoard.ExistingTiles = new List<GridTile>();
-            GameObject newTileObject = Instantiate(CurrentlySelectedTile);
+            GameObject newTileObject = PrefabUtility.InstantiatePrefab(CurrentlySelectedTile) as GameObject;
             GridTile tile = newTileObject.GetComponent<GridTile>();
             tile.Row = row;
             tile.Column = col;
@@ -116,19 +114,28 @@ namespace Kuantech.Puzzle
             tile.transform.SetParent(GroupParent != null ? GroupParent : GridBoard.transform);
             tile.transform.localRotation = Quaternion.identity;
         }
+
+        public void DeleteTile(int row, int col)
+        {
+            if (CurrentMode != EditorMode.Delete) return;
+            HashSet<GridTile> tilesToDelete = new HashSet<GridTile>();
+            for(int i=0;i<GridBoard.ExistingTiles.Count;++i)
+            {
+                GridTile tile = GridBoard.ExistingTiles[i];
+                if(tile == null) continue;
+                if(tile.Row == row && tile.Column == col)
+                {
+                    tilesToDelete.Add(tile);
+                }
+            }
+
+            foreach(var tile in tilesToDelete)
+            {
+                GridBoard.ExistingTiles.Remove(tile);
+                DestroyImmediate(tile.gameObject);
+            }
+        }
         #endif
 
-        public Vector3 GetPointOnPlane()
-        {
-            Ray ray = HandleUtility.GUIPointToWorldRay(Event.current.mousePosition);
-            float groundY = GridBoard.transform.position.y;
-            float rayDistance;
-            Plane groundPlane = new Plane(Vector3.up, new Vector3(GridBoard.transform.position.x, groundY, GridBoard.transform.position.z));
-            if (groundPlane.Raycast(ray, out rayDistance))
-            {
-                return ray.GetPoint(rayDistance);
-            }
-            return Vector3.zero;
-        }
     }
 }

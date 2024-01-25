@@ -59,6 +59,12 @@ namespace Kuantech.Puzzle
             EditorGUILayout.Space();
             DropAreaGUI();
 
+            GUILayout.BeginHorizontal();
+            if(GUILayout.Button("Clear Tile Library"))
+            {
+                _gridBoardEditor.TileLibrary.Clear();
+            }
+            GUILayout.EndHorizontal();
             //tileLibraryList.DoLayoutList();
             serializedObject.ApplyModifiedProperties();
         }

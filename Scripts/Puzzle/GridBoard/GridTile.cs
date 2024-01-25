@@ -15,6 +15,13 @@ namespace Kuantech.Puzzle
         [HideInInspector] public int Row;
         [HideInInspector] public int Column; 
 
+        /// <summary>
+        /// Called when spawned from the grid board
+        /// </summary>
+        public virtual void Spawn()
+        {
+
+        }
         public virtual void SetRowCol(int row, int col)
         {
             Row = row;

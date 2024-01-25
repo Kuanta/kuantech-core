@@ -13,7 +13,7 @@ namespace Kuantech.Puzzle
         public float CellHeight = 1f;
 
         public GridTile[,] Tiles;
-        [HideInInspector] public List<GridTile> ExistingTiles;
+        public List<GridTile> ExistingTiles = new List<GridTile>();
 
         public delegate void TileOperation(GridTile tile);
         public void CreateBoard()
@@ -28,22 +28,40 @@ namespace Kuantech.Puzzle
             }
 
             //Load existing tiles
+            if(ExistingTiles == null) return;
             foreach(var existingTile in ExistingTiles)
             {
+                if(existingTile == null) continue;
                 if(IsTileOccupied(existingTile.Row, existingTile.Column))
                 {
                     Destroy(existingTile.gameObject);
                     continue;
                 }
                 SetTile(existingTile, existingTile.Row, existingTile.Column);
+                existingTile.Spawn();
             }
         }
+        
+        #region Move
+        public virtual bool MoveTile(GridTile gridTile, int row, int col)
+        {
+            if(!IsCoordinateValid(row, col)) return false;
+
+            if(IsTileOccupied(row, col)) return false;
+            Tiles[gridTile.Row, gridTile.Column] = null;
+            SetTile(gridTile, row, col);
+            gridTile.transform.localPosition = GetLocalPosition(row, col);
+            return true;
+        }
+
+        #endregion
 
         #region Query Methods
         public void SetTile(GridTile gridTile, int row, int col)
         {
             if (!IsCoordinateValid(row, col)) return;
             Tiles[row, col] = gridTile;
+            gridTile.SetRowCol(row, col);
         }
 
         public GridTile GetTile(int row, int col)
@@ -62,6 +80,24 @@ namespace Kuantech.Puzzle
 
 
         #region Utility Methods
+        /// <summary>
+        /// Returns row and col 
+        /// </summary>
+        /// <param name="pointOnGrid"></param>
+        /// <param name="row"></param>
+        /// <param name="col"></param>
+        public void GetRowColFromPointOnBoard(Vector3 pointOnGrid, out int row, out int col)
+        {
+            Vector3 botLeftPoint = transform.position - new Vector3(GetWidth() * 0.5f, 0, GetDepth() * 0.5f);
+            Vector3 diff = pointOnGrid - botLeftPoint;
+
+            float horDist = Utils.Helpers.DotProjection(diff, transform.right);
+            float depthDist = Utils.Helpers.DotProjection(diff, transform.forward);
+
+            col = Mathf.FloorToInt(horDist / CellWidth);
+            row = Mathf.FloorToInt(depthDist / CellHeight);
+        }
+
         public void ApplyOperationToTiles(TileOperation operation)
         {
             for(int r=0;r<RowCount;++r)
@@ -103,6 +139,17 @@ namespace Kuantech.Puzzle
             return new Vector2Int(rowCount, colCount);
         }
 
+        public Vector3 GetPointOnPlane(Ray ray)
+        {
+            float groundY = transform.position.y;
+            float rayDistance;
+            Plane groundPlane = new Plane(Vector3.up, new Vector3(transform.position.x, groundY, transform.position.z));
+            if (groundPlane.Raycast(ray, out rayDistance))
+            {
+                return ray.GetPoint(rayDistance);
+            }
+            return Vector3.zero;
+        }
         /// <summary>
         /// Returns the local position from row and col
         /// </summary>
