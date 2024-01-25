@@ -3,7 +3,7 @@ using Kuantech.Core;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-namespace Kuantech.Merge
+namespace Kuantech.Utils
 {
     /// <summary>
     /// Class that is an IDraggable. Useful for cases where dragging methods are needed out of the box

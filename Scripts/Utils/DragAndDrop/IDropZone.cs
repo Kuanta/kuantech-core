@@ -1,4 +1,4 @@
-﻿namespace Kuantech.Merge
+﻿namespace Kuantech.Utils
 {
     public interface IDropZone
     {

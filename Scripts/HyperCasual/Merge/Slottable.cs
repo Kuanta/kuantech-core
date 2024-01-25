@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Kuantech.Utils;
+using UnityEngine;
 
 namespace Kuantech.Merge
 {

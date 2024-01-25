@@ -1,7 +1,7 @@
 using Kuantech.Merge;
 using UnityEngine;
 
-namespace Kuantech.Hypercasual
+namespace Kuantech.Utils
 {
     public class DropZone : MonoBehaviour, IDropZone
     {

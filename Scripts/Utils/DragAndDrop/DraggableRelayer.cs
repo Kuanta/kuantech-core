@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Kuantech.Merge
+namespace Kuantech.Utils
 {
     /// <summary>
     /// A relayer class for cases where Draggable can't have a collider. 

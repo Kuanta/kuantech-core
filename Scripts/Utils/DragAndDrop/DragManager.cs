@@ -7,7 +7,7 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
 
-namespace Kuantech.Merge
+namespace Kuantech.Utils
 {
     [Serializable]
     public class SlotState
