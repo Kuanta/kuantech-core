@@ -1,12 +1,21 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Kuantech.Core;
 using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Puzzle.MatchThree
 {
+    public class MatchGroup
+    {
+        public List<HashSet<MatchThreeElement>> Matches;
+    }
+
     public class MatchThreeBoard : GridBoard {
+        
+        [Header("Available Elements")]
+        public List<MatchThreeElementData> ElementDatas;
 
         [Header("Timing")]
         public float ElementMovementDuration = 0.2f;
@@ -42,7 +51,7 @@ namespace Kuantech.Puzzle.MatchThree
                     tileBg.transform.SetParent(transform);
                     tileBg.transform.localPosition = pos;
                     tileBg.name = $"BGTile_{r}_{c}";
-                    MatchThreeElement tile = SpawnRandomElement(pos,r,c);
+                    MatchThreeElement tile = SpawnRandomElement(r,c);
 
                     //Prevent premade matches
                     foundElements.Clear();
@@ -51,29 +60,54 @@ namespace Kuantech.Puzzle.MatchThree
                     int iterations = 0;
                     while(!foundElements.IsNullOrEmpty())
                     {
-                        tile.ChangeType();
+                        ChangeTileType(tile);
                         foundElements.Clear();
                         checkedElements.Clear();
                         MatchFinder.FindMatchesAroundTile(tile, foundElements, checkedElements);
                         iterations++;
                         if(iterations >= 100) break;
                     }
-            
                 }
             }
         }
 
-        private MatchThreeElement SpawnRandomElement(Vector3 position, int row, int col)
+        /// <summary>
+        /// Spawns a random element in given row and col
+        /// </summary>
+        /// <param name="position"></param>
+        /// <param name="row"></param>
+        /// <param name="col"></param>
+        /// <returns></returns>
+        protected virtual MatchThreeElement SpawnRandomElement(int row, int col)
         {
-            int elementType = Random.Range(0, ElementPrefab.Datas.Count);
-            MatchThreeElement element = GameManager.Instance.Pool.GetObject(ElementPrefab.gameObject).GetComponent<MatchThreeElement>();
-            element.SetElement(elementType);
+            MatchThreeElement element = CreateRandomElement();
             element.SetBoard(this, row, col);
             element.transform.SetParent(transform);
-            element.transform.localPosition = position;
+            element.transform.localPosition = GetLocalPosition(row, col);
             element.name = $"Gem_{row}_{col}";
             SetTile(element, row, col);
             return element;
+        }
+
+        protected virtual MatchThreeElement CreateRandomElement()
+        {
+            MatchThreeElementData elementType = ElementDatas.GetRandomElement();
+            MatchThreeElement element = GameManager.Instance.Pool.GetObject(ElementPrefab.gameObject).GetComponent<MatchThreeElement>();
+            element.SetElementData(elementType);
+            return element;
+        }
+
+        protected virtual void ChangeTileType(MatchThreeElement tile)
+        {
+            ElementDatas.Shuffle();
+            for(int i=0;i<ElementDatas.Count;++i)
+            {
+                if(!tile.CurrentData.IsSameType(ElementDatas[i]))
+                {
+                    tile.SetElementData(ElementDatas[i]);
+                    return;
+                }
+            } 
         }
 
         /// <summary>
@@ -92,17 +126,16 @@ namespace Kuantech.Puzzle.MatchThree
         {
             SwapElements(element1, element2);
             yield return new WaitForSeconds(ElementMovementDuration+0.1f);
-            //Check Matches
-            HashSet<MatchThreeElement> foundElements = new HashSet<MatchThreeElement>();
-            HashSet<MatchThreeElement> checkedElements = new HashSet<MatchThreeElement>();
-            MatchFinder.FindMatchesAroundTile(element1, foundElements, checkedElements);
-            MatchFinder.FindMatchesAroundTile(element2, foundElements, checkedElements);
-            if (foundElements.IsNullOrEmpty())
+
+            MatchGroup groups = MatchFinder.FindAllMatchesV2();
+            if(groups.Matches.IsNullOrEmpty())
             {
                 SwapElements(element1, element2);
+                yield return new WaitForSeconds(ElementMovementDuration);
+                _inputBlocked = false;
                 yield break;
             }
-            HandleMatches(foundElements);
+            HandleMatchGroups(groups);
             PostMove();
         }
 
@@ -117,18 +150,27 @@ namespace Kuantech.Puzzle.MatchThree
             DropRows();
             RefillBoard();
             yield return new WaitForSeconds(MatchCheckAfterSlideDelay);
-            HashSet<MatchThreeElement> matches = MatchFinder.FindAllMatches();
-            if (!matches.IsNullOrEmpty())
+            MatchGroup groups = MatchFinder.FindAllMatchesV2();
+            if (!groups.Matches.IsNullOrEmpty())
             {
-                HandleMatches(matches);
+                HandleMatchGroups(groups);
                 PostMove();
                 yield break;
             }
             _inputBlocked = false;
         }
 
+        private void HandleMatchGroups(MatchGroup group)
+        {
+            foreach(HashSet<MatchThreeElement> g in group.Matches)
+            {
+                HandleMatches(g);
+            }
+        }
         private void HandleMatches(HashSet<MatchThreeElement> matches)
         {
+            List<MatchThreeElement> listMathces = matches.ToList();
+            Debug.LogError("Found group of:" + listMathces.ToList()[0].CurrentData.Name + " with a count of:"+ listMathces.Count);
             foreach (var el in matches)
             {
                 if (el == null)
@@ -198,7 +240,8 @@ namespace Kuantech.Puzzle.MatchThree
                     if(Tiles[r,c] == null)
                     {
                         Vector3 localPosition = GetLocalPosition(RowCount + currentIndex, c); //Position to above so that is aboce
-                        MatchThreeElement newTile = SpawnRandomElement(localPosition, r, c);
+                        MatchThreeElement newTile = SpawnRandomElement(r, c);
+                        newTile.transform.localPosition = localPosition;
                     }
                 }
             }

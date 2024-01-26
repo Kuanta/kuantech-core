@@ -1,53 +1,83 @@
 using System.Collections.Generic;
 using Kuantech.Utils;
-using Sirenix.Serialization;
-using UnityEngine;
 
 namespace Kuantech.Puzzle.MatchThree
 {
     public class MatchFinder
     {
         public MatchThreeBoard Board;
-        private HashSet<MatchThreeElement> _elementsToBeMatched;
+        private HashSet<MatchThreeElement> _groupedElements;
         public MatchFinder(MatchThreeBoard parentBoard)
         {
             Board = parentBoard;
         }
 
-        public HashSet<MatchThreeElement> FindAllMatches()
+        #region Depth-First-Search
+        public MatchGroup FindAllMatchesV2()
         {
-            _elementsToBeMatched = new HashSet<MatchThreeElement>();
-            for(int r=0;r<Board.RowCount;++r)
+            MatchGroup group = new MatchGroup();
+            group.Matches = new List<HashSet<MatchThreeElement>>();
+            _groupedElements = new HashSet<MatchThreeElement>();
+            // Iterate through each tile in the grid
+            for (int c = 0; c < Board.ColumnCount; c++)
             {
-                for(int c=0;c<Board.ColumnCount;++c)
+                for (int r = 0; r < Board.RowCount; r++)
                 {
-                    MatchThreeElement element = Board.GetTile(r,c) as MatchThreeElement;
-                    if(element == null) continue;
+                    MatchThreeElement currentTile = Board.GetTile(r,c) as MatchThreeElement;
+                    if(currentTile == null || _groupedElements.Contains(currentTile)) continue;
 
-                    MatchThreeElement upElement = Board.GetTile(r+1, c) as MatchThreeElement;
-                    MatchThreeElement downElement = Board.GetTile(r-1, c) as MatchThreeElement;
-                    MatchThreeElement leftElement = Board.GetTile(r, c-1) as MatchThreeElement;
-                    MatchThreeElement rightElement = Board.GetTile(r, c+1) as MatchThreeElement;
+                    HashSet<MatchThreeElement> matchGroup = new HashSet<MatchThreeElement>();
+                    DFS(currentTile, matchGroup);
 
-                    if(upElement != null && downElement != null && element.IsSameType(upElement) && element.IsSameType(downElement))
-                    {
-                        if(!_elementsToBeMatched.Contains(upElement)) _elementsToBeMatched.Add(upElement);
-                        if(!_elementsToBeMatched.Contains(downElement)) _elementsToBeMatched.Add(downElement);
-                        if (!_elementsToBeMatched.Contains(element)) _elementsToBeMatched.Add(element);
-                    }
-
-                    if (leftElement != null && rightElement != null && element.IsSameType(leftElement) && element.IsSameType(rightElement))
-                    {
-                        if (!_elementsToBeMatched.Contains(leftElement)) _elementsToBeMatched.Add(leftElement);
-                        if (!_elementsToBeMatched.Contains(rightElement)) _elementsToBeMatched.Add(rightElement);
-                        if(!_elementsToBeMatched.Contains(element)) _elementsToBeMatched.Add(element);
-                    }
-
+                    // Add the match group to the list if it is not empty
+                    if(!matchGroup.IsNullOrEmpty()) group.Matches.Add(matchGroup);
                 }
             }
 
-            return _elementsToBeMatched;
+            return group;
         }
+
+        // Depth-First Search to find connected tiles in a match group
+        private void DFS(MatchThreeElement currentTile, HashSet<MatchThreeElement> matchGroup)
+        {
+            if (currentTile == null || _groupedElements.Contains(currentTile)) return;
+            if (!_groupedElements.Contains(currentTile)) _groupedElements.Add(currentTile);
+
+            MatchThreeElement upElement = Board.GetTile(currentTile.Row + 1, currentTile.Column) as MatchThreeElement;
+            MatchThreeElement downElement = Board.GetTile(currentTile.Row - 1, currentTile.Column) as MatchThreeElement;
+            MatchThreeElement leftElement = Board.GetTile(currentTile.Row, currentTile.Column - 1) as MatchThreeElement;
+            MatchThreeElement rightElement = Board.GetTile(currentTile.Row, currentTile.Column + 1) as MatchThreeElement;
+
+            if (upElement != null && downElement != null && currentTile.IsSameType(upElement) && currentTile.IsSameType(downElement))
+            {
+                if (!matchGroup.Contains(upElement)) AddTileToGroup(upElement, matchGroup);
+                if (!matchGroup.Contains(downElement)) AddTileToGroup(downElement, matchGroup);
+                if (!matchGroup.Contains(currentTile)) AddTileToGroup(currentTile, matchGroup);
+            }
+
+            if (leftElement != null && rightElement != null && currentTile.IsSameType(leftElement) && currentTile.IsSameType(rightElement))
+            {
+                if (!matchGroup.Contains(leftElement)) AddTileToGroup(leftElement, matchGroup);
+                if (!matchGroup.Contains(rightElement)) AddTileToGroup(rightElement, matchGroup);
+                if (!matchGroup.Contains(currentTile)) AddTileToGroup(currentTile, matchGroup);
+            }
+
+            if(matchGroup.Contains(upElement)) DFS(upElement, matchGroup);
+            if(matchGroup.Contains(leftElement)) DFS(leftElement, matchGroup);
+            if(matchGroup.Contains(rightElement)) DFS(rightElement, matchGroup);
+            if(matchGroup.Contains(downElement)) DFS(downElement, matchGroup);
+        }
+
+        /// <summary>
+        /// Adds a tile to a match group. Also add it to the grouped tiles
+        /// </summary>
+        /// <param name="tile"></param>
+        /// <param name="matchGroup"></param>
+        private void AddTileToGroup(MatchThreeElement tile, HashSet<MatchThreeElement> matchGroup)
+        {
+            if(!matchGroup.Contains(tile)) matchGroup.Add(tile);
+        }
+        #endregion
 
         /// <summary>
         /// Searches for matches recursively around the tile

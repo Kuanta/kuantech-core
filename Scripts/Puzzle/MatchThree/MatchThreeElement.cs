@@ -1,30 +1,14 @@
 using System;
-using System.Collections.Generic;
-using DG.Tweening;
 using Kuantech.Core;
-using Kuantech.Core.FX;
-using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Puzzle.MatchThree
 {
-    [Serializable]
-    public struct MatchThreeElementData
-    {
-        [KTTag("GemType")]
-        public int Type;
-        public GameObject Visual;
-        public Effect DespawnEffect;
-    }
 
     public class MatchThreeElement : GridTile
     {
-        [Header("Element Types")]
-        public List<MatchThreeElementData> Datas;
-        private int _currentDataIndex;
-
-        [KTTag("GemType")]
-        public int Type;
+        [NonSerialized] public MatchThreeElementData CurrentData;
+        [NonSerialized] public MatchThreeElementVisual CurrentVisual;
 
         //State
         [NonSerialized] public bool ToBeDestroyed;
@@ -42,37 +26,26 @@ namespace Kuantech.Puzzle.MatchThree
             ParentBoard = board;
             SetRowCol(row, col);
         }
-        public void SetElement(int id)
+        public void SetElementData(MatchThreeElementData data)
         {
-            _initialized = true; 
-            Type = id;
-            _currentDataIndex = -1;
-            for(int i=0;i<Datas.Count;++i)
+            _initialized = true;
+            CurrentData = data;
+            if(CurrentVisual != null)
             {
-                if(Datas[i].Type == id)
-                {
-                    _currentDataIndex = i;
-                }
-                Datas[i].Visual.SetActive(Datas[i].Type == id);
+                GameManager.Instance.Pool.PoolObject(CurrentVisual.gameObject);
             }
+            CurrentVisual = GameManager.Instance.Pool.GetObject(CurrentData.VisualPrefab.gameObject)
+            .GetComponent<MatchThreeElementVisual>();
+
+            CurrentVisual.transform.SetParent(transform);
+            CurrentVisual.transform.localPosition = Vector3.zero;
+            CurrentVisual.transform.localRotation = Quaternion.identity;
         }
 
         public override void SetRowCol(int row, int col)
         {
             base.SetRowCol(row, col);
             UpdateTargetPosition();
-        }
-        /// <summary>
-        /// Changes the type. Used to prevent initial mathces
-        /// </summary>
-        public void ChangeType()
-        {
-            _currentDataIndex++;
-            if(_currentDataIndex >= Datas.Count || _currentDataIndex < 0)
-            {
-                _currentDataIndex = 0;
-            }
-            SetElement(Datas[_currentDataIndex].Type);
         }
 
         #region Input
@@ -137,7 +110,6 @@ namespace Kuantech.Puzzle.MatchThree
             MatchThreeElement otherElement = ParentBoard.GetTile(Row + direction.y, Column+direction.x) as MatchThreeElement;
             if(otherElement != null)
             {
-                Debug.LogError("Other element:"+otherElement.name+" - Color:"+otherElement.Type);
                 (ParentBoard as MatchThreeBoard).MakeAMove(this, otherElement);
             }
         }
@@ -150,16 +122,12 @@ namespace Kuantech.Puzzle.MatchThree
 
         public bool IsSameType(MatchThreeElement element)
         {
-            return Type == element.Type;
+            return CurrentData.IsSameType(element.CurrentData);
         }
 
         public void Despawn()
         {
             _initialized = false;
-            if(_currentDataIndex > 0 && Datas[_currentDataIndex].DespawnEffect != null)
-            {
-                Datas[_currentDataIndex].DespawnEffect.Play();
-            }
             GameManager.Instance.Pool.PoolObject(gameObject);
         }
     }
