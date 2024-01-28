@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,10 +31,10 @@ namespace Kuantech.Puzzle.MatchThree
         private MatchFinder MatchFinder;
         private bool _inputBlocked = false;
 
-        private void Start()
-        {
-            Setup();
-        }
+        //Events
+        public Action OnMove;
+        public Action<(MatchThreeElementData, int)> OnCollectElement;
+
         public void Setup()
         {
             MatchFinder = new MatchFinder(this);
@@ -118,6 +119,7 @@ namespace Kuantech.Puzzle.MatchThree
         public void MakeAMove(MatchThreeElement element1, MatchThreeElement element2)
         {
             if(_inputBlocked) return;
+            
             _inputBlocked = true;
             StartCoroutine(_MakeAMoveRoutine(element1, element2));
         }
@@ -132,16 +134,26 @@ namespace Kuantech.Puzzle.MatchThree
             {
                 SwapElements(element1, element2);
                 yield return new WaitForSeconds(ElementMovementDuration);
-                _inputBlocked = false;
+                OnMoveEnd(false);
                 yield break;
             }
-            HandleMatchGroups(groups);
+            HandleMatchGroups(groups, false);
             PostMove();
         }
 
         private void PostMove()
         {
             StartCoroutine(PostMoveCo());
+        }
+
+        /// <summary>
+        /// Should be called whenever a move is ended
+        /// </summary>
+        /// <param name="isValidMove"></param>
+        private void OnMoveEnd(bool isValidMove)
+        {
+            _inputBlocked = false;
+            if(isValidMove) OnMove?.Invoke();
         }
 
         private IEnumerator PostMoveCo()
@@ -153,24 +165,25 @@ namespace Kuantech.Puzzle.MatchThree
             MatchGroup groups = MatchFinder.FindAllMatchesV2();
             if (!groups.Matches.IsNullOrEmpty())
             {
-                HandleMatchGroups(groups);
+                HandleMatchGroups(groups, true);
                 PostMove();
                 yield break;
             }
-            _inputBlocked = false;
+            OnMoveEnd(true);
         }
 
-        private void HandleMatchGroups(MatchGroup group)
+        protected virtual void HandleMatchGroups(MatchGroup group, bool fromPostMove)
         {
             foreach(HashSet<MatchThreeElement> g in group.Matches)
             {
-                HandleMatches(g);
+                HandleMatches(g, fromPostMove);
             }
         }
-        private void HandleMatches(HashSet<MatchThreeElement> matches)
+        protected virtual void HandleMatches(HashSet<MatchThreeElement> matches, bool fromPostMove)
         {
-            List<MatchThreeElement> listMathces = matches.ToList();
-            Debug.LogError("Found group of:" + listMathces.ToList()[0].CurrentData.Name + " with a count of:"+ listMathces.Count);
+            if (matches.Count <= 0) return;
+            List<MatchThreeElement> matchesList = matches.ToList();
+            OnCollectElement?.Invoke((matchesList[0].CurrentData, matchesList.Count));
             foreach (var el in matches)
             {
                 if (el == null)

@@ -26,7 +26,7 @@ namespace Kuantech.Puzzle
                     Tiles[r,c] = null;
                 }
             }
-            
+
             //Load existing tiles
             if(ExistingTiles == null) return;
             foreach(var existingTile in ExistingTiles)
@@ -57,13 +57,45 @@ namespace Kuantech.Puzzle
         #endregion
 
         #region Query Methods
-        public void SetTile(GridTile gridTile, int row, int col)
+        /// <summary>
+        /// Sets the tile for a grid tile
+        /// </summary>
+        /// <param name="gridTile">Grid Tile to set</param>
+        /// <param name="row">Desired row</param>
+        /// <param name="col">Desired col</param>
+        /// <param name="setPosition">If flag is set to true, the position will be set</param>
+        public void SetTile(GridTile gridTile, int row, int col, bool setPosition = true)
         {
             if (!IsCoordinateValid(row, col)) return;
+            gridTile.ParentBoard = this;
             Tiles[row, col] = gridTile;
             gridTile.SetRowCol(row, col);
+            if(setPosition)
+            {
+                gridTile.transform.SetParent(transform);
+                gridTile.SetLocalPosition(GetLocalPosition(row, col));
+            }
         }
 
+        /// <summary>
+        /// Unsets the tile at given row, col
+        /// </summary>
+        /// <param name="row"></param>
+        /// <param name="col"></param>
+        /// <returns></returns>
+        public GridTile UnsetTile(int row, int col)
+        {
+            GridTile existingTile = GetTile(row, col);
+            Tiles[row, col] = null;
+            return existingTile;
+        }
+
+        /// <summary>
+        /// Gets the tile at given row col
+        /// </summary>
+        /// <param name="row"></param>
+        /// <param name="col"></param>
+        /// <returns></returns>
         public GridTile GetTile(int row, int col)
         {
             if (!IsCoordinateValid(row, col)) return null;
@@ -75,9 +107,41 @@ namespace Kuantech.Puzzle
             if(!IsCoordinateValid(row, col)) return false;
             return Tiles[row, col] != null;
         }
+
+        public int GetEmptyTileCount()
+        {
+            int emptyCount = 0;
+            for(int r=0;r<RowCount;++r)
+            {
+                for(int c=0;c<ColumnCount;++c)
+                {
+                    if(GetTile(r,c) == null) emptyCount++;
+                }
+            }
+            return emptyCount;
+        }
+
+        /// <summary>
+        /// Returns the first empty tile starting from R=0, C=0
+        /// </summary>
+        /// <returns>Vector2 in the form of (row, col) </returns>
+        public Vector2Int GetEmptyRowCol()
+        {
+            Vector2Int emptyTileCoords = Vector2Int.one * -1; // Start as invalid
+            for (int r = 0; r < RowCount; ++r)
+            {
+                for (int c = 0; c < ColumnCount; ++c)
+                {
+                    if (GetTile(r, c) == null)
+                    {
+                        emptyTileCoords.x = r;
+                        emptyTileCoords.y = c;
+                    }
+                }
+            }
+            return emptyTileCoords;
+        }
         #endregion
-
-
 
         #region Utility Methods
         /// <summary>

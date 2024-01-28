@@ -27,5 +27,10 @@ namespace Kuantech.Puzzle
             Row = row;
             Column = col;
         }
+
+        public void SetLocalPosition(Vector3 localPosition)
+        {
+            transform.localPosition = localPosition;
+        }
     }
 }

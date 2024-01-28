@@ -1,3 +1,4 @@
+using System;
 using Kuantech.Utils;
 using UnityEngine;
 
@@ -31,8 +32,14 @@ namespace Kuantech.Puzzle
             Vector3 positionOnBoard = GridBoard.GetPointOnPlane(ray);
             int row, col;
             GridBoard.GetRowColFromPointOnBoard(positionOnBoard, out row, out col);
-
-            return GridBoard.MoveTile(gridTileDraggable.GridTile, row, col);
+            
+            return HandleDroppedTile(gridTileDraggable.GridTile, row, col);
         }
+
+        public virtual bool HandleDroppedTile(GridTile tile, int row, int col)
+        {
+            return GridBoard.MoveTile(tile, row, col);
+        }
+
     }
 }

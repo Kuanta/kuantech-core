@@ -6,7 +6,7 @@ namespace Kuantech.Puzzle.MatchThree
         public int Type;
         public string Name;
         public Sprite Icon;
-        public MatchThreeElementVisual VisualPrefab;
+        public GameObject VisualPrefab;
 
         public virtual bool IsSameType(MatchThreeElementData otherData)
         {

@@ -8,7 +8,7 @@ namespace Kuantech.Puzzle.MatchThree
     public class MatchThreeElement : GridTile
     {
         [NonSerialized] public MatchThreeElementData CurrentData;
-        [NonSerialized] public MatchThreeElementVisual CurrentVisual;
+        [NonSerialized] public GameObject CurrentVisual;
 
         //State
         [NonSerialized] public bool ToBeDestroyed;
@@ -34,9 +34,7 @@ namespace Kuantech.Puzzle.MatchThree
             {
                 GameManager.Instance.Pool.PoolObject(CurrentVisual.gameObject);
             }
-            CurrentVisual = GameManager.Instance.Pool.GetObject(CurrentData.VisualPrefab.gameObject)
-            .GetComponent<MatchThreeElementVisual>();
-
+            CurrentVisual = GameManager.Instance.Pool.GetObject(CurrentData.VisualPrefab.gameObject);
             CurrentVisual.transform.SetParent(transform);
             CurrentVisual.transform.localPosition = Vector3.zero;
             CurrentVisual.transform.localRotation = Quaternion.identity;
