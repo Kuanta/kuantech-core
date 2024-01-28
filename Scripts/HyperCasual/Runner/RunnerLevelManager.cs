@@ -92,39 +92,6 @@ namespace Kuantech.Core.HyperCasual.Runner
         public SlotDictionary SlotPrefabs = new SlotDictionary();
         
         [FormerlySerializedAs("_levelDesigns")] public LevelDesigns LevelDesigns;
-            
-        // public override void Initialize(HCGameManager hcGameManager)
-        // {
-        //     base.Initialize(hcGameManager);
-        //     BetterStreamingAssets.Initialize();
-        //     ReadLevels(LevelDesignsFileName);
-        // }
-        
-        // #region Data Reading
-        // /// <summary>
-        // /// Reads the json that contains multiple level designs
-        // /// </summary>
-        // /// <param name="levelsFormatFilename"></param>
-        // private void ReadLevels(string levelsFormatFilename)
-        // {
-        //     if (!ReadDesignsFile(levelsFormatFilename, out LevelDesigns))
-        //     {
-        //         Debug.LogError("Level Designs couldn't be read");
-        //         return;
-        //     }
-        //     Debug.LogError($"All {LevelDesigns.Levels.Count} levels has been read");
-        // }
-        //
-        // private bool ReadDesignsFile(string designFileName, out LevelDesigns levelDesigns)
-        // {
-        //     levelDesigns = new LevelDesigns();
-        //     string filePath = designFileName;
-        //     if (!BetterStreamingAssets.FileExists(filePath)) return false;
-        //     string fileContent = BetterStreamingAssets.ReadAllText(filePath);
-        //     levelDesigns = JsonConvert.DeserializeObject<LevelDesigns>(fileContent);
-        //     return true;
-        // }
-        // #endregion
 
         public override Level GetLevel(int levelIndex)
         {
@@ -145,7 +112,7 @@ namespace Kuantech.Core.HyperCasual.Runner
             }
             if (runnerLevel == null) throw new Exception("Level is null!");
             //todo(gameplay): Get power level and chunk count
-            runnerLevel.OnLevelCreated();
+            runnerLevel.SetupLevel();
             return runnerLevel;
         }
 

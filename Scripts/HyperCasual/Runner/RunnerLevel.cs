@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Kuantech.Utils;
 using UnityEngine;
@@ -27,7 +28,9 @@ namespace Kuantech.Core.HyperCasual.Runner
         private RunnerChunk _startChunk = null;
 
         private LevelManager _runnerLevelManager;
-        
+
+        [NonSerialized] public List<LevelChunk> LevelChunks;
+
         [Header("Level Limits")]
         public Vector3 CurrentLevelForward = new Vector3(1,0,0);
         public float CurrentLevelWidth;
@@ -36,9 +39,9 @@ namespace Kuantech.Core.HyperCasual.Runner
             CurrentRunner = runner;
             PositionRunner();
         }
-        public override void OnLevelCreated()
+        public override void SetupLevel()
         {
-            base.OnLevelCreated();
+            base.SetupLevel();
             //Get existing chunks
             LevelChunks = GetComponentsInChildren<LevelChunk>().ToList();
             if (LevelChunks.Count == 0) Debug.LogError("Premade level has no chunk");
@@ -64,11 +67,11 @@ namespace Kuantech.Core.HyperCasual.Runner
             SetRunner(runnerMan.Runner);
         }
 
-        public override void PrepareLevel()
-        {
-            base.PrepareLevel();
-            PositionRunner();
-        }
+        // public override void PrepareLevel()
+        // {
+        //     base.PrepareLevel();
+        //     PositionRunner();
+        // }
         
         /// <summary>
         /// Restarts the level. If not endless, doesn't clear existing chunks.
@@ -117,7 +120,7 @@ namespace Kuantech.Core.HyperCasual.Runner
         public override void ClearLevel()
         {
             StopAllCoroutines();
-            ReleaseEarnings();
+            //ReleaseEarnings();
             if (_liveChunks == null) return;
             foreach (var chunk in _liveChunks)
             {

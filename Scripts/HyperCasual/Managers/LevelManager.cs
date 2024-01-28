@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using IngameDebugConsole;
 using Sirenix.OdinInspector;
 using UnityEngine;
-using Kuantech.Core;
+using Kuantech.Core.HyperCasual;
 
-namespace Kuantech.Core.HyperCasual
+namespace Kuantech.Core
 {
     public struct StateChangeData
     {
@@ -69,7 +69,7 @@ namespace Kuantech.Core.HyperCasual
             level.transform.rotation = Quaternion.identity;
             level.LevelIndex = levelIndex;
             level.PowerLevel = levelIndex;
-            level.OnLevelCreated(); //todo(optimization): This may be unefficient
+            level.SetupLevel(); //todo(optimization): This may be unefficient
             return level;
         }
 
@@ -96,7 +96,6 @@ namespace Kuantech.Core.HyperCasual
             int powerLevel = levelIndex;
             CurrentLevel.PowerLevel = MaxPowerLevel > 0 ? Mathf.Min(MaxPowerLevel, powerLevel) : powerLevel;
 
-            CurrentLevel.PrepareLevel();
             LevelSetEvent?.Invoke(this, CurrentLevelIndex);
         }
         
@@ -130,7 +129,7 @@ namespace Kuantech.Core.HyperCasual
                 Debug.LogError("Trying to start level while not in waiting state");
                 return;
             }
-            CurrentLevel.StartLevel();
+            CurrentLevel.PlayLevel();
             ChangeCurrentState(LevelState.Playing);
         }
         public virtual void RestartLevel()

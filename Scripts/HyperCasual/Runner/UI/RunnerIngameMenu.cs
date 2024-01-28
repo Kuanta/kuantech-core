@@ -1,5 +1,5 @@
 ﻿using System.Collections;
-using Kuantech.Core.HyperCasual;
+using Kuantech.Core;
 using Kuantech.Core.HyperCasual.UI;
 using Kuantech.HyperCasual.UI;
 using Kuantech.UI;

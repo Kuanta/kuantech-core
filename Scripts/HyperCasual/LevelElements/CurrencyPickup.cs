@@ -11,7 +11,7 @@ namespace Kuantech.Core.HyperCasual.Runner
         {
             base.OnPickup(other);
 
-            LevelManager.GetContext<LevelManager>().CurrentLevel.AddCurrency(CurrencyId, Amount);
+            //LevelManager.GetContext<LevelManager>().CurrentLevel.AddCurrency(CurrencyId, Amount);
         }
     }
 }
