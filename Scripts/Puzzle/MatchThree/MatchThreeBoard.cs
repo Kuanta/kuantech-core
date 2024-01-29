@@ -39,34 +39,42 @@ namespace Kuantech.Puzzle.MatchThree
         {
             MatchFinder = new MatchFinder(this);
             CreateBoard();
+            CreateInitialElements();
+        }
+
+        /// <summary>
+        /// Creates the initial elements
+        /// </summary>
+        public void CreateInitialElements()
+        {
             HashSet<MatchThreeElement> foundElements = new HashSet<MatchThreeElement>();
             HashSet<MatchThreeElement> checkedElements = new HashSet<MatchThreeElement>();
-            for (int r = 0;r<RowCount;++r)
+            for (int r = 0; r < RowCount; ++r)
             {
-                for(int c=0;c<ColumnCount;++c)
+                for (int c = 0; c < ColumnCount; ++c)
                 {
-                    if(IsTileOccupied(r,c)) continue;
+                    if (IsTileOccupied(r, c)) continue;
                     //Create 
-                    Vector3 pos = GetLocalPosition(r,c);
+                    Vector3 pos = GetLocalPosition(r, c);
                     GameObject tileBg = Instantiate(BgTilePrefab);
                     tileBg.transform.SetParent(transform);
                     tileBg.transform.localPosition = pos;
                     tileBg.name = $"BGTile_{r}_{c}";
-                    MatchThreeElement tile = SpawnRandomElement(r,c);
+                    MatchThreeElement tile = SpawnRandomElement(r, c);
 
                     //Prevent premade matches
                     foundElements.Clear();
                     checkedElements.Clear();
                     MatchFinder.FindMatchesAroundTile(tile, foundElements, checkedElements);
                     int iterations = 0;
-                    while(!foundElements.IsNullOrEmpty())
+                    while (!foundElements.IsNullOrEmpty())
                     {
                         ChangeTileType(tile);
                         foundElements.Clear();
                         checkedElements.Clear();
                         MatchFinder.FindMatchesAroundTile(tile, foundElements, checkedElements);
                         iterations++;
-                        if(iterations >= 100) break;
+                        if (iterations >= 100) break;
                     }
                 }
             }
