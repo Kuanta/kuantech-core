@@ -1,8 +1,17 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace Kuantech.Puzzle
 {
+    [Serializable]
+    public class ExistingTileInfo
+    {
+        public GameObject Prefab;
+        public int Row;
+        public int Col;
+    }
+
     public class GridBoard : MonoBehaviour
     {
         [Header("Board Size")]
@@ -13,7 +22,7 @@ namespace Kuantech.Puzzle
         public float CellHeight = 1f;
 
         public GridTile[,] Tiles;
-        [HideInInspector] public List<GridTile> ExistingTiles = new List<GridTile>();
+        [HideInInspector] public List<ExistingTileInfo> ExistingTiles = new List<ExistingTileInfo>();
 
         public delegate void TileOperation(GridTile tile);
         public void CreateBoard()
@@ -37,21 +46,17 @@ namespace Kuantech.Puzzle
         {
             //Load existing tiles
             if (ExistingTiles == null) return;
-            foreach (var existingTile in ExistingTiles)
+            foreach (var existingTileInfo in ExistingTiles)
             {
-                if (existingTile == null) continue;
-                if (IsTileOccupied(existingTile.Row, existingTile.Column))
+                if (existingTileInfo.Prefab == null) continue;
+
+                if (IsTileOccupied(existingTileInfo.Row, existingTileInfo.Col))
                 {
-                    GridTile occupyingTile = GetTile(existingTile.Row, existingTile.Column);
-                    if(occupyingTile != existingTile)
-                    {
-                        existingTile.gameObject.SetActive(false);
-                        continue;
-                    }
+                    continue;
                 }
-                existingTile.gameObject.SetActive(true);
-                SetTile(existingTile, existingTile.Row, existingTile.Column);
-                existingTile.Spawn();
+                GridTile tile = Instantiate(existingTileInfo.Prefab).GetComponent<GridTile>();
+                SetTile(tile, existingTileInfo.Row, existingTileInfo.Col);
+                tile.Spawn();
             }
         }
 
@@ -156,6 +161,20 @@ namespace Kuantech.Puzzle
         }
         #endregion
 
+
+        public void ClearBoard()
+        {
+            for (int r = 0; r < RowCount; ++r)
+            {
+                for (int c = 0; c < ColumnCount; ++c)
+                {
+                    GridTile tile = GetTile(r, c);
+                    if(tile == null) continue;
+                    Destroy(tile.gameObject);
+                    Tiles[r, c] = null;
+                }
+            }
+        }
         #region Utility Methods
         /// <summary>
         /// Returns row and col 

@@ -267,6 +267,13 @@ namespace Kuantech.Puzzle.MatchThree
                 }
             }
         }
+
+        public void RestartBoard()
+        {
+            ClearBoard();
+            SetExistingTiles();
+            CreateInitialElements();
+        }
     }
 
 }

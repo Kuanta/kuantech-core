@@ -25,11 +25,11 @@ namespace Kuantech.Puzzle.MatchThree
         private MatchThreeLevelUI _matchThreeLevelUI;
         public override void SetupLevel()
         {
+            _matchThreeLevelUI = ((MatchThreeLevelUI)LevelUI);
             base.SetupLevel();
             MatchThreeBoard.Setup();
             MatchThreeBoard.OnMove += OnMove;
             PlayLevel(); //todo(matchemy): May not be good here
-            _matchThreeLevelUI = ((MatchThreeLevelUI)LevelUI);
         }
 
         public override void PlayLevel()
@@ -42,6 +42,20 @@ namespace Kuantech.Puzzle.MatchThree
             }else{
                 _collectedElements = new Dictionary<MatchThreeElementData, int>();
             }
+        }
+
+        protected override void ResetUI()
+        {
+            base.ResetUI();
+            _matchThreeLevelUI.SetRemainingMoves(MaxMoveCount);
+        }
+
+        public override void ResetLevelState()
+        {
+            MatchThreeBoard.RestartBoard();
+            _collectedElements.Clear();
+            _currentMoveCount = MaxMoveCount;
+            base.ResetLevelState();
         }
 
         /// <summary>

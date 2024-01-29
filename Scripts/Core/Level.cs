@@ -55,11 +55,17 @@ namespace Kuantech.Core
             ChangeLevelState(LevelState.Failed);
         }
 
-        public virtual void RestartLevel()
+        public void RestartLevel()
         {
+            ResetLevelState();
             ChangeLevelState(LevelState.Waiting);
         }
 
+        //Resets all the states of the level
+        public virtual void ResetLevelState()
+        {
+            ClearLevel();
+        }
         public virtual void ClearLevel()
         {
 

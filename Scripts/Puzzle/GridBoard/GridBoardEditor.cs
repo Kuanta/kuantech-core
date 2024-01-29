@@ -12,6 +12,7 @@ namespace Kuantech.Puzzle
             Draw,
             Delete,
         }
+
         [Header("GridBoard")]
         public GridBoard GridBoard;
         public Transform GroupParent;
@@ -19,6 +20,16 @@ namespace Kuantech.Puzzle
         [HideInInspector] public EditorMode CurrentMode = EditorMode.None;
         [HideInInspector] public List<GameObject> TileLibrary = new List<GameObject>();
         [HideInInspector] public GameObject CurrentlySelectedTile = null;
+        public List<GridTile> EditorTiles = new List<GridTile>();
+
+        private void Awake()
+        {
+            foreach(var tile in EditorTiles)
+            {
+                Destroy(tile.gameObject);
+            }
+        }
+        
         //Mode changes
         public void SetMode(GridBoardEditor.EditorMode mode)
         {
@@ -98,13 +109,21 @@ namespace Kuantech.Puzzle
 
         public void PaintTile(int row, int col)
         {
-            if(CurrentMode != EditorMode.Draw || CurrentlySelectedTile == null) return;
-            if(GridBoard.ExistingTiles == null) GridBoard.ExistingTiles = new List<GridTile>();
+            if(CurrentMode != EditorMode.Draw || CurrentlySelectedTile == null || IsTileOccupied(row, col)) return;
+            if(GridBoard.ExistingTiles == null) GridBoard.ExistingTiles = new List<ExistingTileInfo>();
             GameObject newTileObject = PrefabUtility.InstantiatePrefab(CurrentlySelectedTile) as GameObject;
+            
             GridTile tile = newTileObject.GetComponent<GridTile>();
             tile.Row = row;
             tile.Column = col;
-            GridBoard.ExistingTiles.Add(tile);
+            EditorTiles.Add(tile);
+
+            GridBoard.ExistingTiles.Add(new ExistingTileInfo{
+                Row = row,
+                Col = col,
+                Prefab = CurrentlySelectedTile,
+            });
+
             if(tile == null) 
             {
                 Destroy(newTileObject);
@@ -115,24 +134,55 @@ namespace Kuantech.Puzzle
             tile.transform.localRotation = Quaternion.identity;
         }
 
+        public bool IsTileOccupied(int row, int col)
+        {
+            foreach(var existingTileInfo in GridBoard.ExistingTiles)
+            {
+                if(existingTileInfo.Row == row && existingTileInfo.Col == col) return true;
+            }
+            return false;
+        }
+
+        public GridTile GetEditorTile(int row, int col)
+        {
+            foreach(var tile in EditorTiles)
+            {
+                if(tile.Row == row && tile.Column == col) return tile;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Deletes a tile
+        /// </summary>
+        /// <param name="row"></param>
+        /// <param name="col"></param>
         public void DeleteTile(int row, int col)
         {
             if (CurrentMode != EditorMode.Delete) return;
-            HashSet<GridTile> tilesToDelete = new HashSet<GridTile>();
+            HashSet<ExistingTileInfo> tilesToDelete = new HashSet<ExistingTileInfo>();
+            HashSet<GridTile> editorTileToDelete = new HashSet<GridTile>();
             for(int i=0;i<GridBoard.ExistingTiles.Count;++i)
             {
-                GridTile tile = GridBoard.ExistingTiles[i];
-                if(tile == null) continue;
-                if(tile.Row == row && tile.Column == col)
+                ExistingTileInfo tileInfo = GridBoard.ExistingTiles[i];
+                if(tileInfo == null) continue;
+                if(tileInfo.Row == row && tileInfo.Col == col)
                 {
-                    tilesToDelete.Add(tile);
+                    tilesToDelete.Add(tileInfo);
+                    GridTile editorTile = GetEditorTile(row, col);
+                    editorTileToDelete.Add(editorTile);
                 }
             }
 
             foreach(var tile in tilesToDelete)
             {
                 GridBoard.ExistingTiles.Remove(tile);
-                DestroyImmediate(tile.gameObject);
+            }
+
+            foreach(var editorTile in editorTileToDelete)
+            {
+                EditorTiles.Remove(editorTile);
+                DestroyImmediate(editorTile.gameObject);
             }
         }
         #endif

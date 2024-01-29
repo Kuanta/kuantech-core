@@ -9,7 +9,22 @@ namespace Kuantech.Puzzle
         public override void SetupLevel()
         {
             LevelUI.OnLevelSetup(this);
+            ResetUI();
             base.SetupLevel();
+        }
+
+        public override void ResetLevelState()
+        {
+            base.ResetLevelState();
+            ResetUI();
+        }
+        
+        /// <summary>
+        /// All the resetting about UI should be done here
+        /// </summary>
+        protected virtual void ResetUI()
+        {
+
         }
     }
 }

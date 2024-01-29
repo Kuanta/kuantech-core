@@ -67,18 +67,12 @@ namespace Kuantech.Core.HyperCasual.Runner
             SetRunner(runnerMan.Runner);
         }
 
-        // public override void PrepareLevel()
-        // {
-        //     base.PrepareLevel();
-        //     PositionRunner();
-        // }
-        
         /// <summary>
         /// Restarts the level. If not endless, doesn't clear existing chunks.
         /// </summary>
-        public override void RestartLevel()
+        public override void ResetLevelState()
         {
-            base.RestartLevel();
+            base.ResetLevelState();
             PositionRunner();
             if (ChunkCount <= 0 && !Generated) //Its endless, remove all
             {
