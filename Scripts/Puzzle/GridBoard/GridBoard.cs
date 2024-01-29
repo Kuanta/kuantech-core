@@ -27,21 +27,34 @@ namespace Kuantech.Puzzle
                 }
             }
 
+            SetExistingTiles();
+        }
+        
+        /// <summary>
+        /// C
+        /// </summary>
+        protected void SetExistingTiles()
+        {
             //Load existing tiles
-            if(ExistingTiles == null) return;
-            foreach(var existingTile in ExistingTiles)
+            if (ExistingTiles == null) return;
+            foreach (var existingTile in ExistingTiles)
             {
-                if(existingTile == null) continue;
-                if(IsTileOccupied(existingTile.Row, existingTile.Column))
+                if (existingTile == null) continue;
+                if (IsTileOccupied(existingTile.Row, existingTile.Column))
                 {
-                    Destroy(existingTile.gameObject);
-                    continue;
+                    GridTile occupyingTile = GetTile(existingTile.Row, existingTile.Column);
+                    if(occupyingTile != existingTile)
+                    {
+                        existingTile.gameObject.SetActive(false);
+                        continue;
+                    }
                 }
+                existingTile.gameObject.SetActive(true);
                 SetTile(existingTile, existingTile.Row, existingTile.Column);
                 existingTile.Spawn();
             }
         }
-        
+
         #region Move
         public virtual bool MoveTile(GridTile gridTile, int row, int col)
         {

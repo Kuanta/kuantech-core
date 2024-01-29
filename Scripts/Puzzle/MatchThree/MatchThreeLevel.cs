@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Kuantech.Core;
+using Kuantech.Puzzle.MatchThree.UI;
 using UnityEngine;
 
 namespace Kuantech.Puzzle.MatchThree
@@ -12,27 +12,30 @@ namespace Kuantech.Puzzle.MatchThree
         public int RequiredAmount;
     }
 
-    public class MatchThreeLevel: Level
+    public class MatchThreeLevel: PuzzleLevel
     {
         [Header("Board")]
         [SerializeField] protected MatchThreeBoard MatchThreeBoard;
 
         [Header("Level Properties")]
         [SerializeField] private int MaxMoveCount = 40;
-        [SerializeField] private List<WinConditionEntry> WinCondition;
+        private int _currentMoveCount;
+        public List<WinConditionEntry> WinCondition;
         private Dictionary<MatchThreeElementData, int> _collectedElements;
-
+        private MatchThreeLevelUI _matchThreeLevelUI;
         public override void SetupLevel()
         {
             base.SetupLevel();
             MatchThreeBoard.Setup();
             MatchThreeBoard.OnMove += OnMove;
             PlayLevel(); //todo(matchemy): May not be good here
+            _matchThreeLevelUI = ((MatchThreeLevelUI)LevelUI);
         }
 
         public override void PlayLevel()
         {
             base.PlayLevel();
+            _currentMoveCount = MaxMoveCount;
             if(_collectedElements != null)
             {
                 _collectedElements.Clear();
@@ -46,16 +49,31 @@ namespace Kuantech.Puzzle.MatchThree
         /// </summary>
         public void OnMove()
         {
+           ReduceRemainingMoveCount();
+           _matchThreeLevelUI.SetRemainingMoves(_currentMoveCount);
+        }
+
+        /// <summary>
+        /// Returns the maximum move count
+        /// </summary>
+        /// <returns></returns>
+        public int GetMaxMoveCount()
+        {
+            return MaxMoveCount;
+        }
+
+        protected void ReduceRemainingMoveCount()
+        {
             if (CheckForWinCondition()) return;
-            MaxMoveCount--;
-            if(MaxMoveCount <= 0)
+            _currentMoveCount--;
+            if (_currentMoveCount <= 0)
             {
                 //todo: Check if last move completed the level
                 Debug.LogError("Fail level");
                 FailLevel();
             }
         }
-
+        
         /// <summary>
         /// Adds collected amounts
         /// </summary>
@@ -79,13 +97,14 @@ namespace Kuantech.Puzzle.MatchThree
                 _collectedElements[data] = 0;
             }
             _collectedElements[data] += amount;
+            _matchThreeLevelUI.SetRemainingAmountForTileCondition(data, _collectedElements[data]);
         }
 
         /// <summary>
         /// Chekcs whether the win condition is met
         /// </summary>
         /// <returns></returns>
-        public bool IsWinConditionMet()
+        public virtual bool IsWinConditionMet()
         {
             if(WinCondition == null) return false;
             foreach(var entry in WinCondition)
