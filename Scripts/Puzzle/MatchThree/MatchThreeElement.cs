@@ -1,5 +1,6 @@
 using System;
 using Kuantech.Core;
+using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Puzzle.MatchThree
@@ -8,6 +9,9 @@ namespace Kuantech.Puzzle.MatchThree
     public class MatchThreeElement : GridTile
     {
         public MatchThreeElementData CurrentData;
+
+        [Header("Components")]
+        public WaypointFollower WaypointFollower;
         public GameObject CurrentVisual;
 
         //State
@@ -16,6 +20,7 @@ namespace Kuantech.Puzzle.MatchThree
         private MatchThreeBoard _parentMatchThreeBoard;
 
         private bool _initialized = false;
+    
         private void Update()
         {
             if(!_initialized) return;
@@ -122,6 +127,10 @@ namespace Kuantech.Puzzle.MatchThree
         private Vector3 _targetLocalPosition;
         public void UpdateTargetPosition()
         {
+            if(WaypointFollower == null)
+            {
+                WaypointFollower = gameObject.AddComponent<WaypointFollower>();
+            }
             _targetLocalPosition = ParentBoard.GetLocalPosition(Row, Column);
         }
         #endregion
