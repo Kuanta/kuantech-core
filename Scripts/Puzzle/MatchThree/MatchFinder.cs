@@ -6,7 +6,6 @@ namespace Kuantech.Puzzle.MatchThree
     public class MatchFinder
     {
         public MatchThreeBoard Board;
-        private HashSet<MatchThreeElement> _groupedElements;
         public MatchFinder(MatchThreeBoard parentBoard)
         {
             Board = parentBoard;
@@ -17,17 +16,17 @@ namespace Kuantech.Puzzle.MatchThree
         {
             MatchGroup group = new MatchGroup();
             group.Matches = new List<HashSet<MatchThreeElement>>();
-            _groupedElements = new HashSet<MatchThreeElement>();
+            HashSet<MatchThreeElement> matchedElements = new HashSet<MatchThreeElement>();
             // Iterate through each tile in the grid
             for (int c = 0; c < Board.ColumnCount; c++)
             {
                 for (int r = 0; r < Board.RowCount; r++)
                 {
                     MatchThreeElement currentTile = Board.GetTile(r,c) as MatchThreeElement;
-                    if(currentTile == null || _groupedElements.Contains(currentTile)) continue;
+                    if(currentTile == null) continue;
 
                     HashSet<MatchThreeElement> matchGroup = new HashSet<MatchThreeElement>();
-                    DFS(currentTile, matchGroup);
+                    DFS(currentTile, matchGroup, traversedTiles:null, groupedTiles:matchedElements);
 
                     // Add the match group to the list if it is not empty
                     if(!matchGroup.IsNullOrEmpty()) group.Matches.Add(matchGroup);
@@ -41,15 +40,19 @@ namespace Kuantech.Puzzle.MatchThree
         {
             if(tile == null) return null;
             MatchGroup group = new MatchGroup();
+            HashSet<MatchThreeElement> matches = new HashSet<MatchThreeElement>();
+            group.Matches.Add(matches);
+            DFS(tile, matches);
             return group;
         }
 
         // Depth-First Search to find connected tiles in a match group
-        private void DFS(MatchThreeElement currentTile, HashSet<MatchThreeElement> matchGroup, HashSet<MatchThreeElement> traversedTiles = null)
+        private void DFS(MatchThreeElement currentTile, HashSet<MatchThreeElement> matchGroup, HashSet<MatchThreeElement> traversedTiles = null, HashSet<MatchThreeElement> groupedTiles = null)
         {
-            if (currentTile == null || _groupedElements.Contains(currentTile)) return;
+            if (currentTile == null) return;
+            if(groupedTiles == null) groupedTiles = new HashSet<MatchThreeElement>();
             if(traversedTiles == null) traversedTiles = new HashSet<MatchThreeElement>();
-            if(traversedTiles.Contains(currentTile)) return;
+            if(traversedTiles.Contains(currentTile) || groupedTiles.Contains(currentTile)) return;
             traversedTiles.Add(currentTile);
 
             MatchThreeElement upElement = Board.GetTile(currentTile.Row + 1, currentTile.Column) as MatchThreeElement;
@@ -59,22 +62,22 @@ namespace Kuantech.Puzzle.MatchThree
 
             if (upElement != null && downElement != null && currentTile.IsSameType(upElement) && currentTile.IsSameType(downElement))
             {
-                if (!matchGroup.Contains(upElement)) AddTileToGroup(upElement, matchGroup);
-                if (!matchGroup.Contains(downElement)) AddTileToGroup(downElement, matchGroup);
-                if (!matchGroup.Contains(currentTile)) AddTileToGroup(currentTile, matchGroup);
+                if (!matchGroup.Contains(upElement)) AddTileToGroup(upElement, matchGroup, groupedTiles);
+                if (!matchGroup.Contains(downElement)) AddTileToGroup(downElement, matchGroup, groupedTiles);
+                if (!matchGroup.Contains(currentTile)) AddTileToGroup(currentTile, matchGroup, groupedTiles);
             }
 
             if (leftElement != null && rightElement != null && currentTile.IsSameType(leftElement) && currentTile.IsSameType(rightElement))
             {
-                if (!matchGroup.Contains(leftElement)) AddTileToGroup(leftElement, matchGroup);
-                if (!matchGroup.Contains(rightElement)) AddTileToGroup(rightElement, matchGroup);
-                if (!matchGroup.Contains(currentTile)) AddTileToGroup(currentTile, matchGroup);
+                if (!matchGroup.Contains(leftElement)) AddTileToGroup(leftElement, matchGroup, groupedTiles);
+                if (!matchGroup.Contains(rightElement)) AddTileToGroup(rightElement, matchGroup, groupedTiles);
+                if (!matchGroup.Contains(currentTile)) AddTileToGroup(currentTile, matchGroup, groupedTiles);
             }
 
-            if(currentTile.IsSameType(upElement)) DFS(upElement, matchGroup, traversedTiles);
-            if(currentTile.IsSameType(leftElement)) DFS(leftElement, matchGroup, traversedTiles);
-            if(currentTile.IsSameType(rightElement)) DFS(rightElement, matchGroup, traversedTiles);
-            if(currentTile.IsSameType(downElement)) DFS(downElement, matchGroup, traversedTiles);
+            if(currentTile.IsSameType(upElement)) DFS(upElement, matchGroup, traversedTiles, groupedTiles);
+            if(currentTile.IsSameType(leftElement)) DFS(leftElement, matchGroup, traversedTiles, groupedTiles);
+            if(currentTile.IsSameType(rightElement)) DFS(rightElement, matchGroup, traversedTiles, groupedTiles);
+            if(currentTile.IsSameType(downElement)) DFS(downElement, matchGroup, traversedTiles, groupedTiles);
         }
 
         /// <summary>
@@ -82,10 +85,10 @@ namespace Kuantech.Puzzle.MatchThree
         /// </summary>
         /// <param name="tile"></param>
         /// <param name="matchGroup"></param>
-        private void AddTileToGroup(MatchThreeElement tile, HashSet<MatchThreeElement> matchGroup)
+        private void AddTileToGroup(MatchThreeElement tile, HashSet<MatchThreeElement> matchGroup, HashSet<MatchThreeElement> groupedTiles)
         {
             if(!matchGroup.Contains(tile)) matchGroup.Add(tile);
-            if (!_groupedElements.Contains(tile)) _groupedElements.Add(tile);
+            if (!groupedTiles.Contains(tile)) groupedTiles.Add(tile);
 
         }
         #endregion

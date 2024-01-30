@@ -2,15 +2,25 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Kuantech.Core;
 using Kuantech.Utils;
+using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Kuantech.Puzzle.MatchThree
 {
     public class MatchGroup
     {
-        public List<HashSet<MatchThreeElement>> Matches;
+        public List<HashSet<MatchThreeElement>> Matches = new List<HashSet<MatchThreeElement>>();
+        public int GetMatchCount()
+        {
+            if(Matches == null) return 0;
+            int matchCount = 0;
+            for(int i=0;i<Matches.Count;++i)
+            {
+                if(Matches[0].Count > 0) matchCount++;
+            }
+            return matchCount;
+        }
     }
 
     public class MatchThreeBoard : GridBoard {
@@ -62,8 +72,6 @@ namespace Kuantech.Puzzle.MatchThree
         /// </summary>
         public void CreateInitialElements(bool setBackgroundTiles=false)
         {
-            HashSet<MatchThreeElement> foundElements = new HashSet<MatchThreeElement>();
-            HashSet<MatchThreeElement> checkedElements = new HashSet<MatchThreeElement>();
             for (int r = 0; r < RowCount; ++r)
             {
                 for (int c = 0; c < ColumnCount; ++c)
@@ -87,16 +95,12 @@ namespace Kuantech.Puzzle.MatchThree
                         Debug.LogError("Why we have null?");
                     }
                     //Prevent premade matches
-                    foundElements.Clear();
-                    checkedElements.Clear();
-                    MatchFinder.FindMatchesAroundTile(tile, foundElements, checkedElements);
+                    MatchGroup group = MatchFinder.FindMatchesAroundTile(tile);
                     int iterations = 0;
-                    while (!foundElements.IsNullOrEmpty())
+                    while (group.GetMatchCount() > 0)
                     {
                         ChangeTileType(tile);
-                        foundElements.Clear();
-                        checkedElements.Clear();
-                        MatchFinder.FindMatchesAroundTile(tile, foundElements, checkedElements);
+                        group = MatchFinder.FindMatchesAroundTile(tile);
                         iterations++;
                         if (iterations >= 100) {
                             break;
@@ -326,6 +330,17 @@ namespace Kuantech.Puzzle.MatchThree
             SetExistingTiles();
             CreateInitialElements();
         }
+
+        #region Debugging
+        [Button("Find Matches Around Tile")]
+        public void FindMatchesAroundTileDebug(int row, int col)
+        {
+            MatchThreeElement tile = GetTile(row, col) as MatchThreeElement;
+            if(tile == null) return;
+            MatchGroup group = MatchFinder.FindMatchesAroundTile(tile);
+            Debug.LogError($"Found {group.GetMatchCount()} matches");
+        }
+        #endregion
     }
 
 }
