@@ -94,22 +94,31 @@ namespace Kuantech.Puzzle.MatchThree
                     {
                         Debug.LogError("Why we have null?");
                     }
-                    //Prevent premade matches
-                    MatchGroup group = MatchFinder.FindMatchesAroundTile(tile);
-                    int iterations = 0;
-                    while (group.GetMatchCount() > 0)
-                    {
-                        ChangeTileType(tile);
-                        group = MatchFinder.FindMatchesAroundTile(tile);
-                        iterations++;
-                        if (iterations >= 100) {
-                            break;
-                        }
-                    }
+                    PreventMatchesForTile(tile);
                 }
             }
         }
 
+        /// <summary>
+        /// Tries to prevent a match for the given tile by changing its type until no match is created for it.
+        /// </summary>
+        /// <param name="tile"></param>
+        private void PreventMatchesForTile(MatchThreeElement tile)
+        {
+            //Prevent premade matches
+            MatchGroup group = MatchFinder.FindMatchesAroundTile(tile);
+            int iterations = 0;
+            while (group.GetMatchCount() > 0)
+            {
+                ChangeTileType(tile);
+                group = MatchFinder.FindMatchesAroundTile(tile);
+                iterations++;
+                if (iterations >= 100)
+                {
+                    break;
+                }
+            }
+        }
         /// <summary>
         /// Spawns a random element in given row and col
         /// </summary>
@@ -317,6 +326,9 @@ namespace Kuantech.Puzzle.MatchThree
                         Vector3 localPosition = GetLocalPosition(RowCount, c); //Position to above so that is aboce
                         MatchThreeElement newTile = SpawnRandomElement(r, c);
                         newTile.transform.localPosition = localPosition;
+
+                        //Prevent creating a match
+                        PreventMatchesForTile(newTile); //todo(match3): This could be benefitial for certain game types. Discuss.
                     }
                 }
             }
