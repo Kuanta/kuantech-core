@@ -7,8 +7,8 @@ namespace Kuantech.Puzzle.MatchThree
 
     public class MatchThreeElement : GridTile
     {
-        [NonSerialized] public MatchThreeElementData CurrentData;
-        [NonSerialized] public GameObject CurrentVisual;
+        public MatchThreeElementData CurrentData;
+        public GameObject CurrentVisual;
 
         //State
         [NonSerialized] public bool ToBeDestroyed;
@@ -20,6 +20,11 @@ namespace Kuantech.Puzzle.MatchThree
             if(!_initialized) return;
             transform.localPosition = Vector3.Lerp(transform.position, _targetLocalPosition, _parentMatchThreeBoard.TileSpeed * Time.deltaTime);
         }
+        public void SetInitialized()
+        {
+            _initialized = true;
+        }
+        
         public void SetBoard(MatchThreeBoard board, int row, int col)
         {
             _parentMatchThreeBoard = board;
@@ -120,13 +125,14 @@ namespace Kuantech.Puzzle.MatchThree
 
         public bool IsSameType(MatchThreeElement element)
         {
+            if(element == null) return false;
             return CurrentData.IsSameType(element.CurrentData);
         }
 
         public void Despawn()
         {
             _initialized = false;
-            GameManager.Instance.Pool.PoolObject(gameObject);
+            Destroy(gameObject);
         }
     }
 }

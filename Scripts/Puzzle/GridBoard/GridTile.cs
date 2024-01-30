@@ -12,8 +12,8 @@ namespace Kuantech.Puzzle
 
     public class GridTile : MonoBehaviour {
         [NonSerialized] public GridBoard ParentBoard;
-        [HideInInspector] public int Row;
-        [HideInInspector] public int Column; 
+        public int Row;
+        public int Column; 
 
         /// <summary>
         /// Called when spawned from the grid board

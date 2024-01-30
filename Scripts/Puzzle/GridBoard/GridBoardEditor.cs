@@ -24,6 +24,7 @@ namespace Kuantech.Puzzle
 
         private void Awake()
         {
+            if(!Application.isPlaying) return;
             foreach(var tile in EditorTiles)
             {
                 Destroy(tile.gameObject);

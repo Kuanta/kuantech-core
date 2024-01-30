@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using Sirenix.OdinInspector;
+using UnityEditor;
 using UnityEngine;
 
 namespace Kuantech.Puzzle
@@ -25,7 +27,7 @@ namespace Kuantech.Puzzle
         [HideInInspector] public List<ExistingTileInfo> ExistingTiles = new List<ExistingTileInfo>();
 
         public delegate void TileOperation(GridTile tile);
-        public void CreateBoard()
+        public virtual void CreateBoard()
         {
             Tiles = new GridTile[RowCount, ColumnCount];
             for (int r = 0; r < RowCount; ++r)
@@ -54,12 +56,17 @@ namespace Kuantech.Puzzle
                 {
                     continue;
                 }
-                GridTile tile = Instantiate(existingTileInfo.Prefab).GetComponent<GridTile>();
-                SetTile(tile, existingTileInfo.Row, existingTileInfo.Col);
-                tile.Spawn();
+                CreateExistingTile(existingTileInfo);
             }
         }
 
+        public virtual GridTile CreateExistingTile(ExistingTileInfo existingTileInfo)
+        {
+            GridTile tile = Instantiate(existingTileInfo.Prefab).GetComponent<GridTile>();
+            SetTile(tile, existingTileInfo.Row, existingTileInfo.Col);
+            tile.Spawn();
+            return tile;
+        }
         #region Move
         public virtual bool MoveTile(GridTile gridTile, int row, int col)
         {
@@ -82,7 +89,7 @@ namespace Kuantech.Puzzle
         /// <param name="row">Desired row</param>
         /// <param name="col">Desired col</param>
         /// <param name="setPosition">If flag is set to true, the position will be set</param>
-        public void SetTile(GridTile gridTile, int row, int col, bool setPosition = true)
+        public virtual void SetTile(GridTile gridTile, int row, int col, bool setPosition = true)
         {
             if (!IsCoordinateValid(row, col)) return;
             gridTile.ParentBoard = this;
@@ -117,6 +124,10 @@ namespace Kuantech.Puzzle
         public GridTile GetTile(int row, int col)
         {
             if (!IsCoordinateValid(row, col)) return null;
+            if(Tiles[row,col] != null && (Tiles[row,col].Row != row || Tiles[row,col].Column != col))
+            {
+                Debug.LogError("WE HAVE ROW COL MISMATCH!");
+            }
             return Tiles[row, col];
         }
         
@@ -169,8 +180,10 @@ namespace Kuantech.Puzzle
                 for (int c = 0; c < ColumnCount; ++c)
                 {
                     GridTile tile = GetTile(r, c);
-                    if(tile == null) continue;
-                    Destroy(tile.gameObject);
+                    if(tile != null)
+                    {
+                        Destroy(tile.gameObject);
+                    }
                     Tiles[r, c] = null;
                 }
             }
@@ -268,6 +281,20 @@ namespace Kuantech.Puzzle
         {
             return (RowCount) * CellHeight;
         }
+
         #endregion
+
+
+        [Button("Select Tile")]
+        public void SelectTile(int row, int col)
+        {
+            GridTile tile = GetTile(row, col);
+            if(tile == null)
+            {
+                Debug.LogError("Null tile!");
+                return;
+            }
+            Selection.activeGameObject = tile.gameObject;
+        }
     }
 }

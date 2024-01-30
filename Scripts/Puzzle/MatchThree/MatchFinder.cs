@@ -37,11 +37,20 @@ namespace Kuantech.Puzzle.MatchThree
             return group;
         }
 
+        public MatchGroup FindMatchesAroundTile(MatchThreeElement tile)
+        {
+            if(tile == null) return null;
+            MatchGroup group = new MatchGroup();
+            return group;
+        }
+
         // Depth-First Search to find connected tiles in a match group
-        private void DFS(MatchThreeElement currentTile, HashSet<MatchThreeElement> matchGroup)
+        private void DFS(MatchThreeElement currentTile, HashSet<MatchThreeElement> matchGroup, HashSet<MatchThreeElement> traversedTiles = null)
         {
             if (currentTile == null || _groupedElements.Contains(currentTile)) return;
-            if (!_groupedElements.Contains(currentTile)) _groupedElements.Add(currentTile);
+            if(traversedTiles == null) traversedTiles = new HashSet<MatchThreeElement>();
+            if(traversedTiles.Contains(currentTile)) return;
+            traversedTiles.Add(currentTile);
 
             MatchThreeElement upElement = Board.GetTile(currentTile.Row + 1, currentTile.Column) as MatchThreeElement;
             MatchThreeElement downElement = Board.GetTile(currentTile.Row - 1, currentTile.Column) as MatchThreeElement;
@@ -62,10 +71,10 @@ namespace Kuantech.Puzzle.MatchThree
                 if (!matchGroup.Contains(currentTile)) AddTileToGroup(currentTile, matchGroup);
             }
 
-            if(matchGroup.Contains(upElement)) DFS(upElement, matchGroup);
-            if(matchGroup.Contains(leftElement)) DFS(leftElement, matchGroup);
-            if(matchGroup.Contains(rightElement)) DFS(rightElement, matchGroup);
-            if(matchGroup.Contains(downElement)) DFS(downElement, matchGroup);
+            if(currentTile.IsSameType(upElement)) DFS(upElement, matchGroup, traversedTiles);
+            if(currentTile.IsSameType(leftElement)) DFS(leftElement, matchGroup, traversedTiles);
+            if(currentTile.IsSameType(rightElement)) DFS(rightElement, matchGroup, traversedTiles);
+            if(currentTile.IsSameType(downElement)) DFS(downElement, matchGroup, traversedTiles);
         }
 
         /// <summary>
@@ -76,6 +85,8 @@ namespace Kuantech.Puzzle.MatchThree
         private void AddTileToGroup(MatchThreeElement tile, HashSet<MatchThreeElement> matchGroup)
         {
             if(!matchGroup.Contains(tile)) matchGroup.Add(tile);
+            if (!_groupedElements.Contains(tile)) _groupedElements.Add(tile);
+
         }
         #endregion
 
@@ -85,7 +96,7 @@ namespace Kuantech.Puzzle.MatchThree
         /// <param name="tile"></param>
         /// <param name="foundMatches"></param>
         /// <param name="checkedTiles"></param>
-        public void FindMatchesAroundTile(MatchThreeElement tile, HashSet<MatchThreeElement> foundMatches, HashSet<MatchThreeElement> checkedTiles)
+        public void FindMatchesAroundTile(MatchThreeElement tile, HashSet<MatchThreeElement> foundMatches=null, HashSet<MatchThreeElement> checkedTiles=null)
         {
             if(tile == null || !checkedTiles.IsNullOrEmpty() && checkedTiles.Contains(tile)) return;
             if(checkedTiles == null) checkedTiles = new HashSet<MatchThreeElement>();

@@ -39,13 +39,28 @@ namespace Kuantech.Puzzle.MatchThree
         {
             MatchFinder = new MatchFinder(this);
             CreateBoard();
-            CreateInitialElements();
+            CreateInitialElements(true);
+        }
+
+        public override GridTile CreateExistingTile(ExistingTileInfo existingTileInfo)
+        {
+            GridTile tile = base.CreateExistingTile(existingTileInfo);
+            if(tile is MatchThreeElement element)
+            {
+                element.SetBoard(this, tile.Row, tile.Column);
+                element.transform.SetParent(transform);
+                element.transform.localPosition = GetLocalPosition(tile.Row, tile.Column);
+                element.name = $"Gem_{tile.Row}_{tile.Column}";
+                SetTile(element, tile.Row, tile.Column);
+                element.SetInitialized();
+            }
+            return tile;
         }
 
         /// <summary>
         /// Creates the initial elements
         /// </summary>
-        public void CreateInitialElements()
+        public void CreateInitialElements(bool setBackgroundTiles=false)
         {
             HashSet<MatchThreeElement> foundElements = new HashSet<MatchThreeElement>();
             HashSet<MatchThreeElement> checkedElements = new HashSet<MatchThreeElement>();
@@ -53,15 +68,24 @@ namespace Kuantech.Puzzle.MatchThree
             {
                 for (int c = 0; c < ColumnCount; ++c)
                 {
-                    if (IsTileOccupied(r, c)) continue;
+                    if (IsTileOccupied(r, c))
+                    {
+                        continue;
+                    }
                     //Create 
                     Vector3 pos = GetLocalPosition(r, c);
-                    GameObject tileBg = Instantiate(BgTilePrefab);
-                    tileBg.transform.SetParent(transform);
-                    tileBg.transform.localPosition = pos;
-                    tileBg.name = $"BGTile_{r}_{c}";
+                    if(setBackgroundTiles)
+                    {
+                        GameObject tileBg = Instantiate(BgTilePrefab);
+                        tileBg.transform.SetParent(transform);
+                        tileBg.transform.localPosition = pos;
+                        tileBg.name = $"BGTile_{r}_{c}";
+                    }
                     MatchThreeElement tile = SpawnRandomElement(r, c);
-
+                    if(tile == null)
+                    {
+                        Debug.LogError("Why we have null?");
+                    }
                     //Prevent premade matches
                     foundElements.Clear();
                     checkedElements.Clear();
@@ -74,7 +98,9 @@ namespace Kuantech.Puzzle.MatchThree
                         checkedElements.Clear();
                         MatchFinder.FindMatchesAroundTile(tile, foundElements, checkedElements);
                         iterations++;
-                        if (iterations >= 100) break;
+                        if (iterations >= 100) {
+                            break;
+                        }
                     }
                 }
             }
@@ -89,7 +115,19 @@ namespace Kuantech.Puzzle.MatchThree
         /// <returns></returns>
         protected virtual MatchThreeElement SpawnRandomElement(int row, int col)
         {
-            MatchThreeElement element = CreateRandomElement();
+            return SpawnElement(ElementDatas.GetRandomElement(), row, col);
+        }
+
+        /// <summary>
+        /// Spawns an element at given row col
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="row"></param>
+        /// <param name="col"></param>
+        /// <returns></returns>
+        protected virtual MatchThreeElement SpawnElement(MatchThreeElementData data, int row, int col)
+        {
+            MatchThreeElement element = CreateMatchThreeElement(data);
             element.SetBoard(this, row, col);
             element.transform.SetParent(transform);
             element.transform.localPosition = GetLocalPosition(row, col);
@@ -98,10 +136,24 @@ namespace Kuantech.Puzzle.MatchThree
             return element;
         }
 
+        /// <summary>
+        /// Creates an element of random type
+        /// </summary>
+        /// <returns></returns>
         protected virtual MatchThreeElement CreateRandomElement()
         {
             MatchThreeElementData elementType = ElementDatas.GetRandomElement();
-            MatchThreeElement element = GameManager.Instance.Pool.GetObject(ElementPrefab.gameObject).GetComponent<MatchThreeElement>();
+            return CreateMatchThreeElement(elementType);
+        }
+
+        /// <summary>
+        /// Creates an element of the given type
+        /// </summary>
+        /// <param name="elementType"></param>
+        /// <returns></returns>
+        protected MatchThreeElement CreateMatchThreeElement(MatchThreeElementData elementType)
+        {
+            MatchThreeElement element = Instantiate(ElementPrefab.gameObject).GetComponent<MatchThreeElement>();
             element.SetElementData(elementType);
             return element;
         }
@@ -239,7 +291,7 @@ namespace Kuantech.Puzzle.MatchThree
                     }else if(nullCounter > 0)
                     {
                         GridTile tile = Tiles[r,c];
-                        tile.SetRowCol(tile.Row - nullCounter, tile.Column);
+                        tile.SetRowCol(r - nullCounter, c);
                         Tiles[r-nullCounter,c] = tile;
                         Tiles[r,c] = null;
                     }
@@ -252,15 +304,13 @@ namespace Kuantech.Puzzle.MatchThree
         /// </summary>
         private void RefillBoard()
         {
-            int currentIndex;
             for (int c = 0; c < ColumnCount; ++c)
             {
-                currentIndex = 0;
                 for (int r = 0; r < RowCount; ++r)
                 {
                     if(Tiles[r,c] == null)
                     {
-                        Vector3 localPosition = GetLocalPosition(RowCount + currentIndex, c); //Position to above so that is aboce
+                        Vector3 localPosition = GetLocalPosition(RowCount, c); //Position to above so that is aboce
                         MatchThreeElement newTile = SpawnRandomElement(r, c);
                         newTile.transform.localPosition = localPosition;
                     }
@@ -270,6 +320,8 @@ namespace Kuantech.Puzzle.MatchThree
 
         public void RestartBoard()
         {
+            StopAllCoroutines();
+            _inputBlocked = false;
             ClearBoard();
             SetExistingTiles();
             CreateInitialElements();
