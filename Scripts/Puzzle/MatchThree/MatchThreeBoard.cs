@@ -298,10 +298,15 @@ namespace Kuantech.Puzzle.MatchThree
                 nullCounter = 0;
                 for(int r=0;r<RowCount;++r)
                 {
-                    if(Tiles[r,c] == null)
+                    MatchThreeElement element = GetTile(r,c) as MatchThreeElement;
+                    if(element == null)
                     {
                         nullCounter++;
-                    }else if(nullCounter > 0)
+                    }else if(!element.CanBeMoved)
+                    {
+                        nullCounter = 0;
+                    }
+                    else if(nullCounter > 0)
                     {
                         GridTile tile = Tiles[r,c];
                         tile.SetRowCol(r - nullCounter, c);
@@ -312,6 +317,10 @@ namespace Kuantech.Puzzle.MatchThree
             }
         }
 
+        public MatchThreeElement GetMatchThreeElement(int row, int col)
+        {
+            return GetTile(row, col) as MatchThreeElement;
+        }
         /// <summary>
         /// Refills the board after a move
         /// </summary>
@@ -319,7 +328,17 @@ namespace Kuantech.Puzzle.MatchThree
         {
             for (int c = 0; c < ColumnCount; ++c)
             {
-                for (int r = 0; r < RowCount; ++r)
+                //First, detect the lowest row that the tile can be dropped
+                int lowestRowPossible = 0;
+                for(int r=0;r<RowCount;++r)
+                {
+                    MatchThreeElement m3Element = GetMatchThreeElement(r,c);
+                    if(m3Element != null && !m3Element.CanBeMoved)
+                    {
+                        lowestRowPossible = r;
+                    }
+                }
+                for (int r = lowestRowPossible; r < RowCount; ++r)
                 {
                     if(Tiles[r,c] == null)
                     {

@@ -11,6 +11,7 @@ namespace Kuantech.Puzzle.MatchThree
         public GameObject CurrentVisual;
 
         //State
+        public bool CanBeMoved;
         [NonSerialized] public bool ToBeDestroyed;
         private MatchThreeBoard _parentMatchThreeBoard;
 
@@ -58,13 +59,14 @@ namespace Kuantech.Puzzle.MatchThree
 
         private void OnMouseDown()
         {
+            if (!CanBeMoved) return;
             _mousePressed = true;
-
             _firstTouchPoint = GetMainCameraPos();
         }
 
         private void OnMouseUp()
         {
+            if (!CanBeMoved) return;
             _releasePoint = GetMainCameraPos();
             //Movement Angle
             float angle = Mathf.Atan2(_releasePoint.y - _firstTouchPoint.y, _releasePoint.x - _firstTouchPoint.x);
@@ -86,6 +88,7 @@ namespace Kuantech.Puzzle.MatchThree
 
         private void CheckMovement(float angle)
         {
+            if(!CanBeMoved) return;
             //if(_moving) return;
             Vector2Int direction = new Vector2Int();
             if(angle <= 45.0f && angle >= -45.0f)
@@ -111,7 +114,7 @@ namespace Kuantech.Puzzle.MatchThree
                 return;
             }
             MatchThreeElement otherElement = ParentBoard.GetTile(Row + direction.y, Column+direction.x) as MatchThreeElement;
-            if(otherElement != null)
+            if(otherElement != null && otherElement.CanBeMoved)
             {
                 (ParentBoard as MatchThreeBoard).MakeAMove(this, otherElement);
             }
@@ -125,7 +128,7 @@ namespace Kuantech.Puzzle.MatchThree
 
         public bool IsSameType(MatchThreeElement element)
         {
-            if(element == null) return false;
+            if(element == null || CurrentData == null || element.CurrentData == null) return false;
             return CurrentData.IsSameType(element.CurrentData);
         }
 

@@ -2,6 +2,7 @@ using UnityEngine;
 
 namespace Kuantech.Puzzle.MatchThree
 {
+    [CreateAssetMenu(fileName = "MatchThreeElementData", menuName = "Kuantech/Puzzle/MatchThreeElementData", order = 0)]
     public class MatchThreeElementData : ScriptableObject {
         public int Type;
         public string Name;
