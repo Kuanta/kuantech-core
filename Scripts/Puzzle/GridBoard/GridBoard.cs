@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Kuantech.Core.FX;
 using Sirenix.OdinInspector;
 using UnityEditor;
 using UnityEngine;
@@ -296,5 +297,12 @@ namespace Kuantech.Puzzle
             }
             Selection.activeGameObject = tile.gameObject;
         }
+
+        #region Effects
+        public void PlayEffect(Effect effect, int row, int col)
+        {
+            //Boom
+        }
+        #endregion
     }
 }
