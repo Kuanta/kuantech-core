@@ -5,7 +5,6 @@ using UnityEngine;
 
 namespace Kuantech.Puzzle.MatchThree
 {
-
     public class MatchThreeElement : GridTile
     {
         public MatchThreeElementData CurrentData;
@@ -14,10 +13,16 @@ namespace Kuantech.Puzzle.MatchThree
         public WaypointFollower WaypointFollower;
         public GameObject CurrentVisual;
 
-        //State
+        [Header("State")]
+        [Tooltip("Non movable tiles are counted as obstacles")]
         public bool CanBeMoved;
+        [Tooltip("Interactable elements are interacted by creating matches around it, or moving it if it is movable")]
+        public bool Interactable;
+        [Tooltip("Indestructible tiles can't be destroyed with bombs")] 
+        public bool Indestructible;
+
         [NonSerialized] public bool ToBeDestroyed;
-        private MatchThreeBoard _parentMatchThreeBoard;
+        protected MatchThreeBoard ParentMatchThreeBoard;
 
         private bool _initialized = false;
     
@@ -28,7 +33,7 @@ namespace Kuantech.Puzzle.MatchThree
         
         public void SetBoard(MatchThreeBoard board, int row, int col)
         {
-            _parentMatchThreeBoard = board;
+            ParentMatchThreeBoard = board;
             ParentBoard = board;
             SetRowCol(row, col);
         }
@@ -135,14 +140,21 @@ namespace Kuantech.Puzzle.MatchThree
             {
                 WaypointFollower = gameObject.AddComponent<WaypointFollower>();
             }
-            if(_parentMatchThreeBoard == null) return;
-            WaypointFollower.SetSpeed(_parentMatchThreeBoard.TileSpeed);
+            if(ParentMatchThreeBoard == null) return;
+            WaypointFollower.SetSpeed(ParentMatchThreeBoard.TileSpeed);
         
             WaypointFollower.Waypoint newWaypoint = new WaypointFollower.Waypoint{
                 Position = ParentBoard.GetLocalPosition(Row, Column),
                 IsLocal = true,
             };
             WaypointFollower.AddWaypoint(newWaypoint);
+        }
+        #endregion
+
+        #region Interactable
+        public virtual void Interact()
+        {
+            ParentMatchThreeBoard.DestroyElement(this);
         }
         #endregion
 
@@ -154,6 +166,7 @@ namespace Kuantech.Puzzle.MatchThree
 
         public void Despawn()
         {
+            //todo: Play destroy effect                                                                           
             _initialized = false;
             Destroy(gameObject);
         }

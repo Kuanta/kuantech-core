@@ -18,7 +18,7 @@ namespace Kuantech.Puzzle
         public Transform GroupParent;
         
         [HideInInspector] public EditorMode CurrentMode = EditorMode.None;
-        [HideInInspector] public List<GameObject> TileLibrary = new List<GameObject>();
+        public List<GameObject> TileLibrary = new List<GameObject>();
         [HideInInspector] public GameObject CurrentlySelectedTile = null;
         public List<GridTile> EditorTiles = new List<GridTile>();
 

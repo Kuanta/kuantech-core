@@ -203,13 +203,23 @@ namespace Kuantech.Puzzle.MatchThree
             SwapElements(element1, element2);
             yield return StartCoroutine(WaitTileMovement());
 
+            
             MatchGroup groups = MatchFinder.FindAllMatchesV2();
-            if(groups.Matches.IsNullOrEmpty())
+            if(groups.Matches.IsNullOrEmpty() && !element1.Interactable && !element2.Interactable)
             {
                 SwapElements(element1, element2);
                 yield return StartCoroutine(WaitTileMovement());
                 OnMoveEnd(false);
                 yield break;
+            }
+            if (element1.Interactable)
+            {
+                element1.Interact();
+            }
+
+            if (element2.Interactable)
+            {
+                element2.Interact();
             }
             HandleMatchGroups(groups, false);
             PostMove();
@@ -272,23 +282,31 @@ namespace Kuantech.Puzzle.MatchThree
             {
                 HandleMatchGroups(groups, true);
                 PostMove();
+            }else{
+                OnMoveEnd(true);
             }
-            OnMoveEnd(true);
         }
-
         protected virtual void HandleMatchGroups(MatchGroup group, bool fromPostMove)
         {
+            HashSet<MatchThreeElement> foundInteractables = new HashSet<MatchThreeElement>();
             foreach(HashSet<MatchThreeElement> g in group.Matches)
             {
-                HandleMatches(g, fromPostMove);
+                HandleMatches(g, fromPostMove, foundInteractables);
+            }
+
+            //Handle Interactables
+            foreach(var interactable in foundInteractables)
+            {
+                interactable.Interact();
             }
         }
-        protected virtual void HandleMatches(HashSet<MatchThreeElement> matches, bool fromPostMove)
+        protected virtual void HandleMatches(HashSet<MatchThreeElement> matches, bool fromPostMove, HashSet<MatchThreeElement> foundElements)
         {
             if (matches.Count <= 0) return;
             if(matches.Count < 3)
             {
                 Debug.LogError("Oh no!");
+                return;
             }
             List<MatchThreeElement> matchesList = matches.ToList();
             OnCollectElement?.Invoke((matchesList[0].CurrentData, matchesList.Count));
@@ -298,9 +316,59 @@ namespace Kuantech.Puzzle.MatchThree
                 {
                     continue;
                 }
+                if(el.Interactable)
+                {
+                    el.Interact();
+                }
+                int row = el.Row;
+                int col = el.Column;
                 Tiles[el.Row, el.Column] = null;
                 el.Despawn();
+
+                //Check neighbour interactables
+                CheckNeighbourInteractables(row, col, foundElements);
             }
+        }
+
+        private void CheckNeighbourInteractables(int row, int col, HashSet<MatchThreeElement> foundInteractables)
+        {
+            MatchThreeElement[] neighs = new MatchThreeElement[]
+            {
+                GetMatchThreeElement(row + 1, col),
+                GetMatchThreeElement(row - 1, col),
+                GetMatchThreeElement(row, col+1),
+                GetMatchThreeElement(row, col-1)
+            };
+     
+            foreach(var neigh in neighs)
+            {
+                if(neigh != null && neigh.Interactable && !foundInteractables.Contains(neigh))
+                {
+                    foundInteractables.Add(neigh);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Destroys an element at given row and col
+        /// </summary>
+        /// <param name="row"></param>
+        /// <param name="col"></param>
+        public void DestroyElement(int row, int col)
+        {
+            MatchThreeElement element = GetMatchThreeElement(row, col);
+            DestroyElement(element);
+        }
+        
+        /// <summary>
+        /// Destroys the given element
+        /// </summary>
+        /// <param name="element"></param>
+        public void DestroyElement(MatchThreeElement element)
+        {
+            if(element == null || element.Indestructible) return;
+            Tiles[element.Row, element.Column] = null;
+            element.Despawn();
         }
 
         public void SwapElements(MatchThreeElement element1, MatchThreeElement element2)
