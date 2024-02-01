@@ -45,6 +45,7 @@ namespace Kuantech.Puzzle.MatchThree
         public Action OnMove;
         public Action<(MatchThreeElementData, int)> OnCollectElement;
 
+        private Dictionary<int, int> _highestObstacleIndexInRow;
         public void Setup()
         {
             MatchFinder = new MatchFinder(this);
@@ -200,18 +201,41 @@ namespace Kuantech.Puzzle.MatchThree
         private IEnumerator _MakeAMoveRoutine(MatchThreeElement element1, MatchThreeElement element2)
         {
             SwapElements(element1, element2);
-            yield return new WaitForSeconds(ElementMovementDuration+0.1f);
+            yield return StartCoroutine(WaitTileMovement());
 
             MatchGroup groups = MatchFinder.FindAllMatchesV2();
             if(groups.Matches.IsNullOrEmpty())
             {
                 SwapElements(element1, element2);
-                yield return new WaitForSeconds(ElementMovementDuration);
+                yield return StartCoroutine(WaitTileMovement());
                 OnMoveEnd(false);
                 yield break;
             }
             HandleMatchGroups(groups, false);
             PostMove();
+        }
+
+        private IEnumerator WaitTileMovement()
+        {
+            while(AreTilesMoving())
+            {
+                yield return null;
+            }
+        }
+
+        private bool AreTilesMoving()
+        {
+            //todo: This is temporary. Find an optimized way 
+            for(int r=0;r<RowCount;++r)
+            {
+                for(int c=0; c<ColumnCount;++c)
+                {
+                    MatchThreeElement tile = GetMatchThreeElement(r,c);
+                    if(tile == null) continue;
+                    if(tile.IsMoving()) return true;
+                }
+            }
+            return false;
         }
 
         private void PostMove()
@@ -231,16 +255,23 @@ namespace Kuantech.Puzzle.MatchThree
 
         private IEnumerator PostMoveCo()
         {
-            yield return new WaitForSeconds(SlideWaitDelay);
-            DropRows();
-            RefillBoard();
-            yield return new WaitForSeconds(MatchCheckAfterSlideDelay);
+            int counter = 0;
+            while (DropTiles())
+            {
+                counter++;
+                if(counter > 10)
+                {
+                    yield return new WaitForEndOfFrame();
+                    counter = 0;
+                }
+            }
+
+            yield return StartCoroutine(WaitTileMovement());
             MatchGroup groups = MatchFinder.FindAllMatchesV2();
             if (!groups.Matches.IsNullOrEmpty())
             {
                 HandleMatchGroups(groups, true);
                 PostMove();
-                yield break;
             }
             OnMoveEnd(true);
         }
@@ -255,6 +286,10 @@ namespace Kuantech.Puzzle.MatchThree
         protected virtual void HandleMatches(HashSet<MatchThreeElement> matches, bool fromPostMove)
         {
             if (matches.Count <= 0) return;
+            if(matches.Count < 3)
+            {
+                Debug.LogError("Oh no!");
+            }
             List<MatchThreeElement> matchesList = matches.ToList();
             OnCollectElement?.Invoke((matchesList[0].CurrentData, matchesList.Count));
             foreach (var el in matches)
@@ -283,44 +318,161 @@ namespace Kuantech.Puzzle.MatchThree
             element2.Row = element1Position.y;
             element2.Column = element1Position.x;
 
-            element1.SetRowCol(element2Position.y, element2Position.x);
-            element2.SetRowCol(element1Position.y, element1Position.x);
+            element1.MoveToRowCol(element2Position.y, element2Position.x);
+            element2.MoveToRowCol(element1Position.y, element1Position.x);
         }
-
+        #region Post Move Tile Movements
+        private HashSet<MatchThreeElement> _movedTiles;
         /// <summary>
         /// Drops the rows after a move
         /// </summary>
-        private void DropRows()
+        private bool DropTiles()
         {
-            int nullCounter;
+            bool madeValidMove = false;
+            if(_movedTiles == null)
+            {
+                _movedTiles = new HashSet<MatchThreeElement>();
+            }else{
+                _movedTiles.Clear();
+            }
+            _highestObstacleIndexInRow = new Dictionary<int, int>();
+            //Drop directly beow
             for(int c = 0; c < ColumnCount; ++c)
             {
-                nullCounter = 0;
                 for(int r=0;r<RowCount;++r)
                 {
                     MatchThreeElement element = GetTile(r,c) as MatchThreeElement;
-                    if(element == null)
+                    if(element != null && element.CanBeMoved && !_movedTiles.Contains(element))                   
                     {
-                        nullCounter++;
-                    }else if(!element.CanBeMoved)
+                        //Check below
+                        int rowBelow;
+                        rowBelow = GetDropRow(r, c);
+                        if (rowBelow >= 0 && rowBelow < r)
+                        {
+                            Tiles[r, c] = null;
+                            element.MoveToRowCol(rowBelow, c);
+                            Tiles[rowBelow, c] = element;
+                            madeValidMove = true;
+                            _movedTiles.Add(element);
+                        }
+                    }else if(element != null && !element.CanBeMoved)
                     {
-                        nullCounter = 0;
-                    }
-                    else if(nullCounter > 0)
-                    {
-                        GridTile tile = Tiles[r,c];
-                        tile.SetRowCol(r - nullCounter, c);
-                        Tiles[r-nullCounter,c] = tile;
-                        Tiles[r,c] = null;
+                        if(!_highestObstacleIndexInRow.ContainsKey(c))
+                        {
+                            _highestObstacleIndexInRow[c] = r;
+                        }else{
+                            _highestObstacleIndexInRow[c] = Mathf.Max(_highestObstacleIndexInRow[c], r);
+                        }
                     }
                 }
             }
+
+            //Drop diagonal sideways
+            for (int c = 0; c < ColumnCount; ++c)
+            {
+                for (int r = 0; r < RowCount; ++r)
+                {
+                    MatchThreeElement element = GetTile(r, c) as MatchThreeElement;
+                    if (element != null && element.CanBeMoved && !_movedTiles.Contains(element))
+                    {
+                        //Check below
+                        int rowBelow;
+                        int colToCheck = c-1;
+                        rowBelow = GetDropRow(r, colToCheck);
+
+                        //Can we shift to left diagonal
+                        if(rowBelow < 0 || !CanShiftToColumn(rowBelow, colToCheck) || !IsTileObstacle(r, colToCheck))
+                        {
+                            //Check right diagonal
+                            colToCheck = c+1;
+                            rowBelow = GetDropRow(r,colToCheck);
+                        }
+                        if (rowBelow >= 0 && rowBelow < r && 
+                            CanShiftToColumn(rowBelow, colToCheck) &&  //Check if there a blocker above
+                            IsTileObstacle(r, colToCheck)) //Check if there is a blocker sideways
+                        {
+                            Tiles[r, c] = null;
+                            element.MoveToRowCol(rowBelow-1, colToCheck); //First, move to direct diagonal
+                            element.MoveToRowCol(rowBelow, colToCheck); //...then drop
+                            Tiles[rowBelow, colToCheck] = element;
+                            madeValidMove = true;
+                            _movedTiles.Add(element);
+                        }
+                    }
+                }
+            }
+
+            //Shift sideways
+            for (int r = 0; r < RowCount; ++r)
+            {
+                for (int c = 0; c < ColumnCount; ++c)
+                {
+                    MatchThreeElement element = GetTile(r, c) as MatchThreeElement;
+                    if (element != null && element.CanBeMoved && !_movedTiles.Contains(element))
+                    {
+                        int colToShift = c;
+                        if(IsCoordinateValid(r, c-1) && GetTile(r, c-1) == null && CanShiftToColumn(r, c-1))
+                        {
+                            colToShift = c-1;
+                        }else if(IsCoordinateValid(r, c+1) && GetTile(r, c+1) == null && CanShiftToColumn(r, c+1))
+                        {
+                            colToShift = c+1;
+                        }
+
+                        if(colToShift != c)
+                        {
+                            Tiles[r, c] = null;
+                            element.MoveToRowCol(r, colToShift); //...then drop
+                            Tiles[r, colToShift] = element;
+                            madeValidMove = true;
+                            _movedTiles.Add(element);
+                        }
+                    }
+                }
+            }
+            RefillBoard();
+            return madeValidMove;
+        }
+        
+        /// <summary>
+        /// During diagonal and sideways shift, make sure that the above of the row is blocked.
+        /// Otherwise, let the filling to the RefillTiles method
+        /// </summary>
+        /// <param name="startingRow"></param>
+        /// <param name="column"></param>
+        /// <returns></returns>
+        private bool CanShiftToColumn(int startingRow, int column)
+        {
+            if (_highestObstacleIndexInRow == null || !_highestObstacleIndexInRow.ContainsKey(column)) 
+            {
+                //There is no obstacles
+                return false;
+            }
+            int highestObstaclesInColumn = _highestObstacleIndexInRow[column];
+            return highestObstaclesInColumn > startingRow;
         }
 
-        public MatchThreeElement GetMatchThreeElement(int row, int col)
+        private int GetDropRow(int startingRow, int col)
         {
-            return GetTile(row, col) as MatchThreeElement;
+            if(!IsCoordinateValid(startingRow, col))
+            {
+                return -1;
+            }
+            int lastNullRow = startingRow;
+            for(int i=startingRow-1;i>=0;--i)
+            {
+                MatchThreeElement element = GetMatchThreeElement(i, col);
+                if(element == null)
+                {
+                    lastNullRow = i;
+                }else if(!element.CanBeMoved)
+                {
+                    return lastNullRow;
+                }
+            }
+            return lastNullRow;
         }
+
         /// <summary>
         /// Refills the board after a move
         /// </summary>
@@ -328,24 +480,25 @@ namespace Kuantech.Puzzle.MatchThree
         {
             for (int c = 0; c < ColumnCount; ++c)
             {
-                //First, detect the lowest row that the tile can be dropped
-                int lowestRowPossible = 0;
-                for(int r=0;r<RowCount;++r)
+                int lowestRowPossible = RowCount; //An invalid tile
+                for (int r = RowCount-1; r >= 0; --r)
                 {
-                    MatchThreeElement m3Element = GetMatchThreeElement(r,c);
-                    if(m3Element != null && !m3Element.CanBeMoved)
+                    MatchThreeElement m3Element = GetMatchThreeElement(r, c);
+                    if (m3Element == null)
                     {
                         lowestRowPossible = r;
+                    }else{
+                        break;
                     }
                 }
                 for (int r = lowestRowPossible; r < RowCount; ++r)
                 {
-                    if(Tiles[r,c] == null)
+                    if (Tiles[r, c] == null && IsCoordinateValid(r,c))
                     {
                         Vector3 localPosition = GetLocalPosition(RowCount, c); //Position to above so that is aboce
                         MatchThreeElement newTile = SpawnRandomElement(r, c);
                         newTile.transform.localPosition = localPosition;
-
+                        newTile.MoveToRowCol(r, c);
                         //Prevent creating a match
                         PreventMatchesForTile(newTile); //todo(match3): This could be benefitial for certain game types. Discuss.
                     }
@@ -353,6 +506,28 @@ namespace Kuantech.Puzzle.MatchThree
             }
         }
 
+        #endregion
+
+        /// <summary>
+        /// Checks if tile at row, col is an obstacle, a non movable tile
+        /// </summary>
+        /// <param name="row"></param>
+        /// <param name="col"></param>
+        /// <returns></returns>
+        public bool IsTileObstacle(int row, int col)
+        {
+            if(!IsCoordinateValid(row, col)) return false;
+            MatchThreeElement element = GetMatchThreeElement(row, col);
+            if(element == null) return false;
+            return !element.CanBeMoved;
+        }
+
+        public MatchThreeElement GetMatchThreeElement(int row, int col)
+        {
+            return GetTile(row, col) as MatchThreeElement;
+        }
+
+       
         public void RestartBoard()
         {
             StopAllCoroutines();

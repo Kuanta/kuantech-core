@@ -21,11 +21,6 @@ namespace Kuantech.Puzzle.MatchThree
 
         private bool _initialized = false;
     
-        private void Update()
-        {
-            if(!_initialized) return;
-            transform.localPosition = Vector3.Lerp(transform.position, _targetLocalPosition, _parentMatchThreeBoard.TileSpeed * Time.deltaTime);
-        }
         public void SetInitialized()
         {
             _initialized = true;
@@ -51,9 +46,14 @@ namespace Kuantech.Puzzle.MatchThree
             CurrentVisual.transform.localRotation = Quaternion.identity;
         }
 
-        public override void SetRowCol(int row, int col)
+        /// <summary>
+        /// Moves a tile towards a row - col
+        /// </summary>
+        /// <param name="row"></param>
+        /// <param name="col"></param>
+        public void MoveToRowCol(int row, int col)
         {
-            base.SetRowCol(row, col);
+            SetRowCol(row, col);
             UpdateTargetPosition();
         }
 
@@ -91,6 +91,11 @@ namespace Kuantech.Puzzle.MatchThree
 
         #region Moving
 
+        public bool IsMoving()
+        {
+            if(WaypointFollower == null) return false;
+            return WaypointFollower.IsMoving();
+        }
         private void CheckMovement(float angle)
         {
             if(!CanBeMoved) return;
@@ -124,14 +129,20 @@ namespace Kuantech.Puzzle.MatchThree
                 (ParentBoard as MatchThreeBoard).MakeAMove(this, otherElement);
             }
         }
-        private Vector3 _targetLocalPosition;
         public void UpdateTargetPosition()
         {
             if(WaypointFollower == null)
             {
                 WaypointFollower = gameObject.AddComponent<WaypointFollower>();
             }
-            _targetLocalPosition = ParentBoard.GetLocalPosition(Row, Column);
+            if(_parentMatchThreeBoard == null) return;
+            WaypointFollower.SetSpeed(_parentMatchThreeBoard.TileSpeed);
+        
+            WaypointFollower.Waypoint newWaypoint = new WaypointFollower.Waypoint{
+                Position = ParentBoard.GetLocalPosition(Row, Column),
+                IsLocal = true,
+            };
+            WaypointFollower.AddWaypoint(newWaypoint);
         }
         #endregion
 

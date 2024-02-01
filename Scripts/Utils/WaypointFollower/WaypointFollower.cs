@@ -9,6 +9,7 @@ namespace Kuantech.Utils
         public class Waypoint
         {
             public Vector3 Position;
+            public bool IsLocal;
         }
 
         [Header("Properties")]
@@ -26,20 +27,29 @@ namespace Kuantech.Utils
         }
         public void AddWaypoint(Waypoint newWaypoint)
         {
+            if(Waypoints == null) Waypoints = new Queue<Waypoint>();
+            if(CurrentWaypoint == null || Waypoints.Count == 0)
+            {
+                //No current waypoint
+                CurrentWaypoint = newWaypoint;
+                return;
+            }
+            //There is already a waypoint
             Waypoints.Enqueue(newWaypoint);
+
         }
         #endregion
 
 
         private void Update()
         {
-
+            UpdatePosition();
         }
 
         private void UpdatePosition()
         {
             if(CurrentWaypoint == null) return;
-            Vector3 error = CurrentWaypoint.Position - transform.position;
+            Vector3 error = CurrentWaypoint.IsLocal ? CurrentWaypoint.Position - transform.localPosition : CurrentWaypoint.Position - transform.position;
             float errorMag = error.magnitude;
             if(errorMag <= 0.01f)
             {
@@ -48,13 +58,20 @@ namespace Kuantech.Utils
             }
             Vector3 direction = error / error.magnitude;
             Vector3 positionUpdate = direction * Mathf.Min(errorMag, Time.deltaTime * Speed);
-            transform.position += positionUpdate;
+            if(CurrentWaypoint.IsLocal)
+            {
+                transform.localPosition += positionUpdate;
+            }else{
+                transform.position += positionUpdate;
+            }
         }
 
         private void SetNextWaypoint()
         {
+            if(Waypoints == null) Waypoints = new Queue<Waypoint>();
             if(Waypoints.Count == 0)
             {
+                CurrentWaypoint = null;
                 ReachedFinalTarget?.Invoke();
                 return;
             }
@@ -62,5 +79,9 @@ namespace Kuantech.Utils
             CurrentWaypoint = Waypoints.Dequeue();
         }
 
+        public bool IsMoving()
+        {
+            return CurrentWaypoint != null;
+        }
     }
 }
