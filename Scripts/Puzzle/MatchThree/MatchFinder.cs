@@ -15,7 +15,7 @@ namespace Kuantech.Puzzle.MatchThree
         public MatchGroup FindAllMatchesV2()
         {
             MatchGroup group = new MatchGroup();
-            group.Matches = new List<HashSet<MatchThreeElement>>();
+    
             HashSet<MatchThreeElement> matchedElements = new HashSet<MatchThreeElement>();
             // Iterate through each tile in the grid
             for (int c = 0; c < Board.ColumnCount; c++)
@@ -29,20 +29,26 @@ namespace Kuantech.Puzzle.MatchThree
                     DFS(currentTile, matchGroup, traversedTiles:null, groupedTiles:matchedElements);
 
                     // Add the match group to the list if it is not empty
-                    if(!matchGroup.IsNullOrEmpty()) group.Matches.Add(matchGroup);
+                    if(!matchGroup.IsNullOrEmpty()) group.AddMatch(matchGroup);
                 }
             }
 
             return group;
         }
 
-        public MatchGroup FindMatchesAroundTile(MatchThreeElement tile)
+        public MatchGroup FindMatchesAroundTile(MatchThreeElement tile, MatchGroup group=null)
         {
             if(tile == null) return null;
-            MatchGroup group = new MatchGroup();
+            if(group == null)
+            {
+                group = new MatchGroup();
+            }
             HashSet<MatchThreeElement> matches = new HashSet<MatchThreeElement>();
-            group.Matches.Add(matches);
             DFS(tile, matches);
+            if(matches.Count >= 3)
+            {
+                group.AddMatch(matches);
+            }
             return group;
         }
 
@@ -52,7 +58,7 @@ namespace Kuantech.Puzzle.MatchThree
             if (currentTile == null) return;
             if(groupedTiles == null) groupedTiles = new HashSet<MatchThreeElement>();
             if(traversedTiles == null) traversedTiles = new HashSet<MatchThreeElement>();
-            if(traversedTiles.Contains(currentTile) || groupedTiles.Contains(currentTile)) return;
+            if(traversedTiles.Contains(currentTile)) return;
             traversedTiles.Add(currentTile);
 
             MatchThreeElement upElement = Board.GetTile(currentTile.Row + 1, currentTile.Column) as MatchThreeElement;
@@ -89,57 +95,56 @@ namespace Kuantech.Puzzle.MatchThree
         {
             if(!matchGroup.Contains(tile)) matchGroup.Add(tile);
             if (!groupedTiles.Contains(tile)) groupedTiles.Add(tile);
-
         }
         #endregion
 
-        /// <summary>
-        /// Searches for matches recursively around the tile
-        /// </summary>
-        /// <param name="tile"></param>
-        /// <param name="foundMatches"></param>
-        /// <param name="checkedTiles"></param>
-        public void FindMatchesAroundTile(MatchThreeElement tile, HashSet<MatchThreeElement> foundMatches=null, HashSet<MatchThreeElement> checkedTiles=null)
-        {
-            if(tile == null || !checkedTiles.IsNullOrEmpty() && checkedTiles.Contains(tile)) return;
-            if(checkedTiles == null) checkedTiles = new HashSet<MatchThreeElement>();
-            if(foundMatches == null) foundMatches = new HashSet<MatchThreeElement>();
-            checkedTiles.Add(tile);
-            int r = tile.Row;
-            int c = tile.Column;
+    //     /// <summary>
+    //     /// Searches for matches recursively around the tile
+    //     /// </summary>
+    //     /// <param name="tile"></param>
+    //     /// <param name="foundMatches"></param>
+    //     /// <param name="checkedTiles"></param>
+    //     public void FindMatchesAroundTile(MatchThreeElement tile, HashSet<MatchThreeElement> foundMatches=null, HashSet<MatchThreeElement> checkedTiles=null)
+    //     {
+    //         if(tile == null || !checkedTiles.IsNullOrEmpty() && checkedTiles.Contains(tile)) return;
+    //         if(checkedTiles == null) checkedTiles = new HashSet<MatchThreeElement>();
+    //         if(foundMatches == null) foundMatches = new HashSet<MatchThreeElement>();
+    //         checkedTiles.Add(tile);
+    //         int r = tile.Row;
+    //         int c = tile.Column;
 
-            MatchThreeElement upElement = Board.GetTile(r + 1, c) as MatchThreeElement;
-            MatchThreeElement downElement = Board.GetTile(r - 1, c) as MatchThreeElement;
-            MatchThreeElement leftElement = Board.GetTile(r, c - 1) as MatchThreeElement;
-            MatchThreeElement rightElement = Board.GetTile(r, c + 1) as MatchThreeElement;
-
-
-            if (upElement != null && downElement != null && tile.IsSameType(upElement) && tile.IsSameType(downElement))
-            {
-                if (!foundMatches.Contains(upElement)) foundMatches.Add(upElement);
-                if (!foundMatches.Contains(downElement)) foundMatches.Add(downElement);
-                if (!foundMatches.Contains(tile)) foundMatches.Add(tile);
-            }
-
-            if (leftElement != null && rightElement != null && tile.IsSameType(leftElement) && tile.IsSameType(rightElement))
-            {
-                if (!foundMatches.Contains(leftElement)) foundMatches.Add(leftElement);
-                if (!foundMatches.Contains(rightElement)) foundMatches.Add(rightElement);
-                if (!foundMatches.Contains(tile)) foundMatches.Add(tile);
-            }
+    //         MatchThreeElement upElement = Board.GetTile(r + 1, c) as MatchThreeElement;
+    //         MatchThreeElement downElement = Board.GetTile(r - 1, c) as MatchThreeElement;
+    //         MatchThreeElement leftElement = Board.GetTile(r, c - 1) as MatchThreeElement;
+    //         MatchThreeElement rightElement = Board.GetTile(r, c + 1) as MatchThreeElement;
 
 
-            CheckIfNeighTileShouldBeChecked(tile, upElement, foundMatches, checkedTiles);
-            CheckIfNeighTileShouldBeChecked(tile, leftElement, foundMatches, checkedTiles);
-            CheckIfNeighTileShouldBeChecked(tile, downElement, foundMatches, checkedTiles);
-            CheckIfNeighTileShouldBeChecked(tile, rightElement, foundMatches, checkedTiles);
-        }
+    //         if (upElement != null && downElement != null && tile.IsSameType(upElement) && tile.IsSameType(downElement))
+    //         {
+    //             if (!foundMatches.Contains(upElement)) foundMatches.Add(upElement);
+    //             if (!foundMatches.Contains(downElement)) foundMatches.Add(downElement);
+    //             if (!foundMatches.Contains(tile)) foundMatches.Add(tile);
+    //         }
 
-        private void CheckIfNeighTileShouldBeChecked(MatchThreeElement tile, MatchThreeElement neighTile, HashSet<MatchThreeElement> foundMatches = null, HashSet<MatchThreeElement> checkedTiles = null)
-        {
-            if(neighTile == null || !tile.IsSameType(neighTile)) return;
-            if(checkedTiles != null && checkedTiles.Contains(neighTile)) return;
-            FindMatchesAroundTile(neighTile, foundMatches, checkedTiles);
-        }
+    //         if (leftElement != null && rightElement != null && tile.IsSameType(leftElement) && tile.IsSameType(rightElement))
+    //         {
+    //             if (!foundMatches.Contains(leftElement)) foundMatches.Add(leftElement);
+    //             if (!foundMatches.Contains(rightElement)) foundMatches.Add(rightElement);
+    //             if (!foundMatches.Contains(tile)) foundMatches.Add(tile);
+    //         }
+
+
+    //         CheckIfNeighTileShouldBeChecked(tile, upElement, foundMatches, checkedTiles);
+    //         CheckIfNeighTileShouldBeChecked(tile, leftElement, foundMatches, checkedTiles);
+    //         CheckIfNeighTileShouldBeChecked(tile, downElement, foundMatches, checkedTiles);
+    //         CheckIfNeighTileShouldBeChecked(tile, rightElement, foundMatches, checkedTiles);
+    //     }
+
+    //     private void CheckIfNeighTileShouldBeChecked(MatchThreeElement tile, MatchThreeElement neighTile, HashSet<MatchThreeElement> foundMatches = null, HashSet<MatchThreeElement> checkedTiles = null)
+    //     {
+    //         if(neighTile == null || !tile.IsSameType(neighTile)) return;
+    //         if(checkedTiles != null && checkedTiles.Contains(neighTile)) return;
+    //         FindMatchesAroundTile(neighTile, foundMatches, checkedTiles);
+    //     }
     }
 }

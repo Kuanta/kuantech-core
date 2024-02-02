@@ -10,10 +10,10 @@ namespace Kuantech.Utils
         {
             public Vector3 Position;
             public bool IsLocal;
+            public float Speed;
         }
 
         [Header("Properties")]
-        public float Speed;
         [NonSerialized] public bool Moving;
         [NonSerialized] public Queue<Waypoint> Waypoints;
         [NonSerialized] public Waypoint CurrentWaypoint;
@@ -21,10 +21,6 @@ namespace Kuantech.Utils
         public Action ReachedFinalTarget;
 
         #region Property Setters
-        public void SetSpeed(float speed)
-        {
-            Speed = speed;
-        }
         public void AddWaypoint(Waypoint newWaypoint)
         {
             if(Waypoints == null) Waypoints = new Queue<Waypoint>();
@@ -57,7 +53,7 @@ namespace Kuantech.Utils
                 return;
             }
             Vector3 direction = error / error.magnitude;
-            Vector3 positionUpdate = direction * Mathf.Min(errorMag, Time.deltaTime * Speed);
+            Vector3 positionUpdate = direction * Mathf.Min(errorMag, Time.deltaTime * CurrentWaypoint.Speed);
             if(CurrentWaypoint.IsLocal)
             {
                 transform.localPosition += positionUpdate;

@@ -56,10 +56,10 @@ namespace Kuantech.Puzzle.MatchThree
         /// </summary>
         /// <param name="row"></param>
         /// <param name="col"></param>
-        public void MoveToRowCol(int row, int col)
+        public void MoveToRowCol(int row, int col, float speed)
         {
             SetRowCol(row, col);
-            UpdateTargetPosition();
+            UpdateTargetPosition(speed);
         }
 
         #region Input
@@ -134,18 +134,17 @@ namespace Kuantech.Puzzle.MatchThree
                 (ParentBoard as MatchThreeBoard).MakeAMove(this, otherElement);
             }
         }
-        public void UpdateTargetPosition()
+        public void UpdateTargetPosition(float speed)
         {
             if(WaypointFollower == null)
             {
                 WaypointFollower = gameObject.AddComponent<WaypointFollower>();
             }
             if(ParentMatchThreeBoard == null) return;
-            WaypointFollower.SetSpeed(ParentMatchThreeBoard.TileSpeed);
-        
             WaypointFollower.Waypoint newWaypoint = new WaypointFollower.Waypoint{
                 Position = ParentBoard.GetLocalPosition(Row, Column),
                 IsLocal = true,
+                Speed = speed,
             };
             WaypointFollower.AddWaypoint(newWaypoint);
         }

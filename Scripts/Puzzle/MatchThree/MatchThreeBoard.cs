@@ -8,35 +8,21 @@ using UnityEngine;
 
 namespace Kuantech.Puzzle.MatchThree
 {
-    public class MatchGroup
-    {
-        public List<HashSet<MatchThreeElement>> Matches = new List<HashSet<MatchThreeElement>>();
-        public int GetMatchCount()
-        {
-            if(Matches == null) return 0;
-            int matchCount = 0;
-            for(int i=0;i<Matches.Count;++i)
-            {
-                if(Matches[0].Count > 0) matchCount++;
-            }
-            return matchCount;
-        }
-    }
-
     public class MatchThreeBoard : GridBoard {
         
         [Header("Available Elements")]
         public List<MatchThreeElementData> ElementDatas;
 
-        [Header("Timing")]
         public float ElementMovementDuration = 0.2f;
         public float TileSpeed = 5.0f;
-        public float SlideWaitDelay = 0.25f;
-        public float MatchCheckAfterSlideDelay = 0.5f;
+        public float PostMovementTileSpeed = 20.0f;
 
         [Header("Prefabs")]
         [SerializeField] private GameObject BgTilePrefab;
         [SerializeField] private MatchThreeElement ElementPrefab;
+        
+        [Header("Boosters")]
+        public MatchThreeBoosterCollection BoosterCollection;
 
         private MatchFinder MatchFinder;
         private bool _inputBlocked = false;
@@ -129,7 +115,7 @@ namespace Kuantech.Puzzle.MatchThree
         /// <returns></returns>
         protected virtual MatchThreeElement SpawnRandomElement(int row, int col)
         {
-            return SpawnElement(ElementDatas.GetRandomElement(), row, col);
+            return SpawnElementByData(ElementDatas.GetRandomElement(), row, col);
         }
 
         /// <summary>
@@ -139,13 +125,24 @@ namespace Kuantech.Puzzle.MatchThree
         /// <param name="row"></param>
         /// <param name="col"></param>
         /// <returns></returns>
-        protected virtual MatchThreeElement SpawnElement(MatchThreeElementData data, int row, int col)
+        protected virtual MatchThreeElement SpawnElementByData(MatchThreeElementData data, int row, int col)
         {
             MatchThreeElement element = CreateMatchThreeElement(data);
             element.SetBoard(this, row, col);
             element.transform.SetParent(transform);
             element.transform.localPosition = GetLocalPosition(row, col);
             element.name = $"Gem_{row}_{col}";
+            SetTile(element, row, col);
+            return element;
+        }
+
+        protected virtual MatchThreeElement SpawnElement(MatchThreeElement prefab, int row, int col)
+        {
+            MatchThreeElement element = Instantiate(prefab).GetComponent<MatchThreeElement>();
+            element.SetBoard(this, row, col);
+            element.transform.SetParent(transform);
+            element.transform.localPosition = GetLocalPosition(row, col);
+            element.name = $"{prefab.name}_{row}_{col}";
             SetTile(element, row, col);
             return element;
         }
@@ -202,16 +199,43 @@ namespace Kuantech.Puzzle.MatchThree
         {
             SwapElements(element1, element2);
             yield return StartCoroutine(WaitTileMovement());
-
             
-            MatchGroup groups = MatchFinder.FindAllMatchesV2();
-            if(groups.Matches.IsNullOrEmpty() && !element1.Interactable && !element2.Interactable)
+            MatchGroup groups = MatchFinder.FindMatchesAroundTile(element1);
+            groups = MatchFinder.FindMatchesAroundTile(element2, groups);
+            if(groups.GetMatches().IsNullOrEmpty() && !element1.Interactable && !element2.Interactable)
             {
                 SwapElements(element1, element2);
                 yield return StartCoroutine(WaitTileMovement());
                 OnMoveEnd(false);
                 yield break;
             }
+
+            //Check booster spawns
+            foreach(var group in groups.GetMatches())
+            {
+                MatchGroup.MatchGroupShapes shape = MatchGroup.DetectMatchShape(group);
+                if(shape != MatchGroup.MatchGroupShapes.None)
+                {
+                    int rowToSpawn = -1;
+                    int colToSpawn = -1;
+                    //Which element caused this?
+                    if(group.Contains(element1))
+                    {
+                        rowToSpawn = element1.Row;
+                        colToSpawn = element1.Column;
+                    }else if(group.Contains(element2))
+                    {
+                        rowToSpawn = element2.Row;
+                        colToSpawn = element2.Column;
+                    }
+                    MatchThreeElement booster = BoosterCollection.GetBooster(shape);
+                    if(booster != null)
+                    {
+                        SpawnElement(booster, rowToSpawn, colToSpawn);
+                    }
+                }
+            }
+
             if (element1.Interactable)
             {
                 element1.Interact();
@@ -221,6 +245,7 @@ namespace Kuantech.Puzzle.MatchThree
             {
                 element2.Interact();
             }
+
             HandleMatchGroups(groups, false);
             PostMove();
         }
@@ -278,7 +303,7 @@ namespace Kuantech.Puzzle.MatchThree
 
             yield return StartCoroutine(WaitTileMovement());
             MatchGroup groups = MatchFinder.FindAllMatchesV2();
-            if (!groups.Matches.IsNullOrEmpty())
+            if (!groups.GetMatches().IsNullOrEmpty())
             {
                 HandleMatchGroups(groups, true);
                 PostMove();
@@ -289,7 +314,7 @@ namespace Kuantech.Puzzle.MatchThree
         protected virtual void HandleMatchGroups(MatchGroup group, bool fromPostMove)
         {
             HashSet<MatchThreeElement> foundInteractables = new HashSet<MatchThreeElement>();
-            foreach(HashSet<MatchThreeElement> g in group.Matches)
+            foreach(HashSet<MatchThreeElement> g in group.GetMatches())
             {
                 HandleMatches(g, fromPostMove, foundInteractables);
             }
@@ -318,7 +343,7 @@ namespace Kuantech.Puzzle.MatchThree
                 }
                 int row = el.Row;
                 int col = el.Column;
-                Tiles[el.Row, el.Column] = null;
+                if(Tiles[el.Row, el.Column] == el) Tiles[el.Row, el.Column] = null;
                 el.Despawn();
 
                 //Check neighbour interactables
@@ -382,8 +407,8 @@ namespace Kuantech.Puzzle.MatchThree
             element2.Row = element1Position.y;
             element2.Column = element1Position.x;
 
-            element1.MoveToRowCol(element2Position.y, element2Position.x);
-            element2.MoveToRowCol(element1Position.y, element1Position.x);
+            element1.MoveToRowCol(element2Position.y, element2Position.x, TileSpeed);
+            element2.MoveToRowCol(element1Position.y, element1Position.x, TileSpeed);
         }
         #region Post Move Tile Movements
         private HashSet<MatchThreeElement> _movedTiles;
@@ -414,7 +439,7 @@ namespace Kuantech.Puzzle.MatchThree
                         if (rowBelow >= 0 && rowBelow < r)
                         {
                             Tiles[r, c] = null;
-                            element.MoveToRowCol(rowBelow, c);
+                            element.MoveToRowCol(rowBelow, c, PostMovementTileSpeed);
                             Tiles[rowBelow, c] = element;
                             madeValidMove = true;
                             _movedTiles.Add(element);
@@ -456,8 +481,8 @@ namespace Kuantech.Puzzle.MatchThree
                             IsTileObstacle(r, colToCheck)) //Check if there is a blocker sideways
                         {
                             Tiles[r, c] = null;
-                            element.MoveToRowCol(rowBelow-1, colToCheck); //First, move to direct diagonal
-                            element.MoveToRowCol(rowBelow, colToCheck); //...then drop
+                            element.MoveToRowCol(rowBelow-1, colToCheck, PostMovementTileSpeed); //First, move to direct diagonal
+                            element.MoveToRowCol(rowBelow, colToCheck, PostMovementTileSpeed); //...then drop
                             Tiles[rowBelow, colToCheck] = element;
                             madeValidMove = true;
                             _movedTiles.Add(element);
@@ -486,7 +511,7 @@ namespace Kuantech.Puzzle.MatchThree
                         if(colToShift != c)
                         {
                             Tiles[r, c] = null;
-                            element.MoveToRowCol(r, colToShift); //...then drop
+                            element.MoveToRowCol(r, colToShift, PostMovementTileSpeed); //...then drop
                             Tiles[r, colToShift] = element;
                             madeValidMove = true;
                             _movedTiles.Add(element);
@@ -562,7 +587,7 @@ namespace Kuantech.Puzzle.MatchThree
                         Vector3 localPosition = GetLocalPosition(RowCount, c); //Position to above so that is aboce
                         MatchThreeElement newTile = SpawnRandomElement(r, c);
                         newTile.transform.localPosition = localPosition;
-                        newTile.MoveToRowCol(r, c);
+                        newTile.MoveToRowCol(r, c, PostMovementTileSpeed);
                         //Prevent creating a match
                         PreventMatchesForTile(newTile); //todo(match3): This could be benefitial for certain game types. Discuss.
                     }
