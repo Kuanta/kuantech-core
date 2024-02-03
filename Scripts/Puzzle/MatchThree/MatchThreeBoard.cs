@@ -49,7 +49,6 @@ namespace Kuantech.Puzzle.MatchThree
                 element.transform.localPosition = GetLocalPosition(tile.Row, tile.Column);
                 element.name = $"Gem_{tile.Row}_{tile.Column}";
                 SetTile(element, tile.Row, tile.Column);
-                element.SetInitialized();
             }
             return tile;
         }
@@ -273,7 +272,7 @@ namespace Kuantech.Puzzle.MatchThree
             return false;
         }
 
-        private void PostMove()
+        public void PostMove()
         {
             StartCoroutine(PostMoveCo());
         }
@@ -321,7 +320,7 @@ namespace Kuantech.Puzzle.MatchThree
 
           
         }
-        protected virtual void HandleMatches(HashSet<MatchThreeElement> matches, bool fromPostMove, HashSet<MatchThreeElement> foundElements)
+        protected virtual void HandleMatches(HashSet<MatchThreeElement> matches, bool fromPostMove, HashSet<MatchThreeElement> foundDestructibles)
         {
             if (matches.Count <= 0) return;
             if(matches.Count < 3)
@@ -347,11 +346,11 @@ namespace Kuantech.Puzzle.MatchThree
                 el.Despawn();
 
                 //Check neighbour interactables
-                CheckNeighbourInteractables(row, col, foundElements);
+                CheckNeighbourDestructibles(row, col, foundDestructibles);
             }
         }
 
-        private void CheckNeighbourInteractables(int row, int col, HashSet<MatchThreeElement> foundInteractables)
+        private void CheckNeighbourDestructibles(int row, int col, HashSet<MatchThreeElement> foundDestructibles)
         {
             MatchThreeElement[] neighs = new MatchThreeElement[]
             {
@@ -363,9 +362,9 @@ namespace Kuantech.Puzzle.MatchThree
      
             foreach(var neigh in neighs)
             {
-                if(neigh != null && neigh.Interactable && !foundInteractables.Contains(neigh))
+                if(neigh != null && neigh.Destructible && !foundDestructibles.Contains(neigh))
                 {
-                    foundInteractables.Add(neigh);
+                    foundDestructibles.Add(neigh);
                 }
             }
         }

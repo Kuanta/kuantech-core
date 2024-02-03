@@ -24,5 +24,6 @@ namespace Kuantech.UI
         {
             gameObject.SetActive(false);
         }
+
     }
 }

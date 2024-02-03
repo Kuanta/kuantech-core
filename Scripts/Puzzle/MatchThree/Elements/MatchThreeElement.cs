@@ -20,17 +20,23 @@ namespace Kuantech.Puzzle.MatchThree
         public bool Interactable;
         [Tooltip("Indestructible tiles can't be destroyed with bombs")] 
         public bool Indestructible;
+        [Tooltip("Destructible Tiles gets destroyed when there is a match near them")]
+        public bool Destructible;
+        public int HitToDestroy = 1;
+        private int _currentTakenHit = 0;
 
+        [Header("Gestures")]
+        [SerializeField] private float TapDistanceThresh = 0.1f;
         [NonSerialized] public bool ToBeDestroyed;
         protected MatchThreeBoard ParentMatchThreeBoard;
 
-        private bool _initialized = false;
-    
-        public void SetInitialized()
+
+        public override void Spawn()
         {
-            _initialized = true;
+            base.Spawn();
+            _currentTakenHit = 0;
         }
-        
+ 
         public void SetBoard(MatchThreeBoard board, int row, int col)
         {
             ParentMatchThreeBoard = board;
@@ -39,7 +45,6 @@ namespace Kuantech.Puzzle.MatchThree
         }
         public void SetElementData(MatchThreeElementData data)
         {
-            _initialized = true;
             CurrentData = data;
             if(CurrentVisual != null)
             {
@@ -76,8 +81,15 @@ namespace Kuantech.Puzzle.MatchThree
 
         private void OnMouseUp()
         {
-            if (!CanBeMoved) return;
             _releasePoint = GetMainCameraPos();
+
+            //Is this tap?
+            if ((_releasePoint - _firstTouchPoint).sqrMagnitude <= TapDistanceThresh)
+            {
+                OnTap();
+                return;
+            }
+            if (!CanBeMoved) return;
             //Movement Angle
             float angle = Mathf.Atan2(_releasePoint.y - _firstTouchPoint.y, _releasePoint.x - _firstTouchPoint.x);
             angle = angle * 180.0f / Mathf.PI;
@@ -85,6 +97,13 @@ namespace Kuantech.Puzzle.MatchThree
             {
                 CheckMovement(angle);
             }
+        }
+
+        protected virtual void OnTap()
+        {
+            if(!Interactable) return;
+            Interact();
+            ParentMatchThreeBoard.PostMove();
         }
 
         private Vector3 GetMainCameraPos()
@@ -153,7 +172,21 @@ namespace Kuantech.Puzzle.MatchThree
         #region Interactable
         public virtual void Interact()
         {
-            ParentMatchThreeBoard.DestroyElement(this);
+            ParentMatchThreeBoard.DestroyElement(this); //Destroy after using
+        }
+
+        /// <summary>
+        /// Destructibles tla
+        /// </summary>
+        public virtual void TakeDamage()
+        {
+            if(!Destructible) return;
+            _currentTakenHit++;
+            if(_currentTakenHit >= HitToDestroy)
+            {
+                _currentTakenHit = 0;
+                ParentMatchThreeBoard.DestroyElement(this);
+            }
         }
         #endregion
 
@@ -166,7 +199,6 @@ namespace Kuantech.Puzzle.MatchThree
         public void Despawn()
         {
             //todo: Play destroy effect                                                                           
-            _initialized = false;
             Destroy(gameObject);
         }
     }

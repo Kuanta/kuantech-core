@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Kuantech.Core.FX;
 using Sirenix.OdinInspector;
+using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
 
@@ -273,6 +274,11 @@ namespace Kuantech.Puzzle
                                 row * CellHeight - CellHeight * RowCount * 0.5f + CellHeight * 0.5f);
         }
 
+        public Vector3 GetGlobalPosition(int row, int col)
+        {
+            Vector3 localPos = GetLocalPosition(row, col);
+            return transform.TransformPoint(localPos);
+        }
         public float GetWidth()
         {
             return (ColumnCount) * CellWidth;

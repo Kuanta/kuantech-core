@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Kuantech.Puzzle.UI
 {
-    public class PuzzleLevelUI : UIMenu
+    public class PuzzleLevelUI : UICanvas
     {
         [Header("Panels")]
         public PuzzleCompletePanel CompletePanel;
