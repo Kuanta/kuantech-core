@@ -1,25 +1,60 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using Kuantech.Utils;
+﻿using System;
+using System.Collections;
 using UnityEngine;
 
 namespace Kuantech.Core.FX
 {
     public class Effect : MonoBehaviour
     {
+        [Header("Effect Properties")]
         public string EffectId;
-        public AudioSource Sfx;
-        public ParticleSystem Vfx;
         public float Duration;
         public float Delay = 0f;
-        public float SfxFadeOutDuration = 0; //If set to a value >0, sfx will top with fading out
-        public Animator Animator;
-        private static readonly int Play1 = Animator.StringToHash("Play");
-        public bool EmitEffect = false; //If set to true, effect will be emitted instead of play
-        public int EmitCount = 1;
 
-        public List<AudioSource> SfxColleciton;
-        
+        [Header("Visual Effect")]
+        public VisualEffect Vfx;
+
+        [Header("Sound Effect")]
+        public Sound Sfx;
+        public float SfxFadeOutDuration = 0; //If set to a value >0, sfx will top with fading out
+
+        [Header("Animations")]
+        public Animator Animator;
+
+        private static readonly int Play1 = Animator.StringToHash("Play");
+
+        //If an effect is under the protection of effects library, it can't be destroyed with timed calls
+        [NonSerialized] public bool BoundToEffectsLibrary = false; 
+
+
+        /// <summary>
+        /// Plays the effect using the settings
+        /// </summary>
+        /// <param name="settings"></param>
+        public void Play(EffectPlaySettings settings)
+        {
+            if (settings.SetPosition)
+            {
+                if (settings.EffectParent != null)
+                {
+                    transform.SetParent(settings.EffectParent);
+                    transform.localPosition = settings.LocalPlayPosition;
+                    transform.localRotation = settings.LocalPlayRotation;
+                }
+                else
+                {
+                    transform.position = settings.PlayPosition;
+                    transform.rotation = settings.PlayRotation;
+                }
+            }
+
+            Play(settings.EffectCooldown);
+            if (Duration > 0 && !BoundToEffectsLibrary)
+            {
+                StartCoroutine(PoolRoutine(settings.EffectCooldown));
+            }
+        }
+
         public void Play(float effectCooldown = -1)
         {
             StartCoroutine(PlayRoutine(effectCooldown));
@@ -34,22 +69,15 @@ namespace Kuantech.Core.FX
         protected virtual void PlayEffects(float effectCooldown)
         {
             if (!EffectsLibrary.CanPlaySound(EffectId, effectCooldown)) return;
-            if (SfxColleciton != null && SfxColleciton.Count > 0)
-            {
-                Sfx = SfxColleciton.GetRandomElement();
-            }
+         
             if(Sfx != null) Sfx.Play();
-            if(Vfx != null && !EmitEffect) Vfx.Play();
-            else if (Vfx != null && EmitEffect)
-            {
-                Vfx.transform.position = transform.position;
-                Vfx.transform.forward = transform.forward;
-                Vfx.Emit(EmitCount);
-            }
+            if(Vfx != null) Vfx.Play();
             if(Animator != null) Animator.SetTrigger(Play1);
             EffectsLibrary.SetLastPlayedTime(EffectId);
         }
-        
+
+
+        #region Old Play Methods
         public void Play(Vector3 position, Quaternion rotation, float effectCooldown, bool local = false)
         {
             if (local)
@@ -100,30 +128,25 @@ namespace Kuantech.Core.FX
             Play(parent, position, rotation, effectCooldown);
             StartCoroutine(PoolRoutine(duration));
         }
-        
+        #endregion
+
         public void Stop()
         {
             if(Vfx!=null) Vfx.Stop();
             if (Sfx == null) return;
-            if (SfxFadeOutDuration > 0)
-            {
-                StartCoroutine(FadeOutCoroutine(Sfx, SfxFadeOutDuration));
-            }
-            else
-            {
-                Sfx.Stop();
-            }
+            Sfx.Stop(SfxFadeOutDuration);
+       
         }
-
         public void SetAudioPitch(float pitch)
         {
-            if (Sfx != null) Sfx.pitch = pitch;
+            if (Sfx != null) Sfx.SetPitch(pitch);
         }
         private IEnumerator PoolRoutine(float duration)
         {
+            if(!BoundToEffectsLibrary) yield break;
             if (duration < 0)
             {
-                duration = Vfx.main.duration;
+                duration = Vfx.GetDuration();
             }
             yield return new WaitForSeconds(duration);
             
@@ -131,23 +154,5 @@ namespace Kuantech.Core.FX
             if(Sfx != null) Sfx.Stop();
             EffectsLibrary.GetContext<EffectsLibrary>().EffectsPool.PoolObject(gameObject);
         }
-
-        #region FadeInOut
-
-        private IEnumerator FadeOutCoroutine(AudioSource audioSource, float fadeOutSecs)
-        {
-            float startVolume = audioSource.volume;
-
-            while (audioSource.volume > 0)
-            {
-                audioSource.volume -= startVolume * Time.deltaTime / fadeOutSecs;
-                yield return null;
-            }
-
-            audioSource.Stop();
-            audioSource.volume = startVolume;
-        }
-
-        #endregion
     }
 }
