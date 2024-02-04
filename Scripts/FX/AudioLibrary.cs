@@ -1,24 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using Kuantech.Utils;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Audio;
 
 namespace Kuantech.Core.FX
 {
-    [Serializable]
-    public struct AudioClipEntry
-    {
-        [KTTag("AudioClipTag")]
-        public int ClipId;
-        public AudioSource AudioSource;
-    }
+   
     public class AudioLibrary : MonoBehaviour
     {
         [Header("Audio Mix")]
         [SerializeField] private AudioMixer MasterMixer;
-        public List<AudioClipEntry> Clips;
-        public Dictionary<int, AudioSource> _audios;
+        public List<Sound> Clips;
+        public Dictionary<int, Sound> _audios;
         
         [Header("Music")] 
         public AudioSource MainMenuMusic;
@@ -34,13 +26,27 @@ namespace Kuantech.Core.FX
             SetMusicVolume(toggleMusic == 1 ? musicVolume : 0.0001f);
             SetSfxVolume(toggleSfx == 1 ? sfxVolume : 0.0001f);
 
-            _audios  = new Dictionary<int, AudioSource>();
-            foreach(var clip in Clips)
+            _audios  = new Dictionary<int, Sound>();
+            if(Clips != null)
             {
-                _audios[clip.ClipId] = clip.AudioSource;
+                foreach (var clip in Clips)
+                {
+                    _audios[clip.AudioTag] = clip;
+                }
             }
         }
         
+        /// <summary>
+        /// Checks if audio with given tag is available
+        /// </summary>
+        /// <param name="audioTag"></param>
+        /// <returns></returns>
+        public bool IsSoundAvailable(int audioTag)
+        {
+            if (_audios == null || !_audios.ContainsKey(audioTag)) return false;
+            if (_audios[audioTag] == null) return false;
+            return true;
+        }
         public void PlaySound(int audioType)
         {
             if (_audios == null || !_audios.ContainsKey(audioType)) return;

@@ -7,8 +7,11 @@ using UnityEngine;
 namespace Kuantech.Core.FX
 {
     [Serializable]
-    public class Sound
+    public class Sound : MonoBehaviour
     {
+        [KTTag("AudioTag")]
+        public int AudioTag;
+
         [Tooltip("If not null, this will be played")]
         public List<AudioSource> SfxColleciton;
         public AudioSource AudioSource;
@@ -20,6 +23,7 @@ namespace Kuantech.Core.FX
                 AudioSource = SfxColleciton.GetRandomElement();
             }
             if(AudioSource == null) return;
+            Debug.LogError("Playing "+AudioSource.clip.name);
             AudioSource.Play();
         }
 

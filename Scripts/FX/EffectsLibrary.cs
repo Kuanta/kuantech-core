@@ -92,14 +92,6 @@ namespace Kuantech.Core.FX
             GameObject obj = EffectsPool.GetObject(_effectsByTag[effectTag].gameObject);
             return obj.GetComponent<Effect>();
         }
-
-        public static void PlayAudio(int audioType)
-        {
-            EffectsLibrary context = GetContext<EffectsLibrary>();
-            if(context == null) return;
-            if(context.AudioLibrary == null) return;
-            context.AudioLibrary.PlaySound(audioType);
-        }
         
         public Effect PlayEffect(int effectType, Transform parent, float effectCooldown)
         {
@@ -149,7 +141,7 @@ namespace Kuantech.Core.FX
             return effect;
         }
 
-        public static bool CanPlaySound(string effectId, float effectCooldown = -1)
+        public static bool CanPlayEffect(string effectId, float effectCooldown = -1)
         {
             EffectsLibrary context = EffectsLibrary.GetContext<EffectsLibrary>();
             if (effectCooldown < 0) return true;
@@ -166,5 +158,16 @@ namespace Kuantech.Core.FX
                 context._effectLastPlayedTimes = new Dictionary<string, float>();
             context._effectLastPlayedTimes[effectId] = Time.time;
         }
+
+        #region AudioLibrary
+        public static bool PlayAudio(int audioTag)
+        {
+            EffectsLibrary context = EffectsLibrary.GetContext<EffectsLibrary>();
+            if(context == null) return false;
+            if(context.AudioLibrary == null || !context.AudioLibrary.IsSoundAvailable(audioTag)) return false;
+            context.AudioLibrary.PlaySound(audioTag);
+            return true;
+        }
+        #endregion
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Core.FX
@@ -15,6 +16,8 @@ namespace Kuantech.Core.FX
         public VisualEffect Vfx;
 
         [Header("Sound Effect")]
+        [KTTag("AudioTag")]
+        public int AudioTag;
         public Sound Sfx;
         public float SfxFadeOutDuration = 0; //If set to a value >0, sfx will top with fading out
 
@@ -68,13 +71,20 @@ namespace Kuantech.Core.FX
 
         protected virtual void PlayEffects(float effectCooldown)
         {
-            if (!EffectsLibrary.CanPlaySound(EffectId, effectCooldown)) return;
-         
-            if(Sfx != null) Sfx.Play();
-            if(Vfx != null) Vfx.Play();
+            //Sound
+            if (!EffectsLibrary.CanPlayEffect(EffectId, effectCooldown)) return;
+
+            if(!EffectsLibrary.PlayAudio(AudioTag))
+            {
+                if (Sfx != null) {
+                    Sfx.Play();
+                }
+            }
+            if (Vfx != null) Vfx.Play();
             if(Animator != null) Animator.SetTrigger(Play1);
             EffectsLibrary.SetLastPlayedTime(EffectId);
         }
+
 
 
         #region Old Play Methods
