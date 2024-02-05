@@ -4,6 +4,7 @@ using IngameDebugConsole;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using Kuantech.Core.HyperCasual;
+using Kuantech.UI;
 
 namespace Kuantech.Core
 {
@@ -23,6 +24,7 @@ namespace Kuantech.Core
         public int CurrentLevelIndex;
         public int RepeatLastLevels = 0;
         public int MaxPowerLevel = -1;
+
 
         //Events
         public EventHandler<StateChangeData> StateChangeEvent;

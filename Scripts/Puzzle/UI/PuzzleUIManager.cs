@@ -4,6 +4,13 @@ namespace Kuantech.Puzzle.UI
 {
     public class PuzzleUIManager : SubManager
     {
-        public LevelManager LevelManager;
+        public PuzzleLevelUI LevelUI;
+
+        public static PuzzleLevelUI GetLevelUI()
+        {
+            PuzzleUIManager context = GetContext<PuzzleUIManager>();
+            if(context == null) return null;
+            return context.LevelUI;
+        }
     }
 }

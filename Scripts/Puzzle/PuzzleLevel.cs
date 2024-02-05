@@ -8,7 +8,8 @@ namespace Kuantech.Puzzle
         public PuzzleLevelUI LevelUI;
         public override void SetupLevel()
         {
-            LevelUI.OnLevelSetup(this);
+            LevelUI = PuzzleUIManager.GetLevelUI(); 
+            if(LevelUI != null) LevelUI.OnLevelSetup(this);
             ResetUI();
             base.SetupLevel();
         }

@@ -1,4 +1,6 @@
 using System;
+using Kuantech.Puzzle.UI;
+using Kuantech.UI;
 using UnityEngine;
 
 namespace Kuantech.Core

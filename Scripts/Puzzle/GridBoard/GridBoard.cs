@@ -26,7 +26,7 @@ namespace Kuantech.Puzzle
         public float CellHeight = 1f;
 
         public GridTile[,] Tiles;
-        [HideInInspector] public List<ExistingTileInfo> ExistingTiles = new List<ExistingTileInfo>();
+        public List<ExistingTileInfo> ExistingTiles = new List<ExistingTileInfo>();
 
         public delegate void TileOperation(GridTile tile);
         public virtual void CreateBoard()

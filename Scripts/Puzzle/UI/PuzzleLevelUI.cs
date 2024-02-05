@@ -1,12 +1,17 @@
 using System;
 using Kuantech.Core;
 using Kuantech.UI;
+using TMPro;
 using UnityEngine;
 
 namespace Kuantech.Puzzle.UI
 {
     public class PuzzleLevelUI : UICanvas
     {
+        [Header("Widgets")]
+        [SerializeField] private TMP_Text LevelIndexText;
+        [SerializeField] private string LevelLabel = "Level";
+
         [Header("Panels")]
         public PuzzleCompletePanel CompletePanel;
         public PuzzleFailPanel FailedPanel;
@@ -29,6 +34,7 @@ namespace Kuantech.Puzzle.UI
         public virtual void OnLevelSetup(PuzzleLevel level)
         {
             CurrentLevel = level;
+            if(LevelIndexText != null) LevelIndexText.text = $"{LevelLabel} {level.LevelIndex + 1}";
             level.OnStateChange += OnLevelStateChange;
         }
 

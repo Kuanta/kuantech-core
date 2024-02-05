@@ -1,3 +1,4 @@
+using Kuantech.Core;
 using Kuantech.UI;
 using UnityEngine.UI;
 
@@ -11,7 +12,7 @@ namespace Kuantech.Puzzle.UI
         public void Initialize(PuzzleLevelUI parentUI)
         {
             ContinueButton.onClick.AddListener(()=>{
-                parentUI.CurrentLevel.RestartLevel();
+                LevelManager.GetContext<LevelManager>().CompleteLevel();
             });
         }
     }
