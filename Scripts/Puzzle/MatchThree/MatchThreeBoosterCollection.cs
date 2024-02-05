@@ -7,8 +7,8 @@ namespace Kuantech.Puzzle.MatchThree
     public class MatchThreeBoosterCollection
     {
         [Header("Boosters")]
-        [SerializeField] private MatchThreeRocket HorizontalRocket;
-        [SerializeField] private MatchThreeRocket VerticalRocket;
+        [SerializeField] private MatchThreeBomb HorizontalRocket;
+        [SerializeField] private MatchThreeBomb VerticalRocket;
         [SerializeField] private MatchThreeBomb Bomb;
 
         public MatchThreeElement GetBooster(MatchGroup.MatchGroupShapes shape)

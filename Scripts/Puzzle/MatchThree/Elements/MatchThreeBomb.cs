@@ -1,4 +1,5 @@
 
+using System.Collections.Generic;
 using Kuantech.Core.FX;
 using UnityEngine;
 
@@ -6,21 +7,88 @@ namespace Kuantech.Puzzle.MatchThree
 {
     public class MatchThreeBomb : MatchThreeElement
     {
+        public enum ExplosionTypes
+        {
+            Bomb,
+            HorizontalRocket,
+            VerticalRocket,
+        }
+        [Header("Explosion Type")]
+        [SerializeField] private ExplosionTypes ExplosionType;
+
         [Header("Explosion Effect")]
         [SerializeField] private EffectPlayer ExplosionEffect;
+        public override void Spawn()
+        {
+            Interactable = true;
+            base.Spawn();
+        }
         public override void Interact()
         {
             ExplosionEffect.PlayEffectAtPosition(ParentBoard.GetGlobalPosition(Row, Column), Quaternion.identity);
             //Destroy nearby elements
-            for(int r=-1;r<2;++r)
+            List<MatchThreeElement> elements = GetElementsToDestroy();
+            foreach(var element in elements)
             {
-                for(int c=-1;c<2;++c)
-                {
-                    if(r == 0 && c==0) continue;
-                    ParentMatchThreeBoard.DestroyElement(Row-r, Column-c);
-                }
+                ParentMatchThreeBoard.DestroyElement(element);
             }
             base.Interact();
         }
+        public virtual List<MatchThreeElement> GetElementsToDestroy()
+        {
+            switch(ExplosionType)
+            {
+                default:
+                case ExplosionTypes.Bomb:
+                    return BombExplosion();
+                case ExplosionTypes.HorizontalRocket:
+                    return HorizontalExplosion();
+                case ExplosionTypes.VerticalRocket:
+                    return VerticalExplosion();
+                
+            }
+        }
+
+        private List<MatchThreeElement>  BombExplosion()
+        {
+            List<MatchThreeElement> elements = new List<MatchThreeElement>();
+            for (int r = -1; r < 2; ++r)
+            {
+                for (int c = -1; c < 2; ++c)
+                {
+                    if (r == 0 && c == 0) continue;
+                    MatchThreeElement element = ParentMatchThreeBoard.GetMatchThreeElement(Row - r, Column - c);
+                    if(element == null) continue;
+                    elements.Add(element);
+                }
+            }
+            return elements;
+        }
+
+        private List<MatchThreeElement> HorizontalExplosion()
+        {
+            List<MatchThreeElement> elements = new List<MatchThreeElement>();
+            for (int c = 0; c < ParentMatchThreeBoard.ColumnCount; ++c)
+            {
+                MatchThreeElement element = ParentMatchThreeBoard.GetMatchThreeElement(Row, c);
+                if(element == null) continue;
+                elements.Add(element);
+            }
+            return elements;
+        }
+
+        private List<MatchThreeElement> VerticalExplosion()
+        {
+            List<MatchThreeElement> elements = new List<MatchThreeElement>();
+            for (int r = 0; r < ParentMatchThreeBoard.RowCount; ++r)
+            {
+                MatchThreeElement element = ParentMatchThreeBoard.GetMatchThreeElement(r, Column);
+                if (element == null) continue;
+                elements.Add(element);
+            }
+            return elements;
+        }
     }
+
+  
 }
