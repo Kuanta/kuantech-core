@@ -11,6 +11,7 @@ namespace Kuantech.Core.FX
         [SerializeField] private AudioMixer MasterMixer;
         public List<Sound> Clips;
         public Dictionary<int, Sound> _audios;
+        public Dictionary<string, float> _lastPlayedTimes;
         
         [Header("Music")] 
         public AudioSource MainMenuMusic;
@@ -47,6 +48,10 @@ namespace Kuantech.Core.FX
             if (_audios[audioTag] == null) return false;
             return true;
         }
+        /// <summary>
+        /// Plays a sound that is on the 
+        /// </summary>
+        /// <param name="audioType"></param>
         public void PlaySound(int audioType)
         {
             if (_audios == null || !_audios.ContainsKey(audioType)) return;
@@ -54,6 +59,35 @@ namespace Kuantech.Core.FX
             _audios[audioType].Play();
         }
         
+        public void PlaySound(Sound sound)
+        {
+            if(sound.Cooldown == 0)
+            {
+                sound.Play();
+                return;
+            }
+            if(_lastPlayedTimes == null)
+            {
+                _lastPlayedTimes = new Dictionary<string, float>();
+            }
+            string clipName = sound.AudioSource.clip.name;
+            float lastPlayedTime;
+            if(!_lastPlayedTimes.ContainsKey(clipName))
+            {
+                lastPlayedTime = 0;
+            }else{
+                lastPlayedTime = _lastPlayedTimes[sound.AudioSource.clip.name];
+
+            }
+            float elapsedTime = Time.time - lastPlayedTime;
+            if(elapsedTime >= sound.Cooldown)
+            {
+                sound.Play();
+                Debug.LogError($"Elapsed time for {clipName} is  {elapsedTime} cooldown is {sound.Cooldown}");
+            }
+            _lastPlayedTimes[clipName] = Time.time;
+
+        }
         /// <summary> 
         /// Sets the music volume
         /// </summary>

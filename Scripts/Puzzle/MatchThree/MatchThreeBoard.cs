@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Kuantech.Core.FX;
 using Kuantech.Utils;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -16,6 +17,7 @@ namespace Kuantech.Puzzle.MatchThree
         public float ElementMovementDuration = 0.2f;
         public float TileSpeed = 5.0f;
         public float PostMovementTileSpeed = 20.0f;
+        public float PostMoveDelay = 0.5f;
 
         [Header("Prefabs")]
         [SerializeField] private GameObject BgTilePrefab;
@@ -23,6 +25,9 @@ namespace Kuantech.Puzzle.MatchThree
         
         [Header("Boosters")]
         public MatchThreeBoosterCollection BoosterCollection;
+
+        [Header("Effects")]
+        public EffectPlayer TileMoveEffect;
 
         private MatchFinder MatchFinder;
         private bool _inputBlocked = false;
@@ -246,6 +251,7 @@ namespace Kuantech.Puzzle.MatchThree
             }
 
             HandleMatchGroups(groups, false);
+            yield return new WaitForSeconds(PostMoveDelay);
             PostMove();
         }
 
@@ -408,7 +414,13 @@ namespace Kuantech.Puzzle.MatchThree
 
             element1.MoveToRowCol(element2Position.y, element2Position.x, TileSpeed);
             element2.MoveToRowCol(element1Position.y, element1Position.x, TileSpeed);
+
+            if(TileMoveEffect != null)
+            {
+                TileMoveEffect.PlayEffect();
+            }
         }
+
         #region Post Move Tile Movements
         private HashSet<MatchThreeElement> _movedTiles;
         /// <summary>

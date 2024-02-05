@@ -7,9 +7,10 @@ namespace Kuantech.Puzzle.MatchThree
     public class MatchThreeBomb : MatchThreeElement
     {
         [Header("Explosion Effect")]
-        [SerializeField] private Effect ExplosionEffect;
+        [SerializeField] private EffectPlayer ExplosionEffect;
         public override void Interact()
         {
+            ExplosionEffect.PlayEffectAtPosition(ParentBoard.GetGlobalPosition(Row, Column), Quaternion.identity);
             //Destroy nearby elements
             for(int r=-1;r<2;++r)
             {

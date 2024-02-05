@@ -198,7 +198,12 @@ namespace Kuantech.Puzzle.MatchThree
 
         public void Despawn()
         {
-            //todo: Play destroy effect                                                                           
+            //todo: Play destroy effect 
+            if(CurrentData != null && CurrentData.EffectPlayer != null)
+            {
+                CurrentData.EffectPlayer.PlayEffectAtPosition(ParentBoard.GetGlobalPosition(Row, Column), 
+                Quaternion.identity);
+            }
             Destroy(gameObject);
         }
     }

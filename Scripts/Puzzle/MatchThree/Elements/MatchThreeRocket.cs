@@ -10,8 +10,8 @@ namespace Kuantech.Puzzle.MatchThree
         public bool Vertical;
 
         [Header("Effect")]
-        [SerializeField] private Effect HorizontalRocketEffect;
-        [SerializeField] private Effect VerticalRocketEffect;
+        [SerializeField] private EffectPlayer HorizontalRocketEffect;
+        [SerializeField] private EffectPlayer VerticalRocketEffect;
 
         public override void Spawn()
         {
@@ -27,7 +27,7 @@ namespace Kuantech.Puzzle.MatchThree
                     MatchThreeElement element = ParentMatchThreeBoard.GetMatchThreeElement(Row, c);
                     ParentMatchThreeBoard.DestroyElement(element);
                 }
-                ParentBoard.PlayEffect(HorizontalRocketEffect, Row, Column);
+                HorizontalRocketEffect?.PlayEffectAtPosition(ParentBoard.GetGlobalPosition(Row, Column), Quaternion.identity);
             }
 
             if(Vertical)
@@ -37,7 +37,7 @@ namespace Kuantech.Puzzle.MatchThree
                     MatchThreeElement element = ParentMatchThreeBoard.GetMatchThreeElement(r, Column);
                     ParentMatchThreeBoard.DestroyElement(element);
                 }
-                ParentBoard.PlayEffect(VerticalRocketEffect, Row, Column);
+                VerticalRocketEffect?.PlayEffectAtPosition(ParentBoard.GetGlobalPosition(Row, Column), Quaternion.identity);
             }
 
             base.Interact();

@@ -52,9 +52,9 @@ namespace Kuantech.Core.FX
             }
 
             Play(settings.EffectCooldown);
-            if (Duration > 0 && !BoundToEffectsLibrary)
+            if (!BoundToEffectsLibrary)
             {
-                StartCoroutine(PoolRoutine(settings.EffectCooldown));
+                StartCoroutine(PoolRoutine(Duration));
             }
         }
 
@@ -77,7 +77,7 @@ namespace Kuantech.Core.FX
             if(!EffectsLibrary.PlayAudio(AudioTag))
             {
                 if (Sfx != null) {
-                    Sfx.Play();
+                    Sfx.PlayThroughAudioLibrary();
                 }
             }
             if (Vfx != null) Vfx.Play();

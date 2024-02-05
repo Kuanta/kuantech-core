@@ -13,6 +13,10 @@ namespace Kuantech.Core.FX
         public Effect Effect;
         public Effect EffectPrefab;
         public string EffectId;
+        public void PlayEffect()
+        {
+            PlayEffect(EffectPlaySettings.GetDefaultSettings());
+        }
         public void PlayEffect(EffectPlaySettings settings)
         {
             if(Effect != null)
@@ -28,7 +32,6 @@ namespace Kuantech.Core.FX
                 EffectsLibrary.PlayEffect(EffectId, settings);
             }
         }
-
         public void PlayEffectAtPosition(Vector3 position, Quaternion rotation)
         {
             EffectPlaySettings settings = EffectPlaySettings.GetPlayAtPositionSettings(position, rotation);

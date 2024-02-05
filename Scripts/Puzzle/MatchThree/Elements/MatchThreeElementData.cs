@@ -1,3 +1,4 @@
+using Kuantech.Core.FX;
 using UnityEngine;
 
 namespace Kuantech.Puzzle.MatchThree
@@ -7,6 +8,7 @@ namespace Kuantech.Puzzle.MatchThree
         public int Type;
         public string Name;
         public Sprite Icon;
+        public EffectPlayer EffectPlayer;
         public GameObject VisualPrefab;
 
         public virtual bool IsSameType(MatchThreeElementData otherData)

@@ -15,6 +15,7 @@ namespace Kuantech.Core.FX
         [Tooltip("If not null, this will be played")]
         public List<AudioSource> SfxColleciton;
         public AudioSource AudioSource;
+        public float Cooldown = 0.1f;
         
         public void Play()
         {
@@ -23,8 +24,12 @@ namespace Kuantech.Core.FX
                 AudioSource = SfxColleciton.GetRandomElement();
             }
             if(AudioSource == null) return;
-            Debug.LogError("Playing "+AudioSource.clip.name);
             AudioSource.Play();
+        }
+
+        public void PlayThroughAudioLibrary()
+        {
+            EffectsLibrary.PlaySound(this);
         }
 
         public void Stop(float fadeOutDuraiton=0f)

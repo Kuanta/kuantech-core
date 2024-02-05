@@ -168,6 +168,14 @@ namespace Kuantech.Core.FX
             context.AudioLibrary.PlaySound(audioTag);
             return true;
         }
+
+        public static void PlaySound(Sound sound)
+        {
+            EffectsLibrary context = EffectsLibrary.GetContext<EffectsLibrary>();
+            if (context == null) return;
+            if (context.AudioLibrary == null) return;
+            context.AudioLibrary.PlaySound(sound);
+        }
         #endregion
     }
 }
