@@ -153,7 +153,7 @@ namespace Kuantech.Core.FX
         }
         private IEnumerator PoolRoutine(float duration)
         {
-            if(!BoundToEffectsLibrary) yield break;
+            if(BoundToEffectsLibrary) yield break;
             if (duration < 0)
             {
                 duration = Vfx.GetDuration();
