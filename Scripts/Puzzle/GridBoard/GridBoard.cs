@@ -26,7 +26,6 @@ namespace Kuantech.Puzzle
         public float CellHeight = 1f;
 
         public GridTile[,] Tiles;
-        public List<ExistingTileInfo> ExistingTiles = new List<ExistingTileInfo>();
 
         public delegate void TileOperation(GridTile tile);
         public virtual void CreateBoard()
@@ -46,26 +45,29 @@ namespace Kuantech.Puzzle
         /// <summary>
         /// C
         /// </summary>
+        private GridBoardEditorTile[] _editorTiles;
         protected void SetExistingTiles()
         {
             //Load existing tiles
-            if (ExistingTiles == null) return;
-            foreach (var existingTileInfo in ExistingTiles)
+            GridBoardEditorTile[] editorTiles = GetComponentsInChildren<GridBoardEditorTile>();
+            for(int i=0;i<editorTiles.Length;++i)
             {
+                GridBoardEditorTile existingTileInfo = editorTiles[i];
                 if (existingTileInfo.Prefab == null) continue;
 
-                if (IsTileOccupied(existingTileInfo.Row, existingTileInfo.Col))
+                if (IsTileOccupied(existingTileInfo.Row, existingTileInfo.Column))
                 {
                     continue;
                 }
                 CreateExistingTile(existingTileInfo);
+                existingTileInfo.DestroyEditorGameobject();
             }
         }
 
-        public virtual GridTile CreateExistingTile(ExistingTileInfo existingTileInfo)
+        public virtual GridTile CreateExistingTile(GridBoardEditorTile existingTileInfo)
         {
             GridTile tile = Instantiate(existingTileInfo.Prefab).GetComponent<GridTile>();
-            SetTile(tile, existingTileInfo.Row, existingTileInfo.Col);
+            SetTile(tile, existingTileInfo.Row, existingTileInfo.Column);
             tile.Spawn();
             return tile;
         }

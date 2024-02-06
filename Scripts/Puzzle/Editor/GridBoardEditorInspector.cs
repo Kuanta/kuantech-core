@@ -37,6 +37,13 @@ namespace Kuantech.Puzzle
             serializedObject.Update();
             GUILayout.Space(10);
 
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Update Editor Tiles"))
+            {
+                _gridBoardEditor.UpdateEditorTiles();
+            }
+            GUILayout.EndHorizontal();
+            
             EditorGUILayout.LabelField("Tools", EditorStyles.boldLabel);
             GUILayout.BeginHorizontal();
 
@@ -56,16 +63,21 @@ namespace Kuantech.Puzzle
             }
             GUILayout.EndHorizontal();
 
+
             EditorGUILayout.Space();
+            
             DropAreaGUI();
 
             GUILayout.BeginHorizontal();
+            if(GUILayout.Button("Update Editor Tiles"))
+            {
+                _gridBoardEditor.UpdateEditorTiles();
+            }
             if(GUILayout.Button("Clear Tile Library"))
             {
                 _gridBoardEditor.TileLibrary.Clear();
             }
             GUILayout.EndHorizontal();
-            //tileLibraryList.DoLayoutList();
             serializedObject.ApplyModifiedProperties();
         }
 

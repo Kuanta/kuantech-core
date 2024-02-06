@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Linq;
+using Sirenix.OdinInspector;
 using UnityEditor;
 using UnityEngine;
 
@@ -20,7 +22,7 @@ namespace Kuantech.Puzzle
         [HideInInspector] public EditorMode CurrentMode = EditorMode.None;
         public List<GameObject> TileLibrary = new List<GameObject>();
         [HideInInspector] public GameObject CurrentlySelectedTile = null;
-        public List<GridTile> EditorTiles = new List<GridTile>();
+        public List<GridBoardEditorTile> EditorTiles = new List<GridBoardEditorTile>();
 
         private void Awake()
         {
@@ -111,40 +113,44 @@ namespace Kuantech.Puzzle
         public void PaintTile(int row, int col)
         {
             if(CurrentMode != EditorMode.Draw || CurrentlySelectedTile == null || IsTileOccupied(row, col)) return;
-            if(GridBoard.ExistingTiles == null) GridBoard.ExistingTiles = new List<ExistingTileInfo>();
+            GameObject emptyTileObject = new GameObject($"EditorTile_{row}_{col}");
+            GridBoardEditorTile editorTileComp = emptyTileObject.AddComponent<GridBoardEditorTile>();
+
             GameObject newTileObject = PrefabUtility.InstantiatePrefab(CurrentlySelectedTile) as GameObject;
-            
+            emptyTileObject.transform.SetParent(GroupParent != null ? GroupParent : GridBoard.transform);
             GridTile tile = newTileObject.GetComponent<GridTile>();
             tile.Row = row;
             tile.Column = col;
-            EditorTiles.Add(tile);
-
-            GridBoard.ExistingTiles.Add(new ExistingTileInfo{
-                Row = row,
-                Col = col,
-                Prefab = CurrentlySelectedTile,
-            });
+            editorTileComp.Prefab = CurrentlySelectedTile;
+            editorTileComp.Row = row;
+            editorTileComp.Column = col;
+            editorTileComp.EditorObject = tile.gameObject;
+            EditorTiles.Add(editorTileComp);
 
             if(tile == null) 
             {
                 Destroy(newTileObject);
                 return;
             }
-            tile.transform.position = GridBoard.transform.TransformPoint(GridBoard.GetLocalPosition(row, col));
-            tile.transform.SetParent(GroupParent != null ? GroupParent : GridBoard.transform);
+
+            emptyTileObject.transform.position = GridBoard.transform.TransformPoint(GridBoard.GetLocalPosition(row, col));
+            tile.transform.SetParent(emptyTileObject.transform);
+            tile.transform.localPosition = Vector3.zero;
             tile.transform.localRotation = Quaternion.identity;
+            UpdateEditorTiles();
+            EditorUtility.SetDirty(this);
         }
 
         public bool IsTileOccupied(int row, int col)
         {
-            foreach(var existingTileInfo in GridBoard.ExistingTiles)
+            foreach(var existingTileInfo in EditorTiles)
             {
-                if(existingTileInfo.Row == row && existingTileInfo.Col == col) return true;
+                if(existingTileInfo.Row == row && existingTileInfo.Column == col) return true;
             }
             return false;
         }
 
-        public GridTile GetEditorTile(int row, int col)
+        public GridBoardEditorTile GetEditorTile(int row, int col)
         {
             foreach(var tile in EditorTiles)
             {
@@ -161,30 +167,30 @@ namespace Kuantech.Puzzle
         public void DeleteTile(int row, int col)
         {
             if (CurrentMode != EditorMode.Delete) return;
-            HashSet<ExistingTileInfo> tilesToDelete = new HashSet<ExistingTileInfo>();
-            HashSet<GridTile> editorTileToDelete = new HashSet<GridTile>();
-            for(int i=0;i<GridBoard.ExistingTiles.Count;++i)
+            HashSet<GridBoardEditorTile> tilesToDelete = new HashSet<GridBoardEditorTile>();
+            for(int i=0;i<EditorTiles.Count;++i)
             {
-                ExistingTileInfo tileInfo = GridBoard.ExistingTiles[i];
+                GridBoardEditorTile tileInfo = EditorTiles[i];
                 if(tileInfo == null) continue;
-                if(tileInfo.Row == row && tileInfo.Col == col)
+                if(tileInfo.Row == row && tileInfo.Column == col)
                 {
                     tilesToDelete.Add(tileInfo);
-                    GridTile editorTile = GetEditorTile(row, col);
-                    editorTileToDelete.Add(editorTile);
+                    DestroyImmediate(tileInfo.gameObject);
                 }
             }
 
             foreach(var tile in tilesToDelete)
             {
-                GridBoard.ExistingTiles.Remove(tile);
+                EditorTiles.Remove(tile);
             }
+            UpdateEditorTiles();
+            EditorUtility.SetDirty(this);
+        }
 
-            foreach(var editorTile in editorTileToDelete)
-            {
-                EditorTiles.Remove(editorTile);
-                DestroyImmediate(editorTile.gameObject);
-            }
+        public void UpdateEditorTiles()
+        {
+            Transform parent = (GroupParent != null ? GroupParent : GridBoard.transform);
+            EditorTiles = parent.GetComponentsInChildren<GridBoardEditorTile>().ToList();
         }
         #endif
 

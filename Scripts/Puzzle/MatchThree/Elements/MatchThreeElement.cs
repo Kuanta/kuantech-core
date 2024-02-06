@@ -43,7 +43,7 @@ namespace Kuantech.Puzzle.MatchThree
             ParentBoard = board;
             SetRowCol(row, col);
         }
-        public void SetElementData(MatchThreeElementData data)
+        public virtual void SetElementData(MatchThreeElementData data)
         {
             CurrentData = data;
             if(CurrentVisual != null)

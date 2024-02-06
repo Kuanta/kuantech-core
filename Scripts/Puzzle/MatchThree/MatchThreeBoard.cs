@@ -44,7 +44,7 @@ namespace Kuantech.Puzzle.MatchThree
             CreateInitialElements(true);
         }
 
-        public override GridTile CreateExistingTile(ExistingTileInfo existingTileInfo)
+        public override GridTile CreateExistingTile(GridBoardEditorTile existingTileInfo)
         {
             GridTile tile = base.CreateExistingTile(existingTileInfo);
             if(tile is MatchThreeElement element)
