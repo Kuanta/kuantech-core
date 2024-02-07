@@ -51,7 +51,7 @@ namespace Kuantech.Core.FX
         {
             EffectsLibrary context = GetContext<EffectsLibrary>();
             if(context == null) return;
-            Effect effect = context.GetEffectPrefabById(EffectId);
+            Effect effect = context.GetEffectById(EffectId);
             if(effect == null) return;
             effect.Play(settings);
         }
@@ -64,7 +64,7 @@ namespace Kuantech.Core.FX
             effect.Play(settings);
         }
 
-        public Effect GetEffectPrefabById(string effectId)
+        public Effect GetEffectById(string effectId)
         {
             //Check live effects first
             if(!_existingEffectsById.IsNullOrEmpty() && _existingEffectsById.ContainsKey(effectId))
