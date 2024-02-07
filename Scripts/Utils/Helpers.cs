@@ -6,6 +6,7 @@ using System.Reflection;
 using Kuantech.Core.Utils;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.EventSystems;
 using Random = UnityEngine.Random;
 
 namespace Kuantech.Utils
@@ -300,6 +301,22 @@ namespace Kuantech.Utils
 
         #region GameObjects
 
+        public static bool IsCursorOnUI()
+        {
+#if (UNITY_IOS || UNITY_ANDROID) && !UNITY_EDITOR
+                if (EventSystem.current.IsPointerOverGameObject(0))
+                {
+                    return true;
+                }
+             
+#else
+            if (EventSystem.current.IsPointerOverGameObject())
+            {
+                return true;
+            }
+#endif
+        return false;
+        }
         public static Bounds CalculateBounds(GameObject parentObject)
         {
             // Get all renderers of this GameObject and its children

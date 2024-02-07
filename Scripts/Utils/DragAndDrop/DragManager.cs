@@ -83,18 +83,7 @@ namespace Kuantech.Utils
             {
                 _startedClick = false;
                 _dragging = false;
-#if (UNITY_IOS || UNITY_ANDROID) && !UNITY_EDITOR
-                if (EventSystem.current.IsPointerOverGameObject(0))
-                {
-                    return;
-                }
-             
-#else
-                if (EventSystem.current.IsPointerOverGameObject())
-                {
-                    return;
-                }
-#endif
+                if (Utils.Helpers.IsCursorOnUI()) return;
                 _startedClick = true;
                 _startPosition = Input.mousePosition;
                 _startTime = Time.time;

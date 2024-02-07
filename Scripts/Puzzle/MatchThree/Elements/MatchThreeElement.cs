@@ -2,6 +2,7 @@ using System;
 using Kuantech.Core;
 using Kuantech.Utils;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace Kuantech.Puzzle.MatchThree
 {
@@ -74,6 +75,7 @@ namespace Kuantech.Puzzle.MatchThree
 
         private void OnMouseDown()
         {
+            if(Utils.Helpers.IsCursorOnUI()) return;
             if (!CanBeMoved) return;
             _mousePressed = true;
             _firstTouchPoint = GetMainCameraPos();
@@ -81,6 +83,8 @@ namespace Kuantech.Puzzle.MatchThree
 
         private void OnMouseUp()
         {
+            if(!_mousePressed) return;
+            _mousePressed = false;
             _releasePoint = GetMainCameraPos();
 
             //Is this tap?
