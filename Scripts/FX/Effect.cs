@@ -28,8 +28,6 @@ namespace Kuantech.Core.FX
 
         //If an effect is under the protection of effects library, it can't be destroyed with timed calls
         [NonSerialized] public bool BoundToEffectsLibrary = false; 
-
-
         /// <summary>
         /// Plays the effect using the settings
         /// </summary>
@@ -52,7 +50,7 @@ namespace Kuantech.Core.FX
             }
 
             Play(settings.EffectCooldown);
-            if (!BoundToEffectsLibrary)
+            if (settings.DespawnAfterPlay && !BoundToEffectsLibrary)
             {
                 StartCoroutine(PoolRoutine(Duration));
             }

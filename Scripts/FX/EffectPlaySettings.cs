@@ -8,6 +8,7 @@ namespace Kuantech.Core.FX
     {
         public float Duration;
         public float EffectCooldown;
+        public bool DespawnAfterPlay;
 
         //Play under parent
         public bool SetPosition; //If true, the position will be set
@@ -25,6 +26,7 @@ namespace Kuantech.Core.FX
             {
                 Duration = -1,
                 EffectCooldown = -1,
+                DespawnAfterPlay = false,
                 SetPosition = false,
                 EffectParent = null,
                 LocalPlayPosition = Vector3.zero,

@@ -21,11 +21,13 @@ namespace Kuantech.Core.FX
         {
             if(Effect != null)
             {
+                settings.DespawnAfterPlay = false; //This is probably bound to a gameobject. Don't despawn
                 Effect.Play(settings);
                 return;
             }
             if(EffectPrefab != null)
             {
+                settings.DespawnAfterPlay = true; //Initialized prefabs should be despawned. They won't be despawned if they are bound to effects library so have no fear
                 EffectsLibrary.PlayEffect(EffectPrefab.EffectId, settings);
             }else if(!EffectId.IsNullOrEmpty())
             {

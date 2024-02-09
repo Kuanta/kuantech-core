@@ -16,14 +16,22 @@ namespace Kuantech.Core.FX
         public List<AudioSource> SfxColleciton;
         public AudioSource AudioSource;
         public float Cooldown = 0.1f;
+        [Tooltip("If set to true, AudioLibrary will be checked")]
+        public bool PlayWithAudioLibrary;
         
         public void Play()
         {
-            if(!SfxColleciton.IsNullOrEmpty())
+            if (PlayWithAudioLibrary)
+            {
+                EffectsLibrary.PlayAudio(AudioTag);
+                return;
+            }
+            if (!SfxColleciton.IsNullOrEmpty())
             {
                 AudioSource = SfxColleciton.GetRandomElement();
             }
             if(AudioSource == null) return;
+            
             AudioSource.Play();
         }
 
