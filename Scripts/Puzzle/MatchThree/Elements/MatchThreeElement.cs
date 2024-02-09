@@ -23,6 +23,8 @@ namespace Kuantech.Puzzle.MatchThree
         public bool Indestructible;
         [Tooltip("Destructible Tiles gets destroyed when there is a match near them")]
         public bool Destructible;
+        [Tooltip("If set to true, its visual will be hidden on spawn")]
+        public bool HideVisual;
         public int HitToDestroy = 1;
         private int _currentTakenHit = 0;
 
@@ -36,6 +38,10 @@ namespace Kuantech.Puzzle.MatchThree
         {
             base.Spawn();
             _currentTakenHit = 0;
+            if(CurrentVisual != null && HideVisual)
+            {
+                CurrentVisual.gameObject.SetActive(false);
+            }
         }
  
         public void SetBoard(MatchThreeBoard board, int row, int col)

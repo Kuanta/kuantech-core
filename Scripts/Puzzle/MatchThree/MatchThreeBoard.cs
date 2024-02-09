@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Kuantech.Core.FX;
+using Kuantech.Matchemy;
 using Kuantech.Utils;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -37,6 +38,7 @@ namespace Kuantech.Puzzle.MatchThree
         public Action<(MatchThreeElementData, int)> OnCollectElement;
 
         private Dictionary<int, int> _highestObstacleIndexInRow;
+        
         public void Setup()
         {
             MatchFinder = new MatchFinder(this);
@@ -67,19 +69,23 @@ namespace Kuantech.Puzzle.MatchThree
             {
                 for (int c = 0; c < ColumnCount; ++c)
                 {
-                    if (IsTileOccupied(r, c))
-                    {
-                        continue;
-                    }
-                    //Create 
                     Vector3 pos = GetLocalPosition(r, c);
-                    if(setBackgroundTiles)
+                    MatchThreeElement existingElement = GetMatchThreeElement(r,c);
+                    bool placeBackground = existingElement == null || existingElement.CanBeMoved || !existingElement.Indestructible || existingElement.Interactable;
+                    if (setBackgroundTiles && placeBackground)
                     {
                         GameObject tileBg = Instantiate(BgTilePrefab);
                         tileBg.transform.SetParent(transform);
                         tileBg.transform.localPosition = pos;
                         tileBg.name = $"BGTile_{r}_{c}";
                     }
+
+                    if (IsTileOccupied(r, c))
+                    {
+                        continue;
+                    }
+       
+                 
                     MatchThreeElement tile = SpawnRandomElement(r, c);
                     if(tile == null)
                     {
@@ -146,6 +152,8 @@ namespace Kuantech.Puzzle.MatchThree
             element.SetBoard(this, row, col);
             element.transform.SetParent(transform);
             element.transform.localPosition = GetLocalPosition(row, col);
+            element.transform.localScale = Vector3.one;
+            element.transform.localRotation = Quaternion.identity;
             element.name = $"{prefab.name}_{row}_{col}";
             SetTile(element, row, col);
             return element;

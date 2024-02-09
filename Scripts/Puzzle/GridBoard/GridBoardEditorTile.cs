@@ -6,7 +6,6 @@ namespace Kuantech.Puzzle
         public GameObject Prefab;
         public int Row;
         public int Column;
-        
         public GameObject EditorObject;
         public void DestroyEditorGameobject()
         {

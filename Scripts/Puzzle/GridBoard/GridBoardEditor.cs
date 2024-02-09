@@ -24,14 +24,14 @@ namespace Kuantech.Puzzle
         [HideInInspector] public GameObject CurrentlySelectedTile = null;
         public List<GridBoardEditorTile> EditorTiles = new List<GridBoardEditorTile>();
 
-        private void Awake()
-        {
-            if(!Application.isPlaying) return;
-            foreach(var tile in EditorTiles)
-            {
-                Destroy(tile.gameObject);
-            }
-        }
+        // private void Awake()
+        // {
+        //     if(!Application.isPlaying) return;
+        //     foreach(var tile in EditorTiles)
+        //     {
+        //         Destroy(tile.gameObject);
+        //     }
+        // }
         
         //Mode changes
         public void SetMode(GridBoardEditor.EditorMode mode)
@@ -113,10 +113,15 @@ namespace Kuantech.Puzzle
         public void PaintTile(int row, int col)
         {
             if(CurrentMode != EditorMode.Draw || CurrentlySelectedTile == null || IsTileOccupied(row, col)) return;
-            GameObject emptyTileObject = new GameObject($"EditorTile_{row}_{col}");
-            GridBoardEditorTile editorTileComp = emptyTileObject.AddComponent<GridBoardEditorTile>();
+       
 
             GameObject newTileObject = PrefabUtility.InstantiatePrefab(CurrentlySelectedTile) as GameObject;
+            
+            GameObject emptyTileObject = new GameObject($"EditorTile_{row}_{col}");
+           
+            GridBoardEditorTile editorTileComp = emptyTileObject.AddComponent<GridBoardEditorTile>();
+          
+
             emptyTileObject.transform.SetParent(GroupParent != null ? GroupParent : GridBoard.transform);
             GridTile tile = newTileObject.GetComponent<GridTile>();
             tile.Row = row;
@@ -125,6 +130,13 @@ namespace Kuantech.Puzzle
             editorTileComp.Row = row;
             editorTileComp.Column = col;
             editorTileComp.EditorObject = tile.gameObject;
+
+            GridBoardEditorTile prefabEditorTileComp = newTileObject.GetComponent<GridBoardEditorTile>();
+            if (prefabEditorTileComp != null)
+            {
+                editorTileComp.Prefab = prefabEditorTileComp.Prefab;
+            }
+
             EditorTiles.Add(editorTileComp);
 
             if(tile == null) 
