@@ -7,8 +7,8 @@ namespace Kuantech.Core.HyperCasual
     public class ToggleButton : MonoBehaviour
     {
         public Button Button;
-        [SerializeField] private Image OnImage;
-        [SerializeField] private Image OffImage;
+        [SerializeField] private GameObject OnImage;
+        [SerializeField] private GameObject OffImage;
         
         public bool State;
         public UnityAction<bool> OnToggle;
@@ -25,8 +25,8 @@ namespace Kuantech.Core.HyperCasual
 
         public void SetState(bool toggle)
         {
-            OnImage.gameObject.SetActive(toggle);
-            OffImage.gameObject.SetActive(!toggle);
+            if(OnImage != null) OnImage.SetActive(toggle);
+            if(OffImage != null) OffImage.SetActive(!toggle);
             State = toggle;
             OnToggle?.Invoke(State);
         }
