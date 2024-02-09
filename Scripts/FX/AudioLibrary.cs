@@ -33,6 +33,7 @@ namespace Kuantech.Core.FX
                 foreach (var clip in Clips)
                 {
                     _audios[clip.AudioTag] = clip;
+                    clip.PlayWithAudioLibrary = false; //Prevent endless cycle
                 }
             }
         }
