@@ -142,7 +142,12 @@ namespace Kuantech.Core
                 };
             }
             return hcGameModel.GetCurrency(currencyId);
-        }   
+        }
+
+        public static Currency GetCurrencyStatic(CurrencyData currency)
+        {
+            return GetCurrencyStatic(currency.CurrencyId);
+        }
 
         /// <summary>
         /// Fires an event, telling that the value of a currency has been updated.

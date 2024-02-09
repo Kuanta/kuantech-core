@@ -5,9 +5,33 @@ using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
 using UnityEngine;
+using Newtonsoft.Json.Serialization;
+using System.Reflection;
 
 namespace Kuantech.Core
 {
+    [AttributeUsage(AttributeTargets.Field)]
+    public class NonSaveableAttribute : Attribute
+    {
+    }
+
+
+    public class NonSaveableContractResolver : DefaultContractResolver
+    {
+        protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization)
+        {
+            JsonProperty property = base.CreateProperty(member, memberSerialization);
+
+            // Check if the NonSaveableAttribute is applied to the field
+            if (Attribute.IsDefined(member, typeof(NonSaveableAttribute)))
+            {
+                property.ShouldSerialize = _ => false;
+            }
+
+            return property;
+        }
+    }
+    
     [Serializable]
     public abstract class StateModule : ScriptableObject
     {
@@ -19,10 +43,13 @@ namespace Kuantech.Core
                 TypeNameHandling = TypeNameHandling.Objects
             };
             var loadedObject = JsonConvert.DeserializeObject(savedData, this.GetType(), settings);
-            foreach (var property in this.GetType().GetFields())
+            foreach (var field in this.GetType().GetFields())
             {
-                var loadedValue = property.GetValue(loadedObject);
-                property.SetValue(this, loadedValue);
+                if (!Attribute.IsDefined(field, typeof(NonSaveableAttribute)))
+                {
+                    var loadedValue = field.GetValue(loadedObject);
+                    field.SetValue(this, loadedValue);
+                }
             }
         }
 
@@ -30,8 +57,10 @@ namespace Kuantech.Core
         {
             var settings = new JsonSerializerSettings
             {
-                TypeNameHandling = TypeNameHandling.Objects
+                TypeNameHandling = TypeNameHandling.Objects,
+                ContractResolver = new NonSaveableContractResolver()
             };
+
             return JsonConvert.SerializeObject(this, Formatting.Indented, settings);
         }
 
