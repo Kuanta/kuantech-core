@@ -23,7 +23,14 @@ namespace Kuantech.Core
     {
         public int LevelIndex;
         public int PowerLevel;
-        public LevelState CurrentState;
+        private LevelState _levelState;
+        public LevelState CurrentState
+        {
+            get {return _levelState;}
+            set {
+                _levelState = value;
+                }
+        }
 
         public Action<LevelChangeData> OnStateChange;
 
@@ -49,18 +56,20 @@ namespace Kuantech.Core
 
         public virtual void CompleteLevel()
         {
+            if(CurrentState != LevelState.Playing) return;
             ChangeLevelState(LevelState.Completed);
         }
 
         public virtual void FailLevel()
         {
+            if (CurrentState != LevelState.Playing) return;
             ChangeLevelState(LevelState.Failed);
         }
 
         public void RestartLevel()
         {
             ResetLevelState();
-            ChangeLevelState(LevelState.Waiting);
+            ChangeLevelState(LevelState.Playing);
         }
 
         //Resets all the states of the level

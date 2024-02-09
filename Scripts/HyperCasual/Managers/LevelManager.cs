@@ -40,7 +40,7 @@ namespace Kuantech.Core
                 levelIndex = module.GetLevelIndex();
             }
             SetLevel(levelIndex);
-            ChangeCurrentState(LevelState.Waiting);
+            //ChangeCurrentState(LevelState.Waiting);
         }
         public static LevelState GetCurrentState()
         {
@@ -155,7 +155,7 @@ namespace Kuantech.Core
                 var module = gsm.GetModule<HyperCasualGameModel>();
                 module.SetLevelIndex(CurrentLevelIndex);
             }
-            ChangeCurrentState(LevelState.Waiting);
+            //ChangeCurrentState(LevelState.Waiting);
         }
 
         public virtual void FailLevel()
