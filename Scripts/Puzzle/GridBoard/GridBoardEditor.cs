@@ -1,11 +1,11 @@
 using System.Collections.Generic;
 using System.Linq;
-using Sirenix.OdinInspector;
 using UnityEditor;
 using UnityEngine;
 
 namespace Kuantech.Puzzle
 {
+    #if UNITY_EDITOR
     [ExecuteInEditMode]
     public class GridBoardEditor : MonoBehaviour {
         public enum EditorMode
@@ -207,4 +207,5 @@ namespace Kuantech.Puzzle
         #endif
 
     }
+    #endif
 }

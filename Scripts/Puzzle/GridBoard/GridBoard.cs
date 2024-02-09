@@ -293,7 +293,7 @@ namespace Kuantech.Puzzle
 
         #endregion
 
-
+        #if UNITY_EDITOR
         [Button("Select Tile")]
         public void SelectTile(int row, int col)
         {
@@ -305,7 +305,8 @@ namespace Kuantech.Puzzle
             }
             Selection.activeGameObject = tile.gameObject;
         }
-
+        #endif
+        
         #region Effects
         public void PlayEffect(Effect effect, int row, int col)
         {
