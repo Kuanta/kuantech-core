@@ -24,15 +24,6 @@ namespace Kuantech.Puzzle
         [HideInInspector] public GameObject CurrentlySelectedTile = null;
         public List<GridBoardEditorTile> EditorTiles = new List<GridBoardEditorTile>();
 
-        // private void Awake()
-        // {
-        //     if(!Application.isPlaying) return;
-        //     foreach(var tile in EditorTiles)
-        //     {
-        //         Destroy(tile.gameObject);
-        //     }
-        // }
-        
         //Mode changes
         public void SetMode(GridBoardEditor.EditorMode mode)
         {
