@@ -84,7 +84,6 @@ namespace Kuantech.Core.FX
             if(elapsedTime >= sound.Cooldown)
             {
                 sound.Play();
-                Debug.LogError($"Elapsed time for {clipName} is  {elapsedTime} cooldown is {sound.Cooldown}");
             }
             _lastPlayedTimes[clipName] = Time.time;
 
