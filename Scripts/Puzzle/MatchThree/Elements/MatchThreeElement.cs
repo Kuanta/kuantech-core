@@ -2,7 +2,6 @@ using System;
 using Kuantech.Core;
 using Kuantech.Utils;
 using UnityEngine;
-using UnityEngine.EventSystems;
 
 namespace Kuantech.Puzzle.MatchThree
 {
@@ -16,7 +15,9 @@ namespace Kuantech.Puzzle.MatchThree
 
         [Header("State")]
         [Tooltip("Non movable tiles are counted as obstacles")]
-        public bool CanBeMoved;
+        [SerializeField] private bool _canBeMoved;
+        [NonSerialized] public bool Frozen; //Froze tiles can't be moved. Used for tutorial
+
         [Tooltip("Interactable elements are interacted by creating matches around it, or moving it if it is movable")]
         public bool Interactable;
         [Tooltip("Indestructible tiles can't be destroyed with bombs")] 
@@ -53,7 +54,11 @@ namespace Kuantech.Puzzle.MatchThree
         public virtual void SetElementData(MatchThreeElementData data)
         {
             CurrentData = data;
-            if(CurrentVisual != null)
+            if (Row == 2 && Column == 2)
+            {
+                Debug.LogError("Deb");
+            }
+            if (CurrentVisual != null)
             {
                 GameManager.Instance.Pool.PoolObject(CurrentVisual.gameObject);
             }
@@ -61,6 +66,20 @@ namespace Kuantech.Puzzle.MatchThree
             CurrentVisual.transform.SetParent(transform);
             CurrentVisual.transform.localPosition = Vector3.zero;
             CurrentVisual.transform.localRotation = Quaternion.identity;
+        }
+
+        /// <summary>
+        /// Checks whether a tile can be moved or not
+        /// </summary>
+        /// <returns></returns>
+        public bool CanBeMoved()
+        {
+            return _canBeMoved;
+        }
+
+        public bool IsFrozen()
+        {
+            return Frozen;
         }
 
         /// <summary>
@@ -81,8 +100,8 @@ namespace Kuantech.Puzzle.MatchThree
 
         private void OnMouseDown()
         {
-            if(Utils.Helpers.IsCursorOnUI()) return;
-            if (!CanBeMoved) return;
+            if(Kuantech.Utils.Helpers.IsCursorOnUI()) return;
+            if (!_canBeMoved) return;
             _mousePressed = true;
             _firstTouchPoint = GetMainCameraPos();
         }
@@ -99,7 +118,7 @@ namespace Kuantech.Puzzle.MatchThree
                 OnTap();
                 return;
             }
-            if (!CanBeMoved) return;
+            if (!_canBeMoved) return;
             //Movement Angle
             float angle = Mathf.Atan2(_releasePoint.y - _firstTouchPoint.y, _releasePoint.x - _firstTouchPoint.x);
             angle = angle * 180.0f / Mathf.PI;
@@ -132,7 +151,7 @@ namespace Kuantech.Puzzle.MatchThree
         }
         private void CheckMovement(float angle)
         {
-            if(!CanBeMoved) return;
+            if(!_canBeMoved) return;
             //if(_moving) return;
             Vector2Int direction = new Vector2Int();
             if(angle <= 45.0f && angle >= -45.0f)
@@ -158,7 +177,7 @@ namespace Kuantech.Puzzle.MatchThree
                 return;
             }
             MatchThreeElement otherElement = ParentBoard.GetTile(Row + direction.y, Column+direction.x) as MatchThreeElement;
-            if(otherElement != null && otherElement.CanBeMoved)
+            if(otherElement != null && otherElement._canBeMoved)
             {
                 (ParentBoard as MatchThreeBoard).MakeAMove(this, otherElement);
             }

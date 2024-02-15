@@ -27,8 +27,7 @@ namespace Kuantech.Puzzle.UI
         {
             CompletePanel.Initialize(this);
             FailedPanel.Initialize(this);
-            CompletePanel.Close();
-            FailedPanel.Close();
+            Reset();
         }
 
         public virtual void OnLevelSetup(PuzzleLevel level)
@@ -48,8 +47,7 @@ namespace Kuantech.Puzzle.UI
             {
                 OpenFailedPanel();
             }else{
-                CompletePanel.Close();
-                FailedPanel.Close();
+                Reset();
             }
         }
 
@@ -63,5 +61,10 @@ namespace Kuantech.Puzzle.UI
             FailedPanel.Show();
         }
 
+        public virtual void Reset()
+        {
+            CompletePanel.Close();
+            FailedPanel.Close();
+        }
     }
 }

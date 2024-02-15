@@ -89,7 +89,7 @@ namespace Kuantech.Core
             if (CurrentLevel != null && CurrentLevel.LevelIndex != levelIndex)
             {
                 CurrentLevel.ClearLevel();
-                Destroy(CurrentLevel.gameObject);
+                CurrentLevel.DestroyLevel();
                 CurrentLevel = null;
             }
             CurrentLevel = GetLevel(CurrentLevelIndex);
@@ -155,7 +155,6 @@ namespace Kuantech.Core
                 var module = gsm.GetModule<HyperCasualGameModel>();
                 module.SetLevelIndex(CurrentLevelIndex);
             }
-            //ChangeCurrentState(LevelState.Waiting);
         }
 
         public virtual void FailLevel()

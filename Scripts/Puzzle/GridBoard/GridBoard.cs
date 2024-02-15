@@ -1,8 +1,6 @@
 using System;
-using System.Collections.Generic;
 using Kuantech.Core.FX;
 using Sirenix.OdinInspector;
-using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
 
@@ -39,6 +37,12 @@ namespace Kuantech.Puzzle
                 }
             }
 
+            SetExistingTiles();
+        }
+        
+        public virtual void RestartBoard()
+        {
+            ClearBoard();
             SetExistingTiles();
         }
         
@@ -204,8 +208,8 @@ namespace Kuantech.Puzzle
             Vector3 botLeftPoint = transform.position - new Vector3(GetWidth() * 0.5f, 0, GetDepth() * 0.5f);
             Vector3 diff = pointOnGrid - botLeftPoint;
 
-            float horDist = Utils.Helpers.DotProjection(diff, transform.right);
-            float depthDist = Utils.Helpers.DotProjection(diff, transform.forward);
+            float horDist = Kuantech.Utils.Helpers.DotProjection(diff, transform.right);
+            float depthDist = Kuantech.Utils.Helpers.DotProjection(diff, transform.forward);
 
             col = Mathf.FloorToInt(horDist / CellWidth);
             row = Mathf.FloorToInt(depthDist / CellHeight);
