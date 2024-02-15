@@ -69,7 +69,7 @@ namespace Kuantech.Core
         public void RestartLevel()
         {
             ResetLevelState();
-            ChangeLevelState(LevelState.Playing);
+            PlayLevel();
         }
 
         //Resets all the states of the level
@@ -80,6 +80,10 @@ namespace Kuantech.Core
         public virtual void ClearLevel()
         {
 
+        }
+        public virtual void DestroyLevel()
+        {
+            Destroy(gameObject);
         }
         #endregion
     }
