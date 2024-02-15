@@ -3,14 +3,18 @@ using UnityEngine;
 namespace Kuantech.Core.Utils
 {
     public class ScreenSizeAdjuster : MonoBehaviour {
+        [Header("Anchors")]
         public GameObject TopAnchor;
         public GameObject BottomAnchor;
         public GameObject LeftAnchor;
         public GameObject RightAnchor;
+        public Vector3 CameraOffset;
 
+        [Header("Perspective")]
+        public float PerspectiveFactor = 2.0f;
         public bool FitOnUpdate = true;
 
-        private void Update()
+        protected virtual void Update()
         {
             if(!FitOnUpdate) return;
             FitCameraToAnchors();
@@ -20,10 +24,10 @@ namespace Kuantech.Core.Utils
             Camera mainCamera = Camera.main;
 
             // Get the positions of the anchor points
-            Vector3 topPosition = mainCamera.transform.InverseTransformPoint(TopAnchor.transform.localPosition);
-            Vector3 leftPosition = mainCamera.transform.InverseTransformPoint(LeftAnchor.transform.localPosition);
-            Vector3 rightPosition = mainCamera.transform.InverseTransformPoint(RightAnchor.transform.localPosition);
-            Vector3 bottomPosition = mainCamera.transform.InverseTransformPoint(BottomAnchor.transform.localPosition);
+            Vector3 topPosition = TopAnchor.transform.position;
+            Vector3 leftPosition = LeftAnchor.transform.position;
+            Vector3 rightPosition = RightAnchor.transform.position;
+            Vector3 bottomPosition = BottomAnchor.transform.position;
 
             // Calculate the size of the camera's orthographic view
             float orthoSize = CalculateOrthographicSize(topPosition, leftPosition, rightPosition, bottomPosition);
@@ -31,11 +35,16 @@ namespace Kuantech.Core.Utils
             // Set the camera's orthographic size
             mainCamera.orthographicSize = orthoSize;
 
-            // // Calculate the position for the camera to center on the anchor points
-            // Vector3 targetLocalPosition = new Vector3((leftPosition.x + rightPosition.x) / 2f, (topPosition.y + bottomPosition.y) / 2f, mainCamera.transform.position.z);
+            //Set camera target position for perspective
+            float cameraView = 2.0f * Mathf.Tan(0.5f * Mathf.Deg2Rad * mainCamera.fieldOfView);
+            float distance = PerspectiveFactor * orthoSize / cameraView;
+            distance += 0.5f * orthoSize;
+            
+            // Calculate the position for the camera to center on the anchor points
+            Vector3 targetPosition = (leftPosition + rightPosition + topPosition + bottomPosition) / 4.0f - distance * mainCamera.transform.forward;
 
-            // // Set the camera's position
-            // mainCamera.transform.position = transform.TransformPoint(targetLocalPosition);
+            // Set the camera's position
+            mainCamera.transform.position = targetPosition + CameraOffset;
         }
 
         private float CalculateOrthographicSize(Vector3 top, Vector3 left, Vector3 right, Vector3 bottom)
