@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Kuantech.Matchemy;
 using Kuantech.Puzzle.MatchThree.UI;
 using UnityEngine;
 
@@ -29,7 +30,6 @@ namespace Kuantech.Puzzle.MatchThree
             _matchThreeLevelUI = ((MatchThreeLevelUI)LevelUI);
             MatchThreeBoard.Setup();
             MatchThreeBoard.OnMove += OnMove;
-            PlayLevel(); //todo(matchemy): May not be good here
         }
 
         public override void PlayLevel()
