@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Kuantech.Core.FX;
-using Kuantech.Matchemy;
 using Kuantech.Utils;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -53,6 +52,7 @@ namespace Kuantech.Puzzle.MatchThree
             {
                 element.SetBoard(this, tile.Row, tile.Column);
                 element.transform.SetParent(transform);
+                element.SetElementData(element.CurrentData);
                 element.transform.localPosition = GetLocalPosition(tile.Row, tile.Column);
                 element.name = $"Gem_{tile.Row}_{tile.Column}";
                 SetTile(element, tile.Row, tile.Column);
@@ -71,7 +71,7 @@ namespace Kuantech.Puzzle.MatchThree
                 {
                     Vector3 pos = GetLocalPosition(r, c);
                     MatchThreeElement existingElement = GetMatchThreeElement(r,c);
-                    bool placeBackground = existingElement == null || existingElement.CanBeMoved || !existingElement.Indestructible || existingElement.Interactable;
+                    bool placeBackground = existingElement == null || existingElement.CanBeMoved()|| !existingElement.Indestructible || existingElement.Interactable;
                     if (setBackgroundTiles && placeBackground)
                     {
                         GameObject tileBg = Instantiate(BgTilePrefab);
@@ -201,7 +201,7 @@ namespace Kuantech.Puzzle.MatchThree
         /// <param name="element2"></param>
         public void MakeAMove(MatchThreeElement element1, MatchThreeElement element2)
         {
-            if(_inputBlocked) return;
+            if(_inputBlocked || element1.IsFrozen() || element2.IsFrozen()) return;
             
             _inputBlocked = true;
             StartCoroutine(_MakeAMoveRoutine(element1, element2));
@@ -450,7 +450,7 @@ namespace Kuantech.Puzzle.MatchThree
                 for(int r=0;r<RowCount;++r)
                 {
                     MatchThreeElement element = GetTile(r,c) as MatchThreeElement;
-                    if(element != null && element.CanBeMoved && !_movedTiles.Contains(element))                   
+                    if(element != null && element.CanBeMoved() && !_movedTiles.Contains(element))                   
                     {
                         //Check below
                         int rowBelow;
@@ -463,7 +463,7 @@ namespace Kuantech.Puzzle.MatchThree
                             madeValidMove = true;
                             _movedTiles.Add(element);
                         }
-                    }else if(element != null && !element.CanBeMoved)
+                    }else if(element != null && !element.CanBeMoved())
                     {
                         if(!_highestObstacleIndexInRow.ContainsKey(c))
                         {
@@ -481,7 +481,7 @@ namespace Kuantech.Puzzle.MatchThree
                 for (int r = 0; r < RowCount; ++r)
                 {
                     MatchThreeElement element = GetTile(r, c) as MatchThreeElement;
-                    if (element != null && element.CanBeMoved && !_movedTiles.Contains(element))
+                    if (element != null && element.CanBeMoved() && !_movedTiles.Contains(element))
                     {
                         //Check below
                         int rowBelow;
@@ -516,7 +516,7 @@ namespace Kuantech.Puzzle.MatchThree
                 for (int c = 0; c < ColumnCount; ++c)
                 {
                     MatchThreeElement element = GetTile(r, c) as MatchThreeElement;
-                    if (element != null && element.CanBeMoved && !_movedTiles.Contains(element))
+                    if (element != null && element.CanBeMoved() && !_movedTiles.Contains(element))
                     {
                         int colToShift = c;
                         if(IsCoordinateValid(r, c-1) && GetTile(r, c-1) == null && CanShiftToColumn(r, c-1))
@@ -573,7 +573,7 @@ namespace Kuantech.Puzzle.MatchThree
                 if(element == null)
                 {
                     lastNullRow = i;
-                }else if(!element.CanBeMoved)
+                }else if(!element.CanBeMoved())
                 {
                     return lastNullRow;
                 }
@@ -627,7 +627,7 @@ namespace Kuantech.Puzzle.MatchThree
             if(!IsCoordinateValid(row, col)) return false;
             MatchThreeElement element = GetMatchThreeElement(row, col);
             if(element == null) return false;
-            return !element.CanBeMoved;
+            return !element.CanBeMoved();
         }
 
         public MatchThreeElement GetMatchThreeElement(int row, int col)
@@ -636,12 +636,11 @@ namespace Kuantech.Puzzle.MatchThree
         }
 
        
-        public void RestartBoard()
+        public override void RestartBoard()
         {
             StopAllCoroutines();
             _inputBlocked = false;
-            ClearBoard();
-            SetExistingTiles();
+            base.RestartBoard();
             CreateInitialElements();
         }
 
