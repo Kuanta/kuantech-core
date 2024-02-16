@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Kuantech.Matchemy;
 using Kuantech.Puzzle.MatchThree.UI;
 using UnityEngine;
 
@@ -22,11 +21,17 @@ namespace Kuantech.Puzzle.MatchThree
         [SerializeField] private int MaxMoveCount = 40;
         private int _currentMoveCount;
         public List<WinConditionEntry> WinCondition;
+        private Dictionary<MatchThreeElementData, int> _elementToRequiredCount;
         private Dictionary<MatchThreeElementData, int> _collectedElements;
         private MatchThreeLevelUI _matchThreeLevelUI;
         public override void SetupLevel()
         {
             base.SetupLevel();
+            _elementToRequiredCount = new Dictionary<MatchThreeElementData, int>();
+            foreach(var condition in WinCondition)
+            {
+                _elementToRequiredCount[condition.RequiredElement] = condition.RequiredAmount;
+            }
             _matchThreeLevelUI = ((MatchThreeLevelUI)LevelUI);
             MatchThreeBoard.Setup();
             MatchThreeBoard.OnMove += OnMove;
@@ -105,7 +110,7 @@ namespace Kuantech.Puzzle.MatchThree
         /// </summary>
         /// <param name="data"></param>
         /// <param name="amount"></param>
-        protected void AddToCollected(MatchThreeElementData data, int amount)
+        protected virtual void AddToCollected(MatchThreeElementData data, int amount)
         {
             if (!_collectedElements.ContainsKey(data))
             {
@@ -124,10 +129,22 @@ namespace Kuantech.Puzzle.MatchThree
             if(WinCondition == null) return false;
             foreach(var entry in WinCondition)
             {
-                int collectedAmount = GetCollectedElementCount(entry.RequiredElement);
-                if(collectedAmount < entry.RequiredAmount) return false;
+                if(!IsWinConditionMetForElement(entry.RequiredElement)) return false;
             }
             return true;
+        }
+
+        public bool IsWinConditionMetForElement(MatchThreeElementData data)
+        {
+            int collectedAmount = GetCollectedElementCount(data);
+            int RequiredAmount = GetRequiredCount(data);
+            return RequiredAmount - collectedAmount <= 0f;
+        }
+
+        public int GetRequiredCount(MatchThreeElementData data)
+        {
+            if(_elementToRequiredCount == null || !_elementToRequiredCount.ContainsKey(data)) return 0;
+            return _elementToRequiredCount[data];
         }
 
         /// <summary>

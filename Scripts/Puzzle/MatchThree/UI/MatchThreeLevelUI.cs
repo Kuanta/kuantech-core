@@ -13,7 +13,8 @@ namespace Kuantech.Puzzle.MatchThree.UI
 
         [Header("Required Tiles")]
         [SerializeField] private MatchThreeRequiredTileIndicator TileIndicatorPrefab;
-        [SerializeField] private Transform RequiredTileIndicatorsParent;
+        [SerializeField] protected GameObject RequiredTilesPanel;
+        [SerializeField] protected RectTransform RequiredTileIndicatorsContentParent;
         private Dictionary<MatchThreeElementData, MatchThreeRequiredTileIndicator> _elementToIndicator;
 
         private MatchThreeLevel _currentMatchThreeLevel;
@@ -22,19 +23,27 @@ namespace Kuantech.Puzzle.MatchThree.UI
         {
             base.OnLevelSetup(level);
             _currentMatchThreeLevel = (MatchThreeLevel)level;
-            if (RequiredTileIndicatorsParent != null)
+            if (RequiredTileIndicatorsContentParent != null)
             {
-                RequiredTileIndicatorsParent.DestroyAllChildren();
+                RequiredTileIndicatorsContentParent.DestroyAllChildren();
 
                 _elementToIndicator = new Dictionary<MatchThreeElementData, MatchThreeRequiredTileIndicator>();
-                foreach (var winConditionEntry in _currentMatchThreeLevel.WinCondition)
+                if(_currentMatchThreeLevel.WinCondition.IsNullOrEmpty())
                 {
-                    MatchThreeRequiredTileIndicator indicator = Instantiate(TileIndicatorPrefab.gameObject)
-                    .GetComponent<MatchThreeRequiredTileIndicator>();
-                    _elementToIndicator[winConditionEntry.RequiredElement] = indicator;
-                    indicator.SetElement(winConditionEntry.RequiredElement);
-                    indicator.SetRemainingAmount(winConditionEntry.RequiredAmount);
-                    indicator.transform.SetParent(RequiredTileIndicatorsParent); //The parent should have a layout component attached
+                    RequiredTilesPanel.SetActive(false);
+                }
+                else{
+                    RequiredTilesPanel.SetActive(true);
+                    foreach (var winConditionEntry in _currentMatchThreeLevel.WinCondition)
+                    {
+                        MatchThreeRequiredTileIndicator indicator = Instantiate(TileIndicatorPrefab.gameObject)
+                        .GetComponent<MatchThreeRequiredTileIndicator>();
+                        _elementToIndicator[winConditionEntry.RequiredElement] = indicator;
+                        indicator.SetElement(winConditionEntry.RequiredElement);
+                        indicator.SetRemainingAmount(winConditionEntry.RequiredAmount);
+                        indicator.transform.SetParent(RequiredTileIndicatorsContentParent, false); //The parent should have a layout component attached
+                        indicator.transform.localScale = Vector3.one;
+                    }
                 }
             }
             SetRemainingMoves(_currentMatchThreeLevel.GetMaxMoveCount());
@@ -45,10 +54,11 @@ namespace Kuantech.Puzzle.MatchThree.UI
         /// </summary>
         /// <param name="data"></param>
         /// <param name="remainingAmount"></param>
-        public void SetRemainingAmountForTileCondition(MatchThreeElementData data, int remainingAmount)
+        public void SetRemainingAmountForTileCondition(MatchThreeElementData data, int collectedAmount)
         {
             if(!_elementToIndicator.ContainsKey(data) || _elementToIndicator[data] == null) return;
-            _elementToIndicator[data].SetRemainingAmount(remainingAmount);
+            int remainingAmount = _currentMatchThreeLevel.GetRequiredCount(data) - collectedAmount;
+            _elementToIndicator[data].SetRemainingAmount(Mathf.Max(0,remainingAmount));
         }
 
         /// <summary>
