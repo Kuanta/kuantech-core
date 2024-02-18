@@ -160,6 +160,13 @@ namespace Kuantech.Core.FX
         }
 
         #region AudioLibrary
+        public static AudioLibrary GetAudioLibrary()
+        {
+            EffectsLibrary context = GetContext<EffectsLibrary>();
+            if(context == null) return null;
+            return context.AudioLibrary;
+        }
+        
         public static bool PlayAudio(int audioTag)
         {
             EffectsLibrary context = EffectsLibrary.GetContext<EffectsLibrary>();

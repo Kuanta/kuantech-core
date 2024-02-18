@@ -14,6 +14,8 @@ namespace Kuantech.Core.FX
         public Dictionary<string, float> _lastPlayedTimes;
         
         [Header("Music")] 
+        public List<Music> Musics;
+        public AudioSource MusicPlayer;
         public AudioSource MainMenuMusic;
         public AudioSource IngameMusic;
 
@@ -105,5 +107,25 @@ namespace Kuantech.Core.FX
             if (MasterMixer == null) return;
             MasterMixer.SetFloat("sfxVolume", Mathf.Log10(value * 0.5f) * 20);
         }
+
+        #region Music
+        public void PlayMusic(Music music)
+        {
+            if(music == null) return;
+            StopMusic();
+            if(MusicPlayer == null) return;
+            MusicPlayer.clip = music.Clip;
+            MusicPlayer.loop = music.Loop;
+            MusicPlayer.volume = music.Volume;
+            MusicPlayer.Play();
+        }
+        public void StopMusic()
+        {
+            if(MusicPlayer != null)
+            {
+                MusicPlayer.Stop();
+            }
+        }
+        #endregion
     }
 }
