@@ -18,7 +18,7 @@ namespace Kuantech.Puzzle.MatchThree
         [SerializeField] protected MatchThreeBoard MatchThreeBoard;
 
         [Header("Level Properties")]
-        [SerializeField] private int MaxMoveCount = 40;
+        public int MaxMoveCount = 40;
         private int _currentMoveCount;
         public List<WinConditionEntry> WinCondition;
         private Dictionary<MatchThreeElementData, int> _elementToRequiredCount;

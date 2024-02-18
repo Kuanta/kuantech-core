@@ -1,5 +1,6 @@
 using System;
 using Kuantech.Core;
+using Kuantech.Core.HyperCasual.UI;
 using Kuantech.UI;
 using TMPro;
 using UnityEngine;
@@ -9,8 +10,9 @@ namespace Kuantech.Puzzle.UI
     public class PuzzleLevelUI : UICanvas
     {
         [Header("Widgets")]
-        [SerializeField] private TMP_Text LevelIndexText;
-        [SerializeField] private string LevelLabel = "Level";
+        [SerializeField] private LevelIndicator LevelIndicator;
+        // [SerializeField] private TMP_Text LevelIndexText;
+        // [SerializeField] private string LevelLabel = "Level";
 
         [Header("Panels")]
         public PuzzleCompletePanel CompletePanel;
@@ -33,7 +35,7 @@ namespace Kuantech.Puzzle.UI
         public virtual void OnLevelSetup(PuzzleLevel level)
         {
             CurrentLevel = level;
-            if(LevelIndexText != null) LevelIndexText.text = $"{LevelLabel} {level.LevelIndex + 1}";
+            if(LevelIndicator != null) LevelIndicator.SetLevelIndex(level.LevelIndex + 1);
             level.OnStateChange += OnLevelStateChange;
         }
 
@@ -51,6 +53,10 @@ namespace Kuantech.Puzzle.UI
             }
         }
 
+        public void ToggleLevelIndicator(bool toggle)
+        {
+            LevelIndicator.gameObject.SetActive(toggle);
+        }
         public void OpenCompletePanel()
         {
             CompletePanel.Show();

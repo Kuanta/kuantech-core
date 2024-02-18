@@ -11,37 +11,9 @@ namespace Kuantech.Core.HyperCasual.UI
         [SerializeField] private TMP_Text LevelIndexText;
         [SerializeField] private string LevelPrefix = "Level";
 
-        private void Start()
+        public void SetLevelIndex(int levelIndex)
         {
-            LevelManager levelMan = (GameManager.Instance.GetSubManagerByType<LevelManager>() 
-            as LevelManager);
-            if(levelMan == null) return;
-            levelMan.LevelSetEvent += OnLevelSetEvent; 
-        }
-
-        private void OnDestroy()
-        {
-            LevelManager levelMan = (GameManager.Instance.GetSubManagerByType<LevelManager>()
-                        as LevelManager);
-            if (levelMan == null) return;
-            levelMan.LevelSetEvent -= OnLevelSetEvent;
-        }
-
-        private void OnEnable()
-        {
-            GameStateManager gsm = GameStateManager.GetContext<GameStateManager>();
-            if (gsm == null) return;
-            SetLevelIndex(gsm.GetModule<HyperCasualGameModel>().GetLevelIndex());
-        }
-
-        private void SetLevelIndex(int levelIndex)
-        {
-            LevelIndexText.text = $"{LevelPrefix} {(levelIndex + 1).ToString()}";
-        }
-
-        private void OnLevelSetEvent(object sender, int levelIndex)
-        {
-            SetLevelIndex(levelIndex);
+            LevelIndexText.text = $"{LevelPrefix} {(levelIndex).ToString()}";
         }
     }
 }

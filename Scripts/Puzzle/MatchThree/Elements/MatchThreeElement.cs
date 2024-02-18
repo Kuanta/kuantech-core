@@ -108,10 +108,10 @@ namespace Kuantech.Puzzle.MatchThree
 
         private void OnMouseUp()
         {
-            if(!_mousePressed) return;
+            if (!_mousePressed) return;
             _mousePressed = false;
             _releasePoint = GetMainCameraPos();
-
+            if (Kuantech.Utils.Helpers.IsCursorOnUI()) return;
             //Is this tap?
             if ((_releasePoint - _firstTouchPoint).sqrMagnitude <= TapDistanceThresh)
             {
