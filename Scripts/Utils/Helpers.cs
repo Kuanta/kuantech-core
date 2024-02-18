@@ -303,18 +303,22 @@ namespace Kuantech.Utils
         public static bool IsCursorOnUI()
         {
 #if (UNITY_IOS || UNITY_ANDROID) && !UNITY_EDITOR
-                if (EventSystem.current.IsPointerOverGameObject(0))
+            if (Input.touchCount > 0)
+            {
+                Touch touch = Input.GetTouch(0);
+
+                if (EventSystem.current.IsPointerOverGameObject(touch.fingerId) || EventSystem.current.currentSelectedGameObject != null)
                 {
                     return true;
                 }
-             
+            }
 #else
-            if (EventSystem.current.IsPointerOverGameObject())
+            if (EventSystem.current.IsPointerOverGameObject(0) || EventSystem.current.currentSelectedGameObject != null)
             {
                 return true;
             }
 #endif
-        return false;
+            return false;
         }
         public static Bounds CalculateBounds(GameObject parentObject)
         {
