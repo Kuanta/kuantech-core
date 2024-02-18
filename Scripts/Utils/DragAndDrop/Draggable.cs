@@ -17,14 +17,18 @@ namespace Kuantech.Utils
         
         public virtual bool DragStart()
         {
+            if (!CanBeDragged()) return false;
             _positionBeforeDrag = transform.position;
             return true;
         }
+        [Tooltip("If set to false, Draggable can't be dragged")]
+        public bool DragToggle = true;
 
         [Header("Offset")]
         [SerializeField] private float OffsetDistance = 5f;
         public virtual void Drag(Vector3 cursorPosition)
         {
+            if(!CanBeDragged()) return;
             IDropZone newZone = CheckForDragBench();
             if(_receivedHitThisFrame)
             {
@@ -139,7 +143,7 @@ namespace Kuantech.Utils
 
         public virtual bool CanBeDragged()
         {
-            return true;
+            return DragToggle;
         }
     }
 }
