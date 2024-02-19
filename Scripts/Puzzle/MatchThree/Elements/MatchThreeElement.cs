@@ -34,7 +34,6 @@ namespace Kuantech.Puzzle.MatchThree
         [NonSerialized] public bool ToBeDestroyed;
         protected MatchThreeBoard ParentMatchThreeBoard;
 
-
         public override void Spawn()
         {
             base.Spawn();
@@ -58,6 +57,7 @@ namespace Kuantech.Puzzle.MatchThree
             {
                 Debug.LogError("Deb");
             }
+            if(CurrentData == null || CurrentData.VisualPrefab == null) return;
             if (CurrentVisual != null)
             {
                 GameManager.Instance.Pool.PoolObject(CurrentVisual.gameObject);

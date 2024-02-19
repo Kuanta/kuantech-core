@@ -19,7 +19,7 @@ namespace Kuantech.Puzzle.MatchThree
 
         [Header("Level Properties")]
         public int MaxMoveCount = 40;
-        private int _currentMoveCount;
+        protected int CurrentMoveCount;
         public List<WinConditionEntry> WinCondition;
         private Dictionary<MatchThreeElementData, int> _elementToRequiredCount;
         private Dictionary<MatchThreeElementData, int> _collectedElements;
@@ -40,7 +40,7 @@ namespace Kuantech.Puzzle.MatchThree
         public override void PlayLevel()
         {
             base.PlayLevel();
-            _currentMoveCount = MaxMoveCount;
+            CurrentMoveCount = MaxMoveCount;
             if(_collectedElements != null)
             {
                 _collectedElements.Clear();
@@ -60,7 +60,7 @@ namespace Kuantech.Puzzle.MatchThree
         {
             MatchThreeBoard.RestartBoard();
             _collectedElements.Clear();
-            _currentMoveCount = MaxMoveCount;
+            CurrentMoveCount = MaxMoveCount;
             base.ResetLevelState();
         }
 
@@ -70,7 +70,7 @@ namespace Kuantech.Puzzle.MatchThree
         public void OnMove()
         {
            ReduceRemainingMoveCount();
-           _matchThreeLevelUI.SetRemainingMoves(_currentMoveCount);
+           _matchThreeLevelUI.SetRemainingMoves(CurrentMoveCount);
         }
 
         /// <summary>
@@ -85,8 +85,8 @@ namespace Kuantech.Puzzle.MatchThree
         protected void ReduceRemainingMoveCount()
         {
             if (CheckForWinCondition()) return;
-            _currentMoveCount--;
-            if (_currentMoveCount <= 0)
+            CurrentMoveCount--;
+            if (CurrentMoveCount <= 0)
             {
                 //todo: Check if last move completed the level
                 Debug.LogError("Fail level");
