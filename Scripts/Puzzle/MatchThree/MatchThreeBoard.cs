@@ -332,7 +332,11 @@ namespace Kuantech.Puzzle.MatchThree
                 HandleMatches(g, fromPostMove, foundInteractables);
             }
 
-          
+            //Handle Interactables
+            foreach (var interactable in foundInteractables)
+            {
+                interactable.Interact();
+            }
         }
         protected virtual void HandleMatches(HashSet<MatchThreeElement> matches, bool fromPostMove, HashSet<MatchThreeElement> foundDestructibles)
         {
