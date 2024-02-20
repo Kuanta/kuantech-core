@@ -54,6 +54,7 @@ namespace Kuantech.Puzzle.MatchThree
             base.ResetUI();
             _matchThreeLevelUI = ((MatchThreeLevelUI)LevelUI);
             _matchThreeLevelUI.SetRemainingMoves(MaxMoveCount);
+            _matchThreeLevelUI.ResetWinConditionPanel();
         }
 
         public override void ResetLevelState()

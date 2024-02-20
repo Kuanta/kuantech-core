@@ -49,6 +49,15 @@ namespace Kuantech.Puzzle.MatchThree.UI
             SetRemainingMoves(_currentMatchThreeLevel.GetMaxMoveCount());
         }
 
+        public void ResetWinConditionPanel()
+        {
+            foreach(var pair in _elementToIndicator)
+            {
+                _currentMatchThreeLevel.GetRequiredCount(pair.Key);
+                pair.Value.SetRemainingAmount(_currentMatchThreeLevel.GetRequiredCount(pair.Key));
+            }
+        }
+
         /// <summary>
         /// Updates the remaining amount for given data
         /// </summary>
