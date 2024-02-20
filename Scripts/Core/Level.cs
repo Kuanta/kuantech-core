@@ -1,6 +1,4 @@
 using System;
-using Kuantech.Puzzle.UI;
-using Kuantech.UI;
 using UnityEngine;
 
 namespace Kuantech.Core
@@ -84,6 +82,10 @@ namespace Kuantech.Core
         public virtual void DestroyLevel()
         {
             Destroy(gameObject);
+        }
+        public virtual float GetCurrentScore()
+        {
+            return 0f;
         }
         #endregion
     }

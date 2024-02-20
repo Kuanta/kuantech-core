@@ -53,10 +53,6 @@ namespace Kuantech.Puzzle.MatchThree
         public virtual void SetElementData(MatchThreeElementData data)
         {
             CurrentData = data;
-            if (Row == 2 && Column == 2)
-            {
-                Debug.LogError("Deb");
-            }
             if(CurrentData == null || CurrentData.VisualPrefab == null) return;
             if (CurrentVisual != null)
             {

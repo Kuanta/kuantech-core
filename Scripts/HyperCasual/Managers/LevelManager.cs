@@ -29,6 +29,7 @@ namespace Kuantech.Core
         //Events
         public EventHandler<StateChangeData> StateChangeEvent;
         public EventHandler<int> LevelSetEvent;
+        public EventHandler<Level> LevelCompletedEvent;
 
         public override void OnSubmanagersInitialized()
         {
@@ -52,6 +53,12 @@ namespace Kuantech.Core
         {
             return (GameManager.Instance.GetSubManagerByType<LevelManager>() as LevelManager).CurrentLevel;
         }
+
+        public static int GetCurrentLevelIndex()
+        {
+            return GetContext<LevelManager>().CurrentLevelIndex;
+        }
+
         public virtual Level GetLevel(int levelIndex)
         {
             int levelArrayIndex = levelIndex;
@@ -84,7 +91,6 @@ namespace Kuantech.Core
         {
             levelIndex = Mathf.Max(levelIndex, 0);
             CurrentLevelIndex = levelIndex;
-            LevelSetEvent?.Invoke(this, CurrentLevelIndex);
             if (CurrentLevel != null && levelIndex == CurrentLevel.LevelIndex) return; //Don't destroy and create the same level
             if (CurrentLevel != null && CurrentLevel.LevelIndex != levelIndex)
             {
@@ -97,7 +103,6 @@ namespace Kuantech.Core
             //Set power level
             int powerLevel = levelIndex;
             CurrentLevel.PowerLevel = MaxPowerLevel > 0 ? Mathf.Min(MaxPowerLevel, powerLevel) : powerLevel;
-
             LevelSetEvent?.Invoke(this, CurrentLevelIndex);
         }
         
@@ -136,12 +141,13 @@ namespace Kuantech.Core
         }
         public virtual void RestartLevel()
         {
-            CurrentLevel.RestartLevel();
             ChangeCurrentState(LevelState.Waiting);
+            CurrentLevel.RestartLevel();
         }
 
         public virtual void CompleteLevel()
         {
+            LevelCompletedEvent?.Invoke(this, CurrentLevel);
             CurrentLevel.ClearLevel();
             Destroy(CurrentLevel.gameObject);
             CurrentLevelIndex++;
