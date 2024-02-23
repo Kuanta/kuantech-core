@@ -36,13 +36,13 @@ namespace Kuantech.Core.HyperCasual
         public override void Show()
         {
             base.Show();
-            GameManager.Instance.PauseGame();
+            //GameManager.Instance.PauseGame();
         }
 
         public override void Close()
         {
             base.Close();
-            GameManager.Instance.ResumeGame();
+            //GameManager.Instance.ResumeGame();
         }
 
         private void OnMusicVolumeChange(float value)

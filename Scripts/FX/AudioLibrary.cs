@@ -119,6 +119,11 @@ namespace Kuantech.Core.FX
             MusicPlayer.volume = music.Volume;
             MusicPlayer.Play();
         }
+        public void RestartMusic()
+        {
+            MusicPlayer.Stop();
+            MusicPlayer.Play();
+        }
         public void StopMusic()
         {
             if(MusicPlayer != null)
