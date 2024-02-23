@@ -18,9 +18,9 @@ namespace Kuantech.Puzzle
         [Header("GridBoard")]
         public GridBoard GridBoard;
         public Transform GroupParent;
-        
+        public GridTileLibrary TileCollection;
         [HideInInspector] public EditorMode CurrentMode = EditorMode.None;
-        public List<GameObject> TileLibrary = new List<GameObject>();
+        [HideInInspector] public List<GameObject> TileLibrary = new List<GameObject>();
         [HideInInspector] public GameObject CurrentlySelectedTile = null;
         public List<GridBoardEditorTile> EditorTiles = new List<GridBoardEditorTile>();
 
@@ -62,6 +62,16 @@ namespace Kuantech.Puzzle
                 }
             }
         }
+
+        private void OnValidate() 
+        {
+            if(TileCollection != null)
+            {
+                TileLibrary = new List<GameObject>(TileCollection.Tiles);
+            }
+
+        }
+        
         #if UNITY_EDITOR
        
         private void OnDrawGizmosSelected()

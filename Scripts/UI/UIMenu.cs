@@ -6,6 +6,7 @@ namespace Kuantech.UI
     public class UIMenu : MonoBehaviour
     {
         public string MenuId;
+        public float ShowDelay = 0f;
         [SerializeField] protected Button CloseButton;
 
         protected virtual void Start()

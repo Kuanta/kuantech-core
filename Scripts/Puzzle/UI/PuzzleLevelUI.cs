@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using Kuantech.Core;
 using Kuantech.Core.HyperCasual.UI;
 using Kuantech.UI;
@@ -17,6 +18,8 @@ namespace Kuantech.Puzzle.UI
         [Header("Panels")]
         public PuzzleCompletePanel CompletePanel;
         public PuzzleFailPanel FailedPanel;
+        public float CompletePanelShowDelay = 0f;
+        public float FailedPanelShowDelay = 0f;
 
         [NonSerialized] public PuzzleLevel CurrentLevel;
 
@@ -59,14 +62,22 @@ namespace Kuantech.Puzzle.UI
         }
         public void OpenCompletePanel()
         {
+            StartCoroutine(_OpenCompletePanel());
+        }
+        private IEnumerator _OpenCompletePanel()
+        {
+            yield return new WaitForSeconds(CompletePanelShowDelay);
             CompletePanel.Show();
         }
-
         public void OpenFailedPanel()
         {
+            StartCoroutine(_OpenFailedPanel());
+        }
+        private IEnumerator _OpenFailedPanel()
+        {
+            yield return new WaitForSeconds(FailedPanelShowDelay);
             FailedPanel.Show();
         }
-
         public virtual void Reset()
         {
             CompletePanel.Close();

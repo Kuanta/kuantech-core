@@ -11,6 +11,8 @@ namespace Kuantech.Utils
     public class Draggable : MonoBehaviour, IDraggable
     {
         [SerializeField] protected IDropZone DropZone;
+        [Tooltip("IF set to true, position will be set using the ground ray")]
+        [SerializeField] private bool PositionWithGroundRay = false;
         private Vector3 _positionBeforeDrag;
 
         protected IDropZone CurrentDropZone;
@@ -30,7 +32,7 @@ namespace Kuantech.Utils
         {
             if(!CanBeDragged()) return;
             IDropZone newZone = CheckForDragBench();
-            if(_receivedHitThisFrame)
+            if(_receivedHitThisFrame && PositionWithGroundRay)
             {
                 Transform cameraTransform = DragManager.GetContext<DragManager>().MainCamera.transform;
                 Vector3 diff = cameraTransform.position - _lastHit.point;

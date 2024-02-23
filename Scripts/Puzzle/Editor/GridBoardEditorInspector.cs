@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEditor;
 using UnityEditorInternal;
+using System.Collections.Generic;
 
 namespace Kuantech.Puzzle
 {
@@ -29,6 +30,27 @@ namespace Kuantech.Puzzle
             tileLibraryList = new ReorderableList(serializedObject, tileLibraryProperty, true, true, true, true);
             if(tileLibraryList == null) return;
 
+        }
+
+        [SerializeField]
+        private GridTileLibrary TileCollection
+        {
+            get => _gridBoardEditor.TileCollection;
+            set
+            {
+                _gridBoardEditor.TileCollection = value;
+            }
+        }
+
+        private void UpdateTileLibrary()
+        {
+            // Perform your logic here to update TileLibrary based on the new TileCollection.
+            if (TileCollection != null)
+            {
+                _gridBoardEditor.TileLibrary = new List<GameObject>(TileCollection.Tiles);
+            }
+            // Mark the object as dirty so that the changes are saved.
+            EditorUtility.SetDirty(target);
         }
 
         public override void OnInspectorGUI()
@@ -73,10 +95,10 @@ namespace Kuantech.Puzzle
             {
                 _gridBoardEditor.UpdateEditorTiles();
             }
-            if(GUILayout.Button("Clear Tile Library"))
-            {
-                _gridBoardEditor.TileLibrary.Clear();
-            }
+            // if(GUILayout.Button("Clear Tile Library"))
+            // {
+            //     _gridBoardEditor.TileLibrary.Clear();
+            // }
             GUILayout.EndHorizontal();
             serializedObject.ApplyModifiedProperties();
         }
@@ -131,6 +153,10 @@ namespace Kuantech.Puzzle
                 prefabArray.arraySize++;
                 prefabArray.GetArrayElementAtIndex(prefabArray.arraySize - 1).objectReferenceValue = prefab;
                 serializedObject.ApplyModifiedProperties();
+                if(!_gridBoardEditor.TileCollection.Tiles.Contains(prefab))
+                {
+                    _gridBoardEditor.TileCollection.Tiles.Add(prefab);
+                }
             }
         }
 

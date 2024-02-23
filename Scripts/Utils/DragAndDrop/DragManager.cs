@@ -68,6 +68,8 @@ namespace Kuantech.Utils
         public float DragStartTime = 0f; //A single touch should persist at least this amount
         public float DragRemainErrorThreshold = 1f;
         
+        [Header("Follo Object")]
+        public GameObject FollowObject; //If we have a gameobject that follows cursor smoothly, we can use this to get world position
         //Events
         public EventHandler<IDraggable> OnDragStart;
         public EventHandler<IDraggable> OnDragEnd;
@@ -93,14 +95,13 @@ namespace Kuantech.Utils
             else if (Input.GetMouseButton(0))
             {
                 if(!_startedClick) return;
-                Vector3 mousePosition = Input.mousePosition;
 
                 if (IsPointerClick())
                 {
                     return;
                 }
-
-                if(Time.time - _startTime < DragStartTime)
+                Vector3 mousePosition = Input.mousePosition;
+                if (Time.time - _startTime < DragStartTime)
                 {
                     //Check if the finger is moved
                     if(Vector3.Distance(mousePosition, _startPosition) > DragRemainErrorThreshold)
@@ -113,8 +114,7 @@ namespace Kuantech.Utils
                 if (draggedObject != null && _draggedInterface != null)
                 {
                     _dragging = true;
-                    mousePosition.z = _dragCameraDistance;
-                    Vector3 worldPosition = MainCamera.ScreenToWorldPoint(mousePosition);
+                    Vector3 worldPosition = GetMouseWorldPosition();
                     _draggedInterface.Drag(worldPosition);
                 }
             }
@@ -124,6 +124,17 @@ namespace Kuantech.Utils
                 OnCursorUp();
                 Release();
             }
+        }
+
+        public Vector3 GetMouseWorldPosition()
+        {
+            if(FollowObject != null)
+            {
+                return FollowObject.transform.position;
+            }
+            Vector3 mousePosition = Input.mousePosition;
+            mousePosition.z = _dragCameraDistance;
+            return MainCamera.ScreenToWorldPoint(mousePosition);
         }
 
         /// <summary>
