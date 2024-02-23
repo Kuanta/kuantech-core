@@ -313,7 +313,7 @@ namespace Kuantech.Utils
                 }
             }
 #else
-            if (EventSystem.current.IsPointerOverGameObject(0) || EventSystem.current.currentSelectedGameObject != null)
+            if (EventSystem.current.IsPointerOverGameObject() || EventSystem.current.currentSelectedGameObject != null)
             {
                 return true;
             }
