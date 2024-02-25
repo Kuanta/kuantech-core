@@ -19,6 +19,7 @@ namespace Kuantech.Puzzle
         public GridBoard GridBoard;
         public Transform GroupParent;
         public GridTileLibrary TileCollection;
+        public Color DebugLinesColor = Color.white;
         [HideInInspector] public EditorMode CurrentMode = EditorMode.None;
         [HideInInspector] public List<GameObject> TileLibrary = new List<GameObject>();
         [HideInInspector] public GameObject CurrentlySelectedTile = null;
@@ -86,26 +87,31 @@ namespace Kuantech.Puzzle
             float cellSize = GridBoard.CellHeight;
             Gizmos.color = Color.white;
 
-            Vector3 startPoint = transform.position - new Vector3((colCount - 1) * cellSize / 2, 0, (rowCount - 1) * cellSize / 2);
+            Vector3 startHorizontal = GridBoard.RightVector * ((colCount - 1) * cellSize / 2);
+            Vector3 startDepth = GridBoard.ForwardVector * ((rowCount - 1) * cellSize / 2);
+            Vector3 startPoint = -startHorizontal - startDepth;
 
             for (int row = 0; row < rowCount; row++)
             {
                 for (int col = 0; col < colCount; col++)
                 {
-                    Vector3 currentPoint = startPoint + new Vector3(col * cellSize, 0, row * cellSize);
-
+                    Vector3 currentPoint = startPoint + GridBoard.RightVector * (col * cellSize) + GridBoard.ForwardVector * (row * cellSize);
+                    Vector3 globalCurrent = GridBoard.transform.TransformPoint(currentPoint);
+                    Gizmos.color = DebugLinesColor;
                     // Draw horizontal lines
                     if (col < colCount - 1)
                     {
-                        Vector3 nextPointH = currentPoint + new Vector3(cellSize, 0, 0);
-                        Gizmos.DrawLine(currentPoint, nextPointH);
+                        Vector3 nextPointH = currentPoint + GridBoard.RightVector * cellSize;
+                        nextPointH = GridBoard.transform.TransformPoint(nextPointH);
+                        Gizmos.DrawLine(globalCurrent, nextPointH);
                     }
 
                     // Draw vertical lines
                     if (row < rowCount - 1)
                     {
-                        Vector3 nextPointV = currentPoint + new Vector3(0, 0, cellSize);
-                        Gizmos.DrawLine(currentPoint, nextPointV);
+                        Vector3 nextPointV = currentPoint + GridBoard.ForwardVector * cellSize;
+                        nextPointV = GridBoard.transform.TransformPoint(nextPointV);
+                        Gizmos.DrawLine(globalCurrent, nextPointV);
                     }
                 }
             }
@@ -147,6 +153,7 @@ namespace Kuantech.Puzzle
             }
 
             emptyTileObject.transform.position = GridBoard.transform.TransformPoint(GridBoard.GetLocalPosition(row, col));
+            emptyTileObject.transform.localRotation = Quaternion.identity;
             tile.transform.SetParent(emptyTileObject.transform);
             tile.transform.localPosition = Vector3.zero;
             tile.transform.localRotation = Quaternion.identity;

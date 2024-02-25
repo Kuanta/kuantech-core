@@ -19,6 +19,9 @@ namespace Kuantech.Puzzle
         [Header("Board Size")]
         public int RowCount = 5;
         public int ColumnCount = 5;
+        public Vector3 ForwardVector = Vector3.up;
+        public Vector3 RightVector = Vector3.right;
+
         [Header("Cell Size")]
         public float CellWidth = 1f;
         public float CellHeight = 1f;
@@ -107,6 +110,7 @@ namespace Kuantech.Puzzle
             {
                 gridTile.transform.SetParent(transform);
                 gridTile.SetLocalPosition(GetLocalPosition(row, col));
+                gridTile.transform.localRotation = Quaternion.identity;
             }
         }
 
@@ -205,12 +209,15 @@ namespace Kuantech.Puzzle
         /// <param name="col"></param>
         public void GetRowColFromPointOnBoard(Vector3 pointOnGrid, out int row, out int col)
         {
-            Vector3 botLeftPoint = transform.position - new Vector3(GetWidth() * 0.5f, 0, GetDepth() * 0.5f);
+            Vector3 localBotLeft = -ForwardVector * GetDepth() * 0.5f - RightVector * GetWidth() * 0.5f;
+            Vector3 botLeftPoint = transform.TransformPoint(localBotLeft);
             Vector3 diff = pointOnGrid - botLeftPoint;
-
-            float horDist = Kuantech.Utils.Helpers.DotProjection(diff, transform.right);
-            float depthDist = Kuantech.Utils.Helpers.DotProjection(diff, transform.forward);
-
+            Debug.LogError("Point On Grid:"+pointOnGrid);
+            Vector3 localDiff = transform.InverseTransformDirection(diff);
+            float horDist = Kuantech.Utils.Helpers.DotProjection(localDiff, RightVector);
+            float depthDist = Kuantech.Utils.Helpers.DotProjection(localDiff, ForwardVector);
+            Debug.LogError("Hor Dist:"+horDist);
+            Debug.LogError("Depth Dist:"+depthDist);
             col = Mathf.FloorToInt(horDist / CellWidth);
             row = Mathf.FloorToInt(depthDist / CellHeight);
         }
@@ -258,9 +265,10 @@ namespace Kuantech.Puzzle
 
         public Vector3 GetPointOnPlane(Ray ray)
         {
-            float groundY = transform.position.y;
+            //todo: Fix this to comply with rotated boards
             float rayDistance;
-            Plane groundPlane = new Plane(Vector3.up, new Vector3(transform.position.x, groundY, transform.position.z));
+            Vector3 groundPlaneNormal = Vector3.Cross(transform.rotation * ForwardVector, transform.rotation * RightVector).normalized;
+            Plane groundPlane = new Plane(groundPlaneNormal, transform.position);
             if (groundPlane.Raycast(ray, out rayDistance))
             {
                 return ray.GetPoint(rayDistance);
@@ -275,9 +283,9 @@ namespace Kuantech.Puzzle
         /// <returns></returns>
         public Vector3 GetLocalPosition(int row, int col)
         {
-            return new Vector3(col * CellWidth - CellWidth * ColumnCount * 0.5f + CellWidth * 0.5f,
-                                0,
-                                row * CellHeight - CellHeight * RowCount * 0.5f + CellHeight * 0.5f);
+            Vector3 horizontalPosition = RightVector * (col * CellWidth - CellWidth * ColumnCount * 0.5f + CellWidth * 0.5f);
+            Vector3 depthPosition = ForwardVector * (row * CellHeight - CellHeight * RowCount * 0.5f + CellHeight * 0.5f);
+            return horizontalPosition + depthPosition;
         }
 
         public Vector3 GetGlobalPosition(int row, int col)
