@@ -51,6 +51,7 @@ namespace Kuantech.Puzzle.MatchThree.UI
 
         public void ResetWinConditionPanel()
         {
+            if(_elementToIndicator == null) return;
             foreach(var pair in _elementToIndicator)
             {
                 _currentMatchThreeLevel.GetRequiredCount(pair.Key);

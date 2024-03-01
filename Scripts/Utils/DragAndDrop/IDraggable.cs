@@ -6,5 +6,8 @@
         bool DragStart();
         void Drag(UnityEngine.Vector3 cursorPosition);
         void DragEnd();
+
+        void OnClickDown(){}
+        void OnClickUp(){}
     }
 }

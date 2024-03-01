@@ -127,6 +127,12 @@ namespace Kuantech.Puzzle
             return existingTile;
         }
 
+        public void UnsetTile(GridTile tile)
+        {
+            UnsetTile(tile.Row, tile.Column);
+            Destroy(tile.gameObject);
+        }
+        
         /// <summary>
         /// Gets the tile at given row col
         /// </summary>
@@ -136,6 +142,11 @@ namespace Kuantech.Puzzle
         public GridTile GetTile(int row, int col)
         {
             if (!IsCoordinateValid(row, col)) return null;
+            if(Tiles == null)
+            {
+                Debug.LogError("Null");
+                return null;
+            }
             if(Tiles[row,col] != null && (Tiles[row,col].Row != row || Tiles[row,col].Column != col))
             {
                 Debug.LogError("WE HAVE ROW COL MISMATCH!");
@@ -212,12 +223,9 @@ namespace Kuantech.Puzzle
             Vector3 localBotLeft = -ForwardVector * GetDepth() * 0.5f - RightVector * GetWidth() * 0.5f;
             Vector3 botLeftPoint = transform.TransformPoint(localBotLeft);
             Vector3 diff = pointOnGrid - botLeftPoint;
-            Debug.LogError("Point On Grid:"+pointOnGrid);
             Vector3 localDiff = transform.InverseTransformDirection(diff);
             float horDist = Kuantech.Utils.Helpers.DotProjection(localDiff, RightVector);
             float depthDist = Kuantech.Utils.Helpers.DotProjection(localDiff, ForwardVector);
-            Debug.LogError("Hor Dist:"+horDist);
-            Debug.LogError("Depth Dist:"+depthDist);
             col = Mathf.FloorToInt(horDist / CellWidth);
             row = Mathf.FloorToInt(depthDist / CellHeight);
         }

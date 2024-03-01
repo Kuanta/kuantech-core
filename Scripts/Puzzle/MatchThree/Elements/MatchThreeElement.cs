@@ -1,17 +1,15 @@
 using System;
-using Kuantech.Core;
 using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Puzzle.MatchThree
 {
-    public class MatchThreeElement : GridTile
+    public class MatchThreeElement : GridTile, IDraggable
     {
         public MatchThreeElementData CurrentData;
 
         [Header("Components")]
         public WaypointFollower WaypointFollower;
-        public GameObject CurrentVisual;
 
         [Header("State")]
         [Tooltip("Non movable tiles are counted as obstacles")]
@@ -53,15 +51,8 @@ namespace Kuantech.Puzzle.MatchThree
         public virtual void SetElementData(MatchThreeElementData data)
         {
             CurrentData = data;
-            if(CurrentData == null || CurrentData.VisualPrefab == null) return;
-            if (CurrentVisual != null)
-            {
-                GameManager.Instance.Pool.PoolObject(CurrentVisual.gameObject);
-            }
-            CurrentVisual = GameManager.Instance.Pool.GetObject(CurrentData.VisualPrefab.gameObject);
-            CurrentVisual.transform.SetParent(transform);
-            CurrentVisual.transform.localPosition = Vector3.zero;
-            CurrentVisual.transform.localRotation = Quaternion.identity;
+            if(CurrentData.VisualPrefab == null) return;
+            SetVisual(CurrentData.VisualPrefab);
         }
 
         /// <summary>
@@ -94,35 +85,7 @@ namespace Kuantech.Puzzle.MatchThree
         private Vector3 _releasePoint;
         private bool _mousePressed = false;
 
-        private void OnMouseDown()
-        {
-            if(Kuantech.Utils.Helpers.IsCursorOnUI()) return;
-            if (!_canBeMoved) return;
-            _mousePressed = true;
-            _firstTouchPoint = GetMainCameraPos();
-        }
-
-        private void OnMouseUp()
-        {
-            if (!_mousePressed) return;
-            _mousePressed = false;
-            _releasePoint = GetMainCameraPos();
-            if (Kuantech.Utils.Helpers.IsCursorOnUI()) return;
-            //Is this tap?
-            if ((_releasePoint - _firstTouchPoint).sqrMagnitude <= TapDistanceThresh)
-            {
-                OnTap();
-                return;
-            }
-            if (!_canBeMoved) return;
-            //Movement Angle
-            float angle = Mathf.Atan2(_releasePoint.y - _firstTouchPoint.y, _releasePoint.x - _firstTouchPoint.x);
-            angle = angle * 180.0f / Mathf.PI;
-            if(Vector3.SqrMagnitude(_releasePoint - _firstTouchPoint) > .25f)
-            {
-                CheckMovement(angle);
-            }
-        }
+        
 
         protected virtual void OnTap()
         {
@@ -215,10 +178,10 @@ namespace Kuantech.Puzzle.MatchThree
         }
         #endregion
 
-        public bool IsSameType(MatchThreeElement element)
+        public virtual bool IsSameType(MatchThreeElement element)
         {
             if(element == null || CurrentData == null || element.CurrentData == null) return false;
-            return CurrentData.IsSameType(element.CurrentData);
+            return  CurrentData.IsSameType(element.CurrentData);
         }
 
         public void Despawn()
@@ -231,5 +194,66 @@ namespace Kuantech.Puzzle.MatchThree
             }
             Destroy(gameObject);
         }
+
+        #region Click
+        public bool CanBeDragged()
+        {
+            return false;
+        }
+
+        public bool DragStart()
+        {
+            return false;
+        }
+
+        public void Drag(Vector3 cursorPosition)
+        {
+            return;
+        }
+
+        public void DragEnd()
+        {
+            return;
+        }
+
+        public void OnClickDown()
+        {
+            if (Kuantech.Utils.Helpers.IsCursorOnUI()) return;
+            if (!_canBeMoved) return;
+            _mousePressed = true;
+            _firstTouchPoint = GetMainCameraPos();
+        }
+
+        public void OnClickUp()
+        {
+            if (!_mousePressed) return;
+            _mousePressed = false;
+            _releasePoint = GetMainCameraPos();
+            if (Kuantech.Utils.Helpers.IsCursorOnUI()) return;
+            //Is this tap?
+            if ((_releasePoint - _firstTouchPoint).sqrMagnitude <= TapDistanceThresh)
+            {
+                OnTap();
+                return;
+            }
+            if (!_canBeMoved) return;
+            //Movement Angle
+            float angle = Mathf.Atan2(_releasePoint.y - _firstTouchPoint.y, _releasePoint.x - _firstTouchPoint.x);
+            angle = angle * 180.0f / Mathf.PI;
+            if (Vector3.SqrMagnitude(_releasePoint - _firstTouchPoint) > .25f)
+            {
+                CheckMovement(angle);
+            }
+        }
+        private void OnMouseDown()
+        {
+
+        }
+
+        private void OnMouseUp()
+        {
+            
+        }
+        #endregion
     }
 }

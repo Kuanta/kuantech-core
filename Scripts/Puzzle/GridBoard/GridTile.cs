@@ -13,7 +13,8 @@ namespace Kuantech.Puzzle
     public class GridTile : MonoBehaviour {
         [NonSerialized] public GridBoard ParentBoard;
         public int Row;
-        public int Column; 
+        public int Column;
+        public GameObject CurrentVisual;
 
         /// <summary>
         /// Called when spawned from the grid board
@@ -32,5 +33,18 @@ namespace Kuantech.Puzzle
         {
             transform.localPosition = localPosition;
         }
+
+        public virtual void SetVisual(GameObject visual)
+        {
+            if(CurrentVisual != null)
+            {
+                Destroy(CurrentVisual);
+            }
+            CurrentVisual = Instantiate(visual);
+            CurrentVisual.transform.SetParent(transform);
+            CurrentVisual.transform.localPosition = Vector3.zero;
+            CurrentVisual.transform.localRotation = Quaternion.identity;
+        }
+
     }
 }

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Kuantech.Core.FX;
+using Kuantech.Core.Utils;
 using Kuantech.Utils;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -12,7 +13,7 @@ namespace Kuantech.Puzzle.MatchThree
     public class MatchThreeBoard : GridBoard {
         
         [Header("Available Elements")]
-        public List<MatchThreeElementData> ElementDatas;
+        public WeightedProbabilityArray<MatchThreeElementData> ElementDatas;
 
         public float ElementMovementDuration = 0.2f;
         public float TileSpeed = 5.0f;
@@ -72,7 +73,7 @@ namespace Kuantech.Puzzle.MatchThree
                     Vector3 pos = GetLocalPosition(r, c);
                     MatchThreeElement existingElement = GetMatchThreeElement(r,c);
                     bool placeBackground = existingElement == null || existingElement.CanBeMoved()|| !existingElement.Indestructible || existingElement.Interactable;
-                    if (setBackgroundTiles && placeBackground)
+                    if (setBackgroundTiles && placeBackground && BgTilePrefab != null)
                     {
                         GameObject tileBg = Instantiate(BgTilePrefab);
                         tileBg.transform.SetParent(transform);
@@ -125,7 +126,7 @@ namespace Kuantech.Puzzle.MatchThree
         /// <returns></returns>
         protected virtual MatchThreeElement SpawnRandomElement(int row, int col)
         {
-            return SpawnElementByData(ElementDatas.GetRandomElement(), row, col);
+            return SpawnElementByData(ElementDatas.Sample(), row, col);
         }
 
         /// <summary>
@@ -165,7 +166,7 @@ namespace Kuantech.Puzzle.MatchThree
         /// <returns></returns>
         protected virtual MatchThreeElement CreateRandomElement()
         {
-            MatchThreeElementData elementType = ElementDatas.GetRandomElement();
+            MatchThreeElementData elementType = ElementDatas.Sample();
             return CreateMatchThreeElement(elementType);
         }
 
@@ -183,12 +184,12 @@ namespace Kuantech.Puzzle.MatchThree
 
         protected virtual void ChangeTileType(MatchThreeElement tile)
         {
-            ElementDatas.Shuffle();
-            for(int i=0;i<ElementDatas.Count;++i)
+            ElementDatas.Elements.Shuffle();
+            for(int i=0;i<ElementDatas.Elements.Count;++i)
             {
-                if(!tile.CurrentData.IsSameType(ElementDatas[i]))
+                if(!tile.CurrentData.IsSameType(ElementDatas.Elements[i].Element))
                 {
-                    tile.SetElementData(ElementDatas[i]);
+                    tile.SetElementData(ElementDatas.Elements[i].Element);
                     return;
                 }
             } 
