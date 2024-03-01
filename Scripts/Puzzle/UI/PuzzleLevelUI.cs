@@ -30,8 +30,8 @@ namespace Kuantech.Puzzle.UI
         }
         public void Initialize()
         {
-            CompletePanel.Initialize(this);
-            FailedPanel.Initialize(this);
+            if(CompletePanel != null) CompletePanel.Initialize(this);
+            if(FailedPanel != null) FailedPanel.Initialize(this);
             Reset();
         }
 
@@ -67,7 +67,7 @@ namespace Kuantech.Puzzle.UI
         private IEnumerator _OpenCompletePanel()
         {
             yield return new WaitForSeconds(CompletePanelShowDelay);
-            CompletePanel.Show();
+            if(CompletePanel != null) CompletePanel.Show();
         }
         public void OpenFailedPanel()
         {
@@ -80,8 +80,8 @@ namespace Kuantech.Puzzle.UI
         }
         public virtual void Reset()
         {
-            CompletePanel.Close();
-            FailedPanel.Close();
+            if(CompletePanel != null) CompletePanel.Close();
+            if(FailedPanel != null) FailedPanel.Close();
         }
     }
 }
