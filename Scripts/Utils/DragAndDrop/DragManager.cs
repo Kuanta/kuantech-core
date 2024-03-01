@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using Kuantech.Core;
-using Kuantech.Core.HyperCasual;
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.EventSystems;
 
 
 namespace Kuantech.Utils
@@ -68,7 +66,7 @@ namespace Kuantech.Utils
         public float DragStartTime = 0f; //A single touch should persist at least this amount
         public float DragRemainErrorThreshold = 1f;
         
-        [Header("Follo Object")]
+        [Header("Follow Object")]
         public GameObject FollowObject; //If we have a gameobject that follows cursor smoothly, we can use this to get world position
         //Events
         public EventHandler<IDraggable> OnDragStart;
@@ -79,6 +77,7 @@ namespace Kuantech.Utils
         protected bool _startedClick;
         protected bool _dragging = false;
         
+
         private void Update()
         {
             if (Input.GetMouseButtonDown(0))
@@ -173,6 +172,10 @@ namespace Kuantech.Utils
 
         protected virtual void OnCursorUp()
         {
+            if (_draggedInterface != null)
+            {
+                _draggedInterface.OnClickUp();
+            }
             if (draggedObject != null && _draggedInterface != null)
             {
                 OnDragEnd?.Invoke(this, _draggedInterface);
@@ -189,6 +192,10 @@ namespace Kuantech.Utils
         {
             // Check if the hit object implements the IDraggable interface
             _draggedInterface = hit.collider.transform.gameObject.GetComponent<IDraggable>();
+            if(_draggedInterface != null)
+            {
+                _draggedInterface.OnClickDown();
+            }
             if (_draggedInterface != null && _draggedInterface.DragStart())
             {
                 draggedObject = hit.collider.transform;
