@@ -76,6 +76,7 @@ namespace Kuantech.Puzzle
             GridTile tile = Instantiate(existingTileInfo.Prefab).GetComponent<GridTile>();
             SetTile(tile, existingTileInfo.Row, existingTileInfo.Column);
             tile.Spawn();
+            tile.OnCreateExisting();
             return tile;
         }
         #region Move
@@ -89,7 +90,6 @@ namespace Kuantech.Puzzle
             gridTile.transform.localPosition = GetLocalPosition(row, col);
             return true;
         }
-
         #endregion
 
         #region Query Methods

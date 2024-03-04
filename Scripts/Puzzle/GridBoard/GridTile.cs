@@ -15,6 +15,7 @@ namespace Kuantech.Puzzle
         public int Row;
         public int Column;
         public GameObject CurrentVisual;
+        public bool LockVisual = false;
 
         /// <summary>
         /// Called when spawned from the grid board
@@ -36,6 +37,7 @@ namespace Kuantech.Puzzle
 
         public virtual void SetVisual(GameObject visual)
         {
+            if(CurrentVisual != null && LockVisual) return;
             if(CurrentVisual != null)
             {
                 Destroy(CurrentVisual);
@@ -46,5 +48,12 @@ namespace Kuantech.Puzzle
             CurrentVisual.transform.localRotation = Quaternion.identity;
         }
 
+        /// <summary>
+        /// This is called for tiles that exists on the board
+        /// </summary>
+        public virtual void OnCreateExisting()
+        {
+
+        }
     }
 }

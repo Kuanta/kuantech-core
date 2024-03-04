@@ -51,7 +51,7 @@ namespace Kuantech.Puzzle.MatchThree
         public virtual void SetElementData(MatchThreeElementData data)
         {
             CurrentData = data;
-            if(CurrentData.VisualPrefab == null) return;
+            if(CurrentData == null || CurrentData.VisualPrefab == null) return;
             SetVisual(CurrentData.VisualPrefab);
         }
 
@@ -184,7 +184,13 @@ namespace Kuantech.Puzzle.MatchThree
             return  CurrentData.IsSameType(element.CurrentData);
         }
 
-        public void Despawn()
+        public virtual void Despawn()
+        {
+            PlayDespawnEffect();
+            Destroy(gameObject);
+        }
+
+        public virtual void PlayDespawnEffect()
         {
             //todo: Play destroy effect 
             if(CurrentData != null && CurrentData.EffectPlayer != null)
@@ -192,7 +198,6 @@ namespace Kuantech.Puzzle.MatchThree
                 CurrentData.EffectPlayer.PlayEffectAtPosition(ParentBoard.GetGlobalPosition(Row, Column), 
                 Quaternion.identity);
             }
-            Destroy(gameObject);
         }
 
         #region Click
