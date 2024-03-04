@@ -47,13 +47,14 @@ namespace Kuantech.Core.FX
             if(AudioLibrary != null) AudioLibrary.Initialize();
         }
         
-        public static void PlayEffect(string EffectId, EffectPlaySettings settings)
+        public static Effect PlayEffect(string EffectId, EffectPlaySettings settings)
         {
             EffectsLibrary context = GetContext<EffectsLibrary>();
-            if(context == null) return;
+            if(context == null) return null;
             Effect effect = context.GetEffectById(EffectId);
-            if(effect == null) return;
+            if(effect == null) return null;
             effect.Play(settings);
+            return effect;
         }
 
         public static void PlayEffect(Effect effectPrefab, EffectPlaySettings settings)

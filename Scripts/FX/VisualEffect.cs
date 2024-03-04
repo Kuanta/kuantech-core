@@ -29,5 +29,16 @@ namespace Kuantech.Core.FX
         {
             return ParticleEffect.main.duration;
         }
+
+        public virtual void SetColor(Color color)
+        {
+            ParticleSystem[] particleSystems = GetComponentsInChildren<ParticleSystem>();
+            foreach(var particle in particleSystems)
+            {
+                var mainModule = particle.main;
+                mainModule.startColor = color;
+            }
+           
+        }
     }
 }

@@ -73,13 +73,13 @@ namespace Kuantech.Core.FX
             {
                 _lastPlayedTimes = new Dictionary<string, float>();
             }
-            string clipName = sound.AudioSource.clip.name;
+            string clipName = sound.AudioId;
             float lastPlayedTime;
             if(!_lastPlayedTimes.ContainsKey(clipName))
             {
                 lastPlayedTime = 0;
             }else{
-                lastPlayedTime = _lastPlayedTimes[sound.AudioSource.clip.name];
+                lastPlayedTime = _lastPlayedTimes[sound.AudioId];
 
             }
             float elapsedTime = Time.time - lastPlayedTime;

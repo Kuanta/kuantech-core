@@ -9,6 +9,7 @@ namespace Kuantech.Core.FX
     [Serializable]
     public class Sound : MonoBehaviour
     {
+        public string AudioId;
         [KTTag("AudioTag")]
         public int AudioTag;
 
