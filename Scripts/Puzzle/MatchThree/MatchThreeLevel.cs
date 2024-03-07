@@ -72,7 +72,6 @@ namespace Kuantech.Puzzle.MatchThree
         public void OnMove()
         {
            ReduceRemainingMoveCount();
-           _matchThreeLevelUI.SetRemainingMoves(CurrentMoveCount);
         }
 
         /// <summary>
@@ -84,7 +83,7 @@ namespace Kuantech.Puzzle.MatchThree
             return MaxMoveCount;
         }
 
-        protected void ReduceRemainingMoveCount()
+        public void ReduceRemainingMoveCount()
         {
             if (CheckForWinCondition()) return;
             CurrentMoveCount--;
@@ -94,8 +93,9 @@ namespace Kuantech.Puzzle.MatchThree
                 Debug.LogError("Fail level");
                 FailLevel();
             }
+            _matchThreeLevelUI.SetRemainingMoves(CurrentMoveCount);
         }
-        
+
         /// <summary>
         /// Adds collected amounts
         /// </summary>

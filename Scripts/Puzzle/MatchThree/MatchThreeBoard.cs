@@ -70,15 +70,11 @@ namespace Kuantech.Puzzle.MatchThree
             {
                 for (int c = 0; c < ColumnCount; ++c)
                 {
-                    Vector3 pos = GetLocalPosition(r, c);
                     MatchThreeElement existingElement = GetMatchThreeElement(r,c);
                     bool placeBackground = existingElement == null || existingElement.CanBeMoved()|| !existingElement.Indestructible || existingElement.Interactable;
                     if (setBackgroundTiles && placeBackground && BgTilePrefab != null)
                     {
-                        GameObject tileBg = Instantiate(BgTilePrefab);
-                        tileBg.transform.SetParent(transform);
-                        tileBg.transform.localPosition = pos;
-                        tileBg.name = $"BGTile_{r}_{c}";
+                        CreateBackgroundTile(r, c);
                     }
 
                     if (IsTileOccupied(r, c))
@@ -95,6 +91,20 @@ namespace Kuantech.Puzzle.MatchThree
                     PreventMatchesForTile(tile);
                 }
             }
+        }
+
+        public virtual GameObject CreateBackgroundTile(int row, int col)
+        {
+            Vector3 pos = GetLocalPosition(row, col);
+            GameObject tileBg = Instantiate(BgTilePrefab);
+            tileBg.transform.SetParent(transform);
+            tileBg.transform.localPosition = pos;
+            tileBg.name = $"BGTile_{row}_{col}";
+            if(tileBg.TryGetComponent(out GridBoardBackground gridBg))
+            {
+                gridBg.SetBackground(row, col);
+            }
+            return tileBg;
         }
 
         /// <summary>

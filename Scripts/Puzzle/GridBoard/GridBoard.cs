@@ -188,6 +188,7 @@ namespace Kuantech.Puzzle
                     {
                         emptyTileCoords.x = r;
                         emptyTileCoords.y = c;
+                        return emptyTileCoords;
                     }
                 }
             }
