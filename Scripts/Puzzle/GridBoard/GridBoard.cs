@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Kuantech.Core.FX;
 using Sirenix.OdinInspector;
 using UnityEditor;
@@ -127,6 +128,13 @@ namespace Kuantech.Puzzle
             return existingTile;
         }
 
+        public void UnsetTiles(List<GridTile> tiles)
+        {
+            foreach(var tile in tiles)
+            {
+                UnsetTile(tile);
+            }
+        }
         public void UnsetTile(GridTile tile)
         {
             UnsetTile(tile.Row, tile.Column);
@@ -193,6 +201,27 @@ namespace Kuantech.Puzzle
                 }
             }
             return emptyTileCoords;
+        }
+
+        /// <summary>
+        /// Gets a list of empty row columns
+        /// </summary>
+        /// <returns></returns>
+        public List<Vector2Int> GetEmptyTiles()
+        {
+            List<Vector2Int> emptyTiles = new List<Vector2Int>();
+            for (int r = 0; r < RowCount; ++r)
+            {
+                for (int c = 0; c < ColumnCount; ++c)
+                {
+                    if (IsTileOccupied(r,c))
+                    {
+                        continue;
+                    }
+                    emptyTiles.Add(new Vector2Int(r,c));
+                }
+            }
+            return emptyTiles;
         }
         #endregion
 

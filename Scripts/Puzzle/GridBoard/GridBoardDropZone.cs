@@ -7,6 +7,8 @@ namespace Kuantech.Puzzle
     public class GridBoardDropZone : MonoBehaviour, IDropZone
     {
         public GridBoard GridBoard;
+        public delegate bool HandleDroppedTileHandler(GridTile tile, int row, int col);
+        public HandleDroppedTileHandler DroppedTileHandler;
         private void Start()
         {
             if(GridBoard == null)
@@ -37,6 +39,10 @@ namespace Kuantech.Puzzle
 
         public virtual bool HandleDroppedTile(GridTile tile, int row, int col)
         {
+            if(DroppedTileHandler != null)
+            {
+                return DroppedTileHandler(tile, row, col);
+            }
             return GridBoard.MoveTile(tile, row, col);
         }
 

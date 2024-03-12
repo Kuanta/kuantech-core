@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Kuantech.Core;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -17,6 +18,9 @@ namespace Kuantech.Utils
 
         protected IDropZone CurrentDropZone;
         
+        //Events
+        public Action OnDrop;
+
         public virtual bool DragStart()
         {
             if (!CanBeDragged()) return false;
@@ -69,6 +73,9 @@ namespace Kuantech.Utils
             if(!LandedOnDropZone(DropZone))
             {
                 ReturnToPreviousPosition();
+            }else{
+                //Dropped
+                OnDrop?.Invoke();
             }
         }
         

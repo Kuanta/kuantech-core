@@ -350,6 +350,11 @@ namespace Kuantech.Utils
                 GameObject.Destroy(transform.GetChild(i).gameObject);
             }
         }
+        
+        public static void AttachChild(this GameObject gameObject, Transform child)
+        {
+            child.gameObject.AttachToParent(gameObject.transform);
+        }
 
         public static void AttachToParent(this GameObject gameObject, Transform parent)
         {
