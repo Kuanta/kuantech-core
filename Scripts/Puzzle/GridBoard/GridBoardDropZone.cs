@@ -7,7 +7,7 @@ namespace Kuantech.Puzzle
     public class GridBoardDropZone : MonoBehaviour, IDropZone
     {
         public GridBoard GridBoard;
-        public delegate bool HandleDroppedTileHandler(GridTile tile, int row, int col);
+        public delegate bool HandleDroppedTileHandler(GridTileDraggable draggableTile, int row, int col);
         public HandleDroppedTileHandler DroppedTileHandler;
         private void Start()
         {
@@ -26,7 +26,7 @@ namespace Kuantech.Puzzle
         {
             if(GridBoard == null) return false;
             GridTileDraggable gridTileDraggable = draggable as GridTileDraggable;
-            if(gridTileDraggable == null || gridTileDraggable.GridTile == null) return false;
+            if(gridTileDraggable == null || gridTileDraggable.AnchorGridTile == null) return false;
             Camera mainCamera = DragManager.GetContext<DragManager>().MainCamera;
             Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition); //todo: 
             
@@ -34,17 +34,23 @@ namespace Kuantech.Puzzle
             int row, col;
             GridBoard.GetRowColFromPointOnBoard(positionOnBoard, out row, out col);
             
-            return HandleDroppedTile(gridTileDraggable.GridTile, row, col);
+            return HandleDroppedTile(gridTileDraggable, row, col);
         }
 
-        public virtual bool HandleDroppedTile(GridTile tile, int row, int col)
+        public virtual bool HandleDroppedTile(GridTileDraggable draggableTile, int row, int col)
         {
+            //GridTile tile = draggableTile.AnchorGridTile;
             if(DroppedTileHandler != null)
             {
-                return DroppedTileHandler(tile, row, col);
+                return DroppedTileHandler(draggableTile, row, col);
             }
-            return GridBoard.MoveTile(tile, row, col);
+            return GridBoard.MoveTile(draggableTile.AnchorGridTile, row, col);
+           
         }
 
+        public bool CanTileDropped(GridTileDraggable draggableTile, int row, int col)
+        {
+            return true;
+        }
     }
 }
