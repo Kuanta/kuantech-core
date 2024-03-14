@@ -81,14 +81,13 @@ namespace Kuantech.Puzzle
             return tile;
         }
         #region Move
-        public virtual bool MoveTile(GridTile gridTile, int row, int col)
+        public virtual bool MoveTile(GridTile gridTile, int row, int col, bool setPosition = true)
         {
             if(!IsCoordinateValid(row, col)) return false;
 
             if(IsTileOccupied(row, col)) return false;
-            Tiles[gridTile.Row, gridTile.Column] = null;
-            SetTile(gridTile, row, col);
-            gridTile.transform.localPosition = GetLocalPosition(row, col);
+            Tiles[row, col] = null;
+            SetTile(gridTile, row, col, setPosition);
             return true;
         }
         #endregion
@@ -137,6 +136,7 @@ namespace Kuantech.Puzzle
         }
         public void UnsetTile(GridTile tile)
         {
+            Debug.LogError($"Unsetting piece at {tile.Row} - {tile.Column}");
             UnsetTile(tile.Row, tile.Column);
             Destroy(tile.gameObject);
         }
@@ -168,6 +168,10 @@ namespace Kuantech.Puzzle
             return Tiles[row, col] != null;
         }
 
+        public bool IsTileValidAndEmpty(int row, int col)
+        {
+            return !IsTileOccupied(row, col) && IsCoordinateValid(row, col);
+        }
         public int GetEmptyTileCount()
         {
             int emptyCount = 0;
