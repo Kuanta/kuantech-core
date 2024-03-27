@@ -65,7 +65,6 @@ namespace Kuantech.Utils
         public float MaxTapTime = 0.25f; //Taps should be quicker than this
         public float DragStartTime = 0f; //A single touch should persist at least this amount
         public float DragRemainErrorThreshold = 1f;
-        
         [Header("Follow Object")]
         public GameObject FollowObject; //If we have a gameobject that follows cursor smoothly, we can use this to get world position
         //Events
@@ -86,7 +85,7 @@ namespace Kuantech.Utils
                 _dragging = false;
                 if (Utils.Helpers.IsCursorOnUI()) return;
                 _startedClick = true;
-                _startPosition = Input.mousePosition;
+                _startPosition = GetCursorPosition();
                 _startTime = Time.time;
                 CheckWorld();
             }
@@ -99,7 +98,7 @@ namespace Kuantech.Utils
                 {
                     return;
                 }
-                Vector3 mousePosition = Input.mousePosition;
+                Vector3 mousePosition = GetCursorPosition();
                 if (Time.time - _startTime < DragStartTime)
                 {
                     //Check if the finger is moved
@@ -125,13 +124,17 @@ namespace Kuantech.Utils
             }
         }
 
+        private Vector3 GetCursorPosition()
+        {
+            return Input.mousePosition;
+        }
         public Vector3 GetMouseWorldPosition()
         {
             if(FollowObject != null)
             {
                 return FollowObject.transform.position;
             }
-            Vector3 mousePosition = Input.mousePosition;
+            Vector3 mousePosition = GetCursorPosition();
             mousePosition.z = _dragCameraDistance;
             return MainCamera.ScreenToWorldPoint(mousePosition);
         }
@@ -151,7 +154,7 @@ namespace Kuantech.Utils
         /// <returns></returns>
         protected bool IsPointerClick()
         {
-            Vector3 mousePosition = Input.mousePosition;
+            Vector3 mousePosition = GetCursorPosition();
 
             if (mousePosition == _startPosition && Time.time - _startTime < MaxTapTime)
             {
@@ -162,7 +165,7 @@ namespace Kuantech.Utils
         protected virtual void CheckWorld()
         {
 
-            Ray ray = MainCamera.ScreenPointToRay(Input.mousePosition);
+            Ray ray = MainCamera.ScreenPointToRay(GetCursorPosition());
             RaycastHit hit;
             if (UnityEngine.Physics.Raycast(ray, out hit, RaycastLength, DraggableLayer.value))
             {
@@ -224,7 +227,7 @@ namespace Kuantech.Utils
         private bool CheckGround(out Vector3 targetPosition)
         {
             RaycastHit hit;
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            Ray ray = Camera.main.ScreenPointToRay(GetCursorPosition());
             targetPosition = Vector3.zero;
             if (UnityEngine.Physics.Raycast(ray, out hit, Mathf.Infinity, GroundLayer))
             {

@@ -1,4 +1,6 @@
-﻿namespace Kuantech.Utils
+﻿using UnityEngine;
+
+namespace Kuantech.Utils
 {
     public interface IDraggable
     {
@@ -9,5 +11,9 @@
 
         void OnClickDown(){}
         void OnClickUp(){}
+        
+        virtual Vector3 GetCursorPosition(){
+            return Input.mousePosition;
+        }
     }
 }

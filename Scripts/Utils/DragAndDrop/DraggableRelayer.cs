@@ -11,7 +11,7 @@ namespace Kuantech.Utils
         public Draggable Draggable;
         public bool CanBeDragged()
         {
-            return Draggable.CanBeDragged();
+            return Draggable != null && Draggable.CanBeDragged();
         }
 
         public void Drag(Vector3 cursorPosition)
@@ -21,11 +21,13 @@ namespace Kuantech.Utils
 
         public void DragEnd()
         {
+            if(Draggable == null) return;
             Draggable.DragEnd();
         }
 
         public bool DragStart()
         {
+            if(!CanBeDragged()) return false;
             return Draggable.DragStart();
         }
     }
