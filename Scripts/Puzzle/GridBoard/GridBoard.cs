@@ -17,6 +17,11 @@ namespace Kuantech.Puzzle
 
     public class GridBoard : MonoBehaviour
     {
+        public enum DirectionTypes : uint
+        {
+            Top = 0, Right = 1, Bottom = 2, Left = 3, TopLeft = 4, TopRight = 5, BottomLeft = 6, BottomRight = 7, Invalid
+        }
+
         [Header("Board Size")]
         public int RowCount = 5;
         public int ColumnCount = 5;
@@ -74,7 +79,8 @@ namespace Kuantech.Puzzle
 
         public virtual GridTile CreateExistingTile(GridBoardEditorTile existingTileInfo)
         {
-            GridTile tile = Instantiate(existingTileInfo.Prefab).GetComponent<GridTile>();
+            GridTile tile = Instantiate(existingTileInfo.EditorObject).GetComponent<GridTile>();
+            tile.gameObject.SetActive(true);
             SetTile(tile, existingTileInfo.Row, existingTileInfo.Column);
             tile.Spawn();
             tile.OnCreateExisting();
@@ -111,6 +117,7 @@ namespace Kuantech.Puzzle
                 gridTile.transform.SetParent(transform);
                 gridTile.SetLocalPosition(GetLocalPosition(row, col));
                 gridTile.transform.localRotation = Quaternion.identity;
+                gridTile.transform.localScale = Vector3.one;
             }
         }
 
@@ -136,8 +143,8 @@ namespace Kuantech.Puzzle
         }
         public void UnsetTile(GridTile tile)
         {
-            Debug.LogError($"Unsetting piece at {tile.Row} - {tile.Column}");
             UnsetTile(tile.Row, tile.Column);
+            tile.OnDespawn();
             Destroy(tile.gameObject);
         }
         

@@ -10,8 +10,9 @@ namespace Kuantech.Puzzle
         public void DestroyEditorGameobject()
         {
             if(EditorObject == null) return;
-            Destroy(EditorObject);
-            EditorObject = null;
+            // Destroy(EditorObject);
+            // EditorObject = null;
+            EditorObject.SetActive(false);
         }
     }
 }

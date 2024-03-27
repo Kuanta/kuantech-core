@@ -55,5 +55,10 @@ namespace Kuantech.Puzzle
         {
 
         }
+
+        public virtual void OnDespawn()
+        {
+
+        }
     }
 }

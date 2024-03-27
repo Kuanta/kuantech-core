@@ -15,7 +15,6 @@ namespace Kuantech.Puzzle
             {
                 GridBoard = GetComponent<GridBoard>();
             }
-
         }
 
         public void ClearSlot(int row, int col)
@@ -28,7 +27,7 @@ namespace Kuantech.Puzzle
             GridTileDraggable gridTileDraggable = draggable as GridTileDraggable;
             if(gridTileDraggable == null || gridTileDraggable.AnchorGridTile == null) return false;
             Camera mainCamera = DragManager.GetContext<DragManager>().MainCamera;
-            Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition); //todo: 
+            Ray ray = mainCamera.ScreenPointToRay(draggable.GetCursorPosition()); //todo: 
             
             Vector3 positionOnBoard = GridBoard.GetPointOnPlane(ray);
             int row, col;

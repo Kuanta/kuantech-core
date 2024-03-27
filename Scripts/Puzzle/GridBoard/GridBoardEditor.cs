@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Sirenix.OdinInspector;
 using UnityEditor;
 using UnityEngine;
 
@@ -200,6 +201,24 @@ namespace Kuantech.Puzzle
             }
 
             foreach(var tile in tilesToDelete)
+            {
+                EditorTiles.Remove(tile);
+            }
+            UpdateEditorTiles();
+            EditorUtility.SetDirty(this);
+        }
+
+        public void DeleteAllTiles()
+        {
+            HashSet<GridBoardEditorTile> tilesToDelete = new HashSet<GridBoardEditorTile>();
+            for (int i = 0; i < EditorTiles.Count; ++i)
+            {
+                GridBoardEditorTile tileInfo = EditorTiles[i];
+                if (tileInfo == null) continue;
+                tilesToDelete.Add(tileInfo);
+                DestroyImmediate(tileInfo.gameObject);
+            }
+            foreach (var tile in tilesToDelete)
             {
                 EditorTiles.Remove(tile);
             }

@@ -91,9 +91,9 @@ namespace Kuantech.Puzzle
             DropAreaGUI();
 
             GUILayout.BeginHorizontal();
-            if(GUILayout.Button("Update Editor Tiles"))
+            if(GUILayout.Button("Delete All Tiles"))
             {
-                _gridBoardEditor.UpdateEditorTiles();
+                _gridBoardEditor.DeleteAllTiles();
             }
             // if(GUILayout.Button("Clear Tile Library"))
             // {
@@ -209,7 +209,6 @@ namespace Kuantech.Puzzle
                             {
                                 _gridBoardEditor.CurrentlySelectedTile = prefab;
                                 // Handle the button click (e.g., set the active tile)
-                                Debug.LogError("Selected:"+prefab.name);
                             }
 
                             float labelHeight = 20f;
