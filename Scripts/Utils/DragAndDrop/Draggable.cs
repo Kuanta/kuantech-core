@@ -14,7 +14,8 @@ namespace Kuantech.Utils
         [SerializeField] protected IDropZone DropZone;
         [Tooltip("IF set to true, position will be set using the ground ray")]
         [SerializeField] private bool PositionWithGroundRay = false;
-        public Vector3 DragPositionOffset;
+        public Vector2 OffsetPercentages = Vector3.zero; 
+        [NonSerialized] public Vector3 DragPositionOffset;
 
         private Vector3 _positionBeforeDrag;
         private Transform _parentBeforeDrag;
@@ -24,6 +25,7 @@ namespace Kuantech.Utils
         //Events
         public Action OnDrop;
 
+      
         public virtual bool DragStart()
         {
             if (!CanBeDragged()) return false;
@@ -31,6 +33,9 @@ namespace Kuantech.Utils
             _parentBeforeDrag = transform.parent;
             transform.SetParent(null);
             transform.localScale = Vector3.one;
+
+            //Calculate offset
+            DragPositionOffset = new Vector3(Screen.width * OffsetPercentages.x, Screen.height * OffsetPercentages.y, 0);
             return true;
         }
         [Tooltip("If set to false, Draggable can't be dragged")]
@@ -38,9 +43,10 @@ namespace Kuantech.Utils
 
         [Header("Offset")]
         [SerializeField] private float OffsetDistance = 5f;
+        [SerializeField] private float SmoothDampTime = 0.1f;
         public virtual void Drag(Vector3 cursorPosition)
         {
-            cursorPosition += DragPositionOffset;
+            cursorPosition += GetDragPositionOffset();
             if(!CanBeDragged()) return;
             IDropZone newZone = CheckForDragBench();
             if(_receivedHitThisFrame && PositionWithGroundRay)
@@ -65,11 +71,12 @@ namespace Kuantech.Utils
                 return;
             }
         }
-
+        private Vector3 _dampSpeed;
         protected virtual void SetPosition(Vector3 position)
         {
-            transform.position = position;
+            transform.position = Vector3.SmoothDamp(transform.position, position, ref _dampSpeed, SmoothDampTime);
         }
+        
         public virtual void DragEnd()
         {
             if(DropZone == null || DropZone == CurrentDropZone || !DropZone.OnDrop(this)) 
@@ -110,7 +117,7 @@ namespace Kuantech.Utils
             {
                 // Set up the PointerEventData based on the current mouse position
                 PointerEventData pointerEventData = new PointerEventData(EventSystem.current);
-                pointerEventData.position = Input.mousePosition + DragPositionOffset;
+                pointerEventData.position = Input.mousePosition + GetDragPositionOffset();
 
                 // Create a list of Raycast Results
                 List<RaycastResult> results = new List<RaycastResult>();
@@ -128,7 +135,7 @@ namespace Kuantech.Utils
             }
             
             // Create a ray from the camera through the cursor position
-            Ray ray = dm.MainCamera.ScreenPointToRay(Input.mousePosition + DragPositionOffset);
+            Ray ray = dm.MainCamera.ScreenPointToRay(Input.mousePosition + GetDragPositionOffset());
 
             // Cast the ray and get the first object hit
             RaycastHit hit;
@@ -165,7 +172,12 @@ namespace Kuantech.Utils
 
         public Vector3 GetCursorPosition()
         {
-            return Input.mousePosition + DragPositionOffset;
+            return Input.mousePosition + GetDragPositionOffset();
+        }
+
+        public Vector3 GetDragPositionOffset()
+        {
+            return DragPositionOffset;
         }
     }
 }

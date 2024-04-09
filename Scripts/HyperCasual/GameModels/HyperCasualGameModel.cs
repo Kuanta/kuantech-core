@@ -4,58 +4,67 @@ using UnityEngine;
 
 namespace Kuantech.Core.HyperCasual
 {
+    [Serializable]
+    public class HyperCasualGameModelData
+    {
+        public int LevelIndex;
+        public Dictionary<string, Currency> Currencies;
+    }
+
+
     [CreateAssetMenu(menuName = "Kuantech/StateModules/HyperCasualModule")]
     public class HyperCasualGameModel : StateModule
     {
         // A unique identifier for this module.
         public override string ModuleID => typeof(HyperCasualGameModel).ToString();
 
-        public int LevelIndex;
-        public Dictionary<string, Currency> Currencies;
+       
+        public HyperCasualGameModelData Data;
 
         public override void SetDefaultValues()
         {
-            LevelIndex = 0;
-            Currencies = new Dictionary<string, Currency>();
+            Data = new HyperCasualGameModelData();
+            Data.LevelIndex = 0;
+            Data.Currencies = new Dictionary<string, Currency>();
         }
 
         public void SetLevelIndex(int levelIndex)
         {
-            LevelIndex = levelIndex;
+            Data.LevelIndex = levelIndex;
             Dirtied = true;
         }
 
         public int GetLevelIndex()
         {
-            return LevelIndex;
+            return Data.LevelIndex;
         }
 
         public void AddCurrency(string currencyId, int amount)
         {
             Dirtied = true;
-            if (!Currencies.ContainsKey(currencyId))
+            if (!Data.Currencies.ContainsKey(currencyId))
             {
-                Currencies[currencyId] = new Currency{
+                Data.Currencies[currencyId] = new Currency{
                     Amount = amount,
                     CurrencyId = currencyId,
                 };
                 return;
             }
-            Currencies[currencyId] = Currencies[currencyId].AddAmount(amount);
+            Data.Currencies[currencyId] = Data.Currencies[currencyId].AddAmount(amount);
         }
 
         public void RemoveCurrency(string currencyId, int amount)
         {
             Dirtied = true;
-            if (!Currencies.ContainsKey(currencyId)) return;
+            if (!Data.Currencies.ContainsKey(currencyId)) return;
             AddCurrency(currencyId, -Mathf.Abs(amount));
         }
 
         public Currency GetCurrency(string currencyId)
         {
-            if (Currencies != null && Currencies.ContainsKey(currencyId))
+            if (Data.Currencies != null && Data.Currencies.ContainsKey(currencyId))
             {
-                return Currencies[currencyId];
+                return Data.Currencies[currencyId];
             }
             return new Currency{
                 Amount = 0,
@@ -70,11 +79,26 @@ namespace Kuantech.Core.HyperCasual
 
         public void SetCurrency(string currencyId, int amount)
         {
-            Currencies[currencyId] = new Currency{
+            Data.Currencies[currencyId] = new Currency{
                 Amount = amount,
                 CurrencyId = currencyId,
             };
             Dirtied = true;
+        }
+
+        public override object GetData()
+        {
+            return Data;
+        }
+
+        public override void SetData(object loadedData)
+        {
+            Data = loadedData as HyperCasualGameModelData;
+        }
+
+        public override Type GetDataType()
+        {
+            return typeof(HyperCasualGameModelData);
         }
     }
 }

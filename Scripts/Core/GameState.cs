@@ -36,23 +36,45 @@ namespace Kuantech.Core
     public abstract class StateModule : ScriptableObject
     {
         public virtual string ModuleID => GetType().FullName;
+        
+        public virtual void OnRegistered()
+        {
+
+        }
         public virtual void Load(string savedData)
         {
             var settings = new JsonSerializerSettings
             {
                 TypeNameHandling = TypeNameHandling.Objects
             };
-            var loadedObject = JsonConvert.DeserializeObject(savedData, this.GetType(), settings);
-            foreach (var field in this.GetType().GetFields())
+
+            Type savedDataType = GetDataType();
+            if(savedDataType == null) return;
+            var loadedData = JsonConvert.DeserializeObject(savedData, savedDataType, settings);
+            if(loadedData == null)
+            {
+                SetDefaultValues();
+                return;
+            }
+            foreach (var field in savedDataType.GetFields())
             {
                 if (!Attribute.IsDefined(field, typeof(NonSaveableAttribute)))
                 {
-                    var loadedValue = field.GetValue(loadedObject);
-                    field.SetValue(this, loadedValue);
+                    var loadedValue = field.GetValue(loadedData);
+                    field.SetValue(loadedData, loadedValue);
                 }
             }
+            SetData(loadedData);
         }
 
+        public abstract object GetData();
+
+        public abstract void SetData(object loadedData);
+
+        /// <summary>
+        /// Saves the model
+        /// </summary>
+        /// <returns></returns>
         public virtual string Save()
         {
             var settings = new JsonSerializerSettings
@@ -60,9 +82,12 @@ namespace Kuantech.Core
                 TypeNameHandling = TypeNameHandling.Objects,
                 ContractResolver = new NonSaveableContractResolver()
             };
-
-            return JsonConvert.SerializeObject(this, Formatting.Indented, settings);
+            var data = GetData();
+            if(data == null) return null;
+            return JsonConvert.SerializeObject(data, Formatting.Indented, settings);
         }
+
+        public abstract Type GetDataType();
 
         [NonSerialized] public bool Dirtied = false;
 
@@ -77,6 +102,7 @@ namespace Kuantech.Core
         public void RegisterModule(StateModule module)
         {
             _modules[module.ModuleID] = module;
+            module.OnRegistered();
         }
 
         public T GetModule<T>() where T : StateModule

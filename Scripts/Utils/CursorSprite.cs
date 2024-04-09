@@ -1,3 +1,4 @@
+using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Core.Utils
@@ -10,15 +11,25 @@ namespace Kuantech.Core.Utils
         private float distanceFromCamera = 10f;
         public float FollowLerpFactor = 10f;
         private Vector3 _targetPosition;
-    
+        public GameObject Visual;
         private void Enable()
         {
             transform.position = GetCursorPosition();
+            Visual.SetActive(false);
         }
         private void Update()
         {
             _targetPosition = GetCursorPosition();
             transform.position = Vector3.Lerp(transform.position, _targetPosition, Time.deltaTime * FollowLerpFactor);
+            if(Input.GetMouseButtonDown(0))
+            {
+                if (!Helpers.IsCursorOnUI()) Visual.SetActive(true);
+               
+            }
+            else if(Input.GetMouseButtonUp(0))
+            {
+                Visual.SetActive(false);
+            }
         }
 
         private Vector3 GetCursorPosition()
@@ -26,6 +37,14 @@ namespace Kuantech.Core.Utils
             Vector3 mousePosition = Input.mousePosition;
             mousePosition.z = distanceFromCamera; // Set the distance from the camera
             return Camera.ScreenToWorldPoint(mousePosition);
+        }
+
+        private void OnMouseDown() {
+
+        }
+
+        private void OnMouseUp() {
+
         }
     }
 }

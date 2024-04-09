@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Kuantech.Core;
 using Kuantech.Utils;
@@ -44,6 +45,21 @@ namespace Kuantech.ArcadeIdle
         {
             if(VenueStates == null || !VenueStates.ContainsKey(venueId)) return null;
             return VenueStates[venueId];
+        }
+
+        public override object GetData()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override void SetData(object loadedData)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Type GetDataType()
+        {
+            throw new NotImplementedException();
         }
     }
 }

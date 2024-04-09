@@ -38,6 +38,7 @@ namespace Kuantech.Core.FX
         public Effect PlayEffectAtPosition(Vector3 position, Quaternion rotation)
         {
             EffectPlaySettings settings = EffectPlaySettings.GetPlayAtPositionSettings(position, rotation);
+            settings.DespawnAfterPlay = true;
             return PlayEffect(settings);
         }
     }

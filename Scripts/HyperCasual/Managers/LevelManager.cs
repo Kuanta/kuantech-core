@@ -104,8 +104,10 @@ namespace Kuantech.Core
             int powerLevel = levelIndex;
             CurrentLevel.PowerLevel = MaxPowerLevel > 0 ? Mathf.Min(MaxPowerLevel, powerLevel) : powerLevel;
             LevelSetEvent?.Invoke(this, CurrentLevelIndex);
+
+            UpdateLevelIndex();
         }
-        
+
         [ConsoleMethod("setLevel", "Sets the level")]
         public static void SetLevelCC(int levelIndex)
         {
@@ -152,17 +154,18 @@ namespace Kuantech.Core
             Destroy(CurrentLevel.gameObject);
             CurrentLevelIndex++;
             SetLevel(CurrentLevelIndex);
-            CurrentLevelIndex = CurrentLevel.LevelIndex;
+        }
 
+        private void UpdateLevelIndex()
+        {
             //Save the level index
             GameStateManager gsm = GameStateManager.GetContext<GameStateManager>();
-            if(gsm != null)
+            if (gsm != null)
             {
                 var module = gsm.GetModule<HyperCasualGameModel>();
                 module.SetLevelIndex(CurrentLevelIndex);
             }
         }
-
         public virtual void FailLevel()
         {
             ChangeCurrentState(LevelState.Failed);

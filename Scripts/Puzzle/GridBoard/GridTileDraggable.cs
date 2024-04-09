@@ -47,5 +47,10 @@ namespace Kuantech.Puzzle
                 NeighTile = neighTile,
             });
         }
+
+        public virtual bool CanBeDroppedToSlot(int row, int col)
+        {
+            return true;
+        }
     }
 }

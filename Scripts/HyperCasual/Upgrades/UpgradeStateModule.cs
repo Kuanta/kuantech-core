@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Kuantech.Core;
 using UnityEngine;
@@ -25,6 +26,21 @@ namespace Kuantech.HyperCasual
         {
             if (UpgradeLevels == null || !UpgradeLevels.ContainsKey(boostId)) return 0;
             return UpgradeLevels[boostId];
+        }
+
+        public override object GetData()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override void SetData(object loadedData)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Type GetDataType()
+        {
+            throw new NotImplementedException();
         }
     }
 }

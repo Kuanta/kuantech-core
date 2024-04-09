@@ -32,7 +32,7 @@ namespace Kuantech.Puzzle
             Vector3 positionOnBoard = GridBoard.GetPointOnPlane(ray);
             int row, col;
             GridBoard.GetRowColFromPointOnBoard(positionOnBoard, out row, out col);
-            
+            if(!gridTileDraggable.CanBeDroppedToSlot(row, col)) return false;
             return HandleDroppedTile(gridTileDraggable, row, col);
         }
 

@@ -11,7 +11,7 @@ namespace Kuantech.ArcadeIdle
             GameStateManager gsm = GameStateManager.GetContext<GameStateManager>();
             if (gsm == null) return;
             CurrencyModel currModel = gsm.GetGameState().GetModule<CurrencyModel>();
-            foreach(var pair in currModel.Currencies)
+            foreach(var pair in currModel.Data.Currencies)
             {
                 DepositCurrency(pair.Key, pair.Value.Amount);
             }

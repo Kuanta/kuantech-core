@@ -24,6 +24,8 @@ namespace Kuantech.Core.FX
         [Header("Animations")]
         public Animator Animator;
 
+        [NonSerialized] public bool ShouldBeRemoved = false; //This is used for queued audios
+
         private static readonly int Play1 = Animator.StringToHash("Play");
 
         //If an effect is under the protection of effects library, it can't be destroyed with timed calls
@@ -69,6 +71,12 @@ namespace Kuantech.Core.FX
 
         protected virtual void PlayEffects(float effectCooldown)
         {
+            ShouldBeRemoved = false;
+            if(Sfx != null)
+            {
+                Sfx.OnDeqeued = OnSoundDequeued;
+            }
+
             //Sound
             if (!EffectsLibrary.CanPlayEffect(EffectId, effectCooldown)) return;
 
@@ -152,6 +160,11 @@ namespace Kuantech.Core.FX
         private IEnumerator PoolRoutine(float duration)
         {
             if(BoundToEffectsLibrary) yield break;
+            if(Sfx != null && Sfx.Enqueued)
+            {
+                ShouldBeRemoved = true;
+                yield break;
+            }
             if (duration < 0)
             {
                 duration = Vfx.GetDuration();
@@ -161,6 +174,12 @@ namespace Kuantech.Core.FX
             if(Vfx != null) Vfx.Stop();
             if(Sfx != null) Sfx.Stop();
             EffectsLibrary.GetContext<EffectsLibrary>().EffectsPool.PoolObject(gameObject);
+        }
+
+        public void OnSoundDequeued()
+        {
+            Sfx.Enqueued = false;
+            StartCoroutine(PoolRoutine(Duration));
         }
     }
 }

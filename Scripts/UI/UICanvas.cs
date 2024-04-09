@@ -20,11 +20,13 @@ namespace Kuantech.UI
         public void FlyUIElementFromWorldPosition(FlyingUIElement flyingElement, Vector3 worldPosition, RectTransform target, 
         object data = null, UnityAction TargetReachedHandler = null)
         {
+            Vector3 screenPosition = GlobalToScreenPosition(worldPosition);
             flyingElement.transform.SetParent(transform);
-            flyingElement.transform.localPosition = GlobalToScreenPosition(worldPosition);
+            flyingElement.transform.localPosition = screenPosition;
             flyingElement.transform.localScale = Vector3.one;
             flyingElement.transform.localRotation = Quaternion.identity;
-            flyingElement.Fly(GlobalToScreenPosition(worldPosition), target.position, data, TargetReachedHandler);
+            Vector3 screenTargetPosition = GlobalToScreenPosition(target.position);
+            flyingElement.Fly(screenPosition, screenTargetPosition, data, TargetReachedHandler);
         }   
 
         public void ShowFloatingText(FloatingText floatingText, Vector3 worldPosition, Vector3 initialSpeed)

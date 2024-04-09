@@ -1,4 +1,5 @@
 ﻿using Kuantech.Core.FX;
+using Kuantech.Utils;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -7,6 +8,8 @@ namespace Kuantech.Core.UI
     public class ButtonSfx : MonoBehaviour
     {
         [SerializeField] private Sound Audio;
+        [KTTag("AudioTag")]
+        [SerializeField] private int AudioTag;
         [SerializeField] private Button Button;
         
         private void Awake()
@@ -18,7 +21,13 @@ namespace Kuantech.Core.UI
 
         private void ButtonPressHandler()
         {
-            Audio.Play();
+            if(Audio != null)
+            {
+                Audio.Play();
+                return;
+            }
+            AudioLibrary audioLibrary = EffectsLibrary.GetAudioLibrary();
+            if(audioLibrary != null) audioLibrary.PlaySound(AudioTag);
         }
     }
 }

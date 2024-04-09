@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Kuantech.Utils;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace Kuantech.Core.FX
 {
@@ -17,9 +18,30 @@ namespace Kuantech.Core.FX
         public List<AudioSource> SfxColleciton;
         public AudioSource AudioSource;
         public float Cooldown = 0.1f;
+        public float ComboCooldown = 1f;
+
+        [Tooltip("If is set to true, sounds will be queued")]
+        public bool QueueSound = false;
+        [NonSerialized] public bool Enqueued = false;
+
         [Tooltip("If set to true, AudioLibrary will be checked")]
         public bool PlayWithAudioLibrary;
         
+        [Header("Pitch Adjustments")]
+        public float BasePitch = 1f;
+        public float MinPitch = 0f;
+        public float MaxPitch = 1.5f;
+
+        [Header("Pitch Randomization")]
+        public bool RandomizePitch = false;
+        public float PitchVariation = 0.0f;
+
+        [Header("ChangingPitch")]
+        public bool AdjustPitch = false;
+        public float PitchAdjustmentPerPlay = 0.1f;
+        public float PitchResetTime;
+
+        public UnityAction OnDeqeued;
         public void Play()
         {
             if (PlayWithAudioLibrary)
@@ -33,6 +55,19 @@ namespace Kuantech.Core.FX
             }
             if(AudioSource == null) return;
             
+            float pitch = AudioSource.pitch;
+            if(RandomizePitch)
+            {
+                pitch = BasePitch + UnityEngine.Random.Range(-1* PitchVariation, PitchVariation);
+            }
+            else if(AdjustPitch)
+            {
+                int comboCount = AudioLibrary.GetComboCount(this);
+                pitch = BasePitch + comboCount * PitchAdjustmentPerPlay;
+
+            }
+            pitch = Mathf.Clamp(pitch, MinPitch, MaxPitch);
+            AudioSource.pitch = pitch;
             AudioSource.Play();
         }
 
@@ -71,5 +106,10 @@ namespace Kuantech.Core.FX
         }
 
         #endregion
+
+        public void Deqeued()
+        {
+            OnDeqeued?.Invoke();
+        }
     }
 }

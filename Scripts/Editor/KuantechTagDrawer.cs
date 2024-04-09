@@ -18,6 +18,7 @@ namespace Kuantech.Editor
                 int fallbackCount = 10; // Or any reasonable number
                 string[] tags = new string[fallbackCount];
                 bool foundGroup = false;
+                if(tagSettings == null || tagSettings.tagGroups == null) return;
                 foreach (var group in tagSettings.tagGroups)
                 {
                     if(group.TagGroupName != tagAttribute.TagGroup) continue;

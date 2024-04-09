@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Kuantech.Utils;
 using UnityEngine;
 using UnityEngine.Audio;
 
@@ -7,12 +8,19 @@ namespace Kuantech.Core.FX
    
     public class AudioLibrary : MonoBehaviour
     {
+        public struct SoundPlayInfo
+        {
+            public float LastPlayedTime;
+            public int ComboCount;
+        }
         [Header("Audio Mix")]
         [SerializeField] private AudioMixer MasterMixer;
         public List<Sound> Clips;
         public Dictionary<int, Sound> _audios;
-        public Dictionary<string, float> _lastPlayedTimes;
+        public Dictionary<string, SoundPlayInfo> _lastPlayedTimes;
         
+        public SoundQueue SoundQueue;
+
         [Header("Music")] 
         public List<Music> Musics;
         public AudioSource MusicPlayer;
@@ -38,8 +46,15 @@ namespace Kuantech.Core.FX
                     clip.PlayWithAudioLibrary = false; //Prevent endless cycle
                 }
             }
+            SoundQueue = new SoundQueue(this);
         }
-        
+
+        private void Update()
+        {
+            if(SoundQueue == null) return;
+            SoundQueue.HandleQueue();
+        }
+
         /// <summary>
         /// Checks if audio with given tag is available
         /// </summary>
@@ -71,25 +86,68 @@ namespace Kuantech.Core.FX
             }
             if(_lastPlayedTimes == null)
             {
-                _lastPlayedTimes = new Dictionary<string, float>();
+                _lastPlayedTimes = new Dictionary<string, SoundPlayInfo>();
             }
             string clipName = sound.AudioId;
-            float lastPlayedTime;
-            if(!_lastPlayedTimes.ContainsKey(clipName))
-            {
-                lastPlayedTime = 0;
-            }else{
-                lastPlayedTime = _lastPlayedTimes[sound.AudioId];
-
-            }
-            float elapsedTime = Time.time - lastPlayedTime;
+          
+            float elapsedTime = GetElapsedTime(clipName);
             if(elapsedTime >= sound.Cooldown)
             {
                 sound.Play();
+                SetLastPlayedTime(sound);
             }
-            _lastPlayedTimes[clipName] = Time.time;
-
+            else if(sound.QueueSound)
+            {
+                SoundQueue.QueueSound(sound);
+            }
         }
+
+        public float GetElapsedTime(string soundId)
+        {
+            if(_lastPlayedTimes == null || !_lastPlayedTimes.ContainsKey(soundId))
+            {
+                return float.MaxValue;
+            }
+            return Time.time - _lastPlayedTimes[soundId].LastPlayedTime;
+        }
+
+        public void SetLastPlayedTime(Sound sound)
+        {
+            if(sound.AudioId.IsNullOrEmpty()) return;
+            if(!_lastPlayedTimes.ContainsKey(sound.AudioId))
+            {
+                _lastPlayedTimes[sound.AudioId] = new SoundPlayInfo{
+                    LastPlayedTime = 0,
+                    ComboCount = 0,
+                };
+            }
+            SoundPlayInfo info  = _lastPlayedTimes[sound.AudioId];
+            //Did combo count increased?
+            float elapsedTime = Time.time - info.LastPlayedTime;
+            if(elapsedTime < sound.ComboCooldown && sound.ComboCooldown > 0)
+            {
+                info.ComboCount++;
+            }else{
+                info.ComboCount = 0;
+            }
+            info.LastPlayedTime = Time.time;
+            _lastPlayedTimes[sound.AudioId] = info;
+        }
+
+        public static int GetComboCount(Sound sound)
+        {
+            AudioLibrary audioLibrary = EffectsLibrary.GetAudioLibrary();
+            if(audioLibrary == null) return 0;
+            if (sound.AudioId.IsNullOrEmpty()) return 0;
+            if(!audioLibrary._lastPlayedTimes.ContainsKey(sound.AudioId)) return 0;
+            float elapsedTime = audioLibrary.GetElapsedTime(sound.AudioId);
+            if(elapsedTime < sound.ComboCooldown && sound.ComboCooldown > 0)
+            {
+                return audioLibrary._lastPlayedTimes[sound.AudioId].ComboCount;
+            }
+            return 0;
+        }
+  
         /// <summary> 
         /// Sets the music volume
         /// </summary>

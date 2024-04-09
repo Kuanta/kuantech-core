@@ -24,50 +24,56 @@ namespace Kuantech.Core
             return this;
         }
     }
-
+    [Serializable]
+    public class CurrencyModelData
+    {
+        public Dictionary<string, Currency> Currencies;
+        public List<Currency> DefaultCurrencies;
+    }
+    
     [CreateAssetMenu(menuName = "Kuantech/StateModules/CurrencyModule")]
     public class CurrencyModel : StateModule
     {
+        
 
-        public Dictionary<string, Currency> Currencies;
-        public List<Currency> DefaultCurrencies;
-
+        public CurrencyModelData Data;
         public override void SetDefaultValues()
         {
-            Currencies = new Dictionary<string, Currency>();
-            if(DefaultCurrencies == null) return;
-            foreach(var defaultCurr in DefaultCurrencies)
+            Data = new CurrencyModelData();
+            Data.Currencies = new Dictionary<string, Currency>();
+            if(Data.DefaultCurrencies == null) return;
+            foreach(var defaultCurr in Data.DefaultCurrencies)
             {
-                Currencies[defaultCurr.CurrencyId] = defaultCurr;
+                Data.Currencies[defaultCurr.CurrencyId] = defaultCurr;
             }
         }
 
         public void AddCurrency(string currencyId, int amount)
         {
             Dirtied = true;
-            if (!Currencies.ContainsKey(currencyId))
+            if (!Data.Currencies.ContainsKey(currencyId))
             {
-                Currencies[currencyId] = new Currency{
+                Data.Currencies[currencyId] = new Currency{
                     Amount = amount,
                     CurrencyId = currencyId,
                 };
                 return;
             }
-            Currencies[currencyId] = Currencies[currencyId].AddAmount(amount);
+            Data.Currencies[currencyId] = Data.Currencies[currencyId].AddAmount(amount);
         }
 
         public void RemoveCurrency(string currencyId, int amount)
         {
             Dirtied = true;
-            if (!Currencies.ContainsKey(currencyId)) return;
+            if (!Data.Currencies.ContainsKey(currencyId)) return;
             AddCurrency(currencyId, -Mathf.Abs(amount));
         }
 
         public Currency GetCurrency(string currencyId)
         {
-            if (Currencies != null && Currencies.ContainsKey(currencyId))
+            if (Data.Currencies != null && Data.Currencies.ContainsKey(currencyId))
             {
-                return Currencies[currencyId];
+                return Data.Currencies[currencyId];
             }
             return new Currency{
                 Amount = 0,
@@ -82,11 +88,26 @@ namespace Kuantech.Core
 
         public void SetCurrency(string currencyId, int amount)
         {
-            Currencies[currencyId] = new Currency{
+            Data.Currencies[currencyId] = new Currency{
                 Amount = amount,
                 CurrencyId = currencyId,
             };
             Dirtied = true;
+        }
+
+        public override object GetData()
+        {
+            return Data;
+        }
+
+        public override void SetData(object loadedData)
+        {
+            Data = loadedData as CurrencyModelData;
+        }
+
+        public override Type GetDataType()
+        {
+           return typeof(CurrencyModelData);
         }
     }
 }

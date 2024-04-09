@@ -13,6 +13,7 @@ namespace Kuantech.Puzzle
         //Icons
         private GUIContent handIcon;
         private GUIContent tilePainterIcon;
+        private GUIContent deleteAndPaintIcon;
         private GUIContent tileEraserIcon;
 
         private SerializedProperty tileLibraryProperty;
@@ -23,6 +24,7 @@ namespace Kuantech.Puzzle
             _gridBoardEditor = (GridBoardEditor)target;
             handIcon = EditorGUIUtility.IconContent("d_Grid.Default");
             tilePainterIcon = EditorGUIUtility.IconContent("Toolbar Plus");
+            deleteAndPaintIcon = EditorGUIUtility.IconContent("d_Grid.FillTool");
             tileEraserIcon = EditorGUIUtility.IconContent("d_TreeEditor.Trash");
 
             tileLibraryProperty = serializedObject.FindProperty("TileLibrary");
@@ -78,7 +80,10 @@ namespace Kuantech.Puzzle
             {
                 _gridBoardEditor.SetMode(GridBoardEditor.EditorMode.Draw);
             }
-
+            if(GUILayout.Button(deleteAndPaintIcon))
+            {
+                _gridBoardEditor.SetMode(GridBoardEditor.EditorMode.DeleteAndDraw);
+            }
             if(GUILayout.Button(tileEraserIcon))
             {
                 _gridBoardEditor.SetMode(GridBoardEditor.EditorMode.Delete);
@@ -95,10 +100,14 @@ namespace Kuantech.Puzzle
             {
                 _gridBoardEditor.DeleteAllTiles();
             }
-            // if(GUILayout.Button("Clear Tile Library"))
-            // {
-            //     _gridBoardEditor.TileLibrary.Clear();
-            // }
+            if(GUILayout.Button("Update Tile Library"))
+            {
+                _gridBoardEditor.UpdateEditorTiles();
+            }
+            if (GUILayout.Button("Clear Tile Library"))
+            {
+                _gridBoardEditor.TileLibrary.Clear();
+            }
             GUILayout.EndHorizontal();
             serializedObject.ApplyModifiedProperties();
         }

@@ -25,8 +25,10 @@ namespace Kuantech.Core.HyperCasual
             
             if(ToggleSfxButton != null) ToggleSfxButton.SetState(Convert.ToBoolean(toggleSfx));
             if (ToggleMusicButton != null) ToggleMusicButton.SetState(Convert.ToBoolean(toggleMusic));
-            if (SfxVolume != null) SfxVolume.value = ToggleSfxButton.State ? sfxVolume : 0.0001f;
-            if (MusicVolume != null) MusicVolume.value = ToggleMusicButton.State ? musicVolume : 0.0001f;
+            bool toggleSfxState = ToggleSfxButton != null ? ToggleSfxButton.State : true;
+            bool toggleMusicState = ToggleMusicButton != null ? ToggleMusicButton.State : true;
+            if (SfxVolume != null) SfxVolume.value = toggleSfxState ? sfxVolume : 0.0001f;
+            if (MusicVolume != null) MusicVolume.value = toggleMusicState ? musicVolume : 0.0001f;
 
 
             if (ToggleMusicButton != null) ToggleMusicButton.OnToggle += OnMusicToggle;
@@ -48,14 +50,20 @@ namespace Kuantech.Core.HyperCasual
         private void OnMusicVolumeChange(float value)
         {
             PlayerPrefs.SetFloat("MusicVolume",value);
-            value = ToggleMusicButton.State ? value : 0.0001f;
+            if(ToggleMusicButton != null)
+            {
+                value = ToggleMusicButton.State ? value : 0.0001f;
+            }
             EffectsLibrary.GetContext<EffectsLibrary>().AudioLibrary.SetMusicVolume(value);
         }
 
         private void OnSfxVolumeChange(float value)
         {
             PlayerPrefs.SetFloat("SfxVolume", value);
-            value = ToggleSfxButton.State ? value : 0.0001f;
+            if(ToggleSfxButton != null)
+            {
+                value = ToggleSfxButton.State ? value : 0.0001f;
+            }
             EffectsLibrary.GetContext<EffectsLibrary>().AudioLibrary.SetSfxVolume(value);
         }
 

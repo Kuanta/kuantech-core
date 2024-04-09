@@ -46,34 +46,33 @@ namespace Kuantech.Puzzle
                 }
             }
 
-            SetExistingTiles();
+            SetExistingTiles(true);
         }
         
         public virtual void RestartBoard()
         {
             ClearBoard();
-            SetExistingTiles();
+            SetExistingTiles(true);
         }
         
         /// <summary>
         /// C
         /// </summary>
         private GridBoardEditorTile[] _editorTiles;
-        protected void SetExistingTiles()
+        public void SetExistingTiles(bool isLevelFresh)
         {
             //Load existing tiles
             GridBoardEditorTile[] editorTiles = GetComponentsInChildren<GridBoardEditorTile>();
             for(int i=0;i<editorTiles.Length;++i)
             {
                 GridBoardEditorTile existingTileInfo = editorTiles[i];
+                existingTileInfo.DestroyEditorGameobject();
                 if (existingTileInfo.Prefab == null) continue;
-
                 if (IsTileOccupied(existingTileInfo.Row, existingTileInfo.Column))
                 {
                     continue;
                 }
-                CreateExistingTile(existingTileInfo);
-                existingTileInfo.DestroyEditorGameobject();
+                if(isLevelFresh) CreateExistingTile(existingTileInfo);
             }
         }
 

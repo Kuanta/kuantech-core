@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using Sirenix.OdinInspector;
 using UnityEditor;
 using UnityEngine;
 
@@ -14,6 +13,7 @@ namespace Kuantech.Puzzle
             None,
             Draw,
             Delete,
+            DeleteAndDraw,
         }
 
         [Header("GridBoard")]
@@ -58,6 +58,9 @@ namespace Kuantech.Puzzle
                         break;
                     case EditorMode.Delete:
                         DeleteTile(row, col);
+                        break;
+                    case EditorMode.DeleteAndDraw:
+                        DeleteAndPaint(row, col);
                         break;
                     default:
                         break;
@@ -120,7 +123,7 @@ namespace Kuantech.Puzzle
 
         public void PaintTile(int row, int col)
         {
-            if(CurrentMode != EditorMode.Draw || CurrentlySelectedTile == null || IsTileOccupied(row, col)) return;
+            if(CurrentlySelectedTile == null || IsTileOccupied(row, col)) return;
        
 
             GameObject newTileObject = PrefabUtility.InstantiatePrefab(CurrentlySelectedTile) as GameObject;
@@ -162,6 +165,12 @@ namespace Kuantech.Puzzle
             EditorUtility.SetDirty(this);
         }
 
+        public void DeleteAndPaint(int row, int col)
+        {
+            DeleteTile(row, col);
+            PaintTile(row, col);
+        }
+
         public bool IsTileOccupied(int row, int col)
         {
             foreach(var existingTileInfo in EditorTiles)
@@ -187,7 +196,6 @@ namespace Kuantech.Puzzle
         /// <param name="col"></param>
         public void DeleteTile(int row, int col)
         {
-            if (CurrentMode != EditorMode.Delete) return;
             HashSet<GridBoardEditorTile> tilesToDelete = new HashSet<GridBoardEditorTile>();
             for(int i=0;i<EditorTiles.Count;++i)
             {
