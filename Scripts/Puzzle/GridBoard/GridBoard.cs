@@ -323,6 +323,7 @@ namespace Kuantech.Puzzle
             }
             return Vector3.zero;
         }
+
         /// <summary>
         /// Returns the local position from row and col
         /// </summary>

@@ -51,9 +51,10 @@ namespace Kuantech.Utils
     
     public class DragManager : SubManager
     {
+        [Header("Properties")]
         public LayerMask DraggableLayer;
         private Transform draggedObject;
-        private Vector3 _offset;
+        //private Vector3 _offset;
         private IDraggable _draggedInterface;
         private IDraggable _draggedUnderCursor;
         public LayerMask GroundLayer;
@@ -65,6 +66,10 @@ namespace Kuantech.Utils
         public float MaxTapTime = 0.25f; //Taps should be quicker than this
         public float DragStartTime = 0f; //A single touch should persist at least this amount
         public float DragRemainErrorThreshold = 1f;
+
+        [Header("Offset")]
+        public Vector2 OffsetPercentages;
+
         [Header("Follow Object")]
         public GameObject FollowObject; //If we have a gameobject that follows cursor smoothly, we can use this to get world position
         //Events
@@ -85,7 +90,7 @@ namespace Kuantech.Utils
                 _dragging = false;
                 if (Utils.Helpers.IsCursorOnUI()) return;
                 _startedClick = true;
-                _startPosition = GetCursorPosition();
+                _startPosition = GetCursorPosition(false);
                 _startTime = Time.time;
                 CheckWorld();
             }
@@ -98,7 +103,7 @@ namespace Kuantech.Utils
                 {
                     return;
                 }
-                Vector3 mousePosition = GetCursorPosition();
+                Vector3 mousePosition = GetCursorPosition(true);
                 if (Time.time - _startTime < DragStartTime)
                 {
                     //Check if the finger is moved
@@ -124,17 +129,29 @@ namespace Kuantech.Utils
             }
         }
 
-        private Vector3 GetCursorPosition()
+        public static Vector3 GetCursorPosition(bool applyOffset)
         {
-            return Input.mousePosition;
+            Vector3 mousePos = Input.mousePosition;
+            var dm = DragManager.GetContext<DragManager>();
+            if(applyOffset) 
+            {
+               mousePos += dm.GetCursorOffset();
+            }
+            return mousePos;
         }
+
+        public Vector3 GetCursorOffset()
+        {
+            return new Vector3(Screen.width * OffsetPercentages.x, Screen.height * OffsetPercentages.y, 0);
+        }
+
         public Vector3 GetMouseWorldPosition()
         {
             if(FollowObject != null)
             {
                 return FollowObject.transform.position;
             }
-            Vector3 mousePosition = GetCursorPosition();
+            Vector3 mousePosition = GetCursorPosition(true);
             mousePosition.z = _dragCameraDistance;
             return MainCamera.ScreenToWorldPoint(mousePosition);
         }
@@ -154,7 +171,7 @@ namespace Kuantech.Utils
         /// <returns></returns>
         protected bool IsPointerClick()
         {
-            Vector3 mousePosition = GetCursorPosition();
+            Vector3 mousePosition = GetCursorPosition(false);
 
             if (mousePosition == _startPosition && Time.time - _startTime < MaxTapTime)
             {
@@ -165,7 +182,7 @@ namespace Kuantech.Utils
         protected virtual void CheckWorld()
         {
 
-            Ray ray = MainCamera.ScreenPointToRay(GetCursorPosition());
+            Ray ray = MainCamera.ScreenPointToRay(GetCursorPosition(false));
             RaycastHit hit;
             if (UnityEngine.Physics.Raycast(ray, out hit, RaycastLength, DraggableLayer.value))
             {
@@ -212,7 +229,6 @@ namespace Kuantech.Utils
                     return;
                 }
                 OnDragStart?.Invoke(this, _draggedInterface); //Invoke event for subscribers
-                _offset = draggedObject.position - hit.point;
             }
         }
 
@@ -221,13 +237,12 @@ namespace Kuantech.Utils
             _draggedInterface = draggable;
             OnDragStart?.Invoke(this, _draggedInterface); //Invoke event for subscribers
             _draggedInterface.DragStart(); //Call drag start on the dragged object
-            _offset = Vector3.zero;
             draggedObject = (_draggedInterface as MonoBehaviour).gameObject.transform;
         }
         private bool CheckGround(out Vector3 targetPosition)
         {
             RaycastHit hit;
-            Ray ray = Camera.main.ScreenPointToRay(GetCursorPosition());
+            Ray ray = Camera.main.ScreenPointToRay(GetCursorPosition(false));
             targetPosition = Vector3.zero;
             if (UnityEngine.Physics.Raycast(ray, out hit, Mathf.Infinity, GroundLayer))
             {

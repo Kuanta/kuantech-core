@@ -4,17 +4,18 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
+using Kuantech.Puzzle;
 
 namespace Kuantech.JigsawTen.UI
 {
     public class FlyingScoreText : FlyingUIElement
     {
         [SerializeField] private TMP_Text ScoreText;
-        [NonSerialized] public JigsawTenLevel Level;
         [NonSerialized] public int ScoreContribution;
         [SerializeField] private Image BackgroundImage;
         [SerializeField] private Renderer Renderer;
-        public void SetScoreContribution(JigsawTenLevel level, int scoreContrib, Color color)
+        private PuzzleLevel Level;
+        public void SetScoreContribution(PuzzleLevel level, int scoreContrib, Color color)
         {
             ScoreContribution = scoreContrib;
             Level = level;

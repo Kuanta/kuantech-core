@@ -44,7 +44,6 @@ namespace Kuantech.Puzzle
                 return DroppedTileHandler(draggableTile, row, col);
             }
             return GridBoard.MoveTile(draggableTile.AnchorGridTile, row, col);
-           
         }
 
         public bool CanTileDropped(GridTileDraggable draggableTile, int row, int col)

@@ -14,8 +14,8 @@ namespace Kuantech.Utils
         [SerializeField] protected IDropZone DropZone;
         [Tooltip("IF set to true, position will be set using the ground ray")]
         [SerializeField] private bool PositionWithGroundRay = false;
-        public Vector2 OffsetPercentages = Vector3.zero; 
-        [NonSerialized] public Vector3 DragPositionOffset;
+        //public Vector3 OffsetPercentages = Vector3.zero; 
+        //[NonSerialized] public Vector2 DragPositionOffset;
 
         private Vector3 _positionBeforeDrag;
         private Transform _parentBeforeDrag;
@@ -35,7 +35,7 @@ namespace Kuantech.Utils
             transform.localScale = Vector3.one;
 
             //Calculate offset
-            DragPositionOffset = new Vector3(Screen.width * OffsetPercentages.x, Screen.height * OffsetPercentages.y, 0);
+            //DragPositionOffset = new Vector3(Screen.width * OffsetPercentages.x, Screen.height * OffsetPercentages.y);
             return true;
         }
         [Tooltip("If set to false, Draggable can't be dragged")]
@@ -46,7 +46,7 @@ namespace Kuantech.Utils
         [SerializeField] private float SmoothDampTime = 0.1f;
         public virtual void Drag(Vector3 cursorPosition)
         {
-            cursorPosition += GetDragPositionOffset();
+            //cursorPosition += GetDragPositionOffset();
             if(!CanBeDragged()) return;
             IDropZone newZone = CheckForDragBench();
             if(_receivedHitThisFrame && PositionWithGroundRay)
@@ -74,9 +74,13 @@ namespace Kuantech.Utils
         private Vector3 _dampSpeed;
         protected virtual void SetPosition(Vector3 position)
         {
-            transform.position = Vector3.SmoothDamp(transform.position, position, ref _dampSpeed, SmoothDampTime);
+            SmoothDampPosition(position);
         }
         
+        protected void SmoothDampPosition(Vector3 targetPos)
+        {
+            transform.position = Vector3.SmoothDamp(transform.position, targetPos, ref _dampSpeed, SmoothDampTime);
+        }
         public virtual void DragEnd()
         {
             if(DropZone == null || DropZone == CurrentDropZone || !DropZone.OnDrop(this)) 
@@ -84,16 +88,17 @@ namespace Kuantech.Utils
                 ReturnToPreviousPosition();
                 return;
             }
-            if(!LandedOnDropZone(DropZone))
-            {
-                ReturnToPreviousPosition();
-            }else{
-                //Dropped
-                OnDrop?.Invoke();
-            }
+            OnDrop?.Invoke();
+            // if (!CanBeLandedOnDropZone(DropZone))
+            // {
+            //     ReturnToPreviousPosition();
+            // }else{
+            //     //Dropped
+            //     OnDrop?.Invoke();
+            // }
         }
         
-        protected virtual bool LandedOnDropZone(IDropZone dropZone)
+        public virtual bool CanBeLandedOnDropZone(IDropZone dropZone)
         {
             if(CurrentDropZone != null && CurrentDropZone != dropZone) 
             {
@@ -117,8 +122,8 @@ namespace Kuantech.Utils
             {
                 // Set up the PointerEventData based on the current mouse position
                 PointerEventData pointerEventData = new PointerEventData(EventSystem.current);
-                pointerEventData.position = Input.mousePosition + GetDragPositionOffset();
-
+                //pointerEventData.position = Input.mousePosition + GetDragPositionOffset();
+                pointerEventData.position = DragManager.GetCursorPosition(true);
                 // Create a list of Raycast Results
                 List<RaycastResult> results = new List<RaycastResult>();
                 dm.GraphicsRaycaster.Raycast(pointerEventData, results);
@@ -135,7 +140,8 @@ namespace Kuantech.Utils
             }
             
             // Create a ray from the camera through the cursor position
-            Ray ray = dm.MainCamera.ScreenPointToRay(Input.mousePosition + GetDragPositionOffset());
+            //Ray ray = dm.MainCamera.ScreenPointToRay(Input.mousePosition + GetDragPositionOffset());
+            Ray ray = dm.MainCamera.ScreenPointToRay(DragManager.GetCursorPosition(true));
 
             // Cast the ray and get the first object hit
             RaycastHit hit;
@@ -172,12 +178,12 @@ namespace Kuantech.Utils
 
         public Vector3 GetCursorPosition()
         {
-            return Input.mousePosition + GetDragPositionOffset();
+            return DragManager.GetCursorPosition(true); //Input.mousePosition + GetDragPositionOffset();
         }
 
-        public Vector3 GetDragPositionOffset()
-        {
-            return DragPositionOffset;
-        }
+        // public Vector3 GetDragPositionOffset()
+        // {
+        //     return DragPositionOffset;
+        // }
     }
 }

@@ -342,6 +342,32 @@ namespace Kuantech.Utils
 
             return completeBounds;
         }
+
+        /// <summary>
+        /// Transforms a local bounds to given global position and rotation
+        /// </summary>
+        /// <param name="localBounds">Bounds in the local space</param>
+        /// <param name="position">Position in global space</param>
+        /// <param name="rotation">Position in local space</param>
+        /// <returns></returns>
+        public static Bounds TransformBounds(Bounds localBounds, Vector3 position, Quaternion rotation)
+        {
+            Matrix4x4 localToWorldMatrix = Matrix4x4.TRS(position, rotation, Vector3.one);
+
+            Vector3 center = localToWorldMatrix.MultiplyPoint(localBounds.center);
+
+            // Transform the local extents to world space
+            Vector3 extentsX = localToWorldMatrix.MultiplyVector(new Vector3(localBounds.extents.x, 0, 0));
+            Vector3 extentsY = localToWorldMatrix.MultiplyVector(new Vector3(0, localBounds.extents.y, 0));
+            Vector3 extentsZ = localToWorldMatrix.MultiplyVector(new Vector3(0, 0, localBounds.extents.z));
+
+            // Calculate the new extents
+            float x = Mathf.Abs(extentsX.x) + Mathf.Abs(extentsY.x) + Mathf.Abs(extentsZ.x);
+            float y = Mathf.Abs(extentsX.y) + Mathf.Abs(extentsY.y) + Mathf.Abs(extentsZ.y);
+            float z = Mathf.Abs(extentsX.z) + Mathf.Abs(extentsY.z) + Mathf.Abs(extentsZ.z);
+
+            return new Bounds(center, new Vector3(x, y, z));
+        }
         
         public static void DestroyAllChildren(this Transform transform)
         {

@@ -28,6 +28,11 @@ namespace Kuantech.Puzzle
             ResetUI();
         }
         
+        public virtual void EarnScore(int score)
+        {
+
+        }
+        
         /// <summary>
         /// All the resetting about UI should be done here
         /// </summary>
