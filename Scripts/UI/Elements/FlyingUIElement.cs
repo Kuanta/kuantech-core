@@ -14,7 +14,7 @@ namespace Kuantech.UI
         public Vector3 StartNoise;
         public Vector3 EndNoise;
         //Events
-        public UnityAction OnTargetEventReached;
+        public UnityAction<FlyingUIElement> OnTargetEventReached;
 
         [Header("Effect")]
         [SerializeField] private EffectPlayer ScoreReachedEffect;
@@ -47,7 +47,7 @@ namespace Kuantech.UI
         protected virtual void OnTargetReached(UnityAction OnTargetReachedHandler)
         {
             OnTargetReachedHandler?.Invoke();
-            OnTargetEventReached?.Invoke();
+            OnTargetEventReached?.Invoke(this);
 
         }
     }
