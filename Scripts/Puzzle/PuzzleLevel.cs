@@ -1,7 +1,8 @@
+using System.Collections.Generic;
+using System.Linq;
 using Kuantech.Core;
 using Kuantech.Core.Utils;
 using Kuantech.Puzzle.UI;
-using UnityEngine;
 
 namespace Kuantech.Puzzle
 {
@@ -9,6 +10,7 @@ namespace Kuantech.Puzzle
     {
         public PuzzleLevelUI LevelUI;
         public ScreenSizeAdjuster ScreenSizeAdjuster;
+        public List<PuzzleLevelElement> LevelElements = new List<PuzzleLevelElement>();
 
         public override void SetupLevel()
         {
@@ -19,12 +21,29 @@ namespace Kuantech.Puzzle
             {
                 ScreenSizeAdjuster.FitCameraToAnchors();
             }
+            LevelElements = GetComponentsInChildren<PuzzleLevelElement>().ToList();
+            foreach(var element in LevelElements)
+            {
+                element.OnSetup();
+            }
             base.SetupLevel();
         }
 
+        public override void PlayLevel()
+        {
+            base.PlayLevel();
+            foreach (var element in LevelElements)
+            {
+                element.OnPlay();
+            }
+        }
         public override void ResetLevelState()
         {
             base.ResetLevelState();
+            foreach (var element in LevelElements)
+            {
+                element.OnRestart();
+            }
             ResetUI();
         }
         

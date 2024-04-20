@@ -28,7 +28,7 @@ namespace Kuantech.Puzzle.UI
             base.Start();
             Initialize();
         }
-        public void Initialize()
+        public virtual void Initialize()
         {
             if(CompletePanel != null) CompletePanel.Initialize(this);
             if(FailedPanel != null) FailedPanel.Initialize(this);
