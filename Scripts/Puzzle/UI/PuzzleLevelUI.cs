@@ -83,5 +83,18 @@ namespace Kuantech.Puzzle.UI
             if(CompletePanel != null) CompletePanel.Close();
             if(FailedPanel != null) FailedPanel.Close();
         }
+        
+        #region Boosters
+
+        public virtual void SetUIForBooster(PuzzleBooster booster)
+        {
+            
+        }
+
+        public virtual void DisableBoosterUI()
+        {
+            
+        }
+        #endregion
     }
 }

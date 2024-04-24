@@ -81,5 +81,51 @@ namespace Kuantech.Core.HyperCasual
             }
             return _buyables[buyableId]; 
         }
+        
+        /// <summary>
+        /// Checks if there are enough currency.
+        /// </summary>
+        /// <param name="currencyData"></param>
+        /// <param name="amount"></param>
+        /// <returns></returns>
+        public static bool HasCurrency(CurrencyData currencyData, int amount)
+        {
+            GameStateManager gsm = GameManager.Instance.GetSubManagerByType<GameStateManager>() as GameStateManager;
+            if (gsm == null) return false;
+            int heldAmount = gsm.GetCurrency(currencyData.CurrencyId).Amount;
+            if (amount <= heldAmount) return true;
+            return false;
+        }
+        
+        /// <summary>
+        /// Adds currency of given type and amount
+        /// </summary>
+        /// <param name="currencyData"></param>
+        /// <param name="amount"></param>
+        public static void AddCurrency(CurrencyData currencyData, int amount)
+        {
+            GameStateManager gsm = GameManager.Instance.GetSubManagerByType<GameStateManager>() as GameStateManager;
+            if (gsm == null) return;
+            gsm.AddCurrency(currencyData.CurrencyId, amount);
+        }
+        
+        /// <summary>
+        /// Removes the given amount from given currency.
+        /// </summary>
+        /// <param name="currencyData"></param>
+        /// <param name="amount"></param>
+        /// <returns></returns>
+        public static bool RemoveCurrency(CurrencyData currencyData, int amount)
+        {
+            GameStateManager gsm = GameManager.Instance.GetSubManagerByType<GameStateManager>() as GameStateManager;
+            if (gsm == null) return false;
+            int heldAmount = gsm.GetCurrency(currencyData.CurrencyId).Amount;
+            if (heldAmount >= amount)
+            {
+                gsm.RemoveCurrency(currencyData.CurrencyId, amount);
+                return true;
+            }
+            return false;
+        }
     }
 }

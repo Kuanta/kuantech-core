@@ -10,7 +10,6 @@ namespace Kuantech.Puzzle.Utils
         public float BottomPadding;
         public float LeftPadding;
         public float RightPadding;
-        public Vector3 UpVector = new Vector3(0,1,0);
 
         [Header("Board")]
         public GridBoard GridBoard;
@@ -19,17 +18,18 @@ namespace Kuantech.Puzzle.Utils
             if(!FitOnUpdate) return;
             AdjustAnchorPositions();
             FitCameraToAnchors();
-            
         }
 
         private void AdjustAnchorPositions()
         {
             if(GridBoard == null) return;
             Vector3 center = GridBoard.transform.position;
-            TopAnchor.transform.position = center + (GridBoard.GetDepth()*0.5f + TopPadding) * UpVector;
-            BottomAnchor.transform.position = center - (GridBoard.GetDepth() * 0.5f + BottomPadding) * UpVector;
-            LeftAnchor.transform.position = center - (GridBoard.GetWidth() * 0.5f + LeftPadding) * Vector3.right;
-            RightAnchor.transform.position = center + (GridBoard.GetWidth() * 0.5f + RightPadding) * Vector3.right;
+            Vector3 boardForwardVector = GridBoard.transform.rotation * GridBoard.ForwardVector;
+            Vector3 boardRightVector = GridBoard.transform.rotation * GridBoard.RightVector;
+            TopAnchor.transform.localPosition = center + (GridBoard.GetDepth()*0.5f + TopPadding) * boardForwardVector;
+            BottomAnchor.transform.localPosition = center - (GridBoard.GetDepth() * 0.5f + BottomPadding) * boardForwardVector ;
+            LeftAnchor.transform.localPosition = center - (GridBoard.GetWidth() * 0.5f + LeftPadding) * boardRightVector;
+            RightAnchor.transform.localPosition = center + (GridBoard.GetWidth() * 0.5f + RightPadding) * boardRightVector;
         }
     }
 }

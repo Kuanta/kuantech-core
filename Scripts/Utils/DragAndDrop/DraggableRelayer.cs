@@ -25,6 +25,24 @@ namespace Kuantech.Utils
             Draggable.DragEnd();
         }
 
+        public void OnClickDown()
+        {
+            if(Draggable == null) return;
+            Draggable.OnClickDown();
+        }
+
+        public void OnClickUp()
+        {
+            if(Draggable == null) return;
+            Draggable.OnClickUp();
+        }
+
+        public void OnTap()
+        {
+            if (Draggable == null) return;
+            Draggable.OnTap();
+        }
+
         public bool DragStart()
         {
             if(!CanBeDragged()) return false;

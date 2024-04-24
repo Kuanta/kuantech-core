@@ -64,6 +64,7 @@ namespace Kuantech.Utils
         public Camera MainCamera;
         public float RaycastLength = 100;
         public float MaxTapTime = 0.25f; //Taps should be quicker than this
+        public float TapDistanceThresh = 10f;
         public float DragStartTime = 0f; //A single touch should persist at least this amount
         public float DragRemainErrorThreshold = 1f;
 
@@ -98,11 +99,11 @@ namespace Kuantech.Utils
             else if (Input.GetMouseButton(0))
             {
                 if(!_startedClick) return;
-
-                if (IsPointerClick())
-                {
-                    return;
-                }
+                //
+                // if (IsPointerClick())
+                // {
+                //     return;
+                // }
                 Vector3 mousePosition = GetCursorPosition(true);
                 if (Time.time - _startTime < DragStartTime)
                 {
@@ -123,6 +124,10 @@ namespace Kuantech.Utils
             }
             else if (Input.GetMouseButtonUp(0))
             {
+                if (IsPointerClick())
+                {
+                    _draggedInterface.OnTap();
+                }
                 if(!_startedClick) return;
                 OnCursorUp();
                 Release();
@@ -172,8 +177,8 @@ namespace Kuantech.Utils
         protected bool IsPointerClick()
         {
             Vector3 mousePosition = GetCursorPosition(false);
-
-            if (mousePosition == _startPosition && Time.time - _startTime < MaxTapTime)
+            float sqrMag = (mousePosition - _startPosition).sqrMagnitude;
+            if (sqrMag <  TapDistanceThresh && Time.time - _startTime < MaxTapTime)
             {
                 return true;
             }
@@ -204,6 +209,7 @@ namespace Kuantech.Utils
             draggedObject = null;
             _draggedInterface = null;
         }
+        
         /// <summary>
         /// Handles the raycast hit
         /// </summary>

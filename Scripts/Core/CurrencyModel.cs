@@ -34,8 +34,6 @@ namespace Kuantech.Core
     [CreateAssetMenu(menuName = "Kuantech/StateModules/CurrencyModule")]
     public class CurrencyModel : StateModule
     {
-        
-
         public CurrencyModelData Data;
         public override void SetDefaultValues()
         {

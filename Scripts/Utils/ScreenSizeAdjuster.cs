@@ -35,18 +35,24 @@ namespace Kuantech.Core.Utils
             // Set the camera's orthographic size
             mainCamera.orthographicSize = orthoSize;
 
-            // //Set camera target position for perspective
-            // float cameraView = 2.0f * Mathf.Tan(0.5f * Mathf.Deg2Rad * mainCamera.fieldOfView);
-            // float distance = PerspectiveFactor * orthoSize / cameraView;
-            // distance += 0.5f * orthoSize;
-            
             // Calculate the position for the camera to center on the anchor points
-            Vector3 targetPosition = (leftPosition + rightPosition + topPosition + bottomPosition) / 4.0f - distance * mainCamera.transform.forward;
+            Vector3 anchorsCenter = (leftPosition + rightPosition + topPosition + bottomPosition) / 4.0f + CameraOffset;
+            
+            Vector3 viewPlaneNormal = GetViewPlaneNormal();
+            Vector3 targetPosition = anchorsCenter + distance * viewPlaneNormal;
 
             // Set the camera's position
-            mainCamera.transform.position = targetPosition + CameraOffset;
+            mainCamera.transform.position = targetPosition;
+            mainCamera.transform.LookAt(anchorsCenter);
         }
 
+        private Vector3 GetViewPlaneNormal()
+        {
+            Vector3 forward = TopAnchor.transform.position - BottomAnchor.transform.position;
+            Vector3 right = RightAnchor.transform.position - LeftAnchor.transform.position;
+            Vector3 normal = Vector3.Cross(forward, right);
+            return normal.normalized;
+        }
         private float CalculateOrthographicSize(Vector3 top, Vector3 left, Vector3 right, Vector3 bottom)
         {
             Camera mainCamera = Camera.main;

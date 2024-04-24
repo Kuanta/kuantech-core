@@ -38,7 +38,7 @@ namespace Kuantech.Core
             if (gsm != null)
             {
                 var module = gsm.GetModule<HyperCasualGameModel>();
-                levelIndex = module.GetLevelIndex();
+                if(module != null) levelIndex = module.GetLevelIndex();
             }
             SetLevel(levelIndex);
             //ChangeCurrentState(LevelState.Waiting);
@@ -163,7 +163,7 @@ namespace Kuantech.Core
             if (gsm != null)
             {
                 var module = gsm.GetModule<HyperCasualGameModel>();
-                module.SetLevelIndex(CurrentLevelIndex);
+                if(module != null) module.SetLevelIndex(CurrentLevelIndex);
             }
         }
         public virtual void FailLevel()

@@ -87,7 +87,7 @@ namespace Kuantech.Puzzle.MatchThree
 
         
 
-        protected virtual void OnTap()
+        protected virtual void OnTapToElement()
         {
             if(!Interactable) return;
             Interact();
@@ -238,7 +238,7 @@ namespace Kuantech.Puzzle.MatchThree
             //Is this tap?
             if ((_releasePoint - _firstTouchPoint).sqrMagnitude <= TapDistanceThresh)
             {
-                OnTap();
+                OnTapToElement();
                 return;
             }
             if (!_canBeMoved) return;
@@ -250,6 +250,11 @@ namespace Kuantech.Puzzle.MatchThree
                 CheckMovement(angle);
             }
         }
+
+        public void OnTap()
+        {
+        }
+
         private void OnMouseDown()
         {
 

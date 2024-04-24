@@ -11,7 +11,7 @@ namespace Kuantech.Utils
     /// </summary>
     public class Draggable : MonoBehaviour, IDraggable
     {
-        [SerializeField] protected IDropZone DropZone;
+        protected IDropZone DropZone;
         [Tooltip("IF set to true, position will be set using the ground ray")]
         [SerializeField] private bool PositionWithGroundRay = false;
         //public Vector3 OffsetPercentages = Vector3.zero; 
@@ -85,19 +85,15 @@ namespace Kuantech.Utils
         {
             if(DropZone == null || DropZone == CurrentDropZone || !DropZone.OnDrop(this)) 
             {
+                OnFailedDrop();
                 ReturnToPreviousPosition();
                 return;
             }
+            OnSuccesfullDrop();
             OnDrop?.Invoke();
-            // if (!CanBeLandedOnDropZone(DropZone))
-            // {
-            //     ReturnToPreviousPosition();
-            // }else{
-            //     //Dropped
-            //     OnDrop?.Invoke();
-            // }
         }
-        
+
+
         public virtual bool CanBeLandedOnDropZone(IDropZone dropZone)
         {
             if(CurrentDropZone != null && CurrentDropZone != dropZone) 
@@ -176,14 +172,35 @@ namespace Kuantech.Utils
             return DragToggle;
         }
 
+        public virtual void OnTap()
+        {
+        }
+
         public Vector3 GetCursorPosition()
         {
             return DragManager.GetCursorPosition(true); //Input.mousePosition + GetDragPositionOffset();
         }
 
-        // public Vector3 GetDragPositionOffset()
-        // {
-        //     return DragPositionOffset;
-        // }
+        public virtual void OnSuccesfullDrop()
+        {
+            
+        }
+
+        public virtual void OnFailedDrop()
+        {
+            
+        }
+        #region Click
+        public virtual void OnClickDown()
+        {
+            
+        }
+
+        public virtual void OnClickUp()
+        {
+            
+        }
+        #endregion
+
     }
 }

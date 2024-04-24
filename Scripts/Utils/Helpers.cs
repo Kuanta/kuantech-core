@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
@@ -454,6 +456,27 @@ namespace Kuantech.Utils
             }
         }
 
+        #endregion
+
+        #region Serialization
+        public static byte[] Serialize(object obj)
+        {
+            BinaryFormatter formatter = new BinaryFormatter();
+            using (MemoryStream memoryStream = new MemoryStream())
+            {
+                formatter.Serialize(memoryStream, obj);
+                return memoryStream.ToArray();
+            }
+        }
+
+        public static T Deserialize<T>(byte[] data)
+        {
+            BinaryFormatter formatter = new BinaryFormatter();
+            using (MemoryStream memoryStream = new MemoryStream(data))
+            {
+                return (T)formatter.Deserialize(memoryStream);
+            }
+        }
         #endregion
     }
 }

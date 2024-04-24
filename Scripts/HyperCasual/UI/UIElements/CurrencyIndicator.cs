@@ -62,13 +62,11 @@ namespace Kuantech.HyperCasual.UI
 
         private void Update()
         {
-            if (!Initialized)
-            {
-                Initialize();
-                return;
-            }
+            if (Initialized) return;
+            Initialize();
+            return;
         }
-        protected virtual void UpdateValue()
+        public virtual void UpdateValue()
         {
             //Get the current currency value
             GameStateManager gsm = (GameManager.Instance.GetSubManagerByType<GameStateManager>() as GameStateManager);
