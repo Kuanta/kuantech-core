@@ -122,8 +122,9 @@ namespace Kuantech.Utils
                     _draggedInterface.Drag(worldPosition);
                 }
             }
-            else if (Input.GetMouseButtonUp(0))
+            else if (Input.GetMouseButtonUp(0) && _draggedInterface != null)
             {
+                
                 if (IsPointerClick())
                 {
                     _draggedInterface.OnTap();
