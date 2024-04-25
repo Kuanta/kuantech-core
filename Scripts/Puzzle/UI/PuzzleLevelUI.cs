@@ -3,7 +3,6 @@ using System.Collections;
 using Kuantech.Core;
 using Kuantech.Core.HyperCasual.UI;
 using Kuantech.UI;
-using TMPro;
 using UnityEngine;
 
 namespace Kuantech.Puzzle.UI
@@ -23,11 +22,6 @@ namespace Kuantech.Puzzle.UI
 
         [NonSerialized] public PuzzleLevel CurrentLevel;
 
-        protected override void Start()
-        {
-            base.Start();
-            Initialize();
-        }
         public virtual void Initialize()
         {
             if(CompletePanel != null) CompletePanel.Initialize(this);

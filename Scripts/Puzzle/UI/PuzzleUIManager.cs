@@ -6,6 +6,11 @@ namespace Kuantech.Puzzle.UI
     {
         public PuzzleLevelUI LevelUI;
 
+        public override void OnSubmanagersInitialized()
+        {
+            LevelUI.Initialize();
+        }
+        
         public static PuzzleLevelUI GetLevelUI()
         {
             PuzzleUIManager context = GetContext<PuzzleUIManager>();
