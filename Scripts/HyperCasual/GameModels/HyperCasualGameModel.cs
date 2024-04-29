@@ -8,7 +8,7 @@ namespace Kuantech.Core.HyperCasual
     public class HyperCasualGameModelData
     {
         public int LevelIndex;
-        public Dictionary<string, Currency> Currencies;
+        //public Dictionary<string, Currency> Currencies;
     }
 
 
@@ -25,7 +25,7 @@ namespace Kuantech.Core.HyperCasual
         {
             Data = new HyperCasualGameModelData();
             Data.LevelIndex = 0;
-            Data.Currencies = new Dictionary<string, Currency>();
+            //Data.Currencies = new Dictionary<string, Currency>();
         }
 
         public void SetLevelIndex(int levelIndex)
@@ -37,53 +37,6 @@ namespace Kuantech.Core.HyperCasual
         public int GetLevelIndex()
         {
             return Data.LevelIndex;
-        }
-
-        public void AddCurrency(string currencyId, int amount)
-        {
-            Dirtied = true;
-            if (!Data.Currencies.ContainsKey(currencyId))
-            {
-                Data.Currencies[currencyId] = new Currency{
-                    Amount = amount,
-                    CurrencyId = currencyId,
-                };
-                return;
-            }
-            Data.Currencies[currencyId] = Data.Currencies[currencyId].AddAmount(amount);
-        }
-
-        public void RemoveCurrency(string currencyId, int amount)
-        {
-            Dirtied = true;
-            if (!Data.Currencies.ContainsKey(currencyId)) return;
-            AddCurrency(currencyId, -Mathf.Abs(amount));
-        }
-
-        public Currency GetCurrency(string currencyId)
-        {
-            if (Data.Currencies != null && Data.Currencies.ContainsKey(currencyId))
-            {
-                return Data.Currencies[currencyId];
-            }
-            return new Currency{
-                Amount = 0,
-                CurrencyId = currencyId,
-            };
-        }
-
-        public int GetCurrencyAmount(string currencyId)
-        {
-            return GetCurrency(currencyId).Amount;
-        }
-
-        public void SetCurrency(string currencyId, int amount)
-        {
-            Data.Currencies[currencyId] = new Currency{
-                Amount = amount,
-                CurrencyId = currencyId,
-            };
-            Dirtied = true;
         }
 
         public override object GetData()
