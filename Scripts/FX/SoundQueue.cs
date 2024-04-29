@@ -9,6 +9,7 @@ namespace Kuantech.Core.FX
     {
         public Dictionary<string, Queue<Sound>> _soundQueues;
         [NonSerialized] public AudioLibrary AudioLibrary;
+        public int QueueSize = 3;
 
         public SoundQueue(AudioLibrary audioLibrary)
         {
@@ -27,6 +28,8 @@ namespace Kuantech.Core.FX
             {
                 _soundQueues[sound.AudioId] = new Queue<Sound>();
             }
+
+            if (_soundQueues[sound.AudioId].Count > QueueSize) return; //Don't queue too much sound
             _soundQueues[sound.AudioId].Enqueue(sound);
             sound.Enqueued = true;
         }
