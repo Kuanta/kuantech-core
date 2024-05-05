@@ -5,6 +5,7 @@ using UnityEngine;
 
 namespace Kuantech.Core.FX
 {
+    [Serializable]
     public class SoundQueue
     {
         public Dictionary<string, Queue<Sound>> _soundQueues;
@@ -54,7 +55,6 @@ namespace Kuantech.Core.FX
 
         public bool SoundCanBePlayed(Sound sound)
         {
-            
             return AudioLibrary.GetElapsedTime(sound.AudioId) > sound.Cooldown;
         }
     }

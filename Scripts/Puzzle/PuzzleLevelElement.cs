@@ -14,9 +14,10 @@ namespace Kuantech.Puzzle
     public class PuzzleLevelElement : MonoBehaviour 
     {
         [NonSerialized] public PuzzleLevelElementState CurrentState = null;
-        public virtual void OnSetup()
+        [NonSerialized] public PuzzleLevel ParentLevel;
+        public virtual void OnSetup(PuzzleLevel parentLevel)
         {
-
+            ParentLevel = parentLevel;
         }
 
         public virtual void OnPlay()

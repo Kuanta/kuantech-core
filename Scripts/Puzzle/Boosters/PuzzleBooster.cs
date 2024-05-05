@@ -10,11 +10,17 @@ namespace Kuantech.Puzzle
         [Header("Description")] 
         public string Title;
         public string Description;
+        public Sprite Icon;
+        
+        [Header("Requirements")]
 
         [Header("Price")] 
         public CurrencyData PriceCurrencyType;
         public int Price;
 
+        [Header("Level")] 
+        public int LevelRequirement;
+        
         public virtual bool OnSetBooster(PuzzleLevel currentLevel)
         {
             return CanBeBought();

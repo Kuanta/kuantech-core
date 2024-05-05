@@ -30,7 +30,7 @@ namespace Kuantech.Puzzle
             PuzzleLevelElement[] levelElements = GetComponentsInChildren<PuzzleLevelElement>();
             foreach(var element in levelElements)
             {
-                element.OnSetup();
+                element.OnSetup(this);
                 LevelElements[element.GetUniqueId()] = element;
             }
             base.SetupLevel();
