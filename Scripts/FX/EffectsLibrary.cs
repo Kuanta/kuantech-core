@@ -15,6 +15,7 @@ namespace Kuantech.Core.FX
         public Dictionary<string, Effect> _effectsById;
 
         [Tooltip("Parent for existing effects")]
+        public List<Effect> ExistingEffectsList;
         public Transform ExistingEffectsParent;
         public Dictionary<string, Effect> _existingEffectsById;
 
@@ -43,6 +44,12 @@ namespace Kuantech.Core.FX
             {
                 _existingEffectsById[existingEffect.EffectId] = existingEffect;
                 existingEffect.BoundToEffectsLibrary =  true;
+            }
+
+            foreach (var effect in ExistingEffectsList)
+            {
+                _existingEffectsById[effect.EffectId] = effect;
+                effect.BoundToEffectsLibrary = true;
             }
             if(AudioLibrary != null) AudioLibrary.Initialize();
         }
