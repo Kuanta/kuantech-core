@@ -127,7 +127,7 @@ namespace Kuantech.Core
                 if(pair.Value.Dirtied)
                 {
                     string serializedVal = pair.Value.Save();
-                    _serializedModules[pair.Key] = pair.Value.Save();
+                    _serializedModules[pair.Key] = serializedVal;
                     dirtied = true;
                     pair.Value.Dirtied = false;
                 }
