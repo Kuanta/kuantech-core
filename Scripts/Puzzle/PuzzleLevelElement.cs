@@ -33,8 +33,8 @@ namespace Kuantech.Puzzle
         {
             CurrentState = Helpers.Deserialize<PuzzleLevelElementState>(serializedState);
         }
-
-        public PuzzleLevelElementState GetElementState()
+        
+        public virtual PuzzleLevelElementState GetElementState()
         {
             return new PuzzleLevelElementState()
             {

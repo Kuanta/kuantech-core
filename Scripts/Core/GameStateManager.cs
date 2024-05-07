@@ -45,7 +45,10 @@ namespace Kuantech.Core
             //Check periodically whether to save the game state or not. The game state won't save itself if its not dirtied
             if (GameState == null) return;
             if (!(Time.time - _lastCheckTime > SaveCheckFrequency)) return;
-            if (SaveData) GameState.SaveData();
+            if (SaveData)
+            {
+                GameState.SaveData();
+            }
             _lastCheckTime = Time.time;
         }
 

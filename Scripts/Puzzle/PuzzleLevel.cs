@@ -12,7 +12,7 @@ namespace Kuantech.Puzzle
         public PuzzleLevelUI LevelUI;
         public ScreenSizeAdjuster ScreenSizeAdjuster;
         public Dictionary<int, PuzzleLevelElement> LevelElements = new Dictionary<int, PuzzleLevelElement>();
-        [NonSerialized] public PuzzleLevelState LevelState;
+        [NonSerialized] public PuzzleLevelState CurrentPuzzleLevelState;
         
         //Boosters
         [NonSerialized] public PuzzleBooster CurrentBooster;
@@ -28,11 +28,13 @@ namespace Kuantech.Puzzle
             }
             LevelElements = new Dictionary<int, PuzzleLevelElement>();
             PuzzleLevelElement[] levelElements = GetComponentsInChildren<PuzzleLevelElement>();
-            foreach(var element in levelElements)
+            for (int i = 0; i < levelElements.Length; ++i)
             {
+                PuzzleLevelElement element = levelElements[i];
                 element.OnSetup(this);
-                LevelElements[element.GetUniqueId()] = element;
+                LevelElements[i] = element;
             }
+       
             base.SetupLevel();
         }
 
@@ -77,13 +79,7 @@ namespace Kuantech.Puzzle
         public virtual PuzzleLevelState GetLevelState()
         {
             PuzzleLevelState levelState = new PuzzleLevelState();
-            levelState.LevelElementStates = new Dictionary<int, byte[]>();
-            //Get elements state
-            foreach(var pair in LevelElements)
-            {
-                PuzzleLevelElementState levelElementState = pair.Value.GetElementState();
-                levelState.LevelElementStates[pair.Key] = Helpers.Serialize(levelElementState);
-            }
+            levelState.LevelElementStates = GetLevelElementsState();
             return levelState;
         }
 
@@ -92,8 +88,21 @@ namespace Kuantech.Puzzle
             //Load element states
             foreach(var elementStatePair in newState.LevelElementStates)
             {
+                if(!LevelElements.ContainsKey(elementStatePair.Key)) continue;
                 LevelElements[elementStatePair.Key].LoadElementState(elementStatePair.Value);
             }
+        }
+
+        public Dictionary<int, byte[]> GetLevelElementsState()
+        {
+            Dictionary<int, byte[]> elementsState = new Dictionary<int, byte[]>();
+            //Get elements state
+            foreach(var pair in LevelElements)
+            {
+                PuzzleLevelElementState levelElementState = pair.Value.GetElementState();
+                elementsState[pair.Key] = Helpers.Serialize(levelElementState);
+            }
+            return elementsState;
         }
         #endregion
         
