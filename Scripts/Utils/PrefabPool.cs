@@ -32,7 +32,7 @@ namespace Kuantech.Core
         {
             if (!objectToPool.TryGetComponent(out PoolableComponent poolable))
             {
-                Debug.LogError($"Prefab {objectToPool.name} doesn't have poolable component");
+                Debug.LogWarning($"Prefab {objectToPool.name} doesn't have poolable component");
                 UnityEngine.Object.Destroy(objectToPool);
                 return;
             }
@@ -42,7 +42,7 @@ namespace Kuantech.Core
         
             if (!_pool.ContainsKey(key)) //This should never be the case
             {
-                Debug.LogError($"Prefab {objectToPool.name} doesn't have a field in the pool");
+                Debug.LogWarning($"Prefab {objectToPool.name} doesn't have a field in the pool");
                 UnityEngine.Object.Destroy(objectToPool);
                 return;
             }
