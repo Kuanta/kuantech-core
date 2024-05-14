@@ -83,7 +83,7 @@ namespace Kuantech.Puzzle
             return levelState;
         }
 
-        public virtual void LoadLevelState(PuzzleLevelState newState)
+        public virtual bool LoadLevelState(PuzzleLevelState newState)
         {
             //Load element states
             foreach(var elementStatePair in newState.LevelElementStates)
@@ -91,6 +91,7 @@ namespace Kuantech.Puzzle
                 if(!LevelElements.ContainsKey(elementStatePair.Key)) continue;
                 LevelElements[elementStatePair.Key].LoadElementState(elementStatePair.Value);
             }
+            return true;
         }
 
         public Dictionary<int, byte[]> GetLevelElementsState()
