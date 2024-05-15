@@ -21,8 +21,8 @@ namespace Kuantech.Core.HyperCasual.Runner
 
         [Header("Effects")] 
         [SerializeField] private AudioSource PickupSound;
-        [KTTag("AudioClipTag")]
-        [SerializeField] protected int PickupUISound;
+        
+        [SerializeField] protected EffectPlayer PickupUISound;
 
         public EventHandler<Pickupable> PickedEvent;
         
@@ -49,7 +49,7 @@ namespace Kuantech.Core.HyperCasual.Runner
                 PickupSound.Play();
             }else
             {
-                EffectsLibrary.GetContext<EffectsLibrary>().AudioLibrary.PlaySound(PickupUISound);
+                PickupUISound.PlayEffectAtPosition(transform.position, transform.rotation);
             }
 
             PickedEvent?.Invoke(this, this);
@@ -101,10 +101,6 @@ namespace Kuantech.Core.HyperCasual.Runner
         public virtual void Enable()
         {
             if(Model != null) Model.SetActive(true);
-            if (Collider == null)
-            {
-                Debug.LogError("WTYF");
-            }
             if(Collider != null) Collider.enabled = true;
             Available = true;
         }

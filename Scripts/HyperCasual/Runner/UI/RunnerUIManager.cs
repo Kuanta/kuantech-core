@@ -22,7 +22,7 @@ namespace Kuantech.HyperCasual.Runner.UI
             IngameMenu.Initialize();
         }
 
-        private void OnStateChange(object sender, StateChangeData change)
+        private void OnStateChange(object sender, LevelStateChangeData change)
         {
             IngameMenu.OnStateChange(change.NewState);
             MainMenu.OnStateChange(change.NewState);

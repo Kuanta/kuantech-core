@@ -37,34 +37,21 @@ namespace Kuantech.Core.HyperCasual.Runner
         public void SetRunner(Runner runner)
         {
             CurrentRunner = runner;
+            runner.SetCurrentLevel(this);
             PositionRunner();
         }
         public override void SetupLevel()
         {
             base.SetupLevel();
-            //Get existing chunks
-            LevelChunks = GetComponentsInChildren<LevelChunk>().ToList();
-            if (LevelChunks.Count == 0) Debug.LogError("Premade level has no chunk");
-            _currentChunkIndex = 0;
-            _startChunk = LevelChunks[0] as RunnerChunk;
-            ChunkCount = LevelChunks.Count;
-            for (int i = 0; i < LevelChunks.Count; ++i)
-            {
-                RunnerChunk rc = LevelChunks[i] as RunnerChunk;
-                rc.Initialize(this, rc.IsFinalChunk);
-                if (i < LiveChunkCount)
-                {
-                    rc.gameObject.SetActive(true);
-                    _liveChunks.Enqueue(rc);
-                }
-                else
-                {
-                    rc.gameObject.SetActive(false);
-                }
-            }
+            SetupChunks();
+            SetRunner(RunnerManager.GetCurrentRunner());
+            CurrentRunner.OnSetup();
+        }
 
-            RunnerManager runnerMan = GameManager.Instance.GetSubManagerByType<RunnerManager>() as RunnerManager;
-            SetRunner(runnerMan.Runner);
+        public override void PlayLevel()
+        {
+            base.PlayLevel();
+            CurrentRunner.OnPlay(); 
         }
 
         /// <summary>
@@ -82,15 +69,18 @@ namespace Kuantech.Core.HyperCasual.Runner
 
             _currentChunkIndex = 0;
             _liveChunks.Clear();
-            for (int i = 0; i < LevelChunks.Count; ++i)
+            if (LevelChunks != null)
             {
-                LevelChunks[i].gameObject.SetActive(i<LiveChunkCount);
-                LevelChunks[i].OnRestart();
-                _liveChunks.Enqueue(LevelChunks[i] as RunnerChunk);
-                _currentChunkIndex++;
-            }
+                for (int i = 0; i < LevelChunks.Count; ++i)
+                {
+                    LevelChunks[i].gameObject.SetActive(i<LiveChunkCount);
+                    LevelChunks[i].OnRestart();
+                    _liveChunks.Enqueue(LevelChunks[i] as RunnerChunk);
+                    _currentChunkIndex++;
+                }
 
-            _startChunk = LevelChunks[0] as RunnerChunk;
+                _startChunk = LevelChunks[0] as RunnerChunk;
+            }
         }
         private void PositionRunner()
         {
@@ -124,11 +114,40 @@ namespace Kuantech.Core.HyperCasual.Runner
             _currentChunkIndex = 0;
         }
 
+        #region Chunk Handling
+
+        private void SetupChunks()
+        {
+            //Get existing chunks
+            LevelChunks = GetComponentsInChildren<LevelChunk>().ToList();
+            if (LevelChunks.Count > 0)
+            {
+                _currentChunkIndex = 0;
+                _startChunk = LevelChunks[0] as RunnerChunk;
+                ChunkCount = LevelChunks.Count;
+                for (int i = 0; i < LevelChunks.Count; ++i)
+                {
+                    RunnerChunk rc = LevelChunks[i] as RunnerChunk;
+                    rc.Initialize(this, rc.IsFinalChunk);
+                    if (i < LiveChunkCount)
+                    {
+                        rc.gameObject.SetActive(true);
+                        _liveChunks.Enqueue(rc);
+                    }
+                    else
+                    {
+                        rc.gameObject.SetActive(false);
+                    }
+                }
+
+            }
+        }
+        
         public void OnPlayerEnterChunk(RunnerChunk chunk)
         {
             
         }
-        
+
         /// <summary>
         /// Called when player exits a chunk
         /// </summary>
@@ -174,6 +193,8 @@ namespace Kuantech.Core.HyperCasual.Runner
             LevelChunks.Add(nextChunk);
             return nextChunk;
         }
+        #endregion
+        
         #region Chunks Generation
 
         

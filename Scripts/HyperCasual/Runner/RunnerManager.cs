@@ -9,7 +9,9 @@ namespace Kuantech.Core.HyperCasual.Runner
     {
         public Runner RunnerPrefab;
         [NonSerialized] public Runner Runner;
-        [NonSerialized] public RunnerInputHandler RunnerInputHandler;
+        
+        [Header("Input Handler")]
+        [SerializeField] private RunnerInputHandler RunnerInputHandler;
 
         [Header("Cameras")]
         [SerializeField] private CinemachineVirtualCamera MainMenuCamera;
@@ -20,7 +22,7 @@ namespace Kuantech.Core.HyperCasual.Runner
             await base.Initialize(gameManager);
             Runner = Instantiate(RunnerPrefab.gameObject).GetComponent<Runner>();
             Runner.Initialize();
-
+            RunnerInputHandler.Runner = Runner;
             MainMenuCamera.Follow = Runner.GetFollowTarget();
             MainMenuCamera.LookAt = Runner.GetFollowTarget();
             FollowCamera.Follow = Runner.GetFollowTarget();
@@ -37,7 +39,7 @@ namespace Kuantech.Core.HyperCasual.Runner
             levelMan.StateChangeEvent += OnStateChange;
         }
 
-        private void OnStateChange(object sender, StateChangeData stateChangeData)
+        private void OnStateChange(object sender, LevelStateChangeData stateChangeData)
         {
             if (stateChangeData.NewState == LevelState.Waiting)
             {
@@ -55,14 +57,13 @@ namespace Kuantech.Core.HyperCasual.Runner
                 MainMenuCamera.enabled = false;
                 FollowCamera.enabled = true;
             }
-            
-            // //An ugly but necessary fix
-            // if (stateChangeData.NewState == LevelState.Playing)
-            // {
-            //     RunnerInputHandler.enabled = true;
-            // }
         }
 
+        public static Runner GetCurrentRunner()
+        {
+            var context = GetContext<RunnerManager>();
+            return context.Runner;
+        }
         public override void Cleanup()
         {
             base.Cleanup();

@@ -11,7 +11,7 @@ namespace Kuantech.Core
         Failed,
     }
 
-    public struct LevelChangeData
+    public struct LevelStateChangeData
     {
         public LevelState OldState;
         public LevelState NewState;
@@ -30,17 +30,26 @@ namespace Kuantech.Core
                 }
         }
 
-        public Action<LevelChangeData> OnStateChange;
+        public Action<LevelStateChangeData> OnStateChange; //An event bound to level.
 
         #region Level Lifecycle
+        //A simple relayer to LevelManager
         public void ChangeLevelState(LevelState newState)
         {
-            LevelState oldState = CurrentState;
-            CurrentState = newState;
-            OnStateChange?.Invoke(new LevelChangeData{
-                OldState = oldState,
+            LevelManager levelman = LevelManager.GetContext<LevelManager>();
+            if (levelman == null)
+            {
+                Debug.LogError("Level Manager is null, can't change level state");
+            }
+            //For subscribers that subscribe to level only
+            OnStateChange?.Invoke(new LevelStateChangeData
+            {
+                OldState = CurrentState,
                 NewState = newState,
             });
+            
+            //Inform level manager
+            levelman.ChangeCurrentState(newState);
         }
         public virtual void SetupLevel()
         {

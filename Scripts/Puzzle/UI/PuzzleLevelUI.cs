@@ -36,13 +36,13 @@ namespace Kuantech.Puzzle.UI
             level.OnStateChange += OnLevelStateChange;
         }
 
-        private void OnLevelStateChange(LevelChangeData levelChangeData)
+        private void OnLevelStateChange(LevelStateChangeData levelStateChangeData)
         {
-            if(levelChangeData.NewState == LevelState.Completed)
+            if(levelStateChangeData.NewState == LevelState.Completed)
             {
                 OpenCompletePanel();
             }
-            else if(levelChangeData.NewState == LevelState.Failed)
+            else if(levelStateChangeData.NewState == LevelState.Failed)
             {
                 OpenFailedPanel();
             }else{

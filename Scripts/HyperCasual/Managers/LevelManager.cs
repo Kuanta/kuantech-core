@@ -8,11 +8,6 @@ using Kuantech.UI;
 
 namespace Kuantech.Core
 {
-    public struct StateChangeData
-    {
-        public LevelState OldState;
-        public LevelState NewState;
-    }
 
     [Serializable]
     public class LevelDictionary : SerializableDictionary<int, Level>{}
@@ -27,7 +22,7 @@ namespace Kuantech.Core
 
 
         //Events
-        public EventHandler<StateChangeData> StateChangeEvent;
+        public EventHandler<LevelStateChangeData> StateChangeEvent;
         public EventHandler<int> LevelSetEvent;
         public EventHandler<Level> LevelCompletedEvent;
 
@@ -124,7 +119,7 @@ namespace Kuantech.Core
             if (CurrentLevel == null) return;
             LevelState oldState = CurrentLevel.CurrentState;
             CurrentLevel.CurrentState = newState;
-            StateChangeEvent?.Invoke(this, new StateChangeData
+            StateChangeEvent?.Invoke(this, new LevelStateChangeData
             {
                 OldState = oldState,
                 NewState = newState,

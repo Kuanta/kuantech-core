@@ -24,7 +24,9 @@ namespace Kuantech.Utils
         public static float DotProjection(Vector3 vec, Vector3 to)
         {
             Vector3 normalized = to.normalized;
-            return Vector3.Dot(vec, normalized); 
+            float dotProduct = Vector3.Dot(vec, normalized);
+            float roundedDotProduct = Mathf.Round(dotProduct * 100f) / 100f;
+            return roundedDotProduct;
         }
         /// <summary>
         /// Calculate nth value of the fibonacci sequence using Dynamic Programming
