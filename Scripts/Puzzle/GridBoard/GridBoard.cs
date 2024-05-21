@@ -251,6 +251,7 @@ namespace Kuantech.Puzzle
                 }
             }
         }
+        
         #region Utility Methods
         /// <summary>
         /// Returns row and col 

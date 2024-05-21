@@ -151,6 +151,12 @@ namespace Kuantech.Utils
                 handler(child.gameObject);
             }
         }
+        
+        public static float Fmod(float x, float y)
+        {
+            return x - y * Mathf.Floor(x / y);
+        }
+        
         #region String
         public static string Stringfy(this float number, bool roundToInteger = false, bool roundSmallerToInteger = false)
         {

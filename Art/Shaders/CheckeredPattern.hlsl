@@ -34,3 +34,28 @@ void GridPattern_float(float3 position, float3 offset, float gridSize, float gri
         color = ColorGrid;
     }
 }
+
+void DottedPattern_float(float3 vertexPos, float distance, float radius, float4 dotColor, float4 backgroundColor, out float4 color)
+{
+    // Calculate the distance from the vertex position to the nearest dot center
+    float3 adjustedPos = vertexPos;
+    if(adjustedPos.x < 0) adjustedPos.x *= -1;
+    if(adjustedPos.y < 0) adjustedPos.y *= -1;
+    if(adjustedPos.z < 0) adjustedPos.z *= -1;
+    
+    float2 nearestDotCenter = floor(adjustedPos / distance) * distance + 0.5 * distance;
+    
+    // Calculate the distance from the vertex to the center of the nearest dot
+    float2 delta = adjustedPos - nearestDotCenter;
+    float distToDotCenter = length(delta);
+    
+    // If the distance to the dot center is less than the radius, color the dot, otherwise color the background
+    if (distToDotCenter < radius)
+    {
+        color = dotColor;
+    }
+    else
+    {
+        color = backgroundColor;
+    }
+}
