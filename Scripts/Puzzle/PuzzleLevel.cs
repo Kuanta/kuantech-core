@@ -46,6 +46,7 @@ namespace Kuantech.Puzzle
                 element.OnPlay();
             }
         }
+
         public override void ResetLevelState()
         {
             base.ResetLevelState();

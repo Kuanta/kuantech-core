@@ -94,7 +94,7 @@ namespace Kuantech.Utils
         }
 
 
-        public virtual bool CanBeLandedOnDropZone(IDropZone dropZone)
+        public virtual bool CanBeLandedOnDropZone(IDropZone dropZone, Vector3 dropPosition)
         {
             if(CurrentDropZone != null && CurrentDropZone != dropZone) 
             {
