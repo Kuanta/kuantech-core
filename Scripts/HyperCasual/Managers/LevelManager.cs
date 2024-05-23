@@ -4,7 +4,6 @@ using IngameDebugConsole;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using Kuantech.Core.HyperCasual;
-using Kuantech.UI;
 
 namespace Kuantech.Core
 {
