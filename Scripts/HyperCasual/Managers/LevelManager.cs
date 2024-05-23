@@ -73,7 +73,6 @@ namespace Kuantech.Core
             level.transform.rotation = Quaternion.identity;
             level.LevelIndex = levelIndex;
             level.PowerLevel = levelIndex;
-            level.SetupLevel(); //todo(optimization): This may be unefficient
             return level;
         }
 
@@ -94,6 +93,7 @@ namespace Kuantech.Core
                 CurrentLevel = null;
             }
             CurrentLevel = GetLevel(CurrentLevelIndex);
+            CurrentLevel.SetupLevel(); //todo(optimization): This may be unefficient
 
             //Set power level
             int powerLevel = levelIndex;
