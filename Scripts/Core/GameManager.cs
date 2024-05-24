@@ -26,7 +26,12 @@ namespace Kuantech.Core
             DontDestroyOnLoad(gameObject);
         }
 
-        protected virtual async void Start()
+        protected virtual void Start()
+        {
+            StartGame();
+        }
+
+        protected async void StartGame()
         {
             //Get and initialize persistent submanagers
             _subManagers = GetComponentsInChildren<SubManager>();
@@ -34,7 +39,6 @@ namespace Kuantech.Core
             await Initialize();
             OnNewScene();
         }
-
         protected virtual async UniTask Initialize()
         {
             await InitializeSubManagers(_subManagers);

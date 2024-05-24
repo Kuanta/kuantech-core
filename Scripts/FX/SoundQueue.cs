@@ -37,6 +37,7 @@ namespace Kuantech.Core.FX
 
         public void HandleQueue()
         {
+            if (_soundQueues == null) return;
             foreach (var soundId in _soundQueues.Keys)
             {
                 if(_soundQueues[soundId].IsNullOrEmpty()) continue;
