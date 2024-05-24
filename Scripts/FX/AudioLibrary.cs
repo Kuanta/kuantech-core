@@ -27,6 +27,7 @@ namespace Kuantech.Core.FX
         public AudioSource MainMenuMusic;
         public AudioSource IngameMusic;
 
+        private bool _initialized = false;
         public void Initialize()
         {
             //Load music values
@@ -47,11 +48,13 @@ namespace Kuantech.Core.FX
                 }
             }
             SoundQueue = new SoundQueue(this);
+            _initialized = true;
+
         }
 
         private void Update()
         {
-            if(SoundQueue == null) return;
+            if(SoundQueue == null || !_initialized) return;
             SoundQueue.HandleQueue();
         }
 
