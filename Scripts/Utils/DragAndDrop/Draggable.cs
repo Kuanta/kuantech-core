@@ -89,8 +89,8 @@ namespace Kuantech.Utils
                 ReturnToPreviousPosition();
                 return;
             }
-            OnSuccesfullDrop();
             OnDrop?.Invoke();
+            OnSuccesfullDrop();
         }
 
 
