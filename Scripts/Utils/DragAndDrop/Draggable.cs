@@ -34,8 +34,6 @@ namespace Kuantech.Utils
             transform.SetParent(null);
             transform.localScale = Vector3.one;
 
-            //Calculate offset
-            //DragPositionOffset = new Vector3(Screen.width * OffsetPercentages.x, Screen.height * OffsetPercentages.y);
             return true;
         }
         [Tooltip("If set to false, Draggable can't be dragged")]

@@ -139,6 +139,7 @@ namespace Kuantech.Utils
         {
             Vector3 mousePos = Input.mousePosition;
             var dm = DragManager.GetContext<DragManager>();
+            if (dm == null) return Vector3.zero;
             if(applyOffset) 
             {
                mousePos += dm.GetCursorOffset();

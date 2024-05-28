@@ -120,6 +120,14 @@ namespace Kuantech.Core
         }
         public virtual Currency GetCurrency(string currencyId)
         {
+            if (GameState == null)
+            {
+                return new Currency
+                {
+                    Amount = 0,
+                    CurrencyId = currencyId,
+                };
+            }
             CurrencyModel hcGameModel = GameState.GetModule<CurrencyModel>();
             if (hcGameModel == null)
             {
