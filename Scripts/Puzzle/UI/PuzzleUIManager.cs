@@ -8,7 +8,7 @@ namespace Kuantech.Puzzle.UI
 
         public override void OnSubmanagersInitialized()
         {
-            LevelUI.Initialize();
+            if(LevelUI != null) LevelUI.Initialize();
         }
         
         public static PuzzleLevelUI GetLevelUI()
@@ -22,6 +22,7 @@ namespace Kuantech.Puzzle.UI
         {
             var context = PuzzleUIManager.GetContext<PuzzleUIManager>();
             if(context == null) return;
+            if (context.LevelUI == null) return;
             context.LevelUI.gameObject.SetActive(!context.LevelUI.gameObject.activeInHierarchy);
         }
     }

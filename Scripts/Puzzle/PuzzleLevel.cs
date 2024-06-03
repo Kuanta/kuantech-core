@@ -128,7 +128,7 @@ namespace Kuantech.Puzzle
         
         public virtual void CancelCurrentBooster()
         {
-            LevelUI.DisableBoosterUI();
+            if(LevelUI != null) LevelUI.DisableBoosterUI();
             if (CurrentBooster == null) return;
             CurrentBooster.CancelBooster();
             CurrentBooster = null;
