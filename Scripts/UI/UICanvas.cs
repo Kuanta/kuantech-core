@@ -25,7 +25,9 @@ namespace Kuantech.UI
             flyingElement.transform.localPosition = screenPosition;
             flyingElement.transform.localScale = Vector3.one;
             flyingElement.transform.localRotation = Quaternion.identity;
-            Vector3 screenTargetPosition = GlobalToScreenPosition(target.position);
+            Vector3 targetPos = target.position;
+            targetPos.z = 100;
+            Vector3 screenTargetPosition = GlobalToScreenPosition(targetPos);
             flyingElement.Fly(screenPosition, screenTargetPosition, data, TargetReachedHandler);
         }   
 
@@ -40,12 +42,22 @@ namespace Kuantech.UI
 
         public Vector2 GlobalToScreenPosition(Vector3 worldPosition)
         {
-            Camera camera = GameCamera != null ? GameCamera : Camera.main;
-            Camera canvasCam = CanvasCamera != null ? CanvasCamera : camera;
-            Vector3 screenPos = RectTransformUtility.WorldToScreenPoint(camera, worldPosition);
-            Vector2 position;
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(RectTransform, screenPos, canvasCam, out position);
-            return position;
+            Camera mainCamera = GameCamera != null ? GameCamera : Camera.main;
+            Camera canvasCamera = CanvasCamera != null ? CanvasCamera : mainCamera;
+
+            // Transform world position to screen point using the main camera
+            Vector3 screenPos = mainCamera.WorldToScreenPoint(worldPosition);
+            // If the canvas camera is orthographic, adjust the screen position's depth
+        
+            // Convert screen point to local point in the canvas' RectTransform
+            Vector2 localPoint;
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(RectTransform, screenPos, canvasCamera, out localPoint);
+            // if (canvasCamera.orthographic)
+            // {
+            //     localPoint.y = RectTransform.sizeDelta.y - localPoint.y; // Set the depth to near clip plane of the main camera
+            // }
+            Debug.LogError("Local Pos:"+localPoint);
+            return localPoint;
         }
     }
 }
