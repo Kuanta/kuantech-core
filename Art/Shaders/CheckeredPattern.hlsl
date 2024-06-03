@@ -59,3 +59,49 @@ void DottedPattern_float(float3 vertexPos, float distance, float radius, float4 
         color = backgroundColor;
     }
 }
+
+void TiledPattern_float(float2 vertexPosition, float cellSize, float tileSizeFraction, float tileCornerRadius,int rowCount, int colCount, float4 backgroundColor, float4 tileColor, out float4 color)
+{
+    if(vertexPosition.x < 0) vertexPosition.x *= -1;
+    if(vertexPosition.y < 0) vertexPosition.y *= -1;
+    
+    // Calculate the tile size from the cell size and tile size fraction
+    float tileSize = cellSize * tileSizeFraction;
+
+    // Calculate the half size of the tile for easier calculations
+    float halfTileSize = tileSize * 0.5;
+    
+    // Calculate the position within the current cell
+    float2 cellPosition = fmod(vertexPosition, cellSize);
+    
+    // Calculate the center of the cell
+    float2 cellCenter = cellSize * 0.5;
+    
+    // Calculate the position relative to the center of the cell
+    float2 relativePosition = cellPosition - cellCenter;
+    
+    // Calculate the distance from the center of the tile to the edges
+    float2 halfTileExtents = float2(halfTileSize, halfTileSize);
+    
+    // Check if the relative position is within the tile bounds, considering the rounded corners
+    float2 cornerDistance = abs(relativePosition) - halfTileExtents + tileCornerRadius;
+    float2 clampedCornerDistance = max(cornerDistance, 0.0);
+    float cornerDistanceSquared = dot(clampedCornerDistance, clampedCornerDistance);
+    
+    // Determine the color based on whether the point is inside the tile bounds
+    bool isInsideTile = (relativePosition.x <= halfTileExtents.x && relativePosition.y <= halfTileExtents.y) &&
+                        (cornerDistanceSquared <= (tileCornerRadius * tileCornerRadius));
+
+    if(rowCount > 0 && abs(vertexPosition.y) >= rowCount*cellSize|| colCount > 0 && (abs(vertexPosition.x) >= colCount*cellSize))
+    {
+        color = backgroundColor;
+        return;
+    }
+    if(isInsideTile)
+    {
+        color = tileColor;
+    }else
+    {
+        color = backgroundColor;
+    }
+}
