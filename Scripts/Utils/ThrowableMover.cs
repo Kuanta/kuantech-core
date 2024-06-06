@@ -1,67 +1,68 @@
 ﻿using System;
-using DG.Tweening;
 using Kuantech.Core;
 using Kuantech.Core.FX;
-using Kuantech.Utils;
 using UnityEngine;
 using UnityEngine.Events;
 
-namespace Kuantech.ArcadeIdle
+namespace Kuantech.Utils
 {
-    //todo: Implement Throwable Mover here
-    public class ResourceVisual : MonoBehaviour
+    /// <summary>
+    /// A component that moves the object in a "throwable" fashion
+    /// </summary>
+    public class ThrowableMover : MonoBehaviour
     {
-        [NonSerialized] public string ResourceId;
-        public AnimationCurve SpeedCurve;
-        [NonSerialized] public WorldPoint TargetPoint;
+        [Header("Properties")]
         public float Speed = 5f;  // Speed at which the resource should fly
         public float InitialRiseSpeed = 25.0f;
         public float MaxRiseHeight = 3.0f;
         public float ReachThresh = 0.1f;
+        public AnimationCurve SpeedCurve;
+        public bool UsePool = false;
+        public bool DespawnOnReach = false;
 
-        [Header("Effects")]
-        [KTTag("AudioClipTag")]
-        [SerializeField] private int OnReachedAudio;
-        [NonSerialized] public bool IsMoving = false;
-        [NonSerialized] public UnityAction ReachedTargetHandler;
-        [NonSerialized] public bool DespawnOnReach = false;
-
-        [NonSerialized] public ResourceInventory ParentInventory;
-        [NonSerialized] public ResourceDisplayer ParentDisplayer;
+        [Header("Effects")] 
+        [SerializeField] private EffectPlayer OnReachedEffect;
         
         private float _currentRiseSpeed;
         private float _currentRiseHeight;
         private int _currentRiseDir;
-        public virtual void Spawn()
+        [NonSerialized] public WorldPoint TargetPoint;
+        [NonSerialized] public bool IsMoving = false;
+        [NonSerialized] public UnityAction ReachedTargetHandler;
+
+        public void ThrowToTarget(WorldPoint target, UnityAction reachedTargetHandler = null)
         {
-            IsMoving = false;
-            ReachedTargetHandler = null; //Reset
-            DespawnOnReach = false;
+            TargetPoint = target;
+            IsMoving = true;
+            transform.SetParent(null, true);
+            _currentRiseSpeed = InitialRiseSpeed;
+            _currentRiseHeight = 0;
+            _currentRiseDir = 1;
+            ReachedTargetHandler = reachedTargetHandler;
         }
         
         private void Update()
         {
             if (!IsMoving || TargetPoint == null) return;
-
-            // Calculate the desired position with offset
             Vector3 targetPosition = TargetPoint.GetTargetPosition();
             float distance = Vector3.Distance(transform.position, targetPosition);
             float normalizedSpeed = SpeedCurve.Evaluate(distance);
-
+            
             // Apply initial rise speed and decay it
             _currentRiseHeight += _currentRiseDir * Time.deltaTime * _currentRiseSpeed;
           
             _currentRiseHeight = Mathf.Max(0, _currentRiseHeight);
             targetPosition.y += _currentRiseHeight;
-
+            
             // Move the resource towards the desired position
             transform.position = Vector3.MoveTowards(transform.position,
                 targetPosition, normalizedSpeed * Speed * Time.deltaTime);
-
+            
             if (_currentRiseHeight > MaxRiseHeight && _currentRiseDir > 0)
             {
                 _currentRiseDir = -1;
             }
+            
             // If the resource is close enough to the target, you can stop moving and perform other actions if necessary
             if (!(distance < ReachThresh) || _currentRiseDir > 0) return;
             
@@ -72,41 +73,30 @@ namespace Kuantech.ArcadeIdle
                 transform.localRotation = TargetPoint.LocalRotation;
             }
             IsMoving = false;
-            ReachedTargetHandler?.Invoke();
             OnReachedTarget();
         }
         
-        public void FlyToTarget(WorldPoint targetPoint)
-            {
-                TargetPoint = targetPoint;
-                IsMoving = true;
-                transform.SetParent(null, true);
-                Vector3 targetPosition = TargetPoint.GetTargetPosition();
-                _currentRiseSpeed = InitialRiseSpeed;
-                _currentRiseHeight = 0;
-                _currentRiseDir = 1;
-        }
-
-        public void FlyToTargetWithDoJump(WorldPoint targetPoint, float jumpForce, float duration)
+        protected virtual void OnReachedTarget()
         {
-            IsMoving = true;
-            transform.DOJump(targetPoint.GetTargetPosition(), jumpForce, 1, duration, false).SetEase(Ease.Linear).OnComplete(()=>{
-                IsMoving = false;
-            });
-        }
-        private void OnReachedTarget()
-        {
-            EffectsLibrary.PlayAudio(OnReachedAudio);
+            ReachedTargetHandler?.Invoke();
+            OnReachedEffect.PlayEffectAtPosition(transform.position, transform.rotation);
             if (DespawnOnReach)
             {
                 Despawn();
             }
         }
 
-        public void Despawn()
+        private void Despawn()
         {
             ReachedTargetHandler = null; //Clear subscribers
-            GameManager.Instance.Pool.PoolObject(gameObject);
+            if (UsePool)
+            {
+                GameManager.Instance.Pool.PoolObject(gameObject);
+            }
+            else
+            {
+                Destroy(gameObject);
+            }
         }
     }
 }

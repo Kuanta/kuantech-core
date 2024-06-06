@@ -1,8 +1,10 @@
 ﻿
+using System;
 using UnityEngine;
 
 namespace Kuantech.Utils
 {
+    [Serializable]
     public class WorldPoint
     {
         public Vector3 Position;
@@ -15,6 +17,11 @@ namespace Kuantech.Utils
         public Vector3 GetTargetPosition()
         {
             return Target != null ? Target.TransformPoint(LocalPosition) : Position;
+        }
+
+        public Quaternion GetRotation()
+        {
+            return Target != null ? Target.rotation * LocalRotation : Rotation;
         }
     }
 }
