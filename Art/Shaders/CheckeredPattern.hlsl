@@ -60,11 +60,15 @@ void DottedPattern_float(float3 vertexPos, float distance, float radius, float4 
     }
 }
 
-void TiledPattern_float(float2 vertexPosition, float cellSize, float tileSizeFraction, float tileCornerRadius,int rowCount, int colCount, float4 backgroundColor, float4 tileColor, out float4 color)
+void TiledPattern_float(float2 vertexPosition, float cellSize, float tileSizeFraction, float tileCornerRadius,float rowCount, float colCount, float4 backgroundColor, float4 tileColor, out float4 color)
 {
     if(vertexPosition.x < 0) vertexPosition.x *= -1;
     if(vertexPosition.y < 0) vertexPosition.y *= -1;
-    
+
+    const float2 startOffset = float2(cellSize*0.5f * (colCount%2), cellSize*0.5f * (rowCount%2));
+    vertexPosition.x += startOffset.x;
+    vertexPosition.y += startOffset.y;
+
     // Calculate the tile size from the cell size and tile size fraction
     float tileSize = cellSize * tileSizeFraction;
 
@@ -92,11 +96,13 @@ void TiledPattern_float(float2 vertexPosition, float cellSize, float tileSizeFra
     bool isInsideTile = (relativePosition.x <= halfTileExtents.x && relativePosition.y <= halfTileExtents.y) &&
                         (cornerDistanceSquared <= (tileCornerRadius * tileCornerRadius));
 
-    if(rowCount > 0 && abs(vertexPosition.y) >= rowCount*cellSize|| colCount > 0 && (abs(vertexPosition.x) >= colCount*cellSize))
+    if((rowCount > 0 && abs(vertexPosition.y) - startOffset.y>= rowCount*cellSize*0.5f) || (colCount > 0 && (abs(vertexPosition.x)-startOffset.x >= colCount*cellSize*0.5f)))
     {
         color = backgroundColor;
         return;
     }
+
+
     if(isInsideTile)
     {
         color = tileColor;
