@@ -56,7 +56,6 @@ namespace Kuantech.UI
             // {
             //     localPoint.y = RectTransform.sizeDelta.y - localPoint.y; // Set the depth to near clip plane of the main camera
             // }
-            Debug.LogError("Local Pos:"+localPoint);
             return localPoint;
         }
     }
