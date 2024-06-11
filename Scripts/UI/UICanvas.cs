@@ -9,6 +9,8 @@ namespace Kuantech.UI
         {
             RectTransform = GetComponent<RectTransform>();
         }
+
+        public float TestZPos = 10;
         [SerializeField] private Camera GameCamera;
         [SerializeField] private Camera CanvasCamera;
         [SerializeField] private RectTransform RectTransform;
@@ -20,33 +22,32 @@ namespace Kuantech.UI
         public void FlyUIElementFromWorldPosition(FlyingUIElement flyingElement, Vector3 worldPosition, RectTransform target, 
         object data = null, UnityAction TargetReachedHandler = null)
         {
-            Vector3 screenPosition = GlobalToScreenPosition(worldPosition);
+            Vector3 screenPosition = GlobalToScreenPosition(worldPosition, GameCamera);
             flyingElement.transform.SetParent(transform);
             flyingElement.transform.localPosition = screenPosition;
             flyingElement.transform.localScale = Vector3.one;
             flyingElement.transform.localRotation = Quaternion.identity;
             Vector3 targetPos = target.position;
-            targetPos.z = 100;
-            Vector3 screenTargetPosition = GlobalToScreenPosition(targetPos);
+            Vector3 screenTargetPosition = GlobalToScreenPosition(targetPos, CanvasCamera);
             flyingElement.Fly(screenPosition, screenTargetPosition, data, TargetReachedHandler);
         }   
+        //
+        // public void ShowFloatingText(FloatingText floatingText, Vector3 worldPosition, Vector3 initialSpeed)
+        // {
+        //     floatingText.transform.SetParent(transform);
+        //     floatingText.transform.localPosition = GlobalToScreenPosition(worldPosition);
+        //     floatingText.transform.localScale = Vector3.one;
+        //     floatingText.transform.localRotation = Quaternion.identity;
+        //     floatingText.Fly(initialSpeed);
+        // }
 
-        public void ShowFloatingText(FloatingText floatingText, Vector3 worldPosition, Vector3 initialSpeed)
-        {
-            floatingText.transform.SetParent(transform);
-            floatingText.transform.localPosition = GlobalToScreenPosition(worldPosition);
-            floatingText.transform.localScale = Vector3.one;
-            floatingText.transform.localRotation = Quaternion.identity;
-            floatingText.Fly(initialSpeed);
-        }
-
-        public Vector2 GlobalToScreenPosition(Vector3 worldPosition)
+        public Vector2 GlobalToScreenPosition(Vector3 worldPosition, Camera cam)
         {
             Camera mainCamera = GameCamera != null ? GameCamera : Camera.main;
             Camera canvasCamera = CanvasCamera != null ? CanvasCamera : mainCamera;
 
             // Transform world position to screen point using the main camera
-            Vector3 screenPos = mainCamera.WorldToScreenPoint(worldPosition);
+            Vector3 screenPos = cam.WorldToScreenPoint(worldPosition);
             // If the canvas camera is orthographic, adjust the screen position's depth
         
             // Convert screen point to local point in the canvas' RectTransform
