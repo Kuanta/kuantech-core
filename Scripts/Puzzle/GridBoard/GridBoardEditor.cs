@@ -46,7 +46,9 @@ namespace Kuantech.Puzzle
                 
                 Ray ray = HandleUtility.GUIPointToWorldRay(Event.current.mousePosition);
                 Vector3 pointOnGrid = GridBoard.GetPointOnPlane(ray);
-                GridBoard.GetRowColFromPointOnBoard(pointOnGrid, out int row, out int col);
+                GridTileCoordinate coord = GridBoard.GetRowColFromPointOnBoard(pointOnGrid);
+                int row = coord.Row;
+                int col = coord.Column;
                 
                 // Consume the event to prevent other actions
                 Event.current.Use();

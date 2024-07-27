@@ -8,8 +8,14 @@ namespace Kuantech.Puzzle
     {
         public string Id;
         public GridTile Prefab;
-    }   
-
+    }
+    
+    [Serializable]
+    public struct GridTileCoordinate
+    {
+        public int Row;
+        public int Column;
+    }
     public class GridTile : MonoBehaviour {
         [NonSerialized] public GridBoard ParentBoard;
         public int Row;

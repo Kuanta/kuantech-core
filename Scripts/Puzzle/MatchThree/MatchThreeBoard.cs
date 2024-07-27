@@ -46,20 +46,20 @@ namespace Kuantech.Puzzle.MatchThree
             CreateInitialElements(true);
         }
 
-        public override GridTile CreateExistingTile(GridBoardEditorTile existingTileInfo)
-        {
-            GridTile tile = base.CreateExistingTile(existingTileInfo);
-            if(tile is MatchThreeElement element)
-            {
-                element.SetBoard(this, tile.Row, tile.Column);
-                element.transform.SetParent(transform);
-                element.SetElementData(element.CurrentData);
-                element.transform.localPosition = GetLocalPosition(tile.Row, tile.Column);
-                element.name = $"Gem_{tile.Row}_{tile.Column}";
-                SetTile(element, tile.Row, tile.Column);
-            }
-            return tile;
-        }
+        // public override GridTile CreateExistingTile(GridBoardEditorTile existingTileInfo)
+        // {
+        //     GridTile tile = base.CreateExistingTile(existingTileInfo);
+        //     if(tile is MatchThreeElement element)
+        //     {
+        //         element.SetBoard(this, tile.Row, tile.Column);
+        //         element.transform.SetParent(transform);
+        //         element.SetElementData(element.CurrentData);
+        //         element.transform.localPosition = GetLocalPosition(tile.Row, tile.Column);
+        //         element.name = $"Gem_{tile.Row}_{tile.Column}";
+        //         SetTile(element, tile.Row, tile.Column);
+        //     }
+        //     return tile;
+        // }
 
         /// <summary>
         /// Creates the initial elements

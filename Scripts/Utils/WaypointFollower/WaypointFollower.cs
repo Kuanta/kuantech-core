@@ -13,7 +13,9 @@ namespace Kuantech.Utils
             public float Speed;
         }
 
-        [Header("Properties")]
+        [Header("Properties")] [SerializeField]
+        private float RotationLerpFactor = 10.0f;
+        
         [NonSerialized] public bool Moving;
         [NonSerialized] public Queue<Waypoint> Waypoints;
         [NonSerialized] public Waypoint CurrentWaypoint;
@@ -34,11 +36,33 @@ namespace Kuantech.Utils
             Waypoints.Enqueue(newWaypoint);
 
         }
+
+        public void SetWaypoints(List<Waypoint> waypoints)
+        {
+            CurrentWaypoint = waypoints[0];
+            Waypoints = new Queue<Waypoint>();
+            foreach (var waypoint in waypoints)
+            {
+                Waypoints.Enqueue(waypoint);
+            }
+        }
         #endregion
 
+        #region Controls
 
+        public void FollowPath()
+        {
+            Moving = true;
+        }
+
+        public void Stop()
+        {
+            Moving = false;
+        }
+        #endregion
         private void Update()
         {
+            if (!Moving) return;
             UpdatePosition();
         }
 
@@ -53,6 +77,11 @@ namespace Kuantech.Utils
                 return;
             }
             Vector3 direction = error / error.magnitude;
+            if (direction.sqrMagnitude >= 0.01f)
+            {
+                transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(direction),
+                    Time.deltaTime * RotationLerpFactor);
+            }
             Vector3 positionUpdate = direction * Mathf.Min(errorMag, Time.deltaTime * CurrentWaypoint.Speed);
             if(CurrentWaypoint.IsLocal)
             {

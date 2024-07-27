@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Kuantech.Core.FX;
+using Kuantech.Utils;
 using Sirenix.OdinInspector;
 using UnityEditor;
 using UnityEngine;
@@ -46,45 +47,52 @@ namespace Kuantech.Puzzle
                 }
             }
 
-            SetExistingTiles(true);
+            //SetExistingTiles(true);
+            GridTile[] existingTiles = GetComponentsInChildren<GridTile>();
+            foreach (var tile in existingTiles)
+            {
+                GridTileCoordinate coord = GetRowColFromPosition(tile.transform.position);
+                SetTile(tile, coord.Row, coord.Column);
+                tile.Spawn();
+            }
         }
         
         public virtual void RestartBoard()
         {
             ClearBoard();
-            SetExistingTiles(true);
+            //SetExistingTiles(true);
         }
-        
-        /// <summary>
-        /// C
-        /// </summary>
-        private GridBoardEditorTile[] _editorTiles;
-        public void SetExistingTiles(bool isLevelFresh)
-        {
-            //Load existing tiles
-            GridBoardEditorTile[] editorTiles = GetComponentsInChildren<GridBoardEditorTile>();
-            for(int i=0;i<editorTiles.Length;++i)
-            {
-                GridBoardEditorTile existingTileInfo = editorTiles[i];
-                existingTileInfo.DestroyEditorGameobject();
-                if (existingTileInfo.Prefab == null) continue;
-                if (IsTileOccupied(existingTileInfo.Row, existingTileInfo.Column))
-                {
-                    continue;
-                }
-                if(isLevelFresh) CreateExistingTile(existingTileInfo);
-            }
-        }
-
-        public virtual GridTile CreateExistingTile(GridBoardEditorTile existingTileInfo)
-        {
-            GridTile tile = Instantiate(existingTileInfo.EditorObject).GetComponent<GridTile>();
-            tile.gameObject.SetActive(true);
-            SetTile(tile, existingTileInfo.Row, existingTileInfo.Column);
-            tile.Spawn();
-            tile.OnCreateExisting();
-            return tile;
-        }
+        //
+        // /// <summary>
+        // /// C
+        // /// </summary>
+        // private GridBoardEditorTile[] _editorTiles;
+        // public void SetExistingTiles(bool isLevelFresh)
+        // {
+        //     //Load existing tiles
+        //     GridBoardEditorTile[] editorTiles = GetComponentsInChildren<GridBoardEditorTile>();
+        //     for(int i=0;i<editorTiles.Length;++i)
+        //     {
+        //         GridBoardEditorTile existingTileInfo = editorTiles[i];
+        //         existingTileInfo.DestroyEditorGameobject();
+        //         if (existingTileInfo.Prefab == null) continue;
+        //         if (IsTileOccupied(existingTileInfo.Row, existingTileInfo.Column))
+        //         {
+        //             continue;
+        //         }
+        //         if(isLevelFresh) CreateExistingTile(existingTileInfo);
+        //     }
+        // }
+        //
+        // public virtual GridTile CreateExistingTile(GridBoardEditorTile existingTileInfo)
+        // {
+        //     GridTile tile = Instantiate(existingTileInfo.EditorObject).GetComponent<GridTile>();
+        //     tile.gameObject.SetActive(true);
+        //     SetTile(tile, existingTileInfo.Row, existingTileInfo.Column);
+        //     tile.Spawn();
+        //     tile.OnCreateExisting();
+        //     return tile;
+        // }
         #region Move
         public virtual bool MoveTile(GridTile gridTile, int row, int col, bool setPosition = true)
         {
@@ -98,6 +106,25 @@ namespace Kuantech.Puzzle
         #endregion
 
         #region Query Methods
+        public bool IsCoordinateValid(GridTileCoordinate coordinate)
+        {
+            return IsCoordinateValid(coordinate.Row, coordinate.Column);
+        }
+        
+        public bool IsCoordinateValid(int row, int col)
+        {
+            if(row < 0 || col < 0 || row >= RowCount || col >= ColumnCount) return false;
+            return true;
+        }
+        public bool IsTileValidAndEmpty(GridTileCoordinate coordinate)
+        {
+            return IsTileValidAndEmpty(coordinate.Row, coordinate.Column);
+        }
+        public bool IsTileValidAndEmpty(int row, int col)
+        {
+            return !IsTileOccupied(row, col) && IsCoordinateValid(row, col);
+        }
+        
         /// <summary>
         /// Sets the tile for a grid tile
         /// </summary>
@@ -173,11 +200,7 @@ namespace Kuantech.Puzzle
             if(!IsCoordinateValid(row, col)) return false;
             return Tiles[row, col] != null;
         }
-
-        public bool IsTileValidAndEmpty(int row, int col)
-        {
-            return !IsTileOccupied(row, col) && IsCoordinateValid(row, col);
-        }
+   
         public int GetEmptyTileCount()
         {
             int emptyCount = 0;
@@ -233,8 +256,24 @@ namespace Kuantech.Puzzle
             }
             return emptyTiles;
         }
-        #endregion
 
+        public List<GridTile> Get4Neighs(int row, int col)
+        {
+            List<GridTile> neighs = new List<GridTile>();
+            for (int i = -1; i < 2; ++i)
+            {
+                for (int j = -1; j < 2; ++j)
+                {
+                    if(i==j || (i != 0 && j != 0)) continue; //4 neighs condition
+                    GridTile tile = GetTile(row + i, col + j);
+                    if(tile == null) continue;
+                    neighs.Add(tile);
+                }
+            }
+
+            return neighs;
+        }
+        #endregion
 
         public void ClearBoard()
         {
@@ -254,23 +293,34 @@ namespace Kuantech.Puzzle
         
         #region Utility Methods
         /// <summary>
+        /// Returns the corresponding row and col from a world position. The world position is first projected onto the board
+        /// </summary>
+        /// <param name="position">World position</param>
+        /// <returns></returns>
+        public GridTileCoordinate GetRowColFromPosition(Vector3 position)
+        {
+            GridTileCoordinate coord = new GridTileCoordinate();
+            Vector3 pointOnBoard = GetPointOnPlane(position);
+            return GetRowColFromPointOnBoard(pointOnBoard);
+        }
+        /// <summary>
         /// Returns row and col 
         /// </summary>
         /// <param name="pointOnGrid"></param>
-        /// <param name="row"></param>
-        /// <param name="col"></param>
-        public void GetRowColFromPointOnBoard(Vector3 pointOnGrid, out int row, out int col)
+        public GridTileCoordinate GetRowColFromPointOnBoard(Vector3 pointOnGrid)
         {
+            GridTileCoordinate coord = new GridTileCoordinate();
             Vector3 localBotLeft = -ForwardVector * GetDepth() * 0.5f - RightVector * GetWidth() * 0.5f;
             Vector3 botLeftPoint = transform.TransformPoint(localBotLeft);
             Vector3 diff = pointOnGrid - botLeftPoint;
             Vector3 localDiff = transform.InverseTransformDirection(diff);
             float horDist = Kuantech.Utils.Helpers.DotProjection(localDiff, RightVector);
             float depthDist = Kuantech.Utils.Helpers.DotProjection(localDiff, ForwardVector);
-            col = Mathf.FloorToInt(horDist / CellWidth);
-            row = Mathf.FloorToInt(depthDist / CellHeight);
+            coord.Column = Mathf.FloorToInt(horDist / CellWidth);
+            coord.Row = Mathf.FloorToInt(depthDist / CellHeight);
+            return coord;
         }
-
+        
         public void ApplyOperationToTiles(TileOperation operation)
         {
             for(int r=0;r<RowCount;++r)
@@ -283,11 +333,6 @@ namespace Kuantech.Puzzle
             }
         }
 
-        public bool IsCoordinateValid(int row, int col)
-        {
-            if(row < 0 || col < 0 || row >= RowCount || col >= ColumnCount) return false;
-            return true;
-        }
 
         /// <summary>
         /// Returns the flattened coordinates from row and col
@@ -311,7 +356,24 @@ namespace Kuantech.Puzzle
             int colCount = flat - rowCount * ColumnCount;
             return new Vector2Int(rowCount, colCount);
         }
-
+        public Vector3 GetBoardNormal()
+        {
+            return Vector3.Cross(RightVector, ForwardVector);
+        }
+        
+        public Vector3 GetPointOnPlane(Vector3 globalPosition)
+        {
+            
+            Vector3 diff = globalPosition - transform.position;
+            Vector3 projectedOntoNormal = Helpers.ProjectVector(diff, GetBoardNormal());
+            if (Mathf.Approximately(projectedOntoNormal.sqrMagnitude, 0f))
+            {
+                return globalPosition;
+            }
+            Ray ray = new Ray(globalPosition, GetBoardNormal());
+            return GetPointOnPlane(ray);
+        }
+        
         public Vector3 GetPointOnPlane(Ray ray)
         {
             //todo: Fix this to comply with rotated boards

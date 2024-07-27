@@ -30,8 +30,9 @@ namespace Kuantech.Puzzle
             Ray ray = mainCamera.ScreenPointToRay(draggable.GetCursorPosition()); //todo: 
             
             Vector3 positionOnBoard = GridBoard.GetPointOnPlane(ray);
-            int row, col;
-            GridBoard.GetRowColFromPointOnBoard(positionOnBoard, out row, out col);
+            GridTileCoordinate coord = GridBoard.GetRowColFromPointOnBoard(positionOnBoard);
+            int row = coord.Row;
+            int col = coord.Column;
             if(!gridTileDraggable.CanBeDroppedToSlot(row, col)) return false;
             return HandleDroppedTile(gridTileDraggable, row, col);
         }
