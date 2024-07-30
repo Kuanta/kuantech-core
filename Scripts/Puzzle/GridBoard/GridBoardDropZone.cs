@@ -25,15 +25,18 @@ namespace Kuantech.Puzzle
         {
             if(GridBoard == null) return false;
             GridTileDraggable gridTileDraggable = draggable as GridTileDraggable;
-            if(gridTileDraggable == null || gridTileDraggable.AnchorGridTile == null) return false;
-            Camera mainCamera = DragManager.GetContext<DragManager>().MainCamera;
-            Ray ray = mainCamera.ScreenPointToRay(draggable.GetCursorPosition()); //todo: 
-            
-            Vector3 positionOnBoard = GridBoard.GetPointOnPlane(ray);
-            GridTileCoordinate coord = GridBoard.GetRowColFromPointOnBoard(positionOnBoard);
+            if(gridTileDraggable == null) return false;
+
+            Vector3 anchorTilePosition = gridTileDraggable.GetAnchorTilePosition(GridBoard);
+            GridTileCoordinate coord = GridBoard.GetRowColFromPosition(anchorTilePosition);
+            // Camera mainCamera = DragManager.GetContext<DragManager>().MainCamera;
+            // Ray ray = mainCamera.ScreenPointToRay(draggable.GetCursorPosition()); //todo: 
+            //
+            // Vector3 positionOnBoard = GridBoard.GetPointOnPlane(ray);
+            // GridTileCoordinate coord = GridBoard.GetRowColFromPointOnBoard(positionOnBoard);
             int row = coord.Row;
             int col = coord.Column;
-            if(!gridTileDraggable.CanBeDroppedToSlot(row, col)) return false;
+            if(!gridTileDraggable.CanBeDroppedToSlot(GridBoard, row, col)) return false;
             return HandleDroppedTile(gridTileDraggable, row, col);
         }
 
@@ -44,7 +47,9 @@ namespace Kuantech.Puzzle
             {
                 return DroppedTileHandler(draggableTile, row, col);
             }
-            return GridBoard.MoveTile(draggableTile.AnchorGridTile, row, col);
+            draggableTile.GridTileGroup.PlaceOnBoard(GridBoard, row, col);
+            Destroy(draggableTile.gameObject);
+            return true;
         }
 
         public bool CanTileDropped(GridTileDraggable draggableTile, int row, int col)

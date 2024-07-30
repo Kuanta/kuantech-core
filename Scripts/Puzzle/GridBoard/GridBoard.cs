@@ -33,6 +33,9 @@ namespace Kuantech.Puzzle
         public float CellWidth = 1f;
         public float CellHeight = 1f;
 
+        [Header("Origin Offset")] 
+        public Vector2 OriginOffset = new Vector2(-0.5f, -0.5f);
+        
         public GridTile[,] Tiles;
 
         public delegate void TileOperation(GridTile tile);
@@ -393,14 +396,19 @@ namespace Kuantech.Puzzle
         /// <param name="row"></param>
         /// <param name="col"></param>
         /// <returns></returns>
-        public Vector3 GetLocalPosition(int row, int col)
+        public Vector3 GetLocalPosition(float row, float col, Vector2 originOffset)
         {
-            Vector3 horizontalPosition = RightVector * (col * CellWidth - CellWidth * ColumnCount * 0.5f + CellWidth * 0.5f);
-            Vector3 depthPosition = ForwardVector * (row * CellHeight - CellHeight * RowCount * 0.5f + CellHeight * 0.5f);
+            Vector3 horizontalPosition = RightVector * (col * CellWidth + CellWidth * ColumnCount * originOffset.x + CellWidth * 0.5f);
+            Vector3 depthPosition = ForwardVector * (row * CellHeight + CellHeight * RowCount * originOffset.y + CellHeight * 0.5f);
             return horizontalPosition + depthPosition;
         }
-
-        public Vector3 GetGlobalPosition(int row, int col)
+        
+        public Vector3 GetLocalPosition(float row, float col)
+        {
+            return GetLocalPosition(row, col, OriginOffset);
+        }
+        
+        public Vector3 GetGlobalPosition(float row, float col)
         {
             Vector3 localPos = GetLocalPosition(row, col);
             return transform.TransformPoint(localPos);

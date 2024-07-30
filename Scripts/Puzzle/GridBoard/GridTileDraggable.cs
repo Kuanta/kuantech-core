@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Kuantech.Utils;
 using UnityEngine;
 
@@ -6,51 +5,27 @@ namespace Kuantech.Puzzle
 {
     public class GridTileDraggable : Draggable
     {
-        public struct NeighTileData
-        {
-            public int Row;
-            public int Col;
-            public GridTile NeighTile;
-        }
-        public GridTile AnchorGridTile;
-        public List<NeighTileData> NeighbourTiles;
-        private void Start()
-        {
-            if(AnchorGridTile == null) AnchorGridTile = GetComponent<GridTile>();
-        }
-
+        public GridTileGroup GridTileGroup;
+        
         /// <summary>
-        /// Adds a neighbouring tile
+        /// Checks if this grid tile draggable can be dropped to the grid board
         /// </summary>
-        /// <param name="neighTile"></param>
-        /// <param name="localRow"></param>
-        /// <param name="localCol"></param>
-        public void AddNeighbourTile(GridTile neighTile, int localRow, int localCol)
+        /// <param name="row"></param>
+        /// <param name="col"></param>
+        /// <returns></returns>
+        public virtual bool CanBeDroppedToSlot(GridBoard board, int row, int col)
         {
-            if(NeighbourTiles == null)
-            {
-                NeighbourTiles = new List<NeighTileData>();
-            }
-            //Check if we have duplicate
-            foreach(var data in NeighbourTiles)
-            {
-                if(data.Row == localRow && data.Col == localCol)
-                {
-                    Debug.LogWarning("Duplicate row-col position in neighbouring tiles");
-                    break;
-                }
-            }
-            NeighbourTiles.Add(new NeighTileData()
-            {
-                Row = localRow,
-                Col = localCol,
-                NeighTile = neighTile,
-            });
+            return GridTileGroup.CanBePlacedToBoard(board, row, col);
         }
-
-        public virtual bool CanBeDroppedToSlot(int row, int col)
+        
+        /// <summary>
+        /// Returns the position of the tile at local (0,0). It will be used to place the group on the board
+        /// </summary>
+        /// <param name="board"></param>
+        /// <returns></returns>
+        public Vector3 GetAnchorTilePosition(GridBoard board)
         {
-            return true;
+            return GridTileGroup.GetAnchorTilePosition(board);
         }
     }
 }

@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace Kuantech.Puzzle
 {   
+
     [Serializable]
     public struct GridTileData
     {
@@ -22,7 +23,7 @@ namespace Kuantech.Puzzle
         public int Column;
         public GameObject CurrentVisual;
         public bool LockVisual = false;
-
+        
         /// <summary>
         /// Called when spawned from the grid board
         /// </summary>
@@ -35,7 +36,6 @@ namespace Kuantech.Puzzle
             Row = row;
             Column = col;
         }
-
         public void SetLocalPosition(Vector3 localPosition)
         {
             transform.localPosition = localPosition;
