@@ -20,7 +20,7 @@ namespace Kuantech.Puzzle
         public List<NeighTileData> ChildTilesList;
         public Dictionary<GridTileCoordinate, GridTile> ChildTiles;
 
-        public void Initialize()
+        public virtual void Initialize()
         {
             ChildTiles = new Dictionary<GridTileCoordinate, GridTile>();
             foreach (var childListElement in ChildTilesList)
@@ -40,6 +40,7 @@ namespace Kuantech.Puzzle
             ChildTiles ??= new Dictionary<GridTileCoordinate, GridTile>();
             if (ChildTiles.ContainsKey(coord) && ChildTiles[coord] != null) return false;
             ChildTiles[coord] = tile;
+            tile.transform.SetParent(transform);
             return true;
         }
         
@@ -61,7 +62,7 @@ namespace Kuantech.Puzzle
         /// <param name="board"></param>
         /// <param name="row"></param>
         /// <param name="col"></param>
-        public void PlaceOnBoard(GridBoard board, int row, int col)
+        public virtual void PlaceOnBoard(GridBoard board, int row, int col)
         {
             foreach (var pair in ChildTiles)
             {

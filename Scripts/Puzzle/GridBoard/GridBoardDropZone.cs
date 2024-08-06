@@ -29,11 +29,6 @@ namespace Kuantech.Puzzle
 
             Vector3 anchorTilePosition = gridTileDraggable.GetAnchorTilePosition(GridBoard);
             GridTileCoordinate coord = GridBoard.GetRowColFromPosition(anchorTilePosition);
-            // Camera mainCamera = DragManager.GetContext<DragManager>().MainCamera;
-            // Ray ray = mainCamera.ScreenPointToRay(draggable.GetCursorPosition()); //todo: 
-            //
-            // Vector3 positionOnBoard = GridBoard.GetPointOnPlane(ray);
-            // GridTileCoordinate coord = GridBoard.GetRowColFromPointOnBoard(positionOnBoard);
             int row = coord.Row;
             int col = coord.Column;
             if(!gridTileDraggable.CanBeDroppedToSlot(GridBoard, row, col)) return false;
@@ -42,7 +37,6 @@ namespace Kuantech.Puzzle
 
         public virtual bool HandleDroppedTile(GridTileDraggable draggableTile, int row, int col)
         {
-            //GridTile tile = draggableTile.AnchorGridTile;
             if(DroppedTileHandler != null)
             {
                 return DroppedTileHandler(draggableTile, row, col);

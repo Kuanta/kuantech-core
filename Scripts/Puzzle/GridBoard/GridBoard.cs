@@ -156,11 +156,12 @@ namespace Kuantech.Puzzle
         /// <param name="row"></param>
         /// <param name="col"></param>
         /// <returns></returns>
-        public GridTile UnsetTile(int row, int col)
+        public void UnsetTile(int row, int col)
         {
             GridTile existingTile = GetTile(row, col);
             Tiles[row, col] = null;
-            return existingTile;
+            existingTile.OnDespawn();
+            Destroy(existingTile.gameObject);
         }
 
         public void UnsetTiles(List<GridTile> tiles)
@@ -173,8 +174,7 @@ namespace Kuantech.Puzzle
         public void UnsetTile(GridTile tile)
         {
             UnsetTile(tile.Row, tile.Column);
-            tile.OnDespawn();
-            Destroy(tile.gameObject);
+            
         }
         
         /// <summary>

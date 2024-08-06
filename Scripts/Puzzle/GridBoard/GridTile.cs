@@ -21,8 +21,14 @@ namespace Kuantech.Puzzle
         [NonSerialized] public GridBoard ParentBoard;
         public int Row;
         public int Column;
+        
+        [Header("Visual")] 
+        public Transform VisualParent;
         public GameObject CurrentVisual;
         public bool LockVisual = false;
+        
+        //State
+        [NonSerialized] public bool PlacedOnBoard = false;
         
         /// <summary>
         /// Called when spawned from the grid board
@@ -35,6 +41,7 @@ namespace Kuantech.Puzzle
         {
             Row = row;
             Column = col;
+            PlacedOnBoard = true;
         }
         public void SetLocalPosition(Vector3 localPosition)
         {
@@ -49,7 +56,8 @@ namespace Kuantech.Puzzle
                 Destroy(CurrentVisual);
             }
             CurrentVisual = Instantiate(visual);
-            CurrentVisual.transform.SetParent(transform);
+            Transform visualParent = VisualParent != null ? VisualParent : transform;
+            CurrentVisual.transform.SetParent(visualParent);
             CurrentVisual.transform.localPosition = Vector3.zero;
             CurrentVisual.transform.localRotation = Quaternion.identity;
         }
@@ -64,7 +72,7 @@ namespace Kuantech.Puzzle
 
         public virtual void OnDespawn()
         {
-
+            PlacedOnBoard = false;
         }
     }
 }
