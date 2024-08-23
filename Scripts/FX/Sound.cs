@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Kuantech.Utils;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Serialization;
 
 namespace Kuantech.Core.FX
 {
@@ -14,8 +15,8 @@ namespace Kuantech.Core.FX
         [KTTag("AudioTag")]
         public int AudioTag;
 
-        [Tooltip("If not null, this will be played")]
-        public List<AudioSource> SfxColleciton;
+        [FormerlySerializedAs("SfxColleciton")] [Tooltip("If not null, this will be played")]
+        public List<AudioSource> SfxCollection;
         public AudioSource AudioSource;
         public float Cooldown = 0.1f;
         public float ComboCooldown = 1f;
@@ -49,9 +50,9 @@ namespace Kuantech.Core.FX
                 EffectsLibrary.PlayAudio(AudioTag);
                 return;
             }
-            if (!SfxColleciton.IsNullOrEmpty())
+            if (!SfxCollection.IsNullOrEmpty())
             {
-                AudioSource = SfxColleciton.GetRandomElement();
+                AudioSource = SfxCollection.GetRandomElement();
             }
             if(AudioSource == null) return;
             
