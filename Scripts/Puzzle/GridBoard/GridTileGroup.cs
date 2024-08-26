@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace Kuantech.Puzzle
 {
@@ -11,7 +12,7 @@ namespace Kuantech.Puzzle
         public GridTileCoordinate LocalCoordinates;
         public GridTile NeighTile;
     }
-
+    
     /// <summary>
     /// Represents a group of grid tiles
     /// </summary>
@@ -20,6 +21,9 @@ namespace Kuantech.Puzzle
         public List<NeighTileData> ChildTilesList;
         public Dictionary<GridTileCoordinate, GridTile> ChildTiles;
 
+        
+        //Events
+        public UnityAction OnPlacedOnBoard;
         public virtual void Initialize()
         {
             ChildTiles = new Dictionary<GridTileCoordinate, GridTile>();
@@ -70,6 +74,7 @@ namespace Kuantech.Puzzle
                 GridTile tile = pair.Value;
                 board.MoveTile(tile, localCoord.Row + row, localCoord.Column + col);
             }
+            OnPlacedOnBoard?.Invoke();
         }
 
         public void SetTilePositions(GridBoard board)
