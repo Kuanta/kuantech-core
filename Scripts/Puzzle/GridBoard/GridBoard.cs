@@ -22,7 +22,7 @@ namespace Kuantech.Puzzle
         {
             Top = 0, Right = 1, Bottom = 2, Left = 3, TopLeft = 4, TopRight = 5, BottomLeft = 6, BottomRight = 7, Invalid
         }
-
+        
         [Header("Board Size")]
         public int RowCount = 5;
         public int ColumnCount = 5;
@@ -35,6 +35,9 @@ namespace Kuantech.Puzzle
 
         [Header("Origin Offset")] 
         public Vector2 OriginOffset = new Vector2(-0.5f, -0.5f);
+
+        [Header("BackgroundTile object")] 
+        public GameObject BackgroundGameObjectPrefab;
         
         public GridTile[,] Tiles;
 
@@ -47,6 +50,14 @@ namespace Kuantech.Puzzle
                 for (int c = 0; c < ColumnCount; ++c)
                 {
                     Tiles[r,c] = null;
+
+                    if (BackgroundGameObjectPrefab != null)
+                    {
+                        GameObject bgObj = Instantiate(BackgroundGameObjectPrefab);
+                        bgObj.transform.parent = transform;
+                        bgObj.transform.localPosition = GetLocalPosition(r, c);
+                        bgObj.transform.localRotation = Quaternion.identity;
+                    }
                 }
             }
 
