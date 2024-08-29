@@ -1,12 +1,14 @@
 using Kuantech.Core;
 using Kuantech.Core.FX;
 using Kuantech.UI;
+using TMPro;
 using UnityEngine.UI;
 
 namespace Kuantech.Puzzle.UI
 {
     public class PuzzleFailPanel : UIMenu
     {
+        public TMP_Text FailMessageText;
         public Button RestartButton;
         public Effect LoseEffect;
         public void Initialize(PuzzleLevelUI parentUI)
@@ -24,6 +26,12 @@ namespace Kuantech.Puzzle.UI
             {
                 LoseEffect.Play();
             }
+        }
+
+        public void SetFailText(string failText)
+        {
+            if (FailMessageText == null) return;
+            FailMessageText.text = failText;
         }
     }
 }
