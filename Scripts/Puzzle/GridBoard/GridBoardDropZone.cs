@@ -9,6 +9,10 @@ namespace Kuantech.Puzzle
         public GridBoard GridBoard;
         public delegate bool HandleDroppedTileHandler(GridTileDraggable draggableTile, int row, int col);
         public HandleDroppedTileHandler DroppedTileHandler;
+        
+        public delegate bool CanTileDroppedHandler(GridTileDraggable draggableTile, int row, int col);
+        public CanTileDroppedHandler TileDropConditionChecker; 
+
         private void Start()
         {
             if(GridBoard == null)
@@ -48,6 +52,10 @@ namespace Kuantech.Puzzle
 
         public bool CanTileDropped(GridTileDraggable draggableTile, int row, int col)
         {
+            if (TileDropConditionChecker != null)
+            {
+                return TileDropConditionChecker(draggableTile, row, col);
+            }
             return true;
         }
     }

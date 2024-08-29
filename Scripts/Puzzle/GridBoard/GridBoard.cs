@@ -76,37 +76,7 @@ namespace Kuantech.Puzzle
             ClearBoard();
             //SetExistingTiles(true);
         }
-        //
-        // /// <summary>
-        // /// C
-        // /// </summary>
-        // private GridBoardEditorTile[] _editorTiles;
-        // public void SetExistingTiles(bool isLevelFresh)
-        // {
-        //     //Load existing tiles
-        //     GridBoardEditorTile[] editorTiles = GetComponentsInChildren<GridBoardEditorTile>();
-        //     for(int i=0;i<editorTiles.Length;++i)
-        //     {
-        //         GridBoardEditorTile existingTileInfo = editorTiles[i];
-        //         existingTileInfo.DestroyEditorGameobject();
-        //         if (existingTileInfo.Prefab == null) continue;
-        //         if (IsTileOccupied(existingTileInfo.Row, existingTileInfo.Column))
-        //         {
-        //             continue;
-        //         }
-        //         if(isLevelFresh) CreateExistingTile(existingTileInfo);
-        //     }
-        // }
-        //
-        // public virtual GridTile CreateExistingTile(GridBoardEditorTile existingTileInfo)
-        // {
-        //     GridTile tile = Instantiate(existingTileInfo.EditorObject).GetComponent<GridTile>();
-        //     tile.gameObject.SetActive(true);
-        //     SetTile(tile, existingTileInfo.Row, existingTileInfo.Column);
-        //     tile.Spawn();
-        //     tile.OnCreateExisting();
-        //     return tile;
-        // }
+        
         #region Move
         public virtual bool MoveTile(GridTile gridTile, int row, int col, bool setPosition = true)
         {
@@ -227,7 +197,51 @@ namespace Kuantech.Puzzle
             }
             return emptyCount;
         }
+        
+        /// <summary>
+        /// Finds the largest square window with empty tiles on the board
+        /// </summary>
+        /// <returns></returns>
+        public int GetLargestEmptyTileWindow()
+        {
+            int largestSquare = 1;
+            for (int r = 0; r < RowCount; ++r)
+            {
+                for (int c = 0; c < ColumnCount; ++c)
+                {
+                    int windowSize = FindEmptyWindowSizeAtRowCol(r, c);
+                    largestSquare = Mathf.Max(largestSquare, windowSize);
+                }
+            }
 
+            return largestSquare;
+        }
+        
+        /// <summary>
+        /// Finds the empty window size at given row and col
+        /// </summary>
+        /// <param name="row"></param>
+        /// <param name="col"></param>
+        /// <returns></returns>
+        [Button("Find window size")]
+        private int FindEmptyWindowSizeAtRowCol(int row, int col)
+        {
+            int windowSize = 0;
+            for (int r = 0; r < RowCount; ++r)
+            {
+                for (int c = 0; c < ColumnCount; ++c)
+                {
+                    bool occupied = IsTileOccupied(r + row, c + col);
+                    if (occupied) return windowSize;
+                    if (c == r && c > 0 && r > 0)
+                    {
+                        windowSize = r;
+                        break; //Continue from row
+                    }
+                }
+            }
+            return windowSize;
+        }
         /// <summary>
         /// Returns the first empty tile starting from R=0, C=0
         /// </summary>

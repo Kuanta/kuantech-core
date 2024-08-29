@@ -20,7 +20,6 @@ namespace Kuantech.Puzzle
     {
         public List<NeighTileData> ChildTilesList;
         public Dictionary<GridTileCoordinate, GridTile> ChildTiles;
-
         
         //Events
         public UnityAction OnPlacedOnBoard;
@@ -48,7 +47,13 @@ namespace Kuantech.Puzzle
             return true;
         }
         
-        
+        /// <summary>
+        /// Checks whether the tile group can be placed to given row and col
+        /// </summary>
+        /// <param name="board"></param>
+        /// <param name="row"></param>
+        /// <param name="col"></param>
+        /// <returns></returns>
         public bool CanBePlacedToBoard(GridBoard board, int row, int col)
         {
             foreach (var pair in ChildTiles)
@@ -60,6 +65,23 @@ namespace Kuantech.Puzzle
             return true;
         }
         
+        /// <summary>
+        /// Checks if the tile group can be placed anywhere on the board
+        /// </summary>
+        /// <param name="board"></param>
+        /// <returns></returns>
+        public bool CanBePlacedToBoard(GridBoard board)
+        {
+            for (int r = 0; r < board.RowCount; ++r)
+            {
+                for (int c = 0; c < board.ColumnCount; ++c)
+                {
+                    if (CanBePlacedToBoard(board, r, c)) return true;
+                }
+            }
+            return false;
+        }
+
         /// <summary>
         /// Places the group on the board
         /// </summary>
