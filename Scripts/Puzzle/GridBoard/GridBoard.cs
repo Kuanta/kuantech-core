@@ -37,27 +37,22 @@ namespace Kuantech.Puzzle
         public Vector2 OriginOffset = new Vector2(-0.5f, -0.5f);
 
         [Header("BackgroundTile object")] 
-        public GameObject BackgroundGameObjectPrefab;
+        public GridTileBackground BackgroundGameObjectPrefab;
         
         public GridTile[,] Tiles;
+        public GridTileBackground[,] BackgroundObjects;
 
         public delegate void TileOperation(GridTile tile);
         public virtual void CreateBoard()
         {
             Tiles = new GridTile[RowCount, ColumnCount];
+            BackgroundObjects = new GridTileBackground[RowCount, ColumnCount];
             for (int r = 0; r < RowCount; ++r)
             {
                 for (int c = 0; c < ColumnCount; ++c)
                 {
                     Tiles[r,c] = null;
-
-                    if (BackgroundGameObjectPrefab != null)
-                    {
-                        GameObject bgObj = Instantiate(BackgroundGameObjectPrefab);
-                        bgObj.transform.parent = transform;
-                        bgObj.transform.localPosition = GetLocalPosition(r, c);
-                        bgObj.transform.localRotation = Quaternion.identity;
-                    }
+                    AddBackgroundObject(r,c);
                 }
             }
 
@@ -70,7 +65,18 @@ namespace Kuantech.Puzzle
                 tile.Spawn();
             }
         }
-        
+
+        public virtual void AddBackgroundObject(int row, int col)
+        {
+            if (BackgroundGameObjectPrefab != null)
+            {
+                GridTileBackground bgObj = Instantiate(BackgroundGameObjectPrefab);
+                bgObj.transform.parent = transform;
+                bgObj.transform.localPosition = GetLocalPosition(row, col);
+                bgObj.transform.localRotation = Quaternion.identity;
+                BackgroundObjects[row, col] = bgObj;
+            }
+        }
         public virtual void RestartBoard()
         {
             ClearBoard();
@@ -301,6 +307,17 @@ namespace Kuantech.Puzzle
 
             return neighs;
         }
+        
+        /// <summary>
+        /// Returns the background object for given row and col
+        /// </summary>
+        /// <param name="coord"></param>
+        /// <returns></returns>
+        public GridTileBackground GetBackground(GridTileCoordinate coord)
+        {
+            if (!IsCoordinateValid(coord)) return null;
+            return BackgroundObjects[coord.Row, coord.Column];
+        }
         #endregion
 
         public void ClearBoard()
@@ -468,6 +485,40 @@ namespace Kuantech.Puzzle
         public void PlayEffect(Effect effect, int row, int col)
         {
             //Boom
+        }
+        #endregion
+
+        #region Tile Highlighting
+
+        private HashSet<GridTileBackground> _highlightedTiles;
+        
+        /// <summary>
+        /// Clears the highlighted tile backgrounds
+        /// </summary>
+        public void ClearHighlightedTiles()
+        {
+            if (_highlightedTiles == null) return;
+            foreach (var bg in _highlightedTiles)
+            {
+                bg.ClearHighlight();
+            }
+        }
+        
+        /// <summary>
+        /// Highlights the selected tiles
+        /// </summary>
+        /// <param name="coordinates"></param>
+        public void HighlightTiles(List<GridTileCoordinate> coordinates)
+        {
+            ClearHighlightedTiles();
+            if(_highlightedTiles == null) _highlightedTiles = new HashSet<GridTileBackground>();
+            foreach (var coord in coordinates)
+            {
+                GridTileBackground bgObj = GetBackground(coord);
+                if (bgObj == null) continue;
+                bgObj.Highlight();
+                _highlightedTiles.Add(bgObj);
+            }
         }
         #endregion
     }

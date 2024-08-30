@@ -60,8 +60,12 @@ namespace Kuantech.Utils
 
             if (DropZone != null && newZone == null)
             {
-                //_dropZone.CancelHighlight();
-                //_lastRowCol = Vector2Int.one * -1;
+                OnLeftDropZone(DropZone);
+            }
+
+            if (DropZone == null && newZone != null)
+            {
+                OnEnteredDropZone(newZone);
             }
             DropZone = newZone;
             if (DropZone == null)
@@ -156,6 +160,23 @@ namespace Kuantech.Utils
 
             // If no DragBench was hit, return null
             return null;
+        }
+        
+        /// <summary>
+        /// Called when draggable enters a drop zone
+        /// </summary>
+        /// <param name="dropZone"></param>
+        public virtual void OnEnteredDropZone(IDropZone dropZone)
+        {
+            
+        }
+        
+        /// <summary>
+        /// Called when draggable leaves the dropzone
+        /// </summary>
+        public virtual void OnLeftDropZone(IDropZone dropZone)
+        {
+                
         }
         
         public virtual void ReturnToPreviousPosition()

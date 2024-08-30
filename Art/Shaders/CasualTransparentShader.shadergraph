@@ -1063,7 +1063,7 @@
         "m_Id": "029aeccedee744269543ff859ac84e6e"
     },
     "m_AllowMaterialOverride": false,
-    "m_SurfaceType": 0,
+    "m_SurfaceType": 1,
     "m_ZTestMode": 4,
     "m_ZWriteControl": 0,
     "m_AlphaMode": 0,
@@ -2530,9 +2530,9 @@
         "m_Expanded": true,
         "m_Position": {
             "serializedVersion": "2",
-            "x": -1037.9998779296875,
-            "y": -9.000019073486329,
-            "width": 207.9998779296875,
+            "x": -989.0,
+            "y": 0.00001239776611328125,
+            "width": 208.0,
             "height": 437.0
         }
     },
