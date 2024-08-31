@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Kuantech.Core.FX;
 using Kuantech.Utils;
 using Sirenix.OdinInspector;
@@ -38,34 +39,83 @@ namespace Kuantech.Puzzle
 
         [Header("BackgroundTile object")] 
         public GridTileBackground BackgroundGameObjectPrefab;
+
+        [Header("Editor Background")] [SerializeField]
+        private GameObject Editorbackground;
         
         public GridTile[,] Tiles;
         public GridTileBackground[,] BackgroundObjects;
+
+        private Dictionary<GridTileCoordinate, GridTile> _existingTilesDict;
+        private HashSet<GridTile> _existingTilesSet = new HashSet<GridTile>();
 
         public delegate void TileOperation(GridTile tile);
         public virtual void CreateBoard()
         {
             Tiles = new GridTile[RowCount, ColumnCount];
+            FindExistingTiles();
+            SetBackgroundTiles();
+            if (Editorbackground != null)
+            {
+                Editorbackground.gameObject.SetActive(false);
+            }
+        }
+        
+        /// <summary>
+        /// Finds existing tiles on the board
+        /// </summary>
+        private void FindExistingTiles()
+        {
+            GridTile[] existingTiles = GetComponentsInChildren<GridTile>();
+            _existingTilesDict = new Dictionary<GridTileCoordinate, GridTile>();
+            foreach (var tile in existingTiles)
+            {
+                GridTileCoordinate coord = GetRowColFromPosition(tile.transform.position);
+                if (_existingTilesDict.ContainsKey(coord))
+                {
+                    Destroy(tile.gameObject);
+                    continue;
+                }
+
+                tile.DestroyOnDespawn = false; //Existing tiles should be deactivated on despawn, not destroyed
+                _existingTilesSet.Add(tile);
+                _existingTilesDict[coord] = tile;
+                SetTile(tile, coord.Row, coord.Column);
+                tile.Spawn();
+            }
+        }
+        
+        /// <summary>
+        /// Creates the background tiles
+        /// </summary>
+        private void SetBackgroundTiles()
+        {
             BackgroundObjects = new GridTileBackground[RowCount, ColumnCount];
             for (int r = 0; r < RowCount; ++r)
             {
                 for (int c = 0; c < ColumnCount; ++c)
                 {
-                    Tiles[r,c] = null;
                     AddBackgroundObject(r,c);
                 }
             }
-
-            //SetExistingTiles(true);
-            GridTile[] existingTiles = GetComponentsInChildren<GridTile>();
-            foreach (var tile in existingTiles)
+        }
+        
+        /// <summary>
+        /// Resets the existing tiles
+        /// </summary>
+        private void RespawnExistingTiles()
+        {
+            foreach (var pair in _existingTilesDict)
             {
-                GridTileCoordinate coord = GetRowColFromPosition(tile.transform.position);
-                SetTile(tile, coord.Row, coord.Column);
-                tile.Spawn();
+                GridTileCoordinate coord = pair.Key;
+                GridTile existing = pair.Value;
+                if (existing == null) continue;
+                existing.gameObject.SetActive(true);
+                SetTile(existing, coord.Row, coord.Column);
+                existing.Spawn();
             }
         }
-
+        
         public virtual void AddBackgroundObject(int row, int col)
         {
             if (BackgroundGameObjectPrefab != null)
@@ -80,7 +130,7 @@ namespace Kuantech.Puzzle
         public virtual void RestartBoard()
         {
             ClearBoard();
-            //SetExistingTiles(true);
+            RespawnExistingTiles();
         }
         
         #region Move
@@ -145,12 +195,12 @@ namespace Kuantech.Puzzle
         /// <returns></returns>
         public void UnsetTile(int row, int col)
         {
-            GridTile existingTile = GetTile(row, col);
+            GridTile tile = GetTile(row, col);
+            if (tile == null) return;
             Tiles[row, col] = null;
-            existingTile.OnDespawn();
-            Destroy(existingTile.gameObject);
+            tile.ParentBoard = null;
         }
-
+        
         public void UnsetTiles(List<GridTile> tiles)
         {
             foreach(var tile in tiles)
@@ -158,6 +208,7 @@ namespace Kuantech.Puzzle
                 UnsetTile(tile);
             }
         }
+        
         public void UnsetTile(GridTile tile)
         {
             UnsetTile(tile.Row, tile.Column);
@@ -329,9 +380,9 @@ namespace Kuantech.Puzzle
                     GridTile tile = GetTile(r, c);
                     if(tile != null)
                     {
-                        Destroy(tile.gameObject);
+                        UnsetTile(r,c);
+                        tile.Despawn();
                     }
-                    Tiles[r, c] = null;
                 }
             }
         }
