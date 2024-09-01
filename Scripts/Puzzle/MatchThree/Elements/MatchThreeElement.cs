@@ -42,11 +42,11 @@ namespace Kuantech.Puzzle.MatchThree
             }
         }
  
-        public void SetBoard(MatchThreeBoard board, int row, int col)
+        public void SetBoard(MatchThreeBoard board, int row, int col, int layer=0)
         {
             ParentMatchThreeBoard = board;
             ParentBoard = board;
-            SetRowCol(row, col);
+            SetRowCol(row, col, layer);
         }
         public virtual void SetElementData(MatchThreeElementData data)
         {
@@ -76,7 +76,7 @@ namespace Kuantech.Puzzle.MatchThree
         /// <param name="col"></param>
         public void MoveToRowCol(int row, int col, float speed)
         {
-            SetRowCol(row, col);
+            SetRowCol(row, col, 0);
             UpdateTargetPosition(speed);
         }
 
@@ -135,7 +135,7 @@ namespace Kuantech.Puzzle.MatchThree
                 Debug.LogError("An edge case about angle:"+angle);
                 return;
             }
-            MatchThreeElement otherElement = ParentBoard.GetTile(Row + direction.y, Column+direction.x) as MatchThreeElement;
+            MatchThreeElement otherElement = ParentBoard.GetTile(Row + direction.y, Column+direction.x, Layer) as MatchThreeElement;
             if(otherElement != null && otherElement._canBeMoved)
             {
                 (ParentBoard as MatchThreeBoard).MakeAMove(this, otherElement);

@@ -16,6 +16,7 @@ namespace Kuantech.Puzzle
     {
         public int Row;
         public int Column;
+        public int Layer;
     }
     public class GridTile : MonoBehaviour
     {
@@ -23,6 +24,7 @@ namespace Kuantech.Puzzle
         [NonSerialized] public GridBoard ParentBoard;
         [NonSerialized] public int Row;
         [NonSerialized] public int Column;
+        [NonSerialized] public int Layer;
         
         [Header("Visual")] 
         public Transform VisualParent;
@@ -50,10 +52,11 @@ namespace Kuantech.Puzzle
             }
         }
         
-        public virtual void SetRowCol(int row, int col)
+        public virtual void SetRowCol(int row, int col, int layer)
         {
             Row = row;
             Column = col;
+            Layer = layer;
         }
         
         public void SetLocalPosition(Vector3 localPosition)

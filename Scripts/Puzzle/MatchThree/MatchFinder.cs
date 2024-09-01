@@ -12,7 +12,7 @@ namespace Kuantech.Puzzle.MatchThree
         }
 
         #region Depth-First-Search
-        public MatchGroup FindAllMatchesV2()
+        public MatchGroup FindAllMatchesV2(int layer=0)
         {
             MatchGroup group = new MatchGroup();
     
@@ -22,7 +22,7 @@ namespace Kuantech.Puzzle.MatchThree
             {
                 for (int r = 0; r < Board.RowCount; r++)
                 {
-                    MatchThreeElement currentTile = Board.GetTile(r,c) as MatchThreeElement;
+                    MatchThreeElement currentTile = Board.GetTile(r,c, layer) as MatchThreeElement;
                     if(currentTile == null) continue;
 
                     HashSet<MatchThreeElement> matchGroup = new HashSet<MatchThreeElement>();
@@ -61,10 +61,10 @@ namespace Kuantech.Puzzle.MatchThree
             if(traversedTiles.Contains(currentTile)) return;
             traversedTiles.Add(currentTile);
 
-            MatchThreeElement upElement = Board.GetTile(currentTile.Row + 1, currentTile.Column) as MatchThreeElement;
-            MatchThreeElement downElement = Board.GetTile(currentTile.Row - 1, currentTile.Column) as MatchThreeElement;
-            MatchThreeElement leftElement = Board.GetTile(currentTile.Row, currentTile.Column - 1) as MatchThreeElement;
-            MatchThreeElement rightElement = Board.GetTile(currentTile.Row, currentTile.Column + 1) as MatchThreeElement;
+            MatchThreeElement upElement = Board.GetTile(currentTile.Row + 1, currentTile.Column, currentTile.Layer) as MatchThreeElement;
+            MatchThreeElement downElement = Board.GetTile(currentTile.Row - 1, currentTile.Column, currentTile.Layer) as MatchThreeElement;
+            MatchThreeElement leftElement = Board.GetTile(currentTile.Row, currentTile.Column - 1, currentTile.Layer) as MatchThreeElement;
+            MatchThreeElement rightElement = Board.GetTile(currentTile.Row, currentTile.Column + 1, currentTile.Layer) as MatchThreeElement;
 
             if (upElement != null && downElement != null && currentTile.IsSameType(upElement) && currentTile.IsSameType(downElement))
             {
