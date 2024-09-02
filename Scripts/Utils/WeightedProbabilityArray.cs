@@ -16,18 +16,18 @@ namespace Kuantech.Core.Utils
         }
 
         public List<WPAElement> Elements;
-        private float totalWeight;
+        //private float totalWeight;
 
         public WeightedProbabilityArray()
         {
             Elements = new List<WPAElement>();
-            totalWeight = 0f;
+           // totalWeight = 0f;
         }
 
         public WeightedProbabilityArray(List<WPAElement> wpaElements)
         {
             Elements = new List<WPAElement>();
-            totalWeight = 0f;
+            //totalWeight = 0f;
             foreach (var wpa in wpaElements)
             {
                 AddElement(wpa.Element, wpa.Probability);
@@ -41,7 +41,7 @@ namespace Kuantech.Core.Utils
                 Element = element,
                 Probability = weight,
             });
-            totalWeight += weight;
+            //totalWeight += weight;
         }
 
         public void NormalizeWeights()
@@ -53,7 +53,7 @@ namespace Kuantech.Core.Utils
                 element.Probability /= total;
                 Elements[i] = element;
             }
-            totalWeight = 1;
+            //totalWeight = 1;
 
         }
         public T Sample(float weightDecay=1)
@@ -63,6 +63,12 @@ namespace Kuantech.Core.Utils
                 throw new InvalidOperationException("WeightedProbabilityArray is empty.");
             }
             weightDecay = Mathf.Clamp(weightDecay, 0, 1);
+            float totalWeight = 0f;
+            for (int i = 0; i < Elements.Count; ++i)
+            {
+                totalWeight += Elements[i].Probability;
+            }
+            
             float randomValue = UnityEngine.Random.value * totalWeight;
             float sum = 0f;
             int elementIndex = 0;
@@ -101,7 +107,6 @@ namespace Kuantech.Core.Utils
                     newTotal += existing.Probability;
                 }
             }
-            totalWeight = newTotal;
         }
     }
 }
