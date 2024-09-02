@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using Kuantech.Core;
 using Kuantech.Core.HyperCasual.UI;
+using Kuantech.DominoChain;
 using Kuantech.UI;
 using UnityEngine;
 
@@ -14,7 +15,8 @@ namespace Kuantech.Puzzle.UI
         // [SerializeField] private TMP_Text LevelIndexText;
         // [SerializeField] private string LevelLabel = "Level";
 
-        [Header("Panels")]
+        [Header("Panels")] 
+        public WinConditionIndicatorPanel WinConditionIndicatorPanel;
         public PuzzleCompletePanel CompletePanel;
         public PuzzleFailPanel FailedPanel;
         public float CompletePanelShowDelay = 0f;
@@ -28,12 +30,18 @@ namespace Kuantech.Puzzle.UI
             if(FailedPanel != null) FailedPanel.Initialize(this);
             Reset();
         }
-
+        
         public virtual void OnLevelSetup(PuzzleLevel level)
         {
             CurrentLevel = level;
             if(LevelIndicator != null) LevelIndicator.SetLevelIndex(level.LevelIndex + 1);
             level.OnStateChange += OnLevelStateChange;
+            
+            //Set win conditions
+            if (level.WinConditionTracker != null && WinConditionIndicatorPanel != null)
+            {
+                WinConditionIndicatorPanel.SetIndicatorElements(level.WinConditionTracker);
+            }
         }
 
         private void OnLevelStateChange(LevelStateChangeData levelStateChangeData)
@@ -54,6 +62,18 @@ namespace Kuantech.Puzzle.UI
         {
             LevelIndicator.gameObject.SetActive(toggle);
         }
+
+        #region Score Earning
+        public void SetScore(string key, WinConditionTracker scoreTracker)
+        {
+            int currentAmount = scoreTracker.GetCollectedAmount(key);
+            int targetAmount = scoreTracker.GetTarget(key);
+            int remaining = Mathf.Max(targetAmount - currentAmount, 0);
+            if(WinConditionIndicatorPanel != null) WinConditionIndicatorPanel.SetScore(key, currentAmount, remaining);
+        }
+        #endregion
+        
+        #region Win Lose Panels
         public void OpenCompletePanel()
         {
             StartCoroutine(_OpenCompletePanel());
@@ -72,6 +92,8 @@ namespace Kuantech.Puzzle.UI
             yield return new WaitForSeconds(FailedPanelShowDelay);
             FailedPanel.Show();
         }
+        #endregion
+        
         public virtual void Reset()
         {
             if(CompletePanel != null) CompletePanel.Close();

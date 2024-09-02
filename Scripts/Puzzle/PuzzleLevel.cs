@@ -2,17 +2,24 @@ using System;
 using System.Collections.Generic;
 using Kuantech.Core;
 using Kuantech.Core.Utils;
+using Kuantech.DominoChain;
 using Kuantech.Puzzle.UI;
 using Kuantech.Utils;
+using UnityEngine;
 
 namespace Kuantech.Puzzle
 {
     public class PuzzleLevel : Level
     {
+        [Header("UI")]
         public PuzzleLevelUI LevelUI;
+        
+        [Header("Screen Size Adjuster")]
         public ScreenSizeAdjuster ScreenSizeAdjuster;
+        
         public Dictionary<int, PuzzleLevelElement> LevelElements = new Dictionary<int, PuzzleLevelElement>();
         [NonSerialized] public PuzzleLevelState CurrentPuzzleLevelState;
+        [NonSerialized] public WinConditionTracker WinConditionTracker = null;
         
         //Boosters
         [NonSerialized] public PuzzleBooster CurrentBooster;
@@ -46,7 +53,8 @@ namespace Kuantech.Puzzle
                 element.OnPlay();
             }
         }
-
+        
+        
         public override void ResetLevelState()
         {
             base.ResetLevelState();
@@ -54,6 +62,7 @@ namespace Kuantech.Puzzle
             {
                 element.OnRestart();
             }
+            if(WinConditionTracker != null) WinConditionTracker.Reset();
             ResetBoosters();
             ResetUI();
         }
@@ -63,9 +72,21 @@ namespace Kuantech.Puzzle
             CancelCurrentBooster();
         }
         
-        public virtual void EarnScore(int score)
+        public virtual void EarnScore(string scoreKey, int score)
         {
-
+            WinConditionTracker.AddCollectedAmount(scoreKey, score);
+            CheckWinCondition();
+            //Update UI
+            LevelUI.SetScore(scoreKey, WinConditionTracker);
+        }
+        
+        public virtual void CheckWinCondition()
+        {
+            if (WinConditionTracker == null) return;
+            if (WinConditionTracker.CheckWinCondition())
+            {
+                CompleteLevel();
+            }
         }
         
         /// <summary>

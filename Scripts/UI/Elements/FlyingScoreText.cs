@@ -15,6 +15,7 @@ namespace Kuantech.JigsawTen.UI
         [SerializeField] private Image BackgroundImage;
         [SerializeField] private Renderer Renderer;
         private PuzzleLevel Level;
+        public string ScoreId;
         public void SetScoreContribution(PuzzleLevel level, int scoreContrib, Color color)
         {
             ScoreContribution = scoreContrib;
@@ -27,7 +28,7 @@ namespace Kuantech.JigsawTen.UI
         {
             base.OnTargetReached(OnTargetReachedHandler);
             if(Level == null) return;
-            Level.EarnScore(ScoreContribution);
+            Level.EarnScore(ScoreId, ScoreContribution);
         }
         public void SetText(string text)
         {
