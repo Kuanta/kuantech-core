@@ -231,7 +231,7 @@ namespace Kuantech.Puzzle
         }
 
         /// <summary>
-        /// Unsets the tile at given row, col
+        /// Unsets the tile at given row, col. Doesn't despawn the tile.
         /// </summary>
         /// <param name="row"></param>
         /// <param name="col"></param>
@@ -253,11 +253,21 @@ namespace Kuantech.Puzzle
             }
         }
         
-        public void UnsetTile(GridTile tile, int layer=0)
+        public void UnsetTile(GridTile tile)
         {
-            UnsetTile(tile.Row, tile.Column, layer);
+            UnsetTile(tile.Row, tile.Column, tile.Layer);
         }
         
+        /// <summary>
+        /// Unsets and despawns the tile
+        /// </summary>
+        /// <param name="tile"></param>
+        public void DespawnTile(GridTile tile)
+        {
+            UnsetTile(tile);
+            tile.Despawn();
+        }
+
         /// <summary>
         /// Gets the tile at given row col
         /// </summary>
