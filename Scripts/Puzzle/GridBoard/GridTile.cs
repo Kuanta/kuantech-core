@@ -30,7 +30,6 @@ namespace Kuantech.Puzzle
         public Transform VisualParent;
         [NonSerialized] public GameObject CurrentVisual;
         public bool LockVisual = false;
-
         
         /// <summary>
         /// Called when spawned from the grid board

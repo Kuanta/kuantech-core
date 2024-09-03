@@ -49,6 +49,7 @@ namespace Kuantech.Puzzle
         public List<GridTile[,]> Tiles; //A list of list to represent layered tiles
         //public GridTile[,] Tiles;
         public GridTileBackground[,] BackgroundObjects;
+        public bool[,] BackgroundMask; //A background object can't be placed if its masked here
 
         private Dictionary<GridTileCoordinate, GridTile> _existingTilesDict;
         private HashSet<GridTile> _existingTilesSet = new HashSet<GridTile>();
@@ -57,6 +58,15 @@ namespace Kuantech.Puzzle
         public virtual void CreateBoard()
         {
             Tiles = new List<GridTile[,]>();
+            BackgroundMask = new bool[RowCount,ColumnCount];
+            for (int r = 0; r < RowCount; ++r)
+            {
+                for (int c = 0; c < ColumnCount; ++c)
+                {
+                    BackgroundMask[r, c] = false;
+                }
+            }
+            
             AddLayer(); //Add at least a single layer
             FindExistingTiles();
             SetBackgroundTiles();
@@ -113,8 +123,14 @@ namespace Kuantech.Puzzle
                 _existingTilesDict[coord] = tile;
                 SetTile(tile, coord.Row, coord.Column, coord.Layer);
                 tile.Spawn();
+
+                if (tile is GridBoardUnpassableTile unpassableTile)
+                {
+                    BackgroundMask[coord.Row, coord.Column] = true;
+                }
             }
         }
+        
         /// <summary>
         /// Creates the background tiles
         /// </summary>
@@ -125,6 +141,7 @@ namespace Kuantech.Puzzle
             {
                 for (int c = 0; c < ColumnCount; ++c)
                 {
+                    if (BackgroundMask[r, c]) continue;
                     AddBackgroundObject(r,c);
                 }
             }
@@ -603,7 +620,7 @@ namespace Kuantech.Puzzle
         /// <summary>
         /// Clears the highlighted tile backgrounds
         /// </summary>
-        public void ClearHighlightedTiles()
+        public virtual void ClearHighlightedTiles()
         {
             if (_highlightedTiles == null) return;
             foreach (var bg in _highlightedTiles)
@@ -622,11 +639,16 @@ namespace Kuantech.Puzzle
             if(_highlightedTiles == null) _highlightedTiles = new HashSet<GridTileBackground>();
             foreach (var coord in coordinates)
             {
-                GridTileBackground bgObj = GetBackground(coord);
-                if (bgObj == null) continue;
-                bgObj.Highlight();
-                _highlightedTiles.Add(bgObj);
+                HighlightTile(coord);
             }
+        }
+
+        public virtual void HighlightTile(GridTileCoordinate coord)
+        {
+            GridTileBackground bgObj = GetBackground(coord);
+            if (bgObj == null) return;
+            bgObj.Highlight();
+            _highlightedTiles.Add(bgObj);
         }
         #endregion
     }
