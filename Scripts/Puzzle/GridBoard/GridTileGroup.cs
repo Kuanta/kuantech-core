@@ -20,7 +20,10 @@ namespace Kuantech.Puzzle
     {
         public List<NeighTileData> ChildTilesList;
         public Dictionary<GridTileCoordinate, GridTile> ChildTiles;
-        
+
+        private Vector2 _boundingBoxCenter;
+        private Vector2 _boundingBox;
+
         //Events
         public UnityAction OnPlacedOnBoard;
         public virtual void Initialize()
@@ -131,6 +134,24 @@ namespace Kuantech.Puzzle
             return GetLocalPosition(board, midRow, midCol);
         }
 
+        public Vector2Int GetBoundingBoxSize()
+        {
+            Vector2Int rowLimits = new Vector2Int(Int32.MaxValue, Int32.MinValue);
+            Vector2Int colLimits = new Vector2Int(Int32.MaxValue, Int32.MinValue);
+            foreach (var pair in ChildTiles)
+            {
+                //Min and max row
+                rowLimits.x = Mathf.Min(rowLimits.x, pair.Key.Row);
+                rowLimits.y = Mathf.Max(rowLimits.y, pair.Key.Row);
+                
+                //Min and max col
+                colLimits.x = Mathf.Min(colLimits.x, pair.Key.Column);
+                colLimits.y = Mathf.Max(colLimits.y, pair.Key.Column);
+            }
+
+            return new Vector2Int(colLimits.y - colLimits.x + 1, rowLimits.y-rowLimits.x + 1);
+        }
+        
         public Vector3 GetAnchorTilePosition(GridBoard board)
         {
             var firstKey = ChildTiles.Keys.ToArray()[0];

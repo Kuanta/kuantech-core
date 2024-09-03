@@ -60,7 +60,6 @@ namespace Kuantech.Puzzle
         public override void OnLeftDropZone(IDropZone dropZone)
         {
             base.OnLeftDropZone(dropZone);
-            Debug.LogError("Left drop zone");
             GridBoardDropZone gz = (dropZone as GridBoardDropZone);
             if (gz == null) return;
             gz.GridBoard.ClearHighlightedTiles();

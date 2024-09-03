@@ -2,7 +2,9 @@ using System;
 using System.Collections;
 using Kuantech.Core;
 using Kuantech.Core.HyperCasual.UI;
+using Kuantech.Core.UI;
 using Kuantech.DominoChain;
+using Kuantech.HyperCasual.UI;
 using Kuantech.UI;
 using UnityEngine;
 
@@ -15,6 +17,11 @@ namespace Kuantech.Puzzle.UI
         // [SerializeField] private TMP_Text LevelIndexText;
         // [SerializeField] private string LevelLabel = "Level";
 
+        [Header("Buttons")] 
+        [SerializeField] private ConfirmPanelButton RestartButton;
+
+        [SerializeField] private ConfirmPanel RestartConfirmPanel;
+        
         [Header("Panels")] 
         public WinConditionIndicatorPanel WinConditionIndicatorPanel;
         public PuzzleCompletePanel CompletePanel;
@@ -28,6 +35,15 @@ namespace Kuantech.Puzzle.UI
         {
             if(CompletePanel != null) CompletePanel.Initialize(this);
             if(FailedPanel != null) FailedPanel.Initialize(this);
+
+            if (RestartConfirmPanel != null)
+            {
+                RestartConfirmPanel.OnConfirm += () =>
+                {
+                    CurrentLevel.RestartLevel();
+                };
+            }
+           
             Reset();
         }
         
@@ -98,6 +114,10 @@ namespace Kuantech.Puzzle.UI
         {
             if(CompletePanel != null) CompletePanel.Close();
             if(FailedPanel != null) FailedPanel.Close();
+            if (WinConditionIndicatorPanel != null)
+            {
+                WinConditionIndicatorPanel.Reset();
+            }
         }
         
         #region Boosters

@@ -94,7 +94,7 @@ namespace Kuantech.Puzzle
         /// </summary>
         protected virtual void ResetUI()
         {
-
+            //LevelUI.Reset();
         }
 
         #region Level State

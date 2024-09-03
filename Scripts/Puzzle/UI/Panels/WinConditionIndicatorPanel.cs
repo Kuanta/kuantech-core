@@ -22,9 +22,11 @@ namespace Kuantech.Puzzle.UI
 
         [Header("Sizer")] 
         [SerializeField] private PanelSizer PanelSizer;
-        
+
+        private WinConditionTracker _tracker;
         public void SetIndicatorElements(WinConditionTracker tracker)
         {
+            _tracker = tracker;
             //Clear previous ones
             if (IndicatorElements != null)
             {
@@ -41,6 +43,7 @@ namespace Kuantech.Puzzle.UI
             
             foreach (var pair in tracker.Targets)
             {
+                if (pair.Value.TargetAmount <= 0) continue;
                 string targetKey = pair.Key;
                 WinConditionIndicatorElement element = Instantiate(EntryElementPrefab);
                 IndicatorElements[targetKey] = element;
@@ -62,6 +65,16 @@ namespace Kuantech.Puzzle.UI
             if (!IndicatorElements.ContainsKey(key)) return;
             IndicatorElements[key].SetScore(currentAmount, remainingAmount);
         }
+        
+        public void Reset()
+        {
+            foreach (var pair in IndicatorElements)
+            {
+                if (pair.Value == null) continue;
+                SetScore(pair.Key, 0, _tracker.GetTarget(pair.Key));
+            }
+        }
+        
         private ColoredSpriteAsset GetIconFromKey(string key)
         {
             foreach (var spriteEntry in Sprites)
