@@ -23,8 +23,9 @@ namespace Kuantech.Utils
         protected IDropZone CurrentDropZone;
         
         //Events
+        public Action OnDragStart; //Called when dragging starts
+        public Action OnDragEnd; //Called when dragging ends somehow
         public Action OnDrop;
-
       
         public virtual bool DragStart()
         {
@@ -33,7 +34,7 @@ namespace Kuantech.Utils
             _parentBeforeDrag = transform.parent;
             transform.SetParent(null);
             transform.localScale = Vector3.one;
-
+            OnDragStart?.Invoke();
             return true;
         }
         [Tooltip("If set to false, Draggable can't be dragged")]
@@ -85,6 +86,7 @@ namespace Kuantech.Utils
         }
         public virtual void DragEnd()
         {
+            OnDragEnd?.Invoke();
             if(DropZone == null || DropZone == CurrentDropZone || !DropZone.OnDrop(this)) 
             {
                 OnFailedDrop();
