@@ -112,6 +112,14 @@ namespace Kuantech.Core
                 Debug.LogError("Level Manager is null");
             }
         }
+
+        [ConsoleMethod("resetLevel", "Resets the level")]
+        public static void ResetLevelCC()
+        {
+            var context = LevelManager.GetContext<LevelManager>();
+            if (context == null || context.CurrentLevel == null) return;
+            context.CurrentLevel.RestartLevel();
+        }
         #region Lifecycle
         public virtual void ChangeCurrentState(LevelState newState)
         {
