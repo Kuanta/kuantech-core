@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Kuantech.Utils;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Serialization;
@@ -43,8 +44,16 @@ namespace Kuantech.Core.FX
         public float PitchResetTime;
 
         public UnityAction OnDeqeued;
+
+        private IEnumerator _fadeOutRoutine = null;
+        
         public void Play()
         {
+            if (_fadeOutRoutine != null)
+            {
+                StopCoroutine(_fadeOutRoutine);
+                _fadeOutRoutine = null;
+            }
             if (PlayWithAudioLibrary)
             {
                 EffectsLibrary.PlayAudio(AudioTag);
@@ -80,7 +89,15 @@ namespace Kuantech.Core.FX
         public void Stop(float fadeOutDuraiton=0f)
         {
             //todo(sfx): Implement fadeout
-            if(AudioSource == null) return;
+            if(AudioSource == null || _fadeOutRoutine != null) return;
+            if (fadeOutDuraiton > 0)
+            {
+                _fadeOutRoutine = FadeOutCoroutine(AudioSource, fadeOutDuraiton);
+                StartCoroutine(_fadeOutRoutine);
+                return;
+            }
+            
+            //No fade out, just play
             AudioSource.Stop();
         }
 
@@ -91,7 +108,6 @@ namespace Kuantech.Core.FX
         }
 
         #region FadeInOut
-
         private IEnumerator FadeOutCoroutine(AudioSource audioSource, float fadeOutSecs)
         {
             float startVolume = audioSource.volume;
@@ -99,11 +115,11 @@ namespace Kuantech.Core.FX
             while (audioSource.volume > 0)
             {
                 audioSource.volume -= startVolume * Time.deltaTime / fadeOutSecs;
-                yield return null;
+                yield return new WaitForNextFrameUnit();
             }
 
             audioSource.Stop();
-            audioSource.volume = startVolume;
+            audioSource.volume = startVolume; //Set the volume back to start volume so that in next play sequence its not quiet
         }
 
         #endregion
