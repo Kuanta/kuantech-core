@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using Kuantech.UI;
 using Kuantech.Utils;
 using UnityEngine;
 using UnityEngine.UI;
@@ -14,6 +16,9 @@ namespace Kuantech.Puzzle.UI
         [Header("Checkpoints")] [SerializeField]
         private Transform CheckpointsParent;
         [SerializeField] private LevelStagePanelCheckpoint CheckpointPrefab;
+
+        [Header("Stage Completed Text")]
+        [SerializeField] private UIAnimator StageCompletedText;
         
         [Tooltip("Distance between each Stage")]
         [SerializeField] private float StagesPadding;
@@ -21,7 +26,17 @@ namespace Kuantech.Puzzle.UI
         private List<LevelStagePanelCheckpoint> _checkpoints;
         private int _stageCount;
         private int _currentStage = 0;
-        
+
+        private void Start()
+        {
+            if (StageCompletedText == null) return;
+            StageCompletedText.OnAnimationEnd += () =>
+            {
+                StageCompletedText.Reset();
+                StageCompletedText.gameObject.SetActive(false);
+            };
+        }
+
         public void SetStageCount(int stageCount)
         {
             if (stageCount <= 1)
@@ -70,7 +85,7 @@ namespace Kuantech.Puzzle.UI
 
             for (int i = 0; i < _stageCount; ++i)
             {
-                _checkpoints[i].ToggleReached(i <= stage);
+                _checkpoints[i].SetState(i, stage);
             }
             float fill = Mathf.Clamp01(stage / (float)(_stageCount - 1));
             Fillbar.value= fill;
@@ -88,6 +103,13 @@ namespace Kuantech.Puzzle.UI
 
             float finalFill = _currentStage * fillPerStage + fillForStage;
             Fillbar.value = finalFill;
+        }
+
+        public void OnStageCompleted()
+        {
+            StageCompletedText.gameObject.SetActive(true);
+            StageCompletedText.Reset();
+            StageCompletedText.PlayAnimation();
         }
     }
 }

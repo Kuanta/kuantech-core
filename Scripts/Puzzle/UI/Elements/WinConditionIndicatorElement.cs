@@ -12,6 +12,10 @@ namespace Kuantech.Puzzle.UI
         [SerializeField] private Image MaskingImage;
         [SerializeField] private TMP_Text ScoreText;
         [NonSerialized] public bool ShowRemaining;
+
+        [Header("Completed Elements")] 
+        public GameObject CompletedElements;
+        
         public void SetIcon(ColoredSpriteAsset iconSprite)
         {
             if (iconSprite == null) return;
@@ -25,6 +29,9 @@ namespace Kuantech.Puzzle.UI
         
         public void SetScore(int score, int remainingAmount)
         {
+            bool completed = remainingAmount <= 0;
+            ScoreText.gameObject.SetActive(!completed);
+            CompletedElements.gameObject.SetActive(completed);
             ScoreText.text = ShowRemaining ? remainingAmount.Stringfy() : score.Stringfy();
         }
     }

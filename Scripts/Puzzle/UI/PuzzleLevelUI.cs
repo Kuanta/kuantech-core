@@ -3,7 +3,6 @@ using System.Collections;
 using Kuantech.Core;
 using Kuantech.Core.HyperCasual.UI;
 using Kuantech.Core.UI;
-using Kuantech.DominoChain;
 using Kuantech.HyperCasual.UI;
 using Kuantech.UI;
 using UnityEngine;
@@ -115,7 +114,7 @@ namespace Kuantech.Puzzle.UI
         #region Score panels
         public void OnStageCompleted(int newStageIndex)
         {
-            WinConditionIndicatorPanel.SetPanelForStage(newStageIndex);    
+            WinConditionIndicatorPanel.OnStageCompleted(newStageIndex);
         }
         #endregion
         

@@ -8,19 +8,24 @@ namespace Kuantech.Puzzle.UI
     {
         [SerializeField] private GameObject ReachedState;
         [SerializeField] private GameObject UnReachedState;
+        [SerializeField] private GameObject CompletedState;
         [SerializeField] private TMP_Text NumberText;
 
-        private bool _reached = false;
         public void SetStageNumber(int stageIndex)
         {
             NumberText.text = (stageIndex+1).Stringfy();
         }
-
-        public void ToggleReached(bool reached)
+        
+        /// <summary>
+        /// Sets the state of this element.
+        /// </summary>
+        /// <param name="stageIndex">Stage index this element represents</param>
+        /// <param name="currentStage">Current stage index</param>
+        public void SetState(int stageIndex, int currentStage)
         {
-            _reached = reached;
-            ReachedState.SetActive(reached);
-            UnReachedState.SetActive(!reached);
+            ReachedState.SetActive(stageIndex == currentStage);
+            UnReachedState.SetActive(stageIndex > currentStage);
+            CompletedState.SetActive(stageIndex<currentStage);
         }
     }
 }
