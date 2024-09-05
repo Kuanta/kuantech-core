@@ -43,8 +43,8 @@ namespace Kuantech.Puzzle.UI
                     CurrentLevel.RestartLevel();
                 };
             }
-           
-            Reset();
+            //
+            // Reset();
         }
         
         public virtual void OnLevelSetup(PuzzleLevel level)
@@ -54,9 +54,11 @@ namespace Kuantech.Puzzle.UI
             level.OnStateChange += OnLevelStateChange;
             
             //Set win conditions
-            if (level.WinConditionTracker != null && WinConditionIndicatorPanel != null)
+            WinConditionTracker tracker = CurrentLevel.WinConditionTracker;
+
+            if (WinConditionIndicatorPanel != null && tracker != null)
             {
-                WinConditionIndicatorPanel.SetIndicatorElements(level.WinConditionTracker);
+                WinConditionIndicatorPanel.SetTracker(tracker);
             }
         }
 
@@ -69,7 +71,7 @@ namespace Kuantech.Puzzle.UI
             else if(levelStateChangeData.NewState == LevelState.Failed)
             {
                 OpenFailedPanel();
-            }else{
+            }else if(levelStateChangeData.NewState == LevelState.Playing){ //todo:Resetting at play may cause issues
                 Reset();
             }
         }
@@ -83,7 +85,7 @@ namespace Kuantech.Puzzle.UI
         public void SetScore(string key, WinConditionTracker scoreTracker)
         {
             int currentAmount = scoreTracker.GetCollectedAmount(key);
-            int targetAmount = scoreTracker.GetTarget(key);
+            int targetAmount = scoreTracker.GetTargetAmount(key);
             int remaining = Mathf.Max(targetAmount - currentAmount, 0);
             if(WinConditionIndicatorPanel != null) WinConditionIndicatorPanel.SetScore(key, currentAmount, remaining);
         }
@@ -110,13 +112,20 @@ namespace Kuantech.Puzzle.UI
         }
         #endregion
         
+        #region Score panels
+        public void OnStageCompleted(int newStageIndex)
+        {
+            WinConditionIndicatorPanel.SetPanelForStage(newStageIndex);    
+        }
+        #endregion
+        
         public virtual void Reset()
         {
             if(CompletePanel != null) CompletePanel.Close();
             if(FailedPanel != null) FailedPanel.Close();
             if (WinConditionIndicatorPanel != null)
             {
-                WinConditionIndicatorPanel.Reset();
+                WinConditionIndicatorPanel.SetPanelForStage(0);  
             }
         }
         

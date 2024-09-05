@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Kuantech.DominoChain;
 using Kuantech.Utils.UI;
 using UnityEngine;
 
@@ -20,13 +19,36 @@ namespace Kuantech.Puzzle.UI
         public List<IndicatorSpriteEntry> Sprites;
         public Dictionary<string, WinConditionIndicatorElement> IndicatorElements;
 
+        [Header("Stages")] 
+        [SerializeField] private LevelStagesPanel StagesPanel;
+        
         [Header("Sizer")] 
         [SerializeField] private PanelSizer PanelSizer;
 
         private WinConditionTracker _tracker;
-        public void SetIndicatorElements(WinConditionTracker tracker)
+        private int _currentlyShownStage = 0;
+        public void SetTracker(WinConditionTracker tracker)
         {
             _tracker = tracker;
+            SetStageCount(_tracker.GetStageCount());
+        }
+        
+        // /// <summary>
+        // /// Sets the panel for the current stage
+        // /// </summary>
+        // public void SetPanelForCurrentStage()
+        // {
+        //     int currentStageIndex = _tracker.GetCurrentStageIndex();
+        //     SetPanelForStage(currentStageIndex);
+        // }
+
+        public void SetPanelForStage(int stageIndex)
+        {
+            if (_tracker == null)
+            {
+                Debug.LogWarning("Targets panel couldn't be set");
+                return;
+            }
             //Clear previous ones
             if (IndicatorElements != null)
             {
@@ -39,9 +61,11 @@ namespace Kuantech.Puzzle.UI
             else
             {
                 IndicatorElements = new Dictionary<string, WinConditionIndicatorElement>();
-            }
+            } 
             
-            foreach (var pair in tracker.Targets)
+            PuzzleLevelStage currentStage = _tracker.GetStage(stageIndex);
+            SetCurrentStageIndex(_tracker.GetCurrentStageIndex());
+            foreach (var pair in currentStage.Targets)
             {
                 if (pair.Value.TargetAmount <= 0) continue;
                 string targetKey = pair.Key;
@@ -55,24 +79,34 @@ namespace Kuantech.Puzzle.UI
                 element.transform.localRotation = Quaternion.identity;
                 element.transform.localScale = Vector3.one;
             }
-            
-            //Set the size
-            if(PanelSizer != null) PanelSizer.SetHorizontalElementCount(tracker.Targets.Count);
-        }
 
+            _currentlyShownStage = _tracker.GetCurrentStageIndex();
+            //Set the size
+            if(PanelSizer != null) PanelSizer.SetHorizontalElementCount(currentStage.Targets.Count);
+        }
+        
+        /// <summary>
+        /// Sets the ui elements for the stage index
+        /// </summary>
+        /// <param name="stageIndex"></param>
+        public virtual void SetCurrentStageIndex(int stageIndex)
+        {
+            StagesPanel.SetStage(stageIndex);
+        }
+        
+        /// <summary>
+        /// Sets the stage count
+        /// </summary>
+        /// <param name="stageCount"></param>
+        public virtual void SetStageCount(int stageCount)
+        {
+            StagesPanel.SetStageCount(stageCount);
+        }
+        
         public void SetScore(string key, int currentAmount, int remainingAmount)
         {
             if (!IndicatorElements.ContainsKey(key)) return;
             IndicatorElements[key].SetScore(currentAmount, remainingAmount);
-        }
-        
-        public void Reset()
-        {
-            foreach (var pair in IndicatorElements)
-            {
-                if (pair.Value == null) continue;
-                SetScore(pair.Key, 0, _tracker.GetTarget(pair.Key));
-            }
         }
         
         private ColoredSpriteAsset GetIconFromKey(string key)
@@ -81,7 +115,6 @@ namespace Kuantech.Puzzle.UI
             {
                 if (spriteEntry.Key == key) return spriteEntry.Sprite;
             }
-
             return null;
         }
     }

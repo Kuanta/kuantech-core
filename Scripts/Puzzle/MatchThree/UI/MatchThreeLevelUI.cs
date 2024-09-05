@@ -28,23 +28,24 @@ namespace Kuantech.Puzzle.MatchThree.UI
                 RequiredTileIndicatorsContentParent.DestroyAllChildren();
 
                 _elementToIndicator = new Dictionary<MatchThreeElementData, MatchThreeRequiredTileIndicator>();
-                if(_currentMatchThreeLevel.WinCondition.IsNullOrEmpty())
-                {
-                    RequiredTilesPanel.SetActive(false);
-                }
-                else{
-                    RequiredTilesPanel.SetActive(true);
-                    foreach (var winConditionEntry in _currentMatchThreeLevel.WinCondition)
-                    {
-                        MatchThreeRequiredTileIndicator indicator = Instantiate(TileIndicatorPrefab.gameObject)
-                        .GetComponent<MatchThreeRequiredTileIndicator>();
-                        _elementToIndicator[winConditionEntry.RequiredElement] = indicator;
-                        indicator.SetElement(winConditionEntry.RequiredElement);
-                        indicator.SetRemainingAmount(winConditionEntry.RequiredAmount);
-                        indicator.transform.SetParent(RequiredTileIndicatorsContentParent, false); //The parent should have a layout component attached
-                        indicator.transform.localScale = Vector3.one;
-                    }
-                }
+                Debug.LogError("Check here!"); //todo: fix match3 level ui
+                // if(_currentMatchThreeLevel.WinCondition.IsNullOrEmpty())
+                // {
+                //     RequiredTilesPanel.SetActive(false);
+                // }
+                // else{
+                //     RequiredTilesPanel.SetActive(true);
+                //     foreach (var winConditionEntry in _currentMatchThreeLevel.WinCondition)
+                //     {
+                //         MatchThreeRequiredTileIndicator indicator = Instantiate(TileIndicatorPrefab.gameObject)
+                //         .GetComponent<MatchThreeRequiredTileIndicator>();
+                //         _elementToIndicator[winConditionEntry.RequiredElement] = indicator;
+                //         indicator.SetElement(winConditionEntry.RequiredElement);
+                //         indicator.SetRemainingAmount(winConditionEntry.RequiredAmount);
+                //         indicator.transform.SetParent(RequiredTileIndicatorsContentParent, false); //The parent should have a layout component attached
+                //         indicator.transform.localScale = Vector3.one;
+                //     }
+                // }
             }
             SetRemainingMoves(_currentMatchThreeLevel.GetMaxMoveCount());
         }

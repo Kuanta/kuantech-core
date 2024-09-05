@@ -14,6 +14,7 @@ namespace Kuantech.Puzzle.UI
         [NonSerialized] public bool ShowRemaining;
         public void SetIcon(ColoredSpriteAsset iconSprite)
         {
+            if (iconSprite == null) return;
             Icon.sprite = iconSprite.Sprite;
             Icon.color = iconSprite.GetColor();
             if (MaskingImage != null)

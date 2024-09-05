@@ -5,12 +5,12 @@ using UnityEngine;
 
 namespace Kuantech.Puzzle.MatchThree
 {
-    [Serializable]
-    public struct WinConditionEntry
-    {
-        public MatchThreeElementData RequiredElement;
-        public int RequiredAmount;
-    }
+    // [Serializable]
+    // public struct WinConditionEntry
+    // {
+    //     public MatchThreeElementData RequiredElement;
+    //     public int RequiredAmount;
+    // }
 
     public class MatchThreeLevel: PuzzleLevel
     {
@@ -20,18 +20,21 @@ namespace Kuantech.Puzzle.MatchThree
         [Header("Level Properties")]
         public int MaxMoveCount = 40;
         protected int CurrentMoveCount;
-        public List<WinConditionEntry> WinCondition;
+        //public List<PuzzleLevelStage.WinConditionEntry> WinCondition;
         private Dictionary<MatchThreeElementData, int> _elementToRequiredCount;
         private Dictionary<MatchThreeElementData, int> _collectedElements;
         private MatchThreeLevelUI _matchThreeLevelUI;
+
+        public WinConditionTracker WinConditionTracker;
+        
         public override void SetupLevel()
         {
             base.SetupLevel();
             _elementToRequiredCount = new Dictionary<MatchThreeElementData, int>();
-            foreach(var condition in WinCondition)
-            {
-                _elementToRequiredCount[condition.RequiredElement] = condition.RequiredAmount;
-            }
+            // foreach(var condition in WinCondition)
+            // {
+            //     _elementToRequiredCount[condition.RequiredElement] = condition.RequiredAmount;
+            // }
             _matchThreeLevelUI = ((MatchThreeLevelUI)LevelUI);
             MatchThreeBoard.Setup();
             MatchThreeBoard.OnMove += OnMove;
@@ -128,12 +131,13 @@ namespace Kuantech.Puzzle.MatchThree
         /// <returns></returns>
         public virtual bool IsWinConditionMet()
         {
-            if(WinCondition == null) return false;
-            foreach(var entry in WinCondition)
-            {
-                if(!IsWinConditionMetForElement(entry.RequiredElement)) return false;
-            }
-            return true;
+            // if(WinCondition == null) return false;
+            // foreach(var entry in WinCondition)
+            // {
+            //     if(!IsWinConditionMetForElement(entry.RequiredElement)) return false;
+            // }
+            // return true;
+            return WinConditionTracker.CheckWinCondition();
         }
 
         public bool IsWinConditionMetForElement(MatchThreeElementData data)
@@ -147,21 +151,6 @@ namespace Kuantech.Puzzle.MatchThree
         {
             if(_elementToRequiredCount == null || !_elementToRequiredCount.ContainsKey(data)) return 0;
             return _elementToRequiredCount[data];
-        }
-
-        /// <summary>
-        /// Checks whether an element is required for win condition
-        /// </summary>
-        /// <param name="data"></param>
-        /// <returns></returns>
-        public bool IsElementInWinCondition(MatchThreeElementData data)
-        {
-            if(WinCondition == null) return false;
-            foreach(var entry in WinCondition)
-            {
-                if(entry.RequiredElement.IsSameType(data)) return true;
-            }
-            return false;
         }
 
         /// <summary>
