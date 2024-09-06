@@ -76,7 +76,6 @@ namespace Kuantech.Puzzle.UI
 
         public void SetStage(int stage)
         {
-            Debug.LogError($"Setting stage UI for stage {stage}");
             if (_stageCount <= 1)
             {
                 Fillbar.value= 0;

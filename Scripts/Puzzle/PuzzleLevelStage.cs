@@ -41,6 +41,26 @@ namespace Kuantech.Puzzle
             if (Targets == null) Targets = new Dictionary<string, WinConditionEntry>();
             Targets[targetEntry.Key] = targetEntry;
         }
+
+        public void SetTarget(string key, int value)
+        {
+            if (Targets == null) Targets = new Dictionary<string, WinConditionEntry>();
+            if (Targets.ContainsKey(key))
+            {
+                WinConditionEntry  entry = Targets[key];
+                entry.TargetAmount = value;
+                Targets[key] = entry;
+            }
+            else
+            {
+                Targets[key] = new WinConditionEntry()
+                {
+                    Key = key,
+                    ShowRemaining = true,
+                    TargetAmount = value
+                };
+            }
+        }
         
         /// <summary>
         /// Returns the target amount for the key

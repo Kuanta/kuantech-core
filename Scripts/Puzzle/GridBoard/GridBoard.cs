@@ -51,8 +51,8 @@ namespace Kuantech.Puzzle
         public GridTileBackground[,] BackgroundObjects;
         public bool[,] BackgroundMask; //A background object can't be placed if its masked here
 
-        private Dictionary<GridTileCoordinate, GridTile> _existingTilesDict;
-        private HashSet<GridTile> _existingTilesSet = new HashSet<GridTile>();
+        protected Dictionary<GridTileCoordinate, GridTile> _existingTilesDict;
+        protected HashSet<GridTile> _existingTilesSet = new HashSet<GridTile>();
 
         public delegate void TileOperation(GridTile tile);
         public virtual void CreateBoard()

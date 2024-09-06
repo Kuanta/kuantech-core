@@ -105,10 +105,9 @@ namespace Kuantech.Puzzle
             WinConditionTracker.OnAllStagesCompleted += OnStagesCompleted;
         }
 
-        public void OnStageCompleted(int stageIndex)
+        public virtual void OnStageCompleted(int stageIndex)
         {
             LevelUI.OnStageCompleted(stageIndex);
-            Debug.LogError("Stage Completed");
         }
 
         public void OnStagesCompleted()
