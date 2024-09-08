@@ -65,7 +65,7 @@ namespace Kuantech.Core.HyperCasual.Runner
         private void OnPointerDown(object sender, EventArgs args)
         {
             if (LevelManager.GetCurrentState() != LevelState.Waiting) return;
-            LevelManager.GetContext<LevelManager>().PlayLevel();
+            LevelManager.GetContext<LevelManager>().StartLevel();
         }
     }
 }

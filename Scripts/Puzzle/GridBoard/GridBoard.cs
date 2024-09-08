@@ -54,6 +54,9 @@ namespace Kuantech.Puzzle
         protected Dictionary<GridTileCoordinate, GridTile> _existingTilesDict;
         protected HashSet<GridTile> _existingTilesSet = new HashSet<GridTile>();
 
+        //Masked tiles are tiles that are empty but 'blocked' tiles. 
+        public HashSet<GridTileCoordinate> MaskedTiles = new HashSet<GridTileCoordinate>();
+
         public delegate void TileOperation(GridTile tile);
         public virtual void CreateBoard()
         {
@@ -191,6 +194,31 @@ namespace Kuantech.Puzzle
         #endregion
 
         #region Query Methods
+        /// <summary>
+        /// Masks a tile
+        /// </summary>
+        /// <param name="coord"></param>
+        public void MaskTile(GridTileCoordinate coord)
+        {
+            MaskedTiles ??= new HashSet<GridTileCoordinate>();
+            MaskedTiles.Add(coord);
+        }
+        
+        /// <summary>
+        /// Removes the mask from the tile
+        /// </summary>
+        /// <param name="coord"></param>
+        public void RemoveTileMask(GridTileCoordinate coord)
+        {
+            if(MaskedTiles == null) return;
+            MaskedTiles.Remove(coord);
+        }
+
+        public void ClearTileMasks()
+        {
+            MaskedTiles.Clear();
+        }
+        
         public bool IsCoordinateValid(GridTileCoordinate coordinate)
         {
             return IsCoordinateValid(coordinate.Row, coordinate.Column);
@@ -212,9 +240,9 @@ namespace Kuantech.Puzzle
         {
             return IsTileValidAndEmpty(coordinate.Row, coordinate.Column);
         }
-        public bool IsTileValidAndEmpty(int row, int col)
+        public bool IsTileValidAndEmpty(int row, int col, int layer=0)
         {
-            return !IsTileOccupied(row, col) && IsCoordinateValid(row, col);
+            return !IsTileOccupied(row, col, layer) && IsCoordinateValid(row, col);
         }
 
         /// <summary>
@@ -309,6 +337,14 @@ namespace Kuantech.Puzzle
         public bool IsTileOccupied(int row, int col, int layer=0)
         {
             if(!IsCoordinateValid(row, col)) return false;
+
+            if (MaskedTiles != null && MaskedTiles.Contains(new GridTileCoordinate()
+                {
+                    Row = row, Column = col, Layer = layer,
+                }))
+            {
+                return true;
+            }
             return GetTile(row, col, layer) != null;
         }
    

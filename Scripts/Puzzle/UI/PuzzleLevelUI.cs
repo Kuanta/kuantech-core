@@ -28,6 +28,8 @@ namespace Kuantech.Puzzle.UI
         public float CompletePanelShowDelay = 0f;
         public float FailedPanelShowDelay = 0f;
 
+        [Header("Tutorial")] 
+        [SerializeField] public TutorialHand TutorialHand;
         [NonSerialized] public PuzzleLevel CurrentLevel;
 
         public virtual void Initialize()
@@ -126,6 +128,7 @@ namespace Kuantech.Puzzle.UI
             {
                 WinConditionIndicatorPanel.SetPanelForStage(0);  
             }
+            if(TutorialHand != null) TutorialHand.gameObject.SetActive(false);
         }
         
         #region Boosters

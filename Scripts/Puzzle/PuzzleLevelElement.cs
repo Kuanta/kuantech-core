@@ -1,4 +1,5 @@
 using System;
+using Kuantech.Core;
 using Kuantech.Utils;
 using UnityEngine;
 
@@ -11,24 +12,15 @@ namespace Kuantech.Puzzle
         [NonSerialized] public bool Dirtied;
     }
 
-    public class PuzzleLevelElement : MonoBehaviour 
+    public class PuzzleLevelElement : LevelElement
     {
         [NonSerialized] public PuzzleLevelElementState CurrentState = null;
-        [NonSerialized] public PuzzleLevel ParentLevel;
-        public virtual void OnSetup(PuzzleLevel parentLevel)
+
+        public virtual void OnStageCompleted()
         {
-            ParentLevel = parentLevel;
+            
         }
-
-        public virtual void OnPlay()
-        {
-
-        }
-
-        public virtual void OnRestart()
-        {
-
-        }
+        
         public virtual void LoadElementState(byte[] serializedState)
         {
             CurrentState = Helpers.Deserialize<PuzzleLevelElementState>(serializedState);

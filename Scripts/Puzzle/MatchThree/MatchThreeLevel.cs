@@ -40,7 +40,7 @@ namespace Kuantech.Puzzle.MatchThree
             MatchThreeBoard.OnMove += OnMove;
         }
 
-        public override void PlayLevel()
+        protected override void PlayLevel()
         {
             base.PlayLevel();
             CurrentMoveCount = MaxMoveCount;

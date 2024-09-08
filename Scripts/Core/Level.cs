@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Kuantech.Core
@@ -32,6 +33,9 @@ namespace Kuantech.Core
 
         public Action<LevelStateChangeData> OnStateChange; //An event bound to level.
 
+        [Header("Components")] 
+        public List<LevelElement> LevelComponents;
+        
         #region Level Lifecycle
         //A simple relayer to LevelManager
         public void ChangeLevelState(LevelState newState)
@@ -54,9 +58,30 @@ namespace Kuantech.Core
         public virtual void SetupLevel()
         {
             ChangeLevelState(LevelState.Waiting);
+            foreach (var component in LevelComponents)
+            {
+                component.ParentLevel = this;
+                component.OnSetupLevel();
+            }
         }
-
-        public virtual void PlayLevel()
+        
+        /// <summary>
+        /// Sets the level state to Playing. Calls the PrePlay and PostPlay for level elements
+        /// </summary>
+        public void StartLevel()
+        {
+            foreach (var component in LevelComponents)
+            {
+                component.OnPrePlayLevel();
+            }
+            PlayLevel();
+            foreach (var component in LevelComponents)
+            {
+                component.OnPostPlayLevel();
+            }
+        }
+        
+        protected virtual void PlayLevel()
         {
             ChangeLevelState(LevelState.Playing);
         }
@@ -65,23 +90,36 @@ namespace Kuantech.Core
         {
             if(CurrentState != LevelState.Playing) return;
             ChangeLevelState(LevelState.Completed);
+            foreach (var component in LevelComponents)
+            {
+                component.OnCompleteLevel();
+            }
         }
 
         public virtual void FailLevel()
         {
             if (CurrentState != LevelState.Playing) return;
             ChangeLevelState(LevelState.Failed);
+            foreach (var component in LevelComponents)
+            {
+                component.OnFailLevel();
+            }
         }
 
         public void RestartLevel()
         {
             ResetLevelState();
-            PlayLevel();
+            StartLevel();
         }
 
         //Resets all the states of the level
         public virtual void ResetLevelState()
         {
+            //Should this be before?
+            foreach (var component in LevelComponents)
+            {
+                component.Reset();
+            }
             ClearLevel();
         }
         public virtual void ClearLevel()

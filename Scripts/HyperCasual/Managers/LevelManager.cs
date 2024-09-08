@@ -133,14 +133,14 @@ namespace Kuantech.Core
             });
         }
 
-        public void PlayLevel()
+        public void StartLevel()
         {
             if (CurrentLevel.CurrentState != LevelState.Waiting)
             {
                 Debug.LogError("Trying to start level while not in waiting state");
                 return;
             }
-            CurrentLevel.PlayLevel();
+            CurrentLevel.StartLevel();
             ChangeCurrentState(LevelState.Playing);
         }
         public virtual void RestartLevel()

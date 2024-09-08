@@ -5,12 +5,21 @@ using UnityEngine;
 
 namespace Kuantech.Core
 {
-    public class GameTutorialTaskManager : MonoBehaviour 
+    public class GameTaskManager : MonoBehaviour 
     {
-        public List<GameTutorialTask> Tasks;
+        public List<GameTask> Tasks;
         [NonSerialized] public int CurrentTaskIndex = -1;
         public float TasksStartDelay = 0.5f;
         public float StartNextTaskDelay = 0.5f;
+
+        public void SetupTasks()
+        {
+            foreach (var task in Tasks)
+            {
+                task.SetupTask();
+            }
+        }
+        
         public virtual void StartTasks()
         {
             StartCoroutine(_StartTasks());
@@ -48,12 +57,12 @@ namespace Kuantech.Core
 
         public virtual void Restart()
         {
-            GameTutorialTask currTask = GetCurrentTask();
+            GameTask currTask = GetCurrentTask();
             if(currTask != null) currTask.EndTask();
             CurrentTaskIndex = 0;
         }
 
-        public GameTutorialTask GetCurrentTask()
+        public GameTask GetCurrentTask()
         {
             if(CurrentTaskIndex < 0 || CurrentTaskIndex >= Tasks.Count) return null;
             return Tasks[CurrentTaskIndex];

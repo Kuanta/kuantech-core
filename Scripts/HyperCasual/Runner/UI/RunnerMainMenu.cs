@@ -20,7 +20,7 @@ namespace Kuantech.Core.HyperCasual.Runner.UI
         }
         private void OnStartLevelButtonPressed()
         {
-            LevelManager.GetContext<LevelManager>().PlayLevel();
+            LevelManager.GetContext<LevelManager>().StartLevel();
         }
 
   

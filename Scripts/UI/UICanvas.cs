@@ -14,6 +14,7 @@ namespace Kuantech.UI
         [SerializeField] private Camera GameCamera;
         [SerializeField] private Camera CanvasCamera;
         [SerializeField] private RectTransform RectTransform;
+        [SerializeField] private Canvas Canvas;
         /// <summary>
         /// Flys a ui element to a target rect transform, starting from a world coordinate
         /// </summary>
@@ -30,17 +31,22 @@ namespace Kuantech.UI
             Vector3 targetPos = target.position;
             Vector3 screenTargetPosition = GlobalToScreenPosition(targetPos, CanvasCamera);
             flyingElement.Fly(screenPosition, screenTargetPosition, data, TargetReachedHandler);
-        }   
-        //
-        // public void ShowFloatingText(FloatingText floatingText, Vector3 worldPosition, Vector3 initialSpeed)
-        // {
-        //     floatingText.transform.SetParent(transform);
-        //     floatingText.transform.localPosition = GlobalToScreenPosition(worldPosition);
-        //     floatingText.transform.localScale = Vector3.one;
-        //     floatingText.transform.localRotation = Quaternion.identity;
-        //     floatingText.Fly(initialSpeed);
-        // }
+        }
 
+        #region Cameras
+
+        public Camera GetGameCamera()
+        {
+            return GameCamera;
+        }
+
+        public Camera GetCanvasCamera()
+        {
+            return CanvasCamera;
+        }
+        #endregion
+
+        #region Utility Methods
         public Vector2 GlobalToScreenPosition(Vector3 worldPosition, Camera cam)
         {
             Camera mainCamera = GameCamera != null ? GameCamera : Camera.main;
@@ -48,8 +54,15 @@ namespace Kuantech.UI
 
             // Transform world position to screen point using the main camera
             Vector3 screenPos = cam.WorldToScreenPoint(worldPosition);
+            
+            //For overlay camera
+            if (Canvas.renderMode == RenderMode.ScreenSpaceOverlay)
+            {
+                return new Vector2(screenPos.x, screenPos.y);
+            }
+            
             // If the canvas camera is orthographic, adjust the screen position's depth
-        
+            
             // Convert screen point to local point in the canvas' RectTransform
             Vector2 localPoint;
             RectTransformUtility.ScreenPointToLocalPointInRectangle(RectTransform, screenPos, canvasCamera, out localPoint);
@@ -59,5 +72,18 @@ namespace Kuantech.UI
             // }
             return localPoint;
         }
+
+        public Vector2 ScreenPositionToAnchoredPosition(RectTransform rectTransform, Vector2 screenPos)
+        {
+            if (rectTransform == RectTransform) return screenPos;
+            RectTransform uiElementParent = rectTransform.parent as RectTransform;
+            if (uiElementParent == null) return screenPos;
+            Vector2 localPoint;
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(uiElementParent, screenPos, CanvasCamera,
+                out localPoint);
+
+            return localPoint;
+        }
+        #endregion
     }
 }

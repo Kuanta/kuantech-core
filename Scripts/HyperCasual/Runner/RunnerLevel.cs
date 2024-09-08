@@ -48,7 +48,7 @@ namespace Kuantech.Core.HyperCasual.Runner
             CurrentRunner.OnSetup();
         }
 
-        public override void PlayLevel()
+        protected override void PlayLevel()
         {
             base.PlayLevel();
             CurrentRunner.OnPlay(); 

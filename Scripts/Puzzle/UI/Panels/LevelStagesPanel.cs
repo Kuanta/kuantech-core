@@ -19,8 +19,9 @@ namespace Kuantech.Puzzle.UI
 
         [Header("Stage Completed Text")]
         [SerializeField] private UIAnimator StageCompletedText;
-        
-        [Tooltip("Distance between each Stage")]
+
+        [Tooltip("Distance between each Stage")] [SerializeField]
+        private float FillbarWidth = 200;
         [SerializeField] private float StagesPadding;
 
         private List<LevelStagePanelCheckpoint> _checkpoints;
@@ -39,11 +40,19 @@ namespace Kuantech.Puzzle.UI
 
         public void SetStageCount(int stageCount)
         {
+            float parentSize = 0;
+
             if (stageCount <= 1)
             {
+                parentSize = 0;
                 FillbarParent.sizeDelta = new Vector2(0, FillbarParent.sizeDelta.y);
             }
-
+            else
+            {
+                parentSize = FillbarWidth;
+                FillbarParent.sizeDelta = new Vector2(FillbarWidth, FillbarParent.sizeDelta.y);
+            }
+       
             if (!_checkpoints.IsNullOrEmpty())
             {
                 //Could have found a better way but im lazy
@@ -54,8 +63,7 @@ namespace Kuantech.Puzzle.UI
             }
 
             _stageCount = stageCount;
-            float parentSize = FillbarParent.rect.width;
-            StagesPadding = parentSize / Mathf.Max((_stageCount - 1), 0.0f);
+            StagesPadding = stageCount > 1 ? parentSize / Mathf.Max((_stageCount - 1), 0.0f) : 0;
             //FillbarParent.sizeDelta = new Vector2((stageCount - 1) * StagesPadding, FillbarParent.sizeDelta.y);
             _checkpoints = new List<LevelStagePanelCheckpoint>();
             for (int i = 0; i < stageCount; ++i)

@@ -111,7 +111,7 @@ namespace Kuantech.Puzzle.UI
         
         public void SetScore(string key, int currentAmount, int remainingAmount)
         {
-            if (!IndicatorElements.ContainsKey(key)) return;
+            if (IndicatorElements == null || !IndicatorElements.ContainsKey(key)) return;
             IndicatorElements[key].SetScore(currentAmount, remainingAmount);
         }
         

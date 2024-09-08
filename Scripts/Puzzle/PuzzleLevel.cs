@@ -16,7 +16,6 @@ namespace Kuantech.Puzzle
         [Header("Screen Size Adjuster")]
         public ScreenSizeAdjuster ScreenSizeAdjuster;
         
-        public Dictionary<int, PuzzleLevelElement> LevelElements = new Dictionary<int, PuzzleLevelElement>();
         [NonSerialized] public PuzzleLevelState CurrentPuzzleLevelState;
 
         [Header("Win Condition Tracker")] 
@@ -37,34 +36,12 @@ namespace Kuantech.Puzzle
             {
                 ScreenSizeAdjuster.FitCameraToAnchors();
             }
-            LevelElements = new Dictionary<int, PuzzleLevelElement>();
-            PuzzleLevelElement[] levelElements = GetComponentsInChildren<PuzzleLevelElement>();
-            for (int i = 0; i < levelElements.Length; ++i)
-            {
-                PuzzleLevelElement element = levelElements[i];
-                element.OnSetup(this);
-                LevelElements[i] = element;
-            }
-       
             base.SetupLevel();
         }
-
-        public override void PlayLevel()
-        {
-            base.PlayLevel();
-            foreach (var element in LevelElements.Values)
-            {
-                element.OnPlay();
-            }
-        }
-
+        
         public override void ResetLevelState()
         {
             base.ResetLevelState();
-            foreach (var element in LevelElements.Values)
-            {
-                element.OnRestart();
-            }
             if(WinConditionTracker != null) WinConditionTracker.Reset();
             ResetBoosters();
             ResetUI();
@@ -108,6 +85,13 @@ namespace Kuantech.Puzzle
         public virtual void OnStageCompleted(int stageIndex)
         {
             LevelUI.OnStageCompleted(stageIndex);
+            foreach (var component in LevelComponents)
+            {
+                if (component is PuzzleLevelElement puzzleLevelElement)
+                {
+                    puzzleLevelElement.OnStageCompleted();
+                }
+            }
         }
 
         public void OnStagesCompleted()
@@ -127,23 +111,23 @@ namespace Kuantech.Puzzle
         public virtual bool LoadLevelState(PuzzleLevelState newState)
         {
             //Load element states
-            foreach(var elementStatePair in newState.LevelElementStates)
-            {
-                if(!LevelElements.ContainsKey(elementStatePair.Key)) continue;
-                LevelElements[elementStatePair.Key].LoadElementState(elementStatePair.Value);
-            }
+            // foreach(var elementStatePair in newState.LevelElementStates)
+            // {
+            //     if(!LevelElements.ContainsKey(elementStatePair.Key)) continue;
+            //     LevelElements[elementStatePair.Key].LoadElementState(elementStatePair.Value);
+            // }
             return true;
         }
 
         public Dictionary<int, byte[]> GetLevelElementsState()
         {
             Dictionary<int, byte[]> elementsState = new Dictionary<int, byte[]>();
-            //Get elements state
-            foreach(var pair in LevelElements)
-            {
-                PuzzleLevelElementState levelElementState = pair.Value.GetElementState();
-                elementsState[pair.Key] = Helpers.Serialize(levelElementState);
-            }
+            // //Get elements state
+            // foreach(var pair in LevelElements)
+            // {
+            //     PuzzleLevelElementState levelElementState = pair.Value.GetElementState();
+            //     elementsState[pair.Key] = Helpers.Serialize(levelElementState);
+            // }
             return elementsState;
         }
         #endregion

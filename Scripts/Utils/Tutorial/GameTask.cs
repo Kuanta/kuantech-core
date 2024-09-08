@@ -5,14 +5,18 @@ namespace Kuantech.Core
 {
     [Serializable]
     
-    public class GameTutorialTask : MonoBehaviour
+    public class GameTask : MonoBehaviour
     {
-        public GameTutorialTask NextTask;
+        public GameTask NextTask;
         public string TaskId;
         public string TaskName;
-        public GameTutorialTaskManager ParentTaskManager;
+        public GameTaskManager ParentTaskManager;
         public bool Completed = false;
 
+        public virtual void SetupTask()
+        {
+            
+        }
         public virtual void StartTask()
         {
             Completed = false;
