@@ -108,5 +108,10 @@ namespace Kuantech.Core.Utils
                 }
             }
         }
+
+        public void Clear()
+        {
+            Elements.Clear();
+        }
     }
 }
