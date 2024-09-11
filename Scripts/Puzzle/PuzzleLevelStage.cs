@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace Kuantech.Puzzle
 {
@@ -93,6 +94,13 @@ namespace Kuantech.Puzzle
         {
             if (CollectedAmounts == null || !CollectedAmounts.ContainsKey(key)) return 0;
             return CollectedAmounts[key];
+        }
+
+        public int GetRemainingAmount(string key)
+        {
+            int target = GetTarget(key);
+            int collected = GetCollectedAmount(key);
+            return Mathf.Max(0, target - collected);
         }
         
         /// <summary>
