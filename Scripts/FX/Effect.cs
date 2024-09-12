@@ -30,6 +30,16 @@ namespace Kuantech.Core.FX
 
         //If an effect is under the protection of effects library, it can't be destroyed with timed calls
         [NonSerialized] public bool BoundToEffectsLibrary = false; 
+        
+        /// <summary>
+        /// To simply play
+        /// </summary>
+        public void Play()
+        {
+            EffectPlaySettings.GetDefaultSettings();
+            Play(EffectPlaySettings.GetDefaultSettings());
+        }
+        
         /// <summary>
         /// Plays the effect using the settings
         /// </summary>
@@ -51,25 +61,26 @@ namespace Kuantech.Core.FX
                 }
             }
 
-            Play(settings.EffectCooldown);
+            _Play(settings);
             if (settings.DespawnAfterPlay && !BoundToEffectsLibrary)
             {
                 StartCoroutine(PoolRoutine(Duration));
             }
         }
 
-        public void Play(float effectCooldown = -1)
+        
+        public void _Play(EffectPlaySettings playSettings)
         {
-            StartCoroutine(PlayRoutine(effectCooldown));
+            StartCoroutine(PlayRoutine(playSettings));
         }
 
-        private IEnumerator PlayRoutine(float effectCooldown = -1)
+        private IEnumerator PlayRoutine(EffectPlaySettings playSettings)
         {
             yield return new WaitForSeconds(Delay);
-            PlayEffects(effectCooldown);
+            PlayEffects(playSettings);
         }
 
-        protected virtual void PlayEffects(float effectCooldown)
+        protected virtual void PlayEffects(EffectPlaySettings playSettings)
         {
             ShouldBeRemoved = false;
             if(Sfx != null)
@@ -78,7 +89,7 @@ namespace Kuantech.Core.FX
             }
 
             //Sound
-            if (!EffectsLibrary.CanPlayEffect(EffectId, effectCooldown)) return;
+            if (!EffectsLibrary.CanPlayEffect(EffectId, playSettings.EffectCooldown)) return;
 
             if(!EffectsLibrary.PlayAudio(AudioTag))
             {
@@ -86,12 +97,10 @@ namespace Kuantech.Core.FX
                     Sfx.PlayThroughAudioLibrary();
                 }
             }
-            if (Vfx != null) Vfx.Play();
+            if (Vfx != null) Vfx.Play(playSettings);
             if(Animator != null) Animator.SetTrigger(Play1);
             EffectsLibrary.SetLastPlayedTime(EffectId);
         }
-
-
 
         #region Old Play Methods
         public void Play(Vector3 position, Quaternion rotation, float effectCooldown, bool local = false)
@@ -106,7 +115,7 @@ namespace Kuantech.Core.FX
                 transform.position = position;
                 transform.rotation = rotation;
             }
-            Play(effectCooldown);
+            //Play(effectCooldown);
         }
 
         public void Play(Transform parent, float effectCooldown)
@@ -122,7 +131,7 @@ namespace Kuantech.Core.FX
 
         public void PlayTimed(float effectCooldown)
         {
-            Play(effectCooldown);
+            //Play(effectCooldown);
             StartCoroutine(PoolRoutine(Duration));
             
         }

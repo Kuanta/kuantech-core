@@ -25,6 +25,7 @@ namespace Kuantech.Puzzle.UI
         public WinConditionIndicatorPanel WinConditionIndicatorPanel;
         public PuzzleCompletePanel CompletePanel;
         public PuzzleFailPanel FailedPanel;
+        public BoostersHUD BoostersHUD;
         public float CompletePanelShowDelay = 0f;
         public float FailedPanelShowDelay = 0f;
 
@@ -44,8 +45,11 @@ namespace Kuantech.Puzzle.UI
                     CurrentLevel.RestartLevel();
                 };
             }
-            //
-            // Reset();
+
+            if (BoostersHUD != null)
+            {
+                BoostersHUD.Initialize(this);
+            }
         }
         
         public virtual void OnLevelSetup(PuzzleLevel level)
@@ -60,6 +64,11 @@ namespace Kuantech.Puzzle.UI
             if (WinConditionIndicatorPanel != null && tracker != null)
             {
                 WinConditionIndicatorPanel.SetTracker(tracker);
+            }
+
+            if (BoostersHUD != null)
+            {
+                BoostersHUD.OnLevelSetup(level);
             }
         }
 
@@ -129,18 +138,19 @@ namespace Kuantech.Puzzle.UI
                 WinConditionIndicatorPanel.SetPanelForStage(0);  
             }
             if(TutorialHand != null) TutorialHand.gameObject.SetActive(false);
+            if(BoostersHUD != null) BoostersHUD.Reset();
         }
         
         #region Boosters
 
         public virtual void SetUIForBooster(PuzzleBooster booster)
         {
-            
+            //Can hide additional UI elements here
         }
 
         public virtual void DisableBoosterUI()
         {
-            
+            BoostersHUD.OnBoosterDeactivated();
         }
         #endregion
     }

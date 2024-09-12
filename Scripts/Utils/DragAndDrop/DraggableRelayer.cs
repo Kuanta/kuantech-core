@@ -9,41 +9,41 @@ namespace Kuantech.Utils
     public class DraggableRelayer : MonoBehaviour, IDraggable
     {
         public Draggable Draggable;
-        public bool CanBeDragged()
+        public virtual bool CanBeDragged()
         {
             return Draggable != null && Draggable.CanBeDragged();
         }
 
-        public void Drag(Vector3 cursorPosition)
+        public virtual void Drag(Vector3 cursorPosition)
         {
             Draggable.Drag(cursorPosition);
         }
 
-        public void DragEnd()
+        public virtual void DragEnd()
         {
             if(Draggable == null) return;
             Draggable.DragEnd();
         }
 
-        public void OnClickDown()
+        public virtual void OnClickDown()
         {
             if(Draggable == null) return;
             Draggable.OnClickDown();
         }
 
-        public void OnClickUp()
+        public virtual void OnClickUp()
         {
             if(Draggable == null) return;
             Draggable.OnClickUp();
         }
 
-        public void OnTap()
+        public virtual void OnTap()
         {
             if (Draggable == null) return;
             Draggable.OnTap();
         }
 
-        public bool DragStart()
+        public virtual bool DragStart()
         {
             if(!CanBeDragged()) return false;
             return Draggable.DragStart();

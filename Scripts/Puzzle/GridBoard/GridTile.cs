@@ -41,6 +41,10 @@ namespace Kuantech.Puzzle
 
         public virtual void Despawn()
         {
+            if (ParentBoard != null)
+            {
+                ParentBoard.UnsetTile(this);
+            }
             if (DestroyOnDespawn)
             {
                 Destroy(gameObject);

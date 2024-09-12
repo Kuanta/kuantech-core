@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Kuantech.Core.FX
@@ -6,14 +7,24 @@ namespace Kuantech.Core.FX
         [SerializeField] private ParticleSystem ParticleEffect;
         [SerializeField] private bool Emit;
         [SerializeField] private int EmitCount = 1;
-
+        [SerializeField] private List<ParticleSystem> ChildEmitters;
         [SerializeField] private bool PlayWithEffectsManager;
 
-        public void Play()
+        public void Play(EffectPlaySettings settings)
         {
+            //todo: This can be done better
             if(Emit)
             {
-                ParticleEffect.Emit(EmitCount);
+                ParticleSystem.EmitParams emitParams = new ParticleSystem.EmitParams();
+                emitParams.position = settings.PlayPosition;
+                if (ChildEmitters != null)
+                {
+                    foreach (var childEmitter in ChildEmitters)
+                    {
+                        childEmitter.Emit(emitParams, EmitCount);
+                    } 
+                }
+                ParticleEffect.Emit(emitParams, EmitCount);
                 return;
             }
             ParticleEffect.Play();

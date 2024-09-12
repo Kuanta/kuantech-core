@@ -4,31 +4,36 @@ using UnityEngine;
 
 namespace Kuantech.Puzzle
 {
-    [CreateAssetMenu(fileName = "PuzzleBooster", menuName = "Kuantech/Puzzle/Booster")]
+    [CreateAssetMenu(fileName = "PuzzleBoosterData", menuName = "Kuantech/Puzzle/Booster")]
     public class PuzzleBooster : ScriptableObject
     {
         [Header("Description")] 
         public string Title;
         public string Description;
         public Sprite Icon;
+
+        public bool ShowUIOnActivation;
         
         [Header("Requirements")]
-
         [Header("Price")] 
         public CurrencyData PriceCurrencyType;
         public int Price;
 
         [Header("Level")] 
         public int LevelRequirement;
-        
-        public virtual bool OnSetBooster(PuzzleLevel currentLevel)
+
+        protected PuzzleLevel CurrentLevel;
+        public virtual void ActivateBooster(PuzzleLevel currentLevel)
         {
-            return CanBeBought();
+            CurrentLevel = currentLevel;
         }
 
         public virtual void CancelBooster()
         {
-            
+            if (CurrentLevel != null)
+            {
+                CurrentLevel.CancelCurrentBooster();
+            }
         }
         
         /// <summary>
@@ -44,6 +49,7 @@ namespace Kuantech.Puzzle
         /// </summary>
         public bool BuyBooster()
         {
+            if (PriceCurrencyType == null) return true;
             return StoreManager.RemoveCurrency(PriceCurrencyType, Price);
         }
         
@@ -53,6 +59,7 @@ namespace Kuantech.Puzzle
         /// <returns></returns>
         public bool CanBeBought()
         {
+            if (PriceCurrencyType == null) return true;
             return StoreManager.HasCurrency(PriceCurrencyType, Price);
         }
 
@@ -65,5 +72,13 @@ namespace Kuantech.Puzzle
         {
             return Description;
         }
+        
+                
+        #region Common Functionalities
+        public virtual void OnTileTapped(GridTile tile)
+        {
+            
+        }
+        #endregion
     }
 }

@@ -133,44 +133,46 @@ namespace Kuantech.Puzzle
         #endregion
         
         #region Boosters
-        public virtual bool SetCurrentBooster(PuzzleBooster booster)
+        public virtual bool ActivateBooster(PuzzleBooster booster)
         {
-            if (!booster.OnSetBooster(this)) return false;
+            if (CurrentState != LevelState.Playing || !booster.CanBeBought()) return false;
             if (CurrentBooster != null)
             {
                 CancelCurrentBooster();
             }
-
-            if (!booster.OnSetBooster(this))
-            {
-                return false;
-            }
             CurrentBooster = booster;
+            CurrentBooster.ActivateBooster(this);
             LevelUI.SetUIForBooster(booster);
             return true;
         }
         
+        /// <summary>
+        /// Cancels the current booster without buying it
+        /// </summary>
         public virtual void CancelCurrentBooster()
         {
-            if(LevelUI != null) LevelUI.DisableBoosterUI();
-            if (CurrentBooster == null) return;
-            CurrentBooster.CancelBooster();
-            CurrentBooster = null;
+           DeactivateCurrentBooster();
         }
-
+        
+        /// <summary>
+        /// Called after applying the booster effect succesfully
+        /// </summary>
+        /// <returns></returns>
         public bool CompleteBooster()
         {
             if (CurrentBooster == null) return false;
             bool result = CurrentBooster.CompleteBooster();
-            if (!result)
-            {
-                CancelCurrentBooster();
-            }
-            else
-            {
-                LevelUI.DisableBoosterUI();
-            }
+            DeactivateCurrentBooster();
             return result;
+        }
+        
+        /// <summary>
+        /// Deactivates the current booster
+        /// </summary>
+        private void DeactivateCurrentBooster()
+        {
+            if(LevelUI != null) LevelUI.DisableBoosterUI();
+            CurrentBooster = null;
         }
         #endregion
     }

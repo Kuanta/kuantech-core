@@ -11,7 +11,7 @@ namespace Kuantech.Puzzle.UI
         public TMP_Text FailMessageText;
         public Button RestartButton;
         public Effect LoseEffect;
-        public void Initialize(PuzzleLevelUI parentUI)
+        public virtual void Initialize(PuzzleLevelUI parentUI)
         {
             RestartButton.onClick.AddListener(() =>
             {

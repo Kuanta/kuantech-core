@@ -3,17 +3,18 @@ using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace Kuantech.Puzzle.UI
 {
     public class BoosterActivateButton : MonoBehaviour
     {
-        public PuzzleBooster Booster;
+        public PuzzleBooster booster;
         [SerializeField] private Image BoosterIcon;
         [SerializeField] private Button Button;
         [SerializeField] private CurrencyIndicator CurrencyIndicator;
-        private UnityAction _onClickedAction;
+        private UnityAction<BoosterActivateButton> _onClickedAction;
 
         [Header("Locked")] 
         [SerializeField] private GameObject LockedGameObject;
@@ -21,15 +22,19 @@ namespace Kuantech.Puzzle.UI
         [SerializeField] private TMP_Text LevelRequirementText;
         private bool _locked = false;
 
-        public void Initialize(UnityAction onClickedAction)
+        public void Initialize(UnityAction<BoosterActivateButton> onClickedAction)
         {
             _onClickedAction = onClickedAction;
             if (BoosterIcon != null)
             {
-                BoosterIcon.sprite = Booster.Icon;
+                BoosterIcon.sprite = booster.Icon;
             }
-            CurrencyIndicator.SetCurrency(Booster.PriceCurrencyType);
-            CurrencyIndicator.SetAmount(Booster.Price);
+
+            if (CurrencyIndicator != null)
+            {
+                CurrencyIndicator.SetCurrency(booster.PriceCurrencyType);
+                CurrencyIndicator.SetAmount(booster.Price);
+            }
             if (Button == null)
             {
                 Button = GetComponent<Button>();
@@ -45,20 +50,20 @@ namespace Kuantech.Puzzle.UI
         /// <param name="level"></param>
         public void HandleLockedState(int level)
         {
-            LevelRequirementText.text = $"Lvl. {Booster.LevelRequirement}";
-            SetLockedState(Booster.LevelRequirement > level);
+            if(LevelRequirementText != null) LevelRequirementText.text = $"Lvl. {booster.LevelRequirement}";
+            SetLockedState(booster.LevelRequirement > level);
         }
         
         private void OnClicked()
         {
             if (_locked) return;
-            _onClickedAction?.Invoke();
+            _onClickedAction?.Invoke(this);
         }
 
         public void SetLockedState(bool locked)
         {
-            LockedGameObject.SetActive(locked);
-            UnlockedGameObject.SetActive(!locked);
+            if(LockedGameObject != null) LockedGameObject.SetActive(locked);
+            if(UnlockedGameObject != null) UnlockedGameObject.SetActive(!locked);
             _locked = locked;
         }
 
