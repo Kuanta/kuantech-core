@@ -60,6 +60,7 @@ namespace Kuantech.Core
             {
                 if(RepeatLastLevels > 0)
                 {
+                    RepeatLastLevels = Mathf.Min(RepeatLastLevels, LevelDictionary.Count);
                     int modulus = RepeatLastLevels - (levelArrayIndex + 1 - LevelDictionary.Count) % RepeatLastLevels;
                     levelArrayIndex = LevelDictionary.Count - 1 - modulus;
                 }else
@@ -67,6 +68,8 @@ namespace Kuantech.Core
                     levelArrayIndex = LevelDictionary.Count - 1;
                 }
             }
+
+            levelArrayIndex = Mathf.Clamp(levelArrayIndex, 0, LevelDictionary.Count - 1);
             Level level = Instantiate(LevelDictionary[levelArrayIndex].gameObject).GetComponent<Level>();
             level.transform.position = Vector3.zero;
             level.transform.rotation = Quaternion.identity;
