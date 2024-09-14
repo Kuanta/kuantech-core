@@ -108,12 +108,7 @@ namespace Kuantech.Core
         [ConsoleMethod("setLevel", "Sets the level")]
         public static void SetLevelCC(int levelIndex)
         {
-            try{
-                (GameManager.Instance.GetSubManagerByType<LevelManager>() as LevelManager).SetLevel(levelIndex);
-            }catch (NullReferenceException)
-            {
-                Debug.LogError("Level Manager is null");
-            }
+            GetContext<LevelManager>().SetLevel(levelIndex);
         }
 
         [ConsoleMethod("resetLevel", "Resets the level")]
