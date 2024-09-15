@@ -16,6 +16,9 @@ namespace Kuantech.Puzzle.UI
         [SerializeField] private CurrencyIndicator CurrencyIndicator;
         private UnityAction<BoosterActivateButton> _onClickedAction;
 
+        [Header("Indicators")] [SerializeField]
+        private BoosterButtonRemainingUseIndicator RemainingUseIndicator;
+        
         [Header("Locked")] 
         [SerializeField] private GameObject LockedGameObject;
         [SerializeField] private GameObject UnlockedGameObject;
@@ -70,6 +73,12 @@ namespace Kuantech.Puzzle.UI
         public bool IsLocked()
         {
             return _locked;
+        }
+
+        public void SetRemainingUse(int use)
+        {
+            if (RemainingUseIndicator == null) return;
+            RemainingUseIndicator.SetRemainingUse(use);
         }
     }
 }

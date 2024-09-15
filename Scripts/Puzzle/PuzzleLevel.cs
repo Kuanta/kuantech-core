@@ -24,7 +24,7 @@ namespace Kuantech.Puzzle
         
         //Boosters
         [NonSerialized] public PuzzleBooster CurrentBooster;
-        
+
         //State
         [NonSerialized] public PuzzleLevelState CurrentLevelState;
         
