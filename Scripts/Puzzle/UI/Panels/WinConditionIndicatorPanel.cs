@@ -48,6 +48,12 @@ namespace Kuantech.Puzzle.UI
         //     SetPanelForStage(currentStageIndex);
         // }
 
+        public void SetPanelForStage()
+        {
+            int stageIndex = _tracker.GetCurrentStageIndex();
+            SetPanelForStage(stageIndex);
+        }
+        
         public void SetPanelForStage(int stageIndex)
         {
             if (_tracker == null)
@@ -55,6 +61,7 @@ namespace Kuantech.Puzzle.UI
                 Debug.LogWarning("Targets panel couldn't be set");
                 return;
             }
+
             //Clear previous ones
             if (IndicatorElements != null)
             {
@@ -79,7 +86,7 @@ namespace Kuantech.Puzzle.UI
                 IndicatorElements[targetKey] = element;
                 element.ShowRemaining = pair.Value.ShowRemaining;
                 element.SetIcon(GetIconFromKey(targetKey));
-                element.SetScore(pair.Value.TargetAmount, pair.Value.TargetAmount);
+                element.SetScore(_tracker.GetCollectedAmount(pair.Key), _tracker.GetRemainingAmount(pair.Key));
                 element.transform.SetParent(EntriesParent.transform);
                 element.transform.localPosition = Vector3.zero;
                 element.transform.localRotation = Quaternion.identity;

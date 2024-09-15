@@ -6,7 +6,7 @@ namespace Kuantech.Puzzle
     public class PuzzleStateModel : StateModule
     {
         [NonSerialized] public PuzzleLevel CurrentLevel;
-        [NonSerialized] public PuzzleLevelState LevelState;
+        [NonSerialized] protected PuzzleLevelState LevelState;
 
         public void SetCurrentLevel(PuzzleLevel currentLevel)
         {
@@ -31,6 +31,11 @@ namespace Kuantech.Puzzle
         public override void SetDefaultValues()
         {
             LevelState = new PuzzleLevelState();
+        }
+
+        public PuzzleLevelState GetLevelState()
+        {
+            return LevelState;
         }
     }
 }

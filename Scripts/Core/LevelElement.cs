@@ -8,6 +8,7 @@ namespace Kuantech.Core
     public class LevelElement : MonoBehaviour
     {
         public Level ParentLevel;
+        public int ElementId=0;
         public virtual void OnSetupLevel()
         {
             
@@ -36,7 +37,20 @@ namespace Kuantech.Core
         {
             
         }
+        
+        #region State
 
+        public virtual void LoadElementState(byte[] state)
+        {
+            
+        }
+
+        public virtual byte[] GetElementState()
+        {
+            return null;
+        }
+        #endregion
+        
         public virtual void Reset()
         {
             

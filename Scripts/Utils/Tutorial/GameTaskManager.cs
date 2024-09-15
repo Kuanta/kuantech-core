@@ -20,12 +20,12 @@ namespace Kuantech.Core
             }
         }
         
-        public virtual void StartTasks()
+        public virtual void StartTasks(int taskToStart=0)
         {
-            StartCoroutine(_StartTasks());
+            StartCoroutine(_StartTasks(taskToStart));
         }
 
-        private IEnumerator _StartTasks()
+        private IEnumerator _StartTasks(int taskToStart=0)
         {
             yield return new WaitForSeconds(TasksStartDelay);
             var currentTask = GetCurrentTask();
@@ -34,12 +34,14 @@ namespace Kuantech.Core
                 currentTask.EndTask();
             }
 
-            CurrentTaskIndex = 0;
+            CurrentTaskIndex = taskToStart;
             foreach (var task in Tasks)
             {
                 task.ParentTaskManager = this;
                 task.Completed = false;
             }
+
+            if (CurrentTaskIndex >= Tasks.Count) yield break;
             Tasks[CurrentTaskIndex].StartTask();
         }
         

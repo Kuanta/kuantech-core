@@ -50,6 +50,11 @@ namespace Kuantech.Core
 
             Type savedDataType = GetDataType();
             if(savedDataType == null) return;
+            if (savedData == null)
+            {
+                SetDefaultValues();
+                return;
+            }
             var loadedData = JsonConvert.DeserializeObject(savedData, savedDataType, settings);
             if(loadedData == null)
             {

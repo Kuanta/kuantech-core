@@ -135,7 +135,7 @@ namespace Kuantech.Puzzle.UI
             if(FailedPanel != null) FailedPanel.Close();
             if (WinConditionIndicatorPanel != null)
             {
-                WinConditionIndicatorPanel.SetPanelForStage(0);  
+                WinConditionIndicatorPanel.SetPanelForStage();  
             }
             if(TutorialHand != null) TutorialHand.gameObject.SetActive(false);
             if(BoostersHUD != null) BoostersHUD.Reset();

@@ -25,6 +25,9 @@ namespace Kuantech.Puzzle
         //Boosters
         [NonSerialized] public PuzzleBooster CurrentBooster;
         
+        //State
+        [NonSerialized] public PuzzleLevelState CurrentLevelState;
+        
         public override void SetupLevel()
         {
             CreateWinConditionTracker();
@@ -36,12 +39,14 @@ namespace Kuantech.Puzzle
             {
                 ScreenSizeAdjuster.FitCameraToAnchors();
             }
+            GetStateModel()?.SetCurrentLevel(this);
             base.SetupLevel();
         }
         
         public override void ResetLevelState()
         {
             base.ResetLevelState();
+            ClearLevelState();
             if(WinConditionTracker != null) WinConditionTracker.Reset();
             ResetBoosters();
             ResetUI();
@@ -85,7 +90,7 @@ namespace Kuantech.Puzzle
         public virtual void OnStageCompleted(int stageIndex)
         {
             LevelUI.OnStageCompleted(stageIndex);
-            foreach (var component in LevelComponents)
+            foreach (var component in LevelElements)
             {
                 if (component is PuzzleLevelElement puzzleLevelElement)
                 {
@@ -103,32 +108,67 @@ namespace Kuantech.Puzzle
         #region Level State
         public virtual PuzzleLevelState GetLevelState()
         {
-            PuzzleLevelState levelState = new PuzzleLevelState();
-            levelState.LevelElementStates = GetLevelElementsState();
-            return levelState;
+            return CurrentLevelState;
         }
 
         public virtual bool LoadLevelState(PuzzleLevelState newState)
         {
-            //Load element states
-            // foreach(var elementStatePair in newState.LevelElementStates)
-            // {
-            //     if(!LevelElements.ContainsKey(elementStatePair.Key)) continue;
-            //     LevelElements[elementStatePair.Key].LoadElementState(elementStatePair.Value);
-            // }
+            if (newState.LevelElementStates != null)
+            {
+                for (int i = 0; i < LevelElements.Count; ++i)
+                {
+                    LevelElement element = LevelElements[i];
+                    if (!newState.LevelElementStates.ContainsKey(element.ElementId)) continue;
+                    element.LoadElementState(newState.LevelElementStates[element.ElementId]);
+                }
+            }
             return true;
         }
 
+        public virtual void UpdateLevelState()
+        {
+            CurrentLevelState = new PuzzleLevelState();
+            CurrentLevelState.LevelElementStates = GetLevelElementsState();
+        }
         public Dictionary<int, byte[]> GetLevelElementsState()
         {
             Dictionary<int, byte[]> elementsState = new Dictionary<int, byte[]>();
-            // //Get elements state
-            // foreach(var pair in LevelElements)
-            // {
-            //     PuzzleLevelElementState levelElementState = pair.Value.GetElementState();
-            //     elementsState[pair.Key] = Helpers.Serialize(levelElementState);
-            // }
+            //Get elements state
+            foreach(var levelElement in LevelElements)
+            {
+                byte[] elementState = levelElement.GetElementState();
+                if (elementsState == null) continue;
+                elementsState[levelElement.ElementId] = elementState;
+            }
             return elementsState;
+        }
+
+        protected virtual void ClearLevelState()
+        {
+            PuzzleStateModel stateModel = GetStateModel();
+            if (stateModel == null) return;
+            CurrentLevelState = null;
+            stateModel.Dirtied = true;
+        }
+        protected virtual void DirtyLevelState()
+        {
+            PuzzleStateModel stateModel = GetStateModel();
+            if (stateModel == null) return;
+            stateModel.Dirtied = true;
+            if (CurrentState != LevelState.Playing)
+            {
+                CurrentLevelState = null;
+            }
+            else
+            {
+                UpdateLevelState();
+            }
+        }
+
+        public virtual PuzzleStateModel GetStateModel()
+        {
+            PuzzleStateModel stateModel = GameStateManager.GetModuleStatic<PuzzleStateModel>();
+            return stateModel;
         }
         #endregion
         

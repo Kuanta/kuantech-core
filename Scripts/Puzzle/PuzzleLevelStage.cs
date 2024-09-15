@@ -133,5 +133,33 @@ namespace Kuantech.Puzzle
             if (CollectedAmounts == null) return;
             CollectedAmounts.Clear();
         }
+
+        #region State
+
+        public StageState GetCurrentState()
+        {
+            StageState state = new StageState();
+            state.CollectedAmounts = new List<int>();
+            state.TargetKeys = new List<string>();
+            foreach (var targetPair in Targets)
+            {
+                state.TargetKeys.Add(targetPair.Key);
+                state.CollectedAmounts.Add(GetCollectedAmount(targetPair.Key));
+            }
+
+            return state;
+        }
+
+        public void LoadState(StageState state)
+        {
+            CollectedAmounts = new Dictionary<string, int>();
+            for (int i = 0; i < state.TargetKeys.Count; ++i)
+            {
+                string key = state.TargetKeys[i];
+                int collectedAmount = state.CollectedAmounts[i];
+                SetCollectedAmount(key, collectedAmount);
+            }
+        }
+        #endregion
     }
 }

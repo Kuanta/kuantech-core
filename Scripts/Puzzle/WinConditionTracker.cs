@@ -79,6 +79,18 @@ namespace Kuantech.Puzzle
             return Stages[stageIndex];
         }
         
+        /// <summary>
+        /// Sets the stage
+        /// </summary>
+        /// <param name="stageIndex"></param>
+        /// <returns></returns>
+        public bool GoToStage(int stageIndex)
+        {
+            if (stageIndex >= Stages.Count) return false;
+            _currentStageIndex = stageIndex;
+            return true;
+        }
+        
         public PuzzleLevelStage GetCurrentStage()
         {
             return Stages[Mathf.Min(_currentStageIndex, Stages.Count-1)];
@@ -113,7 +125,11 @@ namespace Kuantech.Puzzle
         {
             return GetCurrentStage().GetTarget(key);
         }
-        
+
+        public int GetRemainingAmount(string key)
+        {
+            return GetTargetAmount(key) - GetCollectedAmount(key);
+        }
         /// <summary>
         /// Checks if all win conditions are satisfied
         /// </summary>
@@ -138,5 +154,29 @@ namespace Kuantech.Puzzle
 
             _currentStageIndex = 0;
         }
+
+        #region State
+        /// <summary>
+        /// Gets the states
+        /// </summary>
+        /// <returns></returns>
+        public WinConditionTrackerState GetCurrentState()
+        {
+            WinConditionTrackerState state = new WinConditionTrackerState();
+            state.CurrentStageIndex = _currentStageIndex;
+            state.CurrentStageState = GetCurrentStage().GetCurrentState();
+            return state;
+        }
+        
+        /// <summary>
+        /// Loads the state
+        /// </summary>
+        /// <param name="state"></param>
+        public void LoadState(WinConditionTrackerState state)
+        {
+            GoToStage(state.CurrentStageIndex);
+            GetCurrentStage().LoadState(state.CurrentStageState);
+        }
+        #endregion
     }
 }

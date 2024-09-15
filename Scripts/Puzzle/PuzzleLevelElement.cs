@@ -20,19 +20,6 @@ namespace Kuantech.Puzzle
         {
             
         }
-        
-        public virtual void LoadElementState(byte[] serializedState)
-        {
-            CurrentState = Helpers.Deserialize<PuzzleLevelElementState>(serializedState);
-        }
-        
-        public virtual PuzzleLevelElementState GetElementState()
-        {
-            return new PuzzleLevelElementState()
-            {
-                isActive = isActiveAndEnabled,
-            };
-        }  
 
         public virtual PuzzleLevelElementState CreateState()
         {

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Kuantech.Core
 {
@@ -33,8 +34,8 @@ namespace Kuantech.Core
 
         public Action<LevelStateChangeData> OnStateChange; //An event bound to level.
 
-        [Header("Components")] 
-        public List<LevelElement> LevelComponents;
+        [FormerlySerializedAs("LevelComponents")] [Header("Components")] 
+        public List<LevelElement> LevelElements;
         
         #region Level Lifecycle
         //A simple relayer to LevelManager
@@ -58,7 +59,7 @@ namespace Kuantech.Core
         public virtual void SetupLevel()
         {
             ChangeLevelState(LevelState.Waiting);
-            foreach (var component in LevelComponents)
+            foreach (var component in LevelElements)
             {
                 component.ParentLevel = this;
                 component.OnSetupLevel();
@@ -70,12 +71,12 @@ namespace Kuantech.Core
         /// </summary>
         public void StartLevel()
         {
-            foreach (var component in LevelComponents)
+            foreach (var component in LevelElements)
             {
                 component.OnPrePlayLevel();
             }
             PlayLevel();
-            foreach (var component in LevelComponents)
+            foreach (var component in LevelElements)
             {
                 component.OnPostPlayLevel();
             }
@@ -90,7 +91,7 @@ namespace Kuantech.Core
         {
             if(CurrentState != LevelState.Playing) return;
             ChangeLevelState(LevelState.Completed);
-            foreach (var component in LevelComponents)
+            foreach (var component in LevelElements)
             {
                 component.OnCompleteLevel();
             }
@@ -100,7 +101,7 @@ namespace Kuantech.Core
         {
             if (CurrentState != LevelState.Playing) return;
             ChangeLevelState(LevelState.Failed);
-            foreach (var component in LevelComponents)
+            foreach (var component in LevelElements)
             {
                 component.OnFailLevel();
             }
@@ -116,7 +117,7 @@ namespace Kuantech.Core
         public virtual void ResetLevelState()
         {
             //Should this be before?
-            foreach (var component in LevelComponents)
+            foreach (var component in LevelElements)
             {
                 component.Reset();
             }
