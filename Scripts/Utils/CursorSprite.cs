@@ -35,6 +35,12 @@ namespace Kuantech.Core.Utils
         private Vector3 GetCursorPosition()
         {
             Vector3 mousePosition = Input.mousePosition;
+
+            if (Camera == null)
+            {
+                //In overlay ui
+                return mousePosition;
+            }
             mousePosition.z = distanceFromCamera; // Set the distance from the camera
             return Camera.ScreenToWorldPoint(mousePosition);
         }
