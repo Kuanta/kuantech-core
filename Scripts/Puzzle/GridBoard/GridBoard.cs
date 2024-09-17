@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Kuantech.Core.FX;
 using Kuantech.Utils;
 using Sirenix.OdinInspector;
@@ -310,7 +309,7 @@ namespace Kuantech.Puzzle
         public void DespawnTile(GridTile tile)
         {
             UnsetTile(tile);
-            tile.Despawn();
+            tile.Despawn(false);
         }
 
         /// <summary>
@@ -367,6 +366,7 @@ namespace Kuantech.Puzzle
         /// <returns></returns>
         public int GetLargestEmptyTileWindow()
         {
+            if (RowCount > 10 && ColumnCount > 10) return 10; //todo: For cpi videos, this freezes the game
             int largestSquare = 1;
             for (int r = 0; r < RowCount; ++r)
             {
@@ -489,7 +489,7 @@ namespace Kuantech.Puzzle
                         if(tile != null)
                         {
                             UnsetTile(r,c);
-                            tile.Despawn();
+                            tile.Despawn(true);
                         }
                     }
                 }
