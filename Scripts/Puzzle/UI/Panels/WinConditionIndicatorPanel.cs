@@ -33,9 +33,13 @@ namespace Kuantech.Puzzle.UI
             SetStageCount(_tracker.GetStageCount());
         }
 
-        public void OnStageCompleted(int newStageIndex)
+        public void OnStageCompleted()
         {
             StagesPanel.OnStageCompleted(); //Will play necessary anims
+
+        }
+        public void OnNewStage(int newStageIndex)
+        {
             SetPanelForStage(newStageIndex);
         }
         

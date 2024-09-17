@@ -123,9 +123,15 @@ namespace Kuantech.Puzzle.UI
         #endregion
         
         #region Score panels
-        public void OnStageCompleted(int newStageIndex)
+
+        public void OnStageCompleted(int completedStageIndex)
         {
-            WinConditionIndicatorPanel.OnStageCompleted(newStageIndex);
+            WinConditionIndicatorPanel.OnStageCompleted();  
+        }
+        
+        public void OnNewStage(int newStageIndex)
+        {
+            WinConditionIndicatorPanel.OnNewStage(newStageIndex);
         }
         #endregion
         

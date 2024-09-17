@@ -84,12 +84,18 @@ namespace Kuantech.Puzzle
             }
 
             WinConditionTracker.OnStageCompleted += OnStageCompleted;
+            WinConditionTracker.OnNewStage += OnNewStage;
             WinConditionTracker.OnAllStagesCompleted += OnStagesCompleted;
         }
 
-        public virtual void OnStageCompleted(int stageIndex)
+        public virtual void OnStageCompleted(int completedStageIndex)
         {
-            LevelUI.OnStageCompleted(stageIndex);
+            LevelUI.OnStageCompleted(completedStageIndex);
+        }
+    
+        public virtual void OnNewStage(int newStageIndex)
+        {
+            LevelUI.OnNewStage(newStageIndex);
             foreach (var component in LevelElements)
             {
                 if (component is PuzzleLevelElement puzzleLevelElement)
@@ -98,7 +104,6 @@ namespace Kuantech.Puzzle
                 }
             }
         }
-
         public void OnStagesCompleted()
         {
             CompleteLevel();
