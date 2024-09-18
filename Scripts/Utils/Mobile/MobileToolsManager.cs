@@ -29,7 +29,6 @@ namespace Kuantech.Utils.Mobile
                 return;
             }
             
-            Debug.LogError("Applying haptic");
             context._lastVibrationTime = Time.time;
             HapticPatterns.PlayConstant(magnitude, frequency, duration);
 #endif
