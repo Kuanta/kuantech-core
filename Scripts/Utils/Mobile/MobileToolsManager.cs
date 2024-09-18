@@ -14,7 +14,7 @@ namespace Kuantech.Utils.Mobile
         [SerializeField] private float VibrationCooldown = 0.2f;
         private float _lastVibrationTime;
 
-        public static void ApplyHaptic(float magnitude, float duration)
+        public static void ApplyHaptic(float magnitude, float frequency, float duration)
         {
 #if UNITY_ANDROID || UNITY_IOS
             var context = GetContext<MobileToolsManager>();
@@ -23,13 +23,23 @@ namespace Kuantech.Utils.Mobile
                 Debug.LogWarning("Add Mobile tools manager to apply haptic feedback");
                 return;
             }
-            if (Time.time - context._lastVibrationTime < context.VibrationCooldown) return;
+
+            if (Time.time - context._lastVibrationTime < context.VibrationCooldown)
+            {
+                return;
+            }
+            
+            Debug.LogError("Applying haptic");
             context._lastVibrationTime = Time.time;
-            HapticPatterns.PlayPreset(HapticPatterns.PresetType.MediumImpact);
+            HapticPatterns.PlayConstant(magnitude, frequency, duration);
 #endif
 
         }
 
+        public static void ApplyHaptic(HapticClip clip)
+        {
+            HapticController.Play(clip);
+        }
         [ConsoleMethod("setHapticCooldown", "Sets haptic feedback cooldown")]
         public static void SetHapticCooldown(float cooldown)
         {
