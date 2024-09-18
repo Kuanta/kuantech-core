@@ -3,7 +3,7 @@ using Kuantech.Core;
 using UnityEngine;
 using IngameDebugConsole;
 using Interhaptics;
-using Interhaptics.Core;
+using Lofelt.NiceVibrations;
 
 namespace Kuantech.Utils.Mobile
 {
@@ -32,7 +32,7 @@ namespace Kuantech.Utils.Mobile
             }
             if (Time.time - context._lastVibrationTime < context.VibrationCooldown) return;
             context._lastVibrationTime = Time.time;
-            HAR.PlayTransient(duration);
+            HapticPatterns.PlayPreset(HapticPatterns.PresetType.MediumImpact);
 #endif
 
         }
