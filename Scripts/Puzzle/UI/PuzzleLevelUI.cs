@@ -156,7 +156,7 @@ namespace Kuantech.Puzzle.UI
 
         public virtual void DisableBoosterUI()
         {
-            BoostersHUD.OnBoosterDeactivated();
+            if(BoostersHUD != null) BoostersHUD.OnBoosterDeactivated();
         }
         #endregion
     }

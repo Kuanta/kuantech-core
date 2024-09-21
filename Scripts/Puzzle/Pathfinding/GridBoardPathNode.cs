@@ -1,25 +1,8 @@
-﻿using UnityEngine;
+﻿using Kuantech.AI.Pathfinding;
+using UnityEngine;
 
 namespace Kuantech.Puzzle.Pathfinding
 {
-    public class PathNode
-    {
-        public float GCost = float.MaxValue;
-        public float HCost;
-        public float FCost => GCost + HCost;
-        public float TraverseCost = 0f;
-        public PathNode ParentNode = null;
-        
-        /// <summary>
-        /// Returns the position of the node
-        /// </summary>
-        /// <returns></returns>
-        public virtual Vector3 GetPosition()
-        {
-            return Vector3.zero;
-        }
-    }
-
     public class GridBoardPathNode : PathNode
     {
         public GridTileCoordinate TileCoordinate;

@@ -9,18 +9,25 @@ namespace Kuantech.Utils
         public class Waypoint
         {
             public Vector3 Position;
+            public Quaternion Rotation;
             public bool IsLocal;
-            public float Speed;
+            //public float Speed;
+            public object UserData;
+            
+            //Event
+            public Action<WaypointFollower> FollowerReachedWaypoint;
         }
 
         [Header("Properties")] [SerializeField]
         private float RotationLerpFactor = 10.0f;
+        public float Speed = 10;
         
         [NonSerialized] public bool Moving;
         [NonSerialized] public Queue<Waypoint> Waypoints;
         [NonSerialized] public Waypoint CurrentWaypoint;
 
-        public Action ReachedFinalTarget;
+        public Action OnReachedFinalTarget;
+        public Action<Waypoint> OnReachedWaypoint;
 
         #region Property Setters
         public void AddWaypoint(Waypoint newWaypoint)
@@ -46,6 +53,13 @@ namespace Kuantech.Utils
                 Waypoints.Enqueue(waypoint);
             }
         }
+
+        public void SetWaypoint(Waypoint waypoint)
+        {
+            Waypoints = new Queue<Waypoint>();
+            Waypoints.Enqueue(waypoint);
+            CurrentWaypoint = waypoint;
+        }
         #endregion
 
         #region Controls
@@ -60,6 +74,22 @@ namespace Kuantech.Utils
             Moving = false;
         }
         #endregion
+        
+        /// <summary>
+        /// For a single shot use
+        /// </summary>
+        /// <param name="worldPoint"></param>
+        public void GoToWorldPoint(WorldPoint worldPoint, Action<WaypointFollower> onReachedAction=null)
+        {
+            Waypoint singleWaypoint = new Waypoint()
+            {
+                Position = worldPoint.GetTargetPosition(),
+                Rotation = worldPoint.GetRotation(),
+            };
+            singleWaypoint.FollowerReachedWaypoint = onReachedAction;
+            SetWaypoint(singleWaypoint);
+            FollowPath();
+        }
         private void Update()
         {
             if (!Moving) return;
@@ -73,6 +103,8 @@ namespace Kuantech.Utils
             float errorMag = error.magnitude;
             if(errorMag <= 0.01f)
             {
+                OnReachedWaypoint?.Invoke(CurrentWaypoint);
+                CurrentWaypoint.FollowerReachedWaypoint?.Invoke(this);
                 SetNextWaypoint();
                 return;
             }
@@ -82,7 +114,7 @@ namespace Kuantech.Utils
                 transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(direction),
                     Time.deltaTime * RotationLerpFactor);
             }
-            Vector3 positionUpdate = direction * Mathf.Min(errorMag, Time.deltaTime * CurrentWaypoint.Speed);
+            Vector3 positionUpdate = direction * Mathf.Min(errorMag, Time.deltaTime * Speed);
             if(CurrentWaypoint.IsLocal)
             {
                 transform.localPosition += positionUpdate;
@@ -96,8 +128,11 @@ namespace Kuantech.Utils
             if(Waypoints == null) Waypoints = new Queue<Waypoint>();
             if(Waypoints.Count == 0)
             {
+                //Snap to position
+                transform.position = CurrentWaypoint.Position;
+                transform.rotation = CurrentWaypoint.Rotation;
                 CurrentWaypoint = null;
-                ReachedFinalTarget?.Invoke();
+                OnReachedFinalTarget?.Invoke();
                 return;
             }
 

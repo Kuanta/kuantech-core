@@ -149,11 +149,13 @@ namespace Kuantech.Puzzle
         
         public void Reset()
         {
-            foreach (var stage in Stages)
+            if (Stages != null)
             {
-                stage.Reset();
+                foreach (var stage in Stages)
+                {
+                    stage.Reset();
+                }
             }
-
             _currentStageIndex = 0;
         }
 

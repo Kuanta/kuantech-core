@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Kuantech.AI.Pathfinding;
 
 namespace Kuantech.Puzzle.Pathfinding
 {

@@ -59,6 +59,11 @@ namespace Kuantech.Core
         public virtual void SetupLevel()
         {
             ChangeLevelState(LevelState.Waiting);
+            SetupComponents();
+        }
+
+        protected virtual void SetupComponents()
+        {
             foreach (var component in LevelElements)
             {
                 component.ParentLevel = this;

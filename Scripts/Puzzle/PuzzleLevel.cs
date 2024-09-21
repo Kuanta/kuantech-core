@@ -77,12 +77,11 @@ namespace Kuantech.Puzzle
 
         public virtual void CreateWinConditionTracker()
         {
+            WinConditionTracker = new WinConditionTracker();
             if (!StageEntries.IsNullOrEmpty())
             {
-                WinConditionTracker = new WinConditionTracker();
                 WinConditionTracker.SetStages(StageEntries);
             }
-
             WinConditionTracker.OnStageCompleted += OnStageCompleted;
             WinConditionTracker.OnNewStage += OnNewStage;
             WinConditionTracker.OnAllStagesCompleted += OnStagesCompleted;
