@@ -1,7 +1,10 @@
 ﻿using Kuantech.Core;
 using UnityEngine;
 using IngameDebugConsole;
+
+#if ENABLE_UNITYHAPTICS
 using Lofelt.NiceVibrations;
+#endif
 
 namespace Kuantech.Utils.Mobile
 {
@@ -16,7 +19,7 @@ namespace Kuantech.Utils.Mobile
 
         public static void ApplyHaptic(float magnitude, float frequency, float duration)
         {
-#if UNITY_ANDROID || UNITY_IOS
+#if (UNITY_ANDROID || UNITY_IOS) && ENABLE_UNITYHAPTICS
             var context = GetContext<MobileToolsManager>();
             if (context == null)
             {
@@ -34,11 +37,12 @@ namespace Kuantech.Utils.Mobile
 #endif
 
         }
-
+#if ENABLE_UNITYHAPTICS
         public static void ApplyHaptic(HapticClip clip)
         {
             HapticController.Play(clip);
         }
+#endif
         [ConsoleMethod("setHapticCooldown", "Sets haptic feedback cooldown")]
         public static void SetHapticCooldown(float cooldown)
         {
