@@ -21,6 +21,9 @@ namespace Kuantech.Puzzle
         [Header("Win Condition Tracker")] 
         public List<WinConditionTracker.LevelStageEntry> StageEntries;
         public WinConditionTracker WinConditionTracker;
+
+        [Header("Level Design")] 
+        public LevelDesignAsset LevelDesignAsset;
         
         //Boosters
         [NonSerialized] public PuzzleBooster CurrentBooster;
@@ -30,6 +33,9 @@ namespace Kuantech.Puzzle
         
         public override void SetupLevel()
         {
+            //Upmost importance
+            FindLevelDesign();
+            
             CreateWinConditionTracker();
             LevelUI = PuzzleUIManager.GetLevelUI(); 
             if(LevelUI != null) LevelUI.OnLevelSetup(this);
@@ -41,6 +47,27 @@ namespace Kuantech.Puzzle
             }
             GetStateModel()?.SetCurrentLevel(this);
             base.SetupLevel();
+        }
+        
+        /// <summary>
+        /// Finds the level design data. If succesfful, loads it to level
+        /// </summary>
+        public virtual void FindLevelDesign()
+        {
+            LevelDesignData data = LevelDesignManager.GetLevelDesignData(LevelIndex);
+            if (data == null && LevelDesignAsset != null)
+            {
+                //If data is null, try to read it from level design asset
+                data = new LevelDesignData();
+                data.CreateFromDesignAsset(LevelDesignAsset);
+            }
+            if (data == null) return;
+            LoadLevelDesign(data);
+        }
+
+        protected virtual void LoadLevelDesign(LevelDesignData designData)
+        {
+            if (designData == null) return;
         }
         
         public override void ResetLevelState()

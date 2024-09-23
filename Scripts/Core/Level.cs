@@ -22,6 +22,7 @@ namespace Kuantech.Core
     public class Level : MonoBehaviour
     {
         public int LevelIndex;
+        public int LevelNumber;
         public int PowerLevel;
         private LevelState _levelState;
         public LevelState CurrentState

@@ -55,7 +55,7 @@ namespace Kuantech.Puzzle.UI
         public virtual void OnLevelSetup(PuzzleLevel level)
         {
             CurrentLevel = level;
-            if(LevelIndicator != null) LevelIndicator.SetLevelIndex(level.LevelIndex + 1);
+            if(LevelIndicator != null) LevelIndicator.SetLevelIndex(level.LevelNumber + 1);
             level.OnStateChange += OnLevelStateChange;
             
             //Set win conditions
