@@ -12,19 +12,19 @@ namespace Kuantech.Data
         [Header("Keys")] 
         [SerializeField] private string SheetId;
         [SerializeField] private string ApiKey;
-        [SerializeField] private string SheetRange;
+        //[SerializeField] private string SheetRange;
 
         public UnityAction<JObject> OnSheetRead;
         public UnityAction OnSheetFailedToRead;
         
-        public string GetRequestUrl()
+        public string GetRequestUrl(string SheetRange)
         {
             return $"https://sheets.googleapis.com/v4/spreadsheets/{SheetId}/values/{SheetRange}?key={ApiKey}";
         }
 
-        public async UniTask GetSheetData()
+        public async UniTask GetSheetData(string SheetRange)
         {
-            string url = GetRequestUrl();
+            string url = GetRequestUrl(SheetRange);
             try
             {
                 using (UnityWebRequest request = UnityWebRequest.Get(url))

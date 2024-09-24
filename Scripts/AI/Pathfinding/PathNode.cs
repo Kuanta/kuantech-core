@@ -13,6 +13,7 @@ namespace Kuantech.AI.Pathfinding
         public float FCost => GCost + HCost;
         public float TraverseCost = 0f;
 
+        public PathNodeComponent ParentNodeComponent;
         [NonSerialized] public Vector3 Position;
         [NonSerialized] public Quaternion Rotation;
         public PathNode ParentNode;
@@ -24,9 +25,18 @@ namespace Kuantech.AI.Pathfinding
         /// <returns></returns>
         public virtual Vector3 GetPosition()
         {
+            if (ParentNodeComponent != null)
+            {
+                return ParentNodeComponent.transform.position;
+            }
             return Position;
         }
 
+        public virtual Quaternion GetRotation()
+        {
+            if (ParentNodeComponent != null) return ParentNodeComponent.transform.rotation;
+            return Rotation;
+        }
         public List<PathNode> GetConnectedNodes()
         {
             return ConnectedNodes;

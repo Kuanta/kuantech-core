@@ -26,6 +26,10 @@ namespace Kuantech.AI.Pathfinding
             while (openList.Count > 0)
             {
                 PathNode currentNode = GetLowestFCostNode(openList);
+                if (currentNode == null)
+                {
+                    Debug.LogError("What??");
+                }
                 if (currentNode == endNode)
                 {
                     // Path found, return it
@@ -41,10 +45,17 @@ namespace Kuantech.AI.Pathfinding
                 // Move current node from open to closed list
                 openList.Remove(currentNode);
                 closedList.Add(currentNode);
-
+                
                 // Evaluate neighbors
+                var connectedNodes = currentNode.GetConnectedNodes();
+                if (connectedNodes == null)
+                {
+                    Debug.LogError($"Null at {currentNode.ParentNodeComponent.name}");
+                    continue;
+                }
                 foreach (PathNode neighbor in currentNode.GetConnectedNodes())
                 {
+                    if(neighbor == null) continue;
                     if (closedList.Contains(neighbor))
                     {
                         continue; // Ignore already evaluated nodes

@@ -41,6 +41,7 @@ namespace Kuantech.AI.Pathfinding
             {
                 WaypointFollower.Waypoint wp = new WaypointFollower.Waypoint();
                 wp.Position = node.GetPosition();
+                wp.Rotation = node.GetRotation();
                 wp.UserData = node;
                 waypoints.Add(wp);
             }

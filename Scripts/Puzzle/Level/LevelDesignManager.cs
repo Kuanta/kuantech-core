@@ -10,6 +10,7 @@ namespace Kuantech.Puzzle
     public class LevelDesignManager : SubManager
     {
         public SheetReader SheetReader;
+        public string LevelDesignSheetRange;
         public string ClassName;
         private JObject _sheetData;
         public override async UniTask Initialize(GameManager gameManager)
@@ -21,7 +22,7 @@ namespace Kuantech.Puzzle
             {
                 _sheetData = readData;
             });
-            await SheetReader.GetSheetData();
+            await SheetReader.GetSheetData(LevelDesignSheetRange);
         }
         
         /// <summary>
