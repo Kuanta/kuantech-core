@@ -91,7 +91,9 @@ namespace Kuantech.Utils
                 points.Add(wp.Position);
             }
             //_smoothSplinePoints = CatmullRomSpline.ConstructSpline(points, SegmentPerSpline);
+            float start = Time.time;
             _smoothSplinePoints = BSpline.GenerateNURBSPath(points, 3, null, points.Count*4);
+            Debug.LogError($"Generated paths in:{Time.time - start} seconds");
         }
         #endregion
 
