@@ -16,6 +16,7 @@ namespace Kuantech.Utils.Mobile
         [Header("Vibrations")]
         [SerializeField] private float VibrationCooldown = 0.2f;
         private float _lastVibrationTime;
+        public bool HapticsToggled;
 
         public static void ApplyHaptic(float magnitude, float frequency, float duration)
         {
@@ -27,6 +28,7 @@ namespace Kuantech.Utils.Mobile
                 return;
             }
 
+            if (context.HapticsToggled) return;
             if (Time.time - context._lastVibrationTime < context.VibrationCooldown)
             {
                 return;
@@ -36,6 +38,17 @@ namespace Kuantech.Utils.Mobile
             HapticPatterns.PlayConstant(magnitude, frequency, duration);
 #endif
 
+        }
+
+        public static void ToggleHaptics(bool toggle)
+        {
+            var context = GetContext<MobileToolsManager>();
+            if (context == null)
+            {
+                Debug.LogWarning("Add Mobile tools manager to apply haptic feedback");
+                return;
+            }
+            context.HapticsToggled = toggle;
         }
 #if ENABLE_UNITYHAPTICS
         public static void ApplyHaptic(HapticClip clip)

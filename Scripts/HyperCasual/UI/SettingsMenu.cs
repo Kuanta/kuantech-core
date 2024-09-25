@@ -1,7 +1,9 @@
 ﻿using System;
 using Kuantech.Core.FX;
 using Kuantech.UI;
+using Kuantech.Utils.Mobile;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace Kuantech.Core.HyperCasual
@@ -12,6 +14,7 @@ namespace Kuantech.Core.HyperCasual
         [SerializeField] private Slider SfxVolume;
         [SerializeField] private ToggleButton ToggleMusicButton;
         [SerializeField] private ToggleButton ToggleSfxButton;
+        [FormerlySerializedAs("ToggleHaptics")] [SerializeField] private ToggleButton ToggleHapticsButton;
         
         private void Awake()
         {
@@ -33,19 +36,17 @@ namespace Kuantech.Core.HyperCasual
 
             if (ToggleMusicButton != null) ToggleMusicButton.OnToggle += OnMusicToggle;
             if (ToggleSfxButton != null) ToggleSfxButton.OnToggle += OnSfxToggle;
+
+            int toggleHaptics = PlayerPrefs.GetInt("Togglehaptics", defaultValue: 1);
+            if (ToggleHapticsButton != null)
+            {
+                ToggleHapticsButton.SetState(Convert.ToBoolean(toggleHaptics));
+                ToggleHapticsButton.OnToggle += OnHapticsToggle;
+            }
+            MobileToolsManager.ToggleHaptics(Convert.ToBoolean(toggleHaptics));
         }
 
-        public override void Show()
-        {
-            base.Show();
-            //GameManager.Instance.PauseGame();
-        }
-
-        public override void Close()
-        {
-            base.Close();
-            //GameManager.Instance.ResumeGame();
-        }
+        #region Sound
 
         private void OnMusicVolumeChange(float value)
         {
@@ -79,6 +80,14 @@ namespace Kuantech.Core.HyperCasual
             PlayerPrefs.SetInt("ToggleSfx", toggle ? 1 : 0 );
             float sfxVol = MusicVolume != null ? SfxVolume.value : 1f;
             EffectsLibrary.GetContext<EffectsLibrary>().AudioLibrary.SetSfxVolume(toggle ? sfxVol : 0.0001f);
+        }
+
+        #endregion
+
+        private void OnHapticsToggle(bool toggle)
+        {
+            MobileToolsManager.ToggleHaptics(toggle);
+            PlayerPrefs.SetInt("ToggleHaptics", toggle ? 1:0);
         }
     }
 }
