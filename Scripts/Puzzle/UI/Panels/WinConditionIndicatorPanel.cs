@@ -33,9 +33,13 @@ namespace Kuantech.Puzzle.UI
             SetStageCount(_tracker.GetStageCount());
         }
 
-        public void OnStageCompleted(int newStageIndex)
+        public void OnStageCompleted()
         {
             StagesPanel.OnStageCompleted(); //Will play necessary anims
+
+        }
+        public void OnNewStage(int newStageIndex)
+        {
             SetPanelForStage(newStageIndex);
         }
         
@@ -82,20 +86,26 @@ namespace Kuantech.Puzzle.UI
             {
                 if (pair.Value.TargetAmount <= 0) continue;
                 string targetKey = pair.Key;
-                WinConditionIndicatorElement element = Instantiate(EntryElementPrefab);
-                IndicatorElements[targetKey] = element;
-                element.ShowRemaining = pair.Value.ShowRemaining;
-                element.SetIcon(GetIconFromKey(targetKey));
-                element.SetScore(_tracker.GetCollectedAmount(pair.Key), _tracker.GetRemainingAmount(pair.Key));
-                element.transform.SetParent(EntriesParent.transform);
-                element.transform.localPosition = Vector3.zero;
-                element.transform.localRotation = Quaternion.identity;
-                element.transform.localScale = Vector3.one;
+                SetWinIndicatorElement(targetKey, pair.Value.ShowRemaining);
             }
 
             _currentlyShownStage = _tracker.GetCurrentStageIndex();
             //Set the size
             if(PanelSizer != null) PanelSizer.SetHorizontalElementCount(currentStage.Targets.Count);
+        }
+
+        public virtual WinConditionIndicatorElement SetWinIndicatorElement(string key, bool showRemaining)
+        {
+            WinConditionIndicatorElement element = Instantiate(EntryElementPrefab);
+            IndicatorElements[key] = element;
+            element.ShowRemaining = showRemaining;
+            element.SetIcon(GetIconFromKey(key));
+            element.SetScore(_tracker.GetCollectedAmount(key), _tracker.GetRemainingAmount(key));
+            element.transform.SetParent(EntriesParent.transform);
+            element.transform.localPosition = Vector3.zero;
+            element.transform.localRotation = Quaternion.identity;
+            element.transform.localScale = Vector3.one;
+            return element;
         }
         
         /// <summary>

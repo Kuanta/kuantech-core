@@ -1,9 +1,10 @@
-﻿using Cysharp.Threading.Tasks;
-using Kuantech.Core;
+﻿using Kuantech.Core;
 using UnityEngine;
 using IngameDebugConsole;
-using Interhaptics;
-using Interhaptics.Core;
+
+#if ENABLE_UNITYHAPTICS
+using Lofelt.NiceVibrations;
+#endif
 
 namespace Kuantech.Utils.Mobile
 {
@@ -15,28 +16,33 @@ namespace Kuantech.Utils.Mobile
         [Header("Vibrations")]
         [SerializeField] private float VibrationCooldown = 0.2f;
         private float _lastVibrationTime;
-        
-        public override async UniTask Initialize(GameManager gameManager)
+
+        public static void ApplyHaptic(float magnitude, float frequency, float duration)
         {
-            base.Initialize(gameManager);
-            HapticManager.DebugSwitch = false;
-        }
-        public static void ApplyHaptic(float magnitude, float duration)
-        {
-#if UNITY_ANDROID || UNITY_IOS
+#if (UNITY_ANDROID || UNITY_IOS) && ENABLE_UNITYHAPTICS
             var context = GetContext<MobileToolsManager>();
             if (context == null)
             {
                 Debug.LogWarning("Add Mobile tools manager to apply haptic feedback");
                 return;
             }
-            if (Time.time - context._lastVibrationTime < context.VibrationCooldown) return;
+
+            if (Time.time - context._lastVibrationTime < context.VibrationCooldown)
+            {
+                return;
+            }
+            
             context._lastVibrationTime = Time.time;
-            HAR.PlayTransient(duration);
+            HapticPatterns.PlayConstant(magnitude, frequency, duration);
 #endif
 
         }
-
+#if ENABLE_UNITYHAPTICS
+        public static void ApplyHaptic(HapticClip clip)
+        {
+            HapticController.Play(clip);
+        }
+#endif
         [ConsoleMethod("setHapticCooldown", "Sets haptic feedback cooldown")]
         public static void SetHapticCooldown(float cooldown)
         {

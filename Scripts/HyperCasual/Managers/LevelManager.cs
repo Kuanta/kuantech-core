@@ -73,7 +73,11 @@ namespace Kuantech.Core
             Level level = Instantiate(LevelDictionary[levelArrayIndex].gameObject).GetComponent<Level>();
             level.transform.position = Vector3.zero;
             level.transform.rotation = Quaternion.identity;
-            level.LevelIndex = levelIndex;
+            
+            //Usefull for repeting last x levels. If there are 20 levels, and we are trying to get 41th level,
+            //this value will be the index of the corresponding repeated level in the levels array
+            level.LevelIndex = levelArrayIndex; 
+            level.LevelNumber = levelIndex;
             level.PowerLevel = levelIndex;
             return level;
         }
@@ -87,8 +91,8 @@ namespace Kuantech.Core
         {
             levelIndex = Mathf.Max(levelIndex, 0);
             CurrentLevelIndex = levelIndex;
-            if (CurrentLevel != null && levelIndex == CurrentLevel.LevelIndex) return; //Don't destroy and create the same level
-            if (CurrentLevel != null && CurrentLevel.LevelIndex != levelIndex)
+            if (CurrentLevel != null && levelIndex == CurrentLevel.LevelNumber) return; //Don't destroy and create the same level
+            if (CurrentLevel != null && CurrentLevel.LevelNumber != levelIndex)
             {
                 CurrentLevel.ClearLevel();
                 CurrentLevel.DestroyLevel();

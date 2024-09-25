@@ -16,7 +16,7 @@ namespace Kuantech.Puzzle.UI
         [Header("Completed Elements")] 
         public GameObject CompletedElements;
         
-        public void SetIcon(ColoredSpriteAsset iconSprite)
+        public virtual void SetIcon(ColoredSpriteAsset iconSprite)
         {
             if (iconSprite == null) return;
             Icon.sprite = iconSprite.Sprite;
@@ -25,6 +25,11 @@ namespace Kuantech.Puzzle.UI
             {
                 MaskingImage.sprite = iconSprite.MaskSprite;
             }
+        }
+
+        public virtual void SetColor(Color color)
+        {
+            Icon.color = color;
         }
         
         public void SetScore(int score, int remainingAmount)

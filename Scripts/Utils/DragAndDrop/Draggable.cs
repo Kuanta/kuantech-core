@@ -25,6 +25,7 @@ namespace Kuantech.Utils
         //Events
         public Action OnDragStart; //Called when dragging starts
         public Action OnDragEnd; //Called when dragging ends somehow
+        public Action OnTapped;
         public Action OnDrop;
       
         public virtual bool DragStart()
@@ -39,7 +40,10 @@ namespace Kuantech.Utils
         }
         [Tooltip("If set to false, Draggable can't be dragged")]
         public bool DragToggle = true;
-
+        
+        [Tooltip("If set to false, can't be tapped")]
+        public bool TapToggle;
+        
         [Header("Offset")]
         [SerializeField] private float OffsetDistance = 5f;
         [SerializeField] private float SmoothDampTime = 0.1f;
@@ -195,6 +199,8 @@ namespace Kuantech.Utils
 
         public virtual void OnTap()
         {
+            if (!TapToggle) return;
+            OnTapped?.Invoke();
         }
 
         public Vector3 GetCursorPosition()

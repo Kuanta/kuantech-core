@@ -151,7 +151,6 @@ namespace Kuantech.Puzzle.MatchThree
             WaypointFollower.Waypoint newWaypoint = new WaypointFollower.Waypoint{
                 Position = ParentBoard.GetLocalPosition(Row, Column),
                 IsLocal = true,
-                Speed = speed,
             };
             WaypointFollower.AddWaypoint(newWaypoint);
         }

@@ -22,6 +22,7 @@ namespace Kuantech.Puzzle
         
         //Events
         public UnityAction<int> OnStageCompleted;
+        public UnityAction<int> OnNewStage;
         public UnityAction OnAllStagesCompleted;
         public void SetStages(List<LevelStageEntry> stages)
         {
@@ -55,8 +56,8 @@ namespace Kuantech.Puzzle
                 OnAllStagesCompleted?.Invoke();
                 return;
             }
-            _currentStageIndex++;
             OnStageCompleted?.Invoke(_currentStageIndex);
+            GoToStage(_currentStageIndex + 1);
         }
 
         public bool IsCurrentStageCompleted()
@@ -88,6 +89,7 @@ namespace Kuantech.Puzzle
         {
             if (stageIndex >= Stages.Count) return false;
             _currentStageIndex = stageIndex;
+            OnNewStage?.Invoke(stageIndex);
             return true;
         }
         
@@ -147,11 +149,13 @@ namespace Kuantech.Puzzle
         
         public void Reset()
         {
-            foreach (var stage in Stages)
+            if (Stages != null)
             {
-                stage.Reset();
+                foreach (var stage in Stages)
+                {
+                    stage.Reset();
+                }
             }
-
             _currentStageIndex = 0;
         }
 

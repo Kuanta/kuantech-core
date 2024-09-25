@@ -55,7 +55,7 @@ namespace Kuantech.Puzzle.UI
         public virtual void OnLevelSetup(PuzzleLevel level)
         {
             CurrentLevel = level;
-            if(LevelIndicator != null) LevelIndicator.SetLevelIndex(level.LevelIndex + 1);
+            if(LevelIndicator != null) LevelIndicator.SetLevelIndex(level.LevelNumber + 1);
             level.OnStateChange += OnLevelStateChange;
             
             //Set win conditions
@@ -123,9 +123,15 @@ namespace Kuantech.Puzzle.UI
         #endregion
         
         #region Score panels
-        public void OnStageCompleted(int newStageIndex)
+
+        public void OnStageCompleted(int completedStageIndex)
         {
-            WinConditionIndicatorPanel.OnStageCompleted(newStageIndex);
+            WinConditionIndicatorPanel.OnStageCompleted();  
+        }
+        
+        public void OnNewStage(int newStageIndex)
+        {
+            WinConditionIndicatorPanel.OnNewStage(newStageIndex);
         }
         #endregion
         
@@ -150,7 +156,7 @@ namespace Kuantech.Puzzle.UI
 
         public virtual void DisableBoosterUI()
         {
-            BoostersHUD.OnBoosterDeactivated();
+            if(BoostersHUD != null) BoostersHUD.OnBoosterDeactivated();
         }
         #endregion
     }

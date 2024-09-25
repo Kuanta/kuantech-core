@@ -108,7 +108,7 @@ namespace Kuantech.Core.HyperCasual.Runner
                 runnerLevel = Instantiate(levelPrefab).GetComponent<RunnerLevel>();
                 runnerLevel.transform.position = Vector3.zero;
                 runnerLevel.transform.rotation = Quaternion.identity;
-                runnerLevel.LevelIndex = levelIndex;
+                runnerLevel.LevelNumber = levelIndex;
             }
             if (runnerLevel == null) throw new Exception("Level is null!");
             //todo(gameplay): Get power level and chunk count
@@ -123,7 +123,7 @@ namespace Kuantech.Core.HyperCasual.Runner
         public RunnerLevel GenerateLevel(int levelIndex)
         {
             RunnerLevel runnerLevel = Instantiate(EmptyLevelPrefab.gameObject).GetComponent<RunnerLevel>();
-            runnerLevel.LevelIndex = levelIndex;
+            runnerLevel.LevelNumber = levelIndex;
             runnerLevel.transform.position = Vector3.zero;
             runnerLevel.transform.rotation = Quaternion.identity;
             return runnerLevel;

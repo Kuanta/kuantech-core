@@ -22,6 +22,7 @@ namespace Kuantech.Core
     public class Level : MonoBehaviour
     {
         public int LevelIndex;
+        public int LevelNumber;
         public int PowerLevel;
         private LevelState _levelState;
         public LevelState CurrentState
@@ -59,6 +60,11 @@ namespace Kuantech.Core
         public virtual void SetupLevel()
         {
             ChangeLevelState(LevelState.Waiting);
+            SetupComponents();
+        }
+
+        protected virtual void SetupComponents()
+        {
             foreach (var component in LevelElements)
             {
                 component.ParentLevel = this;
