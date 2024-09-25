@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using DG.Tweening;
 using Kuantech.Utils.Math;
 using UnityEngine;
@@ -28,21 +27,31 @@ namespace Kuantech.Utils
         public bool LockForwardMovement = false;
         public float TargetReachThresh = 0.1f;
         public float UpdateRotationThresh = 0.1f;
+        public float MaxTurnAngle = 30.0f;
+        public float MinTurnSpeedFactor = 0.5f;
 
         [Header("Spline")] public int SegmentPerSpline = 4;
         [Tooltip("If set to true, a spline will be calculated and agent will follow the spline. However this will prevent events for middle waypoints")]
         public bool UseSpline = false;
+        public int SplineDegree = 5;
+        public int SplineRotationLookAhead = 1;
         
         [NonSerialized] public bool Moving;
         [NonSerialized] public List<Waypoint> WaypointsList;
         [NonSerialized] public Queue<Waypoint> WaypointsQueue;
         [NonSerialized] public Waypoint CurrentWaypoint;
         private float _currentSpeed = 0;
-        private List<Vector3> _smoothSplinePoints = new List<Vector3>();
+        private Vector3[] _smoothSplinePoints = null;
         private int _currentSplinePointIndex;
         private bool _useSpline = false;
         private Tween _moveTween;
         private Tween _rotateTween;
+        
+        
+        //Spline params
+        private float _splineT;
+        private float _splineTSpeed;
+        private float _splineTSpeedFactor = 1;
         
         public Action OnReachedFinalTarget;
         public Action<Waypoint> OnReachedWaypoint;
@@ -83,17 +92,24 @@ namespace Kuantech.Utils
             CurrentWaypoint = waypoint;
         }
 
+        private float _uniformDistanceForPerSegment; //Not a very good name but its 00:33
         public void CalculateSplinePoints()
         {
             List<Vector3> points = new List<Vector3>();
+            points.Add(transform.position);
+            float totalDistance = 0.0f;
             foreach (var wp in WaypointsQueue)
             {
                 points.Add(wp.Position);
+                if (points.Count <= 1) continue;
+                totalDistance += (points[^1] - points[^2]).magnitude;
             }
-            //_smoothSplinePoints = CatmullRomSpline.ConstructSpline(points, SegmentPerSpline);
-            float start = Time.time;
-            _smoothSplinePoints = BSpline.GenerateNURBSPath(points, 3, null, points.Count*4);
-            Debug.LogError($"Generated paths in:{Time.time - start} seconds");
+            _splineTSpeed = Speed/totalDistance;
+            
+            //_smoothSplinePoints = CatmullRomSpline.ConstructSpline(points, SegmentPerSpline).ToArray();
+            int numPoints = points.Count * SegmentPerSpline;
+            _smoothSplinePoints = BSpline.GenerateNURBSPath(points, SplineDegree, null, points.Count*SegmentPerSpline).ToArray();
+            _uniformDistanceForPerSegment = totalDistance / (numPoints-1);
         }
         #endregion
 
@@ -106,10 +122,10 @@ namespace Kuantech.Utils
             if (UseSpline && WaypointsQueue.Count > 2)
             {
                 _useSpline = true;
-                Debug.LogError("Follow paths?");
-
+                _splineT = 0.0f;
+                _currentSplineTSpeed = 0;
                 CalculateSplinePoints();
-                _currentSplinePointIndex = 1;
+                WaypointsQueue.Clear();
             }
             else
             {
@@ -151,10 +167,16 @@ namespace Kuantech.Utils
         private void Update()
         {
             if (!Moving) return;
-            UpdatePosition();
+            if (_useSpline)
+            {
+                UpdatePositionForSpline();
+            }
+            else
+            {
+                UpdatePosition();
+            }
         }
 
-        public float MinTurnSpeedFactor = 0.5f;
         protected virtual void UpdatePosition()
         {
             if(CurrentWaypoint == null && !_useSpline) return;
@@ -173,9 +195,9 @@ namespace Kuantech.Utils
             }
             float deltaTime = Time.deltaTime;
             Vector3 direction = error.normalized;
-            float turnAngle = Vector3.Angle(transform.forward, direction);
-            float turnSpeedFactor = Mathf.Lerp(1f, MinTurnSpeedFactor, turnAngle / 90f);  // 0° = full speed, 90° or more = 50% speed
-            float adjustedSpeed = Speed * turnSpeedFactor;
+            //float turnAngle = Vector3.Angle(transform.forward, direction);
+            //float turnSpeedFactor = Mathf.Lerp(1f, MinTurnSpeedFactor, turnAngle / 90f);  // 0° = full speed, 90° or more = 50% speed
+            float adjustedSpeed = Speed ;
 
             if (_currentSpeed < adjustedSpeed)
             {
@@ -187,23 +209,66 @@ namespace Kuantech.Utils
             _currentSpeed  = Mathf.Clamp( _currentSpeed,  0, adjustedSpeed);
 
             Vector3 moveDirection = direction;
-            if (LockForwardMovement)
-            {
-                moveDirection = transform.forward;
-            }
+            // if (LockForwardMovement)
+            // {
+            //     moveDirection = transform.forward;
+            // }
             Vector3 positionUpdate =  moveDirection * deltaTime * _currentSpeed;
-            
-            if (direction.sqrMagnitude >= UpdateRotationThresh)
-            {
-                transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(direction),
-                    deltaTime * RotationLerpFactor);
-            }
+
+            transform.rotation = Quaternion.LookRotation(direction);
+            // if (errorMag >= UpdateRotationThresh)
+            // {
+            //     transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(direction),
+            //         deltaTime * RotationLerpFactor);
+            // }
             if(CurrentWaypoint.IsLocal)
             {
                 transform.localPosition += positionUpdate;
             }else{
                 transform.position += positionUpdate;
             }
+        }
+
+        private float _currentSplineTSpeed = 0f;
+        private void UpdatePositionForSpline()
+        {
+            transform.position = GetSplineTargetPosition();
+            Vector3 direction = _rotationTarget - transform.position;
+            float turnAngle = Vector3.Angle(transform.forward, direction);
+            float turnSpeedFactor = Mathf.Lerp(1f, MinTurnSpeedFactor, Mathf.Clamp(turnAngle / MaxTurnAngle, MinTurnSpeedFactor, 1));  // 0° = full speed, 90° or more = 50% speed
+            UpdateRotation(_rotationTarget - transform.position);
+
+            float targetSpeed = _splineTSpeed * _splineTSpeedFactor * turnSpeedFactor;
+            if (_currentSplineTSpeed > targetSpeed)
+             {
+                 _currentSplineTSpeed -= Acceleration * Time.deltaTime;
+             }
+             else if(_currentSplineTSpeed < targetSpeed)
+             {
+                 _currentSplineTSpeed += Acceleration * Time.deltaTime;
+            }
+            _splineT += Time.deltaTime * _currentSplineTSpeed;
+            if (_splineT >= 1.0f)
+            {
+                var lastWp = WaypointsList[^1];
+                Moving = false;
+                SnapToPosition(lastWp.Position, lastWp.Rotation);
+                OnReachedFinalTarget?.Invoke();
+            }
+        }
+
+        private void UpdateRotation(Vector3 targetDirection)
+        {
+            if (targetDirection.sqrMagnitude <= UpdateRotationThresh * UpdateRotationThresh) return;
+            // if (LockForwardMovement)
+            // {
+            //     moveDirection = transform.forward;
+            // }
+            // Debug.LogError($"Direction: {moveDirection}");
+            // Vector3 positionUpdate =  moveDirection * deltaTime * _currentSpeed;
+
+            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(targetDirection),
+                Time.deltaTime * RotationLerpFactor);
         }
         private Vector3 _targetPosition;
         private Vector3 GetTargetPosition()
@@ -212,34 +277,58 @@ namespace Kuantech.Utils
             {
                 return CurrentWaypoint.IsLocal ? CurrentWaypoint.Position - transform.localPosition : CurrentWaypoint.Position;
             }
+            return GetSplineTargetPosition();
+        }
 
-            if (_currentSplinePointIndex > _smoothSplinePoints.Count)
+        private Vector3 _rotationTarget;
+        private Vector3 GetSplineTargetPosition()
+        {
+            int lengthOfArray = _smoothSplinePoints.Length;
+
+            float currentIndex = lengthOfArray * _splineT;
+            int minIndex = Mathf.Max(Mathf.FloorToInt(currentIndex), 0);
+            int maxIndex = minIndex+1;
+            if (minIndex >= lengthOfArray || maxIndex >= lengthOfArray)
             {
-                Debug.LogError("????");
+                return _smoothSplinePoints[lengthOfArray-1];
             }
-            return _smoothSplinePoints[_currentSplinePointIndex];
+
+            int rotationTargetIndex = maxIndex + SplineRotationLookAhead;
+            rotationTargetIndex = Mathf.Min(rotationTargetIndex, lengthOfArray - 1);
+            _rotationTarget = _smoothSplinePoints[rotationTargetIndex];
+            Vector3 floorPos = _smoothSplinePoints[minIndex];
+            Vector3 ceilPos = _smoothSplinePoints[maxIndex];
+            if (maxIndex == minIndex)
+            {
+                _splineTSpeedFactor = 1;
+            }
+            else
+            {
+                _splineTSpeedFactor = _uniformDistanceForPerSegment/(ceilPos - floorPos).magnitude;
+            }
+            float innerT = currentIndex - (float)minIndex;
+            return Vector3.Lerp(floorPos, ceilPos, innerT);
         }
         private void SetNextWaypoint()
         {
             _targetPosition = GetTargetPosition();
-            if (_useSpline)
-            {
-                _currentSplinePointIndex++;
-                if (_currentSplinePointIndex >= _smoothSplinePoints.Count)
-                {
-                    //Finished
-                    var lastWp = WaypointsList[^1];
-                    if(lastWp != null)
-                    {
-                        SnapToPosition(lastWp.Position, lastWp.Rotation);
-                    } else{
-                        OnReachedFinalTarget?.Invoke();
-                    }
-                    Moving = false;
-                }
-                return;
-            }
-            
+            // if (_useSpline)
+            // {
+            //     if (_currentSplinePointIndex >= _smoothSplinePoints.Length)
+            //     {
+            //         //Finished
+            //         var lastWp = WaypointsList[^1];
+            //         if(lastWp != null)
+            //         {
+            //             SnapToPosition(lastWp.Position, lastWp.Rotation);
+            //         } else{
+            //             OnReachedFinalTarget?.Invoke();
+            //         }
+            //         Moving = false;
+            //     }
+            //     return;
+            // }
+            //
             WaypointsQueue ??= new Queue<Waypoint>();
             if(WaypointsQueue.Count == 0)
             {

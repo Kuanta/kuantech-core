@@ -10,7 +10,6 @@ namespace Kuantech.Utils.Math
             List<Vector3> splinePoints = new List<Vector3>();
             if (waypoints.Count < 2)
             {
-                Debug.LogError("Not enough waypoints to form a path.");
                 return waypoints;
             }
             // For each set of 4 waypoints (or clamped points for the ends)
