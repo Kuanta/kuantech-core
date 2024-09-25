@@ -239,6 +239,7 @@ namespace Kuantech.Utils
             UpdateRotation(_rotationTarget - transform.position);
 
             float targetSpeed = _splineTSpeed * _splineTSpeedFactor * turnSpeedFactor;
+            targetSpeed = Mathf.Min(targetSpeed, _splineTSpeed);
             if (_currentSplineTSpeed > targetSpeed)
              {
                  _currentSplineTSpeed -= Acceleration * Time.deltaTime;
