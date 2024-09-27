@@ -99,13 +99,12 @@ namespace Kuantech.Core
                 CurrentLevel = null;
             }
             CurrentLevel = GetLevel(CurrentLevelIndex);
-            CurrentLevel.SetupLevel(); //todo(optimization): This may be unefficient
 
             //Set power level
             int powerLevel = levelIndex;
             CurrentLevel.PowerLevel = MaxPowerLevel > 0 ? Mathf.Min(MaxPowerLevel, powerLevel) : powerLevel;
             LevelSetEvent?.Invoke(this, CurrentLevelIndex);
-
+            CurrentLevel.SetupLevel(); //todo(optimization): This may be unefficient
             UpdateLevelIndex();
         }
 

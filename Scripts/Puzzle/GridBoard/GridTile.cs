@@ -21,6 +21,7 @@ namespace Kuantech.Puzzle
     public class GridTile : MonoBehaviour
     {
         public bool DestroyOnDespawn = true;
+        public bool StayOnBoardAfterDespawn = false;
         [NonSerialized] public GridBoard ParentBoard;
         [NonSerialized] public int Row;
         [NonSerialized] public int Column;
@@ -39,8 +40,12 @@ namespace Kuantech.Puzzle
         
         }
 
-        public virtual void Despawn()
+        public virtual void Despawn(bool clearingBoard)
         {
+            if (!clearingBoard && StayOnBoardAfterDespawn)
+            {
+                return;
+            }
             if (ParentBoard != null)
             {
                 ParentBoard.UnsetTile(this);
@@ -49,7 +54,7 @@ namespace Kuantech.Puzzle
             {
                 Destroy(gameObject);
             }
-            else
+            else if(!StayOnBoardAfterDespawn)
             {
                 gameObject.SetActive(false);
             }

@@ -32,6 +32,7 @@ namespace Kuantech.UI
 
         public void PlayAnimation()
         {
+            if (!gameObject.activeInHierarchy) return;
             if (Animator == null) return;
             Animator.SetTrigger(Animate);
         }
