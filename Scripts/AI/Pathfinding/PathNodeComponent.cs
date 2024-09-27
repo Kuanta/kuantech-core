@@ -47,9 +47,10 @@ namespace Kuantech.AI.Pathfinding
 
         public void ConnectToNode(PathNodeComponent nodeComponent)
         {
-            if (nodeComponent.PathNode == null)
+            if (nodeComponent == null || nodeComponent.PathNode == null)
             {
                 Debug.LogError("What?");
+                return;
             }
             if (IsConnectedToNode(nodeComponent)) return;
             ConnectToNode(nodeComponent.PathNode);
