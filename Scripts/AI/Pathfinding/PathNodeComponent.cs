@@ -49,7 +49,7 @@ namespace Kuantech.AI.Pathfinding
         {
             if (nodeComponent == null || nodeComponent.PathNode == null)
             {
-                Debug.LogError("Disconnection between paths");
+                Debug.LogError($"Disconnection between paths at {gameObject.name}");
                 return;
             }
             if (IsConnectedToNode(nodeComponent)) return;
