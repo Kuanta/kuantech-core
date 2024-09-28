@@ -29,7 +29,6 @@ namespace Kuantech.Utils
             TargetPoint = targetPoint;
             IsMoving = true;
             transform.SetParent(null, true);
-            Vector3 targetPosition = TargetPoint.GetTargetPosition();
             _currentRiseSpeed = InitialRiseSpeed;
             _currentRiseHeight = 0;
             _currentRiseDir = 1;
@@ -69,7 +68,6 @@ namespace Kuantech.Utils
                 transform.localScale = Vector3.one;
             }
             IsMoving = false;
-            ReachedTargetHandler?.Invoke();
             ReachedTargetHandler?.Invoke();
         }
     }
