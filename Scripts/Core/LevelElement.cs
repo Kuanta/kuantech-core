@@ -53,7 +53,6 @@ namespace Kuantech.Core
         
         public virtual void Reset()
         {
-            
         }
     }
 }

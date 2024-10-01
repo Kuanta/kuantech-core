@@ -479,10 +479,17 @@ namespace Kuantech.Utils
 
         public static T Deserialize<T>(byte[] data)
         {
-            BinaryFormatter formatter = new BinaryFormatter();
-            using (MemoryStream memoryStream = new MemoryStream(data))
+            try
             {
-                return (T)formatter.Deserialize(memoryStream);
+                BinaryFormatter formatter = new BinaryFormatter();
+                using (MemoryStream memoryStream = new MemoryStream(data))
+                {
+                    return (T)formatter.Deserialize(memoryStream);
+                }
+            }
+            catch (Exception ex)
+            {
+                return default(T); // Return default value if deserialization fails
             }
         }
         #endregion

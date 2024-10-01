@@ -181,7 +181,7 @@ namespace Kuantech.Puzzle
             CurrentLevelState = null;
             stateModel.Dirtied = true;
         }
-        protected virtual void DirtyLevelState()
+        public virtual void DirtyLevelState()
         {
             PuzzleStateModel stateModel = GetStateModel();
             if (stateModel == null) return;

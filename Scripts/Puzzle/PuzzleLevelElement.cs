@@ -1,7 +1,5 @@
 using System;
 using Kuantech.Core;
-using Kuantech.Utils;
-using UnityEngine;
 
 namespace Kuantech.Puzzle
 {
@@ -21,12 +19,6 @@ namespace Kuantech.Puzzle
             
         }
 
-        public virtual PuzzleLevelElementState CreateState()
-        {
-            CurrentState = new PuzzleLevelElementState();
-            return CurrentState;
-        }
-
         public int GetUniqueId()
         {
             return GetInstanceID();
@@ -40,6 +32,15 @@ namespace Kuantech.Puzzle
             }
             CurrentState.Dirtied = true;
          
+        }
+
+        public void ClearState()
+        {
+            CurrentState = null;
+        }
+        public override void Reset()
+        {
+            ClearState();
         }
     }
 }
