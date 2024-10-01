@@ -55,6 +55,8 @@ namespace Kuantech.Utils
         
         public Action OnReachedFinalTarget;
         public Action<Waypoint> OnReachedWaypoint;
+
+        public bool Halted = false;
         
         #region Property Setters
         public void AddWaypoint(Waypoint newWaypoint)
@@ -166,7 +168,7 @@ namespace Kuantech.Utils
         }
         private void Update()
         {
-            if (!Moving) return;
+            if (!Moving || Halted) return;
             if (_useSpline)
             {
                 UpdatePositionForSpline();
@@ -177,6 +179,16 @@ namespace Kuantech.Utils
             }
         }
 
+        public void PauseMovement()
+        {
+            Halted = true;
+        }
+
+        public void ResumeMovement()
+        {
+            Halted = false;
+        }
+        
         protected virtual void UpdatePosition()
         {
             if(CurrentWaypoint == null && !_useSpline) return;
