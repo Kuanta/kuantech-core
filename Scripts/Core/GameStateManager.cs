@@ -42,14 +42,14 @@ namespace Kuantech.Core
 
         protected virtual void LateUpdate()
         {
-            // //Check periodically whether to save the game state or not. The game state won't save itself if its not dirtied
-            // if (GameState == null) return;
-            // if (!(Time.time - _lastCheckTime > SaveCheckFrequency)) return;
-            // if (SaveData)
-            // {
-            //     GameState.SaveData();
-            // }
-            // _lastCheckTime = Time.time;
+            //Check periodically whether to save the game state or not. The game state won't save itself if its not dirtied
+            if (GameState == null) return;
+            if (!(Time.time - _lastCheckTime > SaveCheckFrequency)) return;
+            if (SaveData)
+            {
+                GameState.SaveData();
+            }
+            _lastCheckTime = Time.time;
         }
 
         private void OnApplicationQuit() {
