@@ -169,7 +169,12 @@ namespace Kuantech.Puzzle
             foreach(var levelElement in LevelElements)
             {
                 byte[] elementState = levelElement.GetElementState();
-                if (elementsState == null) continue;
+                if (elementState == null) continue;
+                if (elementsState.ContainsKey(levelElement.ElementId))
+                {
+                    Debug.LogError($"Duplicate key for {levelElement.gameObject}");
+                    continue;
+                }
                 elementsState[levelElement.ElementId] = elementState;
             }
             return elementsState;
