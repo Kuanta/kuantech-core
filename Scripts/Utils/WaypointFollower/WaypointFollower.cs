@@ -125,7 +125,7 @@ namespace Kuantech.Utils
             {
                 _useSpline = true;
                 _splineT = 0.0f;
-                _currentSplineTSpeed = 0;
+                _currentSplineTSpeed = _splineTSpeed * _splineTSpeedFactor;
                 CalculateSplinePoints();
                 WaypointsQueue.Clear();
             }
@@ -250,16 +250,17 @@ namespace Kuantech.Utils
             float turnSpeedFactor = Mathf.Lerp(1f, MinTurnSpeedFactor, Mathf.Clamp(turnAngle / MaxTurnAngle, MinTurnSpeedFactor, 1));  // 0° = full speed, 90° or more = 50% speed
             UpdateRotation(_rotationTarget - transform.position);
 
-            float targetSpeed = _splineTSpeed * _splineTSpeedFactor * turnSpeedFactor;
+            float targetSpeed = _splineTSpeed * _splineTSpeedFactor;//* turnSpeedFactor;
             targetSpeed = Mathf.Min(targetSpeed, _splineTSpeed);
             if (_currentSplineTSpeed > targetSpeed)
-             {
-                 _currentSplineTSpeed -= Acceleration * Time.deltaTime;
-             }
-             else if(_currentSplineTSpeed < targetSpeed)
-             {
-                 _currentSplineTSpeed += Acceleration * Time.deltaTime;
+            {
+             _currentSplineTSpeed -= Acceleration * Time.deltaTime;
             }
+            else if(_currentSplineTSpeed < targetSpeed)
+            {
+             _currentSplineTSpeed += Acceleration * Time.deltaTime;
+            }
+            _currentSplineTSpeed  = Mathf.Clamp( _currentSplineTSpeed,  0, _splineTSpeed * _splineTSpeedFactor);
             _splineT += Time.deltaTime * _currentSplineTSpeed;
             if (_splineT >= 1.0f)
             {

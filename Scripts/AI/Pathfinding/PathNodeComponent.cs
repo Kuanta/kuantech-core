@@ -24,6 +24,11 @@ namespace Kuantech.AI.Pathfinding
                 PathNode.ConnectedNodes = new List<PathNode>();
                 foreach (var connectedObj in ConnectedNodesGameObjects)
                 {
+                    if (connectedObj == null)
+                    {
+                        Debug.LogError($"Null connection in {name}");
+                        continue;
+                    }
                     if (connectedObj == gameObject) continue;
                     if (connectedObj.TryGetComponent(out PathNodeComponent pathNodeComponent))
                     {
@@ -68,7 +73,10 @@ namespace Kuantech.AI.Pathfinding
             }
 
             if (ConnectedNodesGameObjects == null) ConnectedNodesGameObjects = new List<GameObject>();
-            ConnectedNodesGameObjects.Add(nodeComponent.gameObject);
+            if (!ConnectedNodesGameObjects.Contains(nodeComponent.gameObject))
+            {
+                ConnectedNodesGameObjects.Add(nodeComponent.gameObject);
+            }
             if (IsConnectedToNode(nodeComponent)) return;
             ConnectToNode(nodeComponent.PathNode);
         }

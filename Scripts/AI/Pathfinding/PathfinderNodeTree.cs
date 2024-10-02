@@ -56,6 +56,7 @@ namespace Kuantech.AI.Pathfinding
             foreach (var nodeComp in NodeComponents)
             {
                 nodeComp.PathNode.ConnectedNodes = new List<PathNode>();
+                nodeComp.ConnectedNodesGameObjects = new List<GameObject>();
                 nodeComp.PathNode.ParentNodeComponent = nodeComp;
                 
                 //Check must connect nodes
