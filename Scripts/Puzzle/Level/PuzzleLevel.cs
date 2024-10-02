@@ -139,6 +139,7 @@ namespace Kuantech.Puzzle
         #region Level State
         public virtual PuzzleLevelState GetLevelState()
         {
+            UpdateLevelState();
             return CurrentLevelState;
         }
 
@@ -186,14 +187,14 @@ namespace Kuantech.Puzzle
             PuzzleStateModel stateModel = GetStateModel();
             if (stateModel == null) return;
             stateModel.Dirtied = true;
-            if (CurrentState != LevelState.Playing)
-            {
-                CurrentLevelState = null;
-            }
-            else
-            {
-                UpdateLevelState();
-            }
+            // if (CurrentState != LevelState.Playing)
+            // {
+            //     CurrentLevelState = null;
+            // }
+            // else
+            // {
+            //     UpdateLevelState();
+            // }
         }
 
         public virtual PuzzleStateModel GetStateModel()
