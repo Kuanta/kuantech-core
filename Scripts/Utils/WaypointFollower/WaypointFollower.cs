@@ -266,7 +266,7 @@ namespace Kuantech.Utils
                 var lastWp = WaypointsList[^1];
                 Moving = false;
                 SnapToPosition(lastWp.Position, lastWp.Rotation);
-                OnReachedFinalTarget?.Invoke();
+                //OnReachedFinalTarget?.Invoke();
             }
         }
 
@@ -358,10 +358,10 @@ namespace Kuantech.Utils
 
         private void SnapToPosition(Vector3 position, Quaternion rotation)
         {
-            _moveTween = transform.DOMove(position, 0.25f).SetEase(Ease.InOutQuad).OnComplete(()=>{
+            _moveTween = transform.DOMove(position, 0.05f).SetEase(Ease.InOutQuad).OnComplete(()=>{
                 OnReachedFinalTarget?.Invoke();
             });
-            _rotateTween = transform.DORotate(rotation.eulerAngles, 0.25f).SetEase(Ease.InOutQuad);
+            _rotateTween = transform.DORotate(rotation.eulerAngles, 0.05f).SetEase(Ease.InOutQuad);
 
         }
         public bool IsMoving()

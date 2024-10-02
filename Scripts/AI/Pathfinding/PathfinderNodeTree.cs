@@ -13,9 +13,9 @@ namespace Kuantech.AI.Pathfinding
    
         public void Initialize()
         {
-            PathNodeComponent[] nodeComponents = GetComponentsInChildren<PathNodeComponent>();
+            //PathNodeComponent[] nodeComponents = GetComponentsInChildren<PathNodeComponent>();
             Pathfinder = new Pathfinder();
-            foreach (var nodeComp in nodeComponents)
+            foreach (var nodeComp in NodeComponents)
             {
                 nodeComp.Initialize();
                 Nodes.Add(nodeComp.PathNode);

@@ -13,10 +13,10 @@ namespace Kuantech.AI.Pathfinding
         public float FCost => GCost + HCost;
         public float TraverseCost = 0f;
 
-        public PathNodeComponent ParentNodeComponent;
+        [NonSerialized] public PathNodeComponent ParentNodeComponent;
         [NonSerialized] public Vector3 Position;
         [NonSerialized] public Quaternion Rotation;
-        public PathNode ParentNode;
+        [NonSerialized] public PathNode ParentNode;
         [NonSerialized] public List<PathNode> ConnectedNodes;
         
         /// <summary>

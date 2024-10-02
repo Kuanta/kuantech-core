@@ -11,12 +11,26 @@ namespace Kuantech.AI.Pathfinding
         public List<PathNodeComponent> MaskedNodes;
         public List<PathNodeComponent> MustConnectNodes;
         public bool RemoveFromAutoConnect;
+        public List<GameObject> ConnectedNodesGameObjects;
+        
         public void Initialize()
         {
             PathNode ??= new PathNode();
             PathNode.ParentNodeComponent = this;
             PathNode.Position = transform.position;
             PathNode.Rotation = transform.rotation;
+            if (ConnectedNodesGameObjects != null)
+            {
+                PathNode.ConnectedNodes = new List<PathNode>();
+                foreach (var connectedObj in ConnectedNodesGameObjects)
+                {
+                    if (connectedObj == gameObject) continue;
+                    if (connectedObj.TryGetComponent(out PathNodeComponent pathNodeComponent))
+                    {
+                        PathNode.ConnectedNodes.Add(pathNodeComponent.PathNode);
+                    }
+                }
+            }
         }
 
         public bool CanConnectToNode(PathNodeComponent otherNode)
@@ -52,6 +66,9 @@ namespace Kuantech.AI.Pathfinding
                 Debug.LogError($"Disconnection between paths at {gameObject.name}");
                 return;
             }
+
+            if (ConnectedNodesGameObjects == null) ConnectedNodesGameObjects = new List<GameObject>();
+            ConnectedNodesGameObjects.Add(nodeComponent.gameObject);
             if (IsConnectedToNode(nodeComponent)) return;
             ConnectToNode(nodeComponent.PathNode);
         }
