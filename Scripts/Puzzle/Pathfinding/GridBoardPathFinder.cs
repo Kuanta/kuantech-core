@@ -100,7 +100,7 @@ namespace Kuantech.Puzzle.Pathfinding
         /// <returns></returns>
         private float GetDistance(GridBoardPathNode nodeA, GridBoardPathNode nodeB)
         {
-            return Math.Abs(nodeA.Row - nodeB.Row) + Math.Abs(nodeA.Column - nodeB.Column) + nodeB.TraverseCost;
+            return Math.Abs(nodeA.Row - nodeB.Row) + Math.Abs(nodeA.Column - nodeB.Column) + nodeB.GetTraverseCost();
         }
         List<PathNode> RetracePath(GridBoardPathNode startNode, GridBoardPathNode endNode)
         {

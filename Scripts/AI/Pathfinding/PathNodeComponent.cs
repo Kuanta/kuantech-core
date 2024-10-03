@@ -59,6 +59,11 @@ namespace Kuantech.AI.Pathfinding
             return false;
         }
 
+        public virtual float GetTraverseCost()
+        {
+            return 0;
+        }
+        
         public void ConnectToNode(PathNode node)
         {
             PathNode.ConnectedNodes.Add(node);

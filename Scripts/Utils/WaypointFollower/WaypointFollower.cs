@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using DG.Tweening;
 using Kuantech.Utils.Math;
 using UnityEngine;
+using UnityEngine.Rendering.UI;
 
 namespace Kuantech.Utils
 {
@@ -42,6 +43,8 @@ namespace Kuantech.Utils
         [NonSerialized] public Waypoint CurrentWaypoint;
         private float _currentSpeed = 0;
         private Vector3[] _smoothSplinePoints = null;
+        private float[] _arcLengths = null;
+        private float[] _normalizedArcLengths = null;
         private int _currentSplinePointIndex;
         private bool _useSpline = false;
         private Tween _moveTween;
@@ -76,6 +79,10 @@ namespace Kuantech.Utils
 
         public void SetWaypoints(List<Waypoint> waypoints)
         {
+            if (waypoints.Count == 1)
+            {
+                Debug.LogError("asdasd");
+            }
             CurrentWaypoint = waypoints[0];
             WaypointsQueue = new Queue<Waypoint>();
             WaypointsList = waypoints;
@@ -94,24 +101,43 @@ namespace Kuantech.Utils
             CurrentWaypoint = waypoint;
         }
 
-        private float _uniformDistanceForPerSegment; //Not a very good name but its 00:33
         public void CalculateSplinePoints()
         {
             List<Vector3> points = new List<Vector3>();
             points.Add(transform.position);
-            float totalDistance = 0.0f;
             foreach (var wp in WaypointsQueue)
             {
                 points.Add(wp.Position);
                 if (points.Count <= 1) continue;
-                totalDistance += (points[^1] - points[^2]).magnitude;
             }
-            _splineTSpeed = Speed/totalDistance;
-            
+            _splineTSpeed = Speed;
             //_smoothSplinePoints = CatmullRomSpline.ConstructSpline(points, SegmentPerSpline).ToArray();
-            int numPoints = points.Count * SegmentPerSpline;
             _smoothSplinePoints = BSpline.GenerateNURBSPath(points, SplineDegree, null, points.Count*SegmentPerSpline).ToArray();
-            _uniformDistanceForPerSegment = totalDistance / (numPoints-1);
+            ComputeArcLengths();
+        }
+
+        private void ComputeArcLengths()
+        {
+            int lengthOfArray = _smoothSplinePoints.Length;
+            _arcLengths = new float[lengthOfArray];
+            _normalizedArcLengths = new float[lengthOfArray];
+            _arcLengths[0] = 0.0f;
+            for (int i = 1; i < lengthOfArray; i++)
+            {
+                float segmentLength = Vector3.Distance(_smoothSplinePoints[i - 1], _smoothSplinePoints[i]);
+                _arcLengths[i] = _arcLengths[i - 1] + segmentLength;  // Cumulative distance
+            }
+
+            float totalLength = GetArcTotalLength();
+            for (int i = 0; i < _arcLengths.Length; ++i)
+            {
+                _normalizedArcLengths[i] = _arcLengths[i] / totalLength;
+            }
+        }
+
+        private float GetArcTotalLength()
+        {
+            return _arcLengths[^1];
         }
         #endregion
 
@@ -121,7 +147,7 @@ namespace Kuantech.Utils
         {
             KillTweens();
             Moving = true;
-            if (UseSpline && WaypointsQueue.Count > 2)
+            if (UseSpline && WaypointsQueue.Count >= 2)
             {
                 _useSpline = true;
                 _splineT = 0.0f;
@@ -132,6 +158,11 @@ namespace Kuantech.Utils
             else
             {
                 _useSpline = false;
+            }
+
+            if (UseSpline && !_useSpline)
+            {
+                Debug.LogError("FAILURE");
             }
             _targetPosition = GetTargetPosition();
         }
@@ -250,24 +281,23 @@ namespace Kuantech.Utils
             float turnSpeedFactor = Mathf.Lerp(1f, MinTurnSpeedFactor, Mathf.Clamp(turnAngle / MaxTurnAngle, MinTurnSpeedFactor, 1));  // 0° = full speed, 90° or more = 50% speed
             UpdateRotation(_rotationTarget - transform.position);
 
-            float targetSpeed = _splineTSpeed * _splineTSpeedFactor;//* turnSpeedFactor;
+            float targetSpeed = _splineTSpeed;
             targetSpeed = Mathf.Min(targetSpeed, _splineTSpeed);
-            if (_currentSplineTSpeed > targetSpeed)
-            {
-             _currentSplineTSpeed -= Acceleration * Time.deltaTime;
-            }
-            else if(_currentSplineTSpeed < targetSpeed)
-            {
-             _currentSplineTSpeed += Acceleration * Time.deltaTime;
-            }
-            _currentSplineTSpeed  = Mathf.Clamp( _currentSplineTSpeed,  0, _splineTSpeed * _splineTSpeedFactor);
-            _splineT += Time.deltaTime * _currentSplineTSpeed;
+            // if (_currentSplineTSpeed > targetSpeed)
+            // {
+            //  _currentSplineTSpeed -= Acceleration * Time.deltaTime;
+            // }
+            // else if(_currentSplineTSpeed < targetSpeed)
+            // {
+            //  _currentSplineTSpeed += Acceleration * Time.deltaTime;
+            // }
+            _currentSplineTSpeed = targetSpeed;
+            _splineT += Time.deltaTime * (_currentSplineTSpeed / GetArcTotalLength());
             if (_splineT >= 1.0f)
             {
                 var lastWp = WaypointsList[^1];
                 Moving = false;
                 SnapToPosition(lastWp.Position, lastWp.Rotation);
-                //OnReachedFinalTarget?.Invoke();
             }
         }
 
@@ -299,29 +329,58 @@ namespace Kuantech.Utils
         {
             int lengthOfArray = _smoothSplinePoints.Length;
 
-            float currentIndex = lengthOfArray * _splineT;
-            int minIndex = Mathf.Max(Mathf.FloorToInt(currentIndex), 0);
-            int maxIndex = minIndex+1;
-            if (minIndex >= lengthOfArray || maxIndex >= lengthOfArray)
+            // Use the normalized arc lengths to map _splineT to the correct segment
+            for (int i = 1; i < _normalizedArcLengths.Length; i++)
             {
-                return _smoothSplinePoints[lengthOfArray-1];
-            }
+                if (_splineT <= _normalizedArcLengths[i])
+                {
+                    int minIndex = i - 1;
+                    int maxIndex = i;
+                    int rotationTargetIndex = maxIndex + SplineRotationLookAhead;
+                    rotationTargetIndex = Mathf.Min(rotationTargetIndex, lengthOfArray - 1);
+                    _rotationTarget = _smoothSplinePoints[rotationTargetIndex];
+                    // Find the local t value between the two points
+                    float segmentT = (_splineT - _normalizedArcLengths[minIndex]) / (_normalizedArcLengths[maxIndex] - _normalizedArcLengths[minIndex]);
 
-            int rotationTargetIndex = maxIndex + SplineRotationLookAhead;
-            rotationTargetIndex = Mathf.Min(rotationTargetIndex, lengthOfArray - 1);
-            _rotationTarget = _smoothSplinePoints[rotationTargetIndex];
-            Vector3 floorPos = _smoothSplinePoints[minIndex];
-            Vector3 ceilPos = _smoothSplinePoints[maxIndex];
-            if (maxIndex == minIndex)
-            {
-                _splineTSpeedFactor = 1;
+                    // Interpolate the position
+                    Vector3 floorPos = _smoothSplinePoints[minIndex];
+                    Vector3 ceilPos = _smoothSplinePoints[maxIndex];
+                    return Vector3.Lerp(floorPos, ceilPos, segmentT);
+                }
             }
-            else
-            {
-                _splineTSpeedFactor = _uniformDistanceForPerSegment/(ceilPos - floorPos).magnitude;
-            }
-            float innerT = currentIndex - (float)minIndex;
-            return Vector3.Lerp(floorPos, ceilPos, innerT);
+            _rotationTarget = _smoothSplinePoints[^1];
+            return _smoothSplinePoints[lengthOfArray - 1]; 
+            
+            // int lengthOfArray = _smoothSplinePoints.Length;
+            //
+            // float currentIndex = lengthOfArray * _splineT;
+            // int minIndex = Mathf.Max(Mathf.FloorToInt(currentIndex), 0);
+            // int maxIndex = minIndex+1;
+            // if (minIndex >= lengthOfArray || maxIndex >= lengthOfArray)
+            // {
+            //     return _smoothSplinePoints[lengthOfArray-1];
+            // }
+            //
+            // int rotationTargetIndex = maxIndex + SplineRotationLookAhead;
+            // rotationTargetIndex = Mathf.Min(rotationTargetIndex, lengthOfArray - 1);
+            // _rotationTarget = _smoothSplinePoints[rotationTargetIndex];
+            // Vector3 floorPos = _smoothSplinePoints[minIndex];
+            // Vector3 ceilPos = _smoothSplinePoints[maxIndex];
+            //
+            // Debug.LogError($"Spline T Speed Factor: {_splineTSpeedFactor}");
+            // float innerT = currentIndex - (float)minIndex;
+            //
+            // Vector3 targetPosition = Vector3.Lerp(floorPos, ceilPos, innerT);
+            // Vector3 diff = (targetPosition - transform.position);
+            // if (maxIndex != minIndex)
+            // {
+            //     _splineTSpeedFactor = _uniformDistanceForPerSegment / diff.magnitude;
+            // }
+            // else
+            // {
+            //     _splineTSpeedFactor = 1;
+            // }
+            // return Vector3.Lerp(floorPos, ceilPos, innerT);
         }
         private void SetNextWaypoint()
         {

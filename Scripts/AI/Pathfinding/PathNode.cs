@@ -11,7 +11,7 @@ namespace Kuantech.AI.Pathfinding
         public float GCost = float.MaxValue;
         public float HCost;
         public float FCost => GCost + HCost;
-        public float TraverseCost = 0f;
+        [SerializeField] private float TraverseCost = 0f;
 
         [NonSerialized] public PathNodeComponent ParentNodeComponent;
         [NonSerialized] public Vector3 Position;
@@ -49,6 +49,17 @@ namespace Kuantech.AI.Pathfinding
                 ConnectedNodes = new List<PathNode>();
             }
             ConnectedNodes.Add(pathNode);
+        }
+
+        public float GetTraverseCost()
+        {
+            float traverseCost = TraverseCost;
+            if (ParentNodeComponent != null)
+            {
+                traverseCost += ParentNodeComponent.GetTraverseCost();
+            }
+
+            return traverseCost;
         }
     }
 }

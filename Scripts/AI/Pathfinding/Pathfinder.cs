@@ -50,7 +50,6 @@ namespace Kuantech.AI.Pathfinding
                 var connectedNodes = currentNode.GetConnectedNodes();
                 if (connectedNodes == null)
                 {
-                    Debug.LogError($"Null at {currentNode.ParentNodeComponent.name}");
                     continue;
                 }
                 foreach (PathNode neighbor in currentNode.GetConnectedNodes())
@@ -61,7 +60,7 @@ namespace Kuantech.AI.Pathfinding
                         continue; // Ignore already evaluated nodes
                     }
 
-                    float newGCost = currentNode.GCost + CalculateHeuristicCost(currentNode, neighbor) + neighbor.TraverseCost;
+                    float newGCost = currentNode.GCost + CalculateHeuristicCost(currentNode, neighbor) + neighbor.GetTraverseCost();
                     if (newGCost < neighbor.GCost || !openList.Contains(neighbor))
                     {
                         neighbor.GCost = newGCost;
@@ -117,7 +116,7 @@ namespace Kuantech.AI.Pathfinding
                 path.Add(currentNode);
                 currentNode = currentNode.ParentNode;
             }
-
+            path.Add(startNode);
             path.Reverse(); // Reverse the list to get the path from start to end
             return path;
         }
