@@ -79,10 +79,6 @@ namespace Kuantech.Utils
 
         public void SetWaypoints(List<Waypoint> waypoints)
         {
-            if (waypoints.Count == 1)
-            {
-                Debug.LogError("asdasd");
-            }
             CurrentWaypoint = waypoints[0];
             WaypointsQueue = new Queue<Waypoint>();
             WaypointsList = waypoints;
