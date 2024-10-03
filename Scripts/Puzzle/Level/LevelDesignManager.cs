@@ -64,13 +64,6 @@ namespace Kuantech.Puzzle
             }
 
             return null;
-            // if (!levelDesignData.CreateFromSheetData(context._sheetData, levelIndex))
-            // {
-            //     Debug.LogError($"Failed to read level design data for level:{levelIndex}");
-            //     return null;
-            // }
-            // Debug.LogError($"Got level design from sheet for level:{levelIndex}");
-            // return levelDesignData;
         }
 
         private LevelDesignAsset GetLevelDesignAsset(int levelIndex)
