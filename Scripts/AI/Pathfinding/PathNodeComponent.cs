@@ -63,6 +63,10 @@ namespace Kuantech.AI.Pathfinding
         {
             return 0;
         }
+        public virtual bool IsPassable()
+        {
+            return true;
+        }
         
         public void ConnectToNode(PathNode node)
         {
@@ -87,6 +91,10 @@ namespace Kuantech.AI.Pathfinding
         }
         public bool IsConnectedToNode(PathNode node)
         {
+            if (PathNode == null || PathNode.ConnectedNodes == null)
+            {
+                Debug.LogError($"Check {name}");
+            }
             return PathNode.ConnectedNodes.Contains(node);
         }
 

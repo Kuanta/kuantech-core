@@ -155,11 +155,6 @@ namespace Kuantech.Utils
             {
                 _useSpline = false;
             }
-
-            if (UseSpline && !_useSpline)
-            {
-                Debug.LogError("FAILURE");
-            }
             _targetPosition = GetTargetPosition();
         }
 

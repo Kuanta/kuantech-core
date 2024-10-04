@@ -22,16 +22,17 @@ namespace Kuantech.AI.Pathfinding
             WaypointFollower.OnReachedFinalTarget += OnReachedTarget;
         }
         
-        public void GoToNode(PathNode node, PathfinderNodeTree tree)
+        public bool GoToNode(PathNode node, PathfinderNodeTree tree)
         {
             Path shortestPath = tree.FindPath(CurrentNode, node);
             if (shortestPath.PathNodes.IsNullOrEmpty())
             {
                 Debug.LogError($"No Path to {node.Name}");
-                return;
+                return false;
             }
             SetPath(shortestPath.PathNodes.ToArray());
             FollowPath();
+            return true;
         }
         
         public void SetPath(PathNode[] nodes)

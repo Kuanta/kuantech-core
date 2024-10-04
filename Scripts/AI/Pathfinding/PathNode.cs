@@ -11,6 +11,7 @@ namespace Kuantech.AI.Pathfinding
         public float GCost = float.MaxValue;
         public float HCost;
         public float FCost => GCost + HCost;
+        public bool Passable = true;
         [SerializeField] private float TraverseCost = 0f;
 
         [NonSerialized] public PathNodeComponent ParentNodeComponent;
@@ -51,6 +52,14 @@ namespace Kuantech.AI.Pathfinding
             ConnectedNodes.Add(pathNode);
         }
 
+        public bool IsPassable()
+        {
+            if (ParentNodeComponent != null)
+            {
+                return Passable && ParentNodeComponent.IsPassable();
+            }
+            return Passable;
+        }
         public float GetTraverseCost()
         {
             float traverseCost = TraverseCost;
