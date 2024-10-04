@@ -13,7 +13,7 @@ namespace Kuantech.AI.Pathfinding
     /// </summary>
     public class Pathfinder
     {
-        public Path GetShortestPath(PathNode startNode, PathNode endNode)
+        public static Path GetShortestPath(PathNode startNode, PathNode endNode)
         {
             List<PathNode> nodes = new List<PathNode>();
             List<PathNode> openList = new List<PathNode>();
@@ -26,10 +26,7 @@ namespace Kuantech.AI.Pathfinding
             while (openList.Count > 0)
             {
                 PathNode currentNode = GetLowestFCostNode(openList);
-                if (currentNode == null)
-                {
-                    Debug.LogError("What??");
-                }
+              
                 if (currentNode == endNode)
                 {
                     // Path found, return it
@@ -82,16 +79,16 @@ namespace Kuantech.AI.Pathfinding
             };
         }
 
-        public float CalculateHeuristicCost(PathNode node, PathNode endNode)
+        public static float CalculateHeuristicCost(PathNode node, PathNode endNode)
         {
             return GetDistance(node, endNode);
         }
-        private float GetDistance(PathNode nodeA, PathNode nodeB)
+        private static float GetDistance(PathNode nodeA, PathNode nodeB)
         {
             // Simple Euclidean distance
             return Vector3.Distance(nodeA.GetPosition(), nodeB.GetPosition());
         }
-        public PathNode GetLowestFCostNode(List<PathNode> openList)
+        public static PathNode GetLowestFCostNode(List<PathNode> openList)
         {
             PathNode lowestFCostNode = openList[0];
             for (int i = 1; i < openList.Count; i++)
@@ -106,7 +103,7 @@ namespace Kuantech.AI.Pathfinding
         }
         
         // Function to retrace the path from end to start node
-        private List<PathNode> RetracePath(PathNode startNode, PathNode endNode)
+        private static List<PathNode> RetracePath(PathNode startNode, PathNode endNode)
         {
             List<PathNode> path = new List<PathNode>();
             PathNode currentNode = endNode;

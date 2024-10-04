@@ -7,26 +7,18 @@ namespace Kuantech.AI.Pathfinding
 {
     public class PathfinderNodeTree : MonoBehaviour
     {
-        public Pathfinder Pathfinder;
         public List<PathNode> Nodes;
         public List<PathNodeComponent> NodeComponents;
    
         public void Initialize()
         {
-            //PathNodeComponent[] nodeComponents = GetComponentsInChildren<PathNodeComponent>();
-            Pathfinder = new Pathfinder();
             foreach (var nodeComp in NodeComponents)
             {
                 nodeComp.Initialize();
                 Nodes.Add(nodeComp.PathNode);
             }
         }
-        
-        public Path FindPath(PathNode startNode, PathNode endNode)
-        {
-            return Pathfinder.GetShortestPath(startNode, endNode);
-        }
-        
+
         /// <summary>
         /// Returns the closest node
         /// </summary>

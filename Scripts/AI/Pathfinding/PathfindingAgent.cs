@@ -8,7 +8,6 @@ namespace Kuantech.AI.Pathfinding
     public class PathfindingAgent : MonoBehaviour
     {
         [SerializeField] private WaypointFollower WaypointFollower;
-        [SerializeField] private float WaypointFollowerSpeed;
         public PathNode CurrentNode;
         
         //Events
@@ -22,9 +21,9 @@ namespace Kuantech.AI.Pathfinding
             WaypointFollower.OnReachedFinalTarget += OnReachedTarget;
         }
         
-        public bool GoToNode(PathNode node, PathfinderNodeTree tree)
+        public bool GoToNode(PathNode node)
         {
-            Path shortestPath = tree.FindPath(CurrentNode, node);
+            Path shortestPath = Pathfinder.GetShortestPath(CurrentNode, node);
             if (shortestPath.PathNodes.IsNullOrEmpty())
             {
                 Debug.LogError($"No Path to {node.Name}");
