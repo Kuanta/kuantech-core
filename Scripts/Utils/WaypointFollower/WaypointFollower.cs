@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using DG.Tweening;
 using Kuantech.Utils.Math;
 using UnityEngine;
-using UnityEngine.Rendering.UI;
+using UnityEngine.Serialization;
 
 namespace Kuantech.Utils
 {
@@ -21,11 +21,10 @@ namespace Kuantech.Utils
             public Action<WaypointFollower> FollowerReachedWaypoint;
         }
 
-        [Header("Properties")]
+        [Header("Properties")] 
+        public float Speed;
         public float RotationLerpFactor = 10.0f;
-        public float Speed = 10;
         public float Acceleration = 5.0f;
-        public bool LockForwardMovement = false;
         public float TargetReachThresh = 0.1f;
         public float UpdateRotationThresh = 0.1f;
         public float MaxTurnAngle = 30.0f;
@@ -36,6 +35,8 @@ namespace Kuantech.Utils
         public bool UseSpline = false;
         public int SplineDegree = 5;
         public int SplineRotationLookAhead = 1;
+        public float SplineSpeed = 5;
+
         
         [NonSerialized] public bool Moving;
         [NonSerialized] public List<Waypoint> WaypointsList;
@@ -106,7 +107,7 @@ namespace Kuantech.Utils
                 points.Add(wp.Position);
                 if (points.Count <= 1) continue;
             }
-            _splineTSpeed = Speed;
+            _splineTSpeed = SplineSpeed;
             //_smoothSplinePoints = CatmullRomSpline.ConstructSpline(points, SegmentPerSpline).ToArray();
             _smoothSplinePoints = BSpline.GenerateNURBSPath(points, SplineDegree, null, points.Count*SegmentPerSpline).ToArray();
             ComputeArcLengths();
@@ -229,32 +230,15 @@ namespace Kuantech.Utils
             }
             float deltaTime = Time.deltaTime;
             Vector3 direction = error.normalized;
-            //float turnAngle = Vector3.Angle(transform.forward, direction);
-            //float turnSpeedFactor = Mathf.Lerp(1f, MinTurnSpeedFactor, turnAngle / 90f);  // 0° = full speed, 90° or more = 50% speed
-            float adjustedSpeed = Speed ;
-
-            if (_currentSpeed < adjustedSpeed)
-            {
-                _currentSpeed += Acceleration * deltaTime;
-            }else if (_currentSpeed > adjustedSpeed)
-            {
-                _currentSpeed -= Acceleration * deltaTime;
-            }
-            _currentSpeed  = Mathf.Clamp( _currentSpeed,  0, adjustedSpeed);
-
             Vector3 moveDirection = direction;
             // if (LockForwardMovement)
             // {
             //     moveDirection = transform.forward;
             // }
-            Vector3 positionUpdate =  moveDirection * deltaTime * _currentSpeed;
+            Vector3 positionUpdate =  moveDirection * deltaTime * Speed;
 
             transform.rotation = Quaternion.LookRotation(direction);
-            // if (errorMag >= UpdateRotationThresh)
-            // {
-            //     transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(direction),
-            //         deltaTime * RotationLerpFactor);
-            // }
+   
             if(CurrentWaypoint.IsLocal)
             {
                 transform.localPosition += positionUpdate;

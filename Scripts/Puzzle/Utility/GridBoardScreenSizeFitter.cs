@@ -17,7 +17,7 @@ namespace Kuantech.Puzzle.Utils
         {
             if(!FitOnUpdate) return;
             AdjustAnchorPositions();
-            FitCameraToAnchors();
+            base.Update();
         }
 
         private void AdjustAnchorPositions()

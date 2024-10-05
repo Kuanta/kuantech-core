@@ -40,11 +40,6 @@ namespace Kuantech.Puzzle
             LevelUI = PuzzleUIManager.GetLevelUI(); 
             if(LevelUI != null) LevelUI.OnLevelSetup(this);
             ResetUI();
-            
-            if(ScreenSizeAdjuster != null)
-            {
-                ScreenSizeAdjuster.FitCameraToAnchors();
-            }
             GetStateModel()?.SetCurrentLevel(this);
             base.SetupLevel();
         }
