@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using DG.Tweening;
 using Kuantech.Utils.Math;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace Kuantech.Utils
 {
@@ -37,6 +36,8 @@ namespace Kuantech.Utils
         public int SplineRotationLookAhead = 1;
         public float SplineSpeed = 5;
 
+        [Header("Offset")] 
+        public Transform AnchorPoint;
         
         [NonSerialized] public bool Moving;
         [NonSerialized] public List<Waypoint> WaypointsList;
@@ -216,7 +217,7 @@ namespace Kuantech.Utils
         {
             if(CurrentWaypoint == null && !_useSpline) return;
       
-            Vector3 error = _targetPosition - transform.position;
+            Vector3 error = _targetPosition - GetCurrentPosition();
             float errorMag = error.sqrMagnitude;
             if(errorMag <= TargetReachThresh*TargetReachThresh)
             {
@@ -237,21 +238,15 @@ namespace Kuantech.Utils
             // }
             Vector3 positionUpdate =  moveDirection * deltaTime * Speed;
 
-            transform.rotation = Quaternion.LookRotation(direction);
-   
-            if(CurrentWaypoint.IsLocal)
-            {
-                transform.localPosition += positionUpdate;
-            }else{
-                transform.position += positionUpdate;
-            }
+            SetRotation(Quaternion.LookRotation(direction));
+            SetPosition(GetCurrentPosition() + positionUpdate);
         }
 
         private float _currentSplineTSpeed = 0f;
         private void UpdatePositionForSpline()
         {
-            transform.position = GetSplineTargetPosition();
-            Vector3 direction = _rotationTarget - transform.position;
+            SetPosition(GetSplineTargetPosition());
+            Vector3 direction = _rotationTarget - GetCurrentPosition();
             float turnAngle = Vector3.Angle(transform.forward, direction);
             float turnSpeedFactor = Mathf.Lerp(1f, MinTurnSpeedFactor, Mathf.Clamp(turnAngle / MaxTurnAngle, MinTurnSpeedFactor, 1));  // 0° = full speed, 90° or more = 50% speed
             UpdateRotation(_rotationTarget - transform.position);
@@ -286,8 +281,8 @@ namespace Kuantech.Utils
             // Debug.LogError($"Direction: {moveDirection}");
             // Vector3 positionUpdate =  moveDirection * deltaTime * _currentSpeed;
 
-            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(targetDirection),
-                Time.deltaTime * RotationLerpFactor);
+            SetRotation(Quaternion.Slerp(GetCurrentRotation(), Quaternion.LookRotation(targetDirection),
+                Time.deltaTime * RotationLerpFactor));
         }
         private Vector3 _targetPosition;
         private Vector3 GetTargetPosition()
@@ -325,58 +320,10 @@ namespace Kuantech.Utils
             }
             _rotationTarget = _smoothSplinePoints[^1];
             return _smoothSplinePoints[lengthOfArray - 1]; 
-            
-            // int lengthOfArray = _smoothSplinePoints.Length;
-            //
-            // float currentIndex = lengthOfArray * _splineT;
-            // int minIndex = Mathf.Max(Mathf.FloorToInt(currentIndex), 0);
-            // int maxIndex = minIndex+1;
-            // if (minIndex >= lengthOfArray || maxIndex >= lengthOfArray)
-            // {
-            //     return _smoothSplinePoints[lengthOfArray-1];
-            // }
-            //
-            // int rotationTargetIndex = maxIndex + SplineRotationLookAhead;
-            // rotationTargetIndex = Mathf.Min(rotationTargetIndex, lengthOfArray - 1);
-            // _rotationTarget = _smoothSplinePoints[rotationTargetIndex];
-            // Vector3 floorPos = _smoothSplinePoints[minIndex];
-            // Vector3 ceilPos = _smoothSplinePoints[maxIndex];
-            //
-            // Debug.LogError($"Spline T Speed Factor: {_splineTSpeedFactor}");
-            // float innerT = currentIndex - (float)minIndex;
-            //
-            // Vector3 targetPosition = Vector3.Lerp(floorPos, ceilPos, innerT);
-            // Vector3 diff = (targetPosition - transform.position);
-            // if (maxIndex != minIndex)
-            // {
-            //     _splineTSpeedFactor = _uniformDistanceForPerSegment / diff.magnitude;
-            // }
-            // else
-            // {
-            //     _splineTSpeedFactor = 1;
-            // }
-            // return Vector3.Lerp(floorPos, ceilPos, innerT);
         }
         private void SetNextWaypoint()
         {
             _targetPosition = GetTargetPosition();
-            // if (_useSpline)
-            // {
-            //     if (_currentSplinePointIndex >= _smoothSplinePoints.Length)
-            //     {
-            //         //Finished
-            //         var lastWp = WaypointsList[^1];
-            //         if(lastWp != null)
-            //         {
-            //             SnapToPosition(lastWp.Position, lastWp.Rotation);
-            //         } else{
-            //             OnReachedFinalTarget?.Invoke();
-            //         }
-            //         Moving = false;
-            //     }
-            //     return;
-            // }
-            //
             WaypointsQueue ??= new Queue<Waypoint>();
             if(WaypointsQueue.Count == 0)
             {
@@ -391,9 +338,37 @@ namespace Kuantech.Utils
             CurrentWaypoint = WaypointsQueue.Dequeue();
         }
 
+        private Vector3 GetCurrentPosition()
+        {
+            if (AnchorPoint != null)
+            {
+                return transform.position + (transform.forward * AnchorPoint.transform.localPosition.z) ;
+            }
+            return transform.position;
+        }
+
+        private Quaternion GetCurrentRotation()
+        {
+            return transform.rotation;
+        }
+
+        public void SetPosition(Vector3 position)
+        {
+            if (AnchorPoint != null)
+            {
+                position = position - (transform.forward * AnchorPoint.transform.localPosition.z) ;
+            }
+            transform.position = position;
+        }
+
+        public void SetRotation(Quaternion rotation)
+        {
+            transform.rotation = rotation;
+        }
+        
         private void SnapToPosition(Vector3 position, Quaternion rotation)
         {
-            _moveTween = transform.DOMove(position, 0.05f).SetEase(Ease.InOutQuad).OnComplete(()=>{
+            _moveTween = DOTween.To(GetCurrentPosition, SetPosition, position, 0.05f).OnComplete(()=>{
                 OnReachedFinalTarget?.Invoke();
             });
             _rotateTween = transform.DORotate(rotation.eulerAngles, 0.05f).SetEase(Ease.InOutQuad);
