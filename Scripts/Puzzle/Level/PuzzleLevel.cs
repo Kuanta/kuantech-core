@@ -30,7 +30,11 @@ namespace Kuantech.Puzzle
 
         //State
         [NonSerialized] public PuzzleLevelState CurrentLevelState;
-        
+
+        public override void OnLevelSet()
+        {
+            ClearLevelState();
+        }
         public override void SetupLevel()
         {
             //Upmost importance
@@ -179,6 +183,7 @@ namespace Kuantech.Puzzle
         {
             PuzzleStateModel stateModel = GetStateModel();
             if (stateModel == null) return;
+            stateModel.LevelState = null;
             CurrentLevelState = null;
             stateModel.Dirtied = true;
         }

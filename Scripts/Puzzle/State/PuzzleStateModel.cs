@@ -6,7 +6,7 @@ namespace Kuantech.Puzzle
     public class PuzzleStateModel : StateModule
     {
         [NonSerialized] public PuzzleLevel CurrentLevel;
-        [NonSerialized] protected PuzzleLevelState LevelState;
+        [NonSerialized] public PuzzleLevelState LevelState;
 
         public void SetCurrentLevel(PuzzleLevel currentLevel)
         {

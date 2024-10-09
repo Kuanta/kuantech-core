@@ -104,6 +104,7 @@ namespace Kuantech.Core
             int powerLevel = levelIndex;
             CurrentLevel.PowerLevel = MaxPowerLevel > 0 ? Mathf.Min(MaxPowerLevel, powerLevel) : powerLevel;
             LevelSetEvent?.Invoke(this, CurrentLevelIndex);
+            CurrentLevel.OnLevelSet();
             CurrentLevel.SetupLevel(); //todo(optimization): This may be unefficient
             UpdateLevelIndex();
         }

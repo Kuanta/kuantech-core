@@ -57,6 +57,12 @@ namespace Kuantech.Core
             //Inform level manager
             levelman.ChangeCurrentState(newState);
         }
+
+        public virtual void OnLevelSet()
+        {
+            
+        }
+        
         public virtual void SetupLevel()
         {
             ChangeLevelState(LevelState.Waiting);
