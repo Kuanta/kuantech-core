@@ -17,16 +17,20 @@ namespace Kuantech.Puzzle.UI
         }
         
         public UICanvas ParentCanvas;
-        [SerializeField] private RectTransform RectTransform;
+        [SerializeField] private RectTransform ParentRectTransform;
 
         [Header("Swipe Motion")] 
         public float SwipeMotionSpeed = 10;
         public float ReachedThresh = 1;
 
+        [Header("Animator")] 
+        [SerializeField] private Animator Animator;
+        
         [NonSerialized] public Motions CurrentMotion;
         
         private Vector2 _startSwipePosition;
         private Vector2 _endSwipePosition;
+        private static readonly int TapHash = Animator.StringToHash("Tap");
 
         private void Update()
         {
@@ -40,6 +44,14 @@ namespace Kuantech.Puzzle.UI
 
      
         #region Motions
+
+        public void DoTapMotion(Vector3 position)
+        {
+            Vector2 screenPos = ParentCanvas.GlobalToScreenPosition(position, ParentCanvas.GetGameCamera());
+            ParentRectTransform.anchoredPosition = ParentCanvas.ScreenPositionToAnchoredPosition(ParentRectTransform, screenPos);
+            CurrentMotion = Motions.Tap;
+            Animator.SetBool(TapHash, true);
+        }
         
         /// <summary>
         /// Moves the hand from a world object to a ui object
@@ -50,8 +62,8 @@ namespace Kuantech.Puzzle.UI
         {
             Vector2 fromPos = ParentCanvas.GlobalToScreenPosition(from, ParentCanvas.GetGameCamera());
             Vector2 toPos = ParentCanvas.GlobalToScreenPosition(to, ParentCanvas.GetCanvasCamera());
-            StartSwipe(ParentCanvas.ScreenPositionToAnchoredPosition(RectTransform, fromPos), 
-                ParentCanvas.ScreenPositionToAnchoredPosition(RectTransform, toPos));
+            StartSwipe(ParentCanvas.ScreenPositionToAnchoredPosition(ParentRectTransform, fromPos), 
+                ParentCanvas.ScreenPositionToAnchoredPosition(ParentRectTransform, toPos));
         }
         
         /// <summary>
@@ -73,12 +85,12 @@ namespace Kuantech.Puzzle.UI
         {
             Vector2 fromPos = ParentCanvas.GlobalToScreenPosition(from, ParentCanvas.GetGameCamera());
             Vector2 toPos = ParentCanvas.GlobalToScreenPosition(to, ParentCanvas.GetGameCamera());
-            StartSwipe(ParentCanvas.ScreenPositionToAnchoredPosition(RectTransform, fromPos), 
-                ParentCanvas.ScreenPositionToAnchoredPosition(RectTransform, toPos));
+            StartSwipe(ParentCanvas.ScreenPositionToAnchoredPosition(ParentRectTransform, fromPos), 
+                ParentCanvas.ScreenPositionToAnchoredPosition(ParentRectTransform, toPos));
         }
         private void StartSwipe(Vector2 startAnchoredPosition, Vector2 endAnchoredPosition)
         {
-            RectTransform.anchoredPosition = startAnchoredPosition;
+            ParentRectTransform.anchoredPosition = startAnchoredPosition;
             _startSwipePosition = startAnchoredPosition;
             _endSwipePosition = endAnchoredPosition;
             CurrentMotion = Motions.Swipe;
@@ -86,24 +98,25 @@ namespace Kuantech.Puzzle.UI
 
         private void SwipeUpdate()
         {
-            Vector2 error = _endSwipePosition - RectTransform.anchoredPosition;
+            Vector2 error = _endSwipePosition - ParentRectTransform.anchoredPosition;
             float errorMag = error.magnitude;
             errorMag = Mathf.Max(errorMag, 0.001f);
             //error /= errorMag;
             //error.Normalize();
             if (errorMag < ReachedThresh)
             {
-                RectTransform.anchoredPosition = _startSwipePosition;
+                ParentRectTransform.anchoredPosition = _startSwipePosition;
             }
             else
             {
-                RectTransform.anchoredPosition += error * Time.deltaTime * SwipeMotionSpeed;
+                ParentRectTransform.anchoredPosition += error * Time.deltaTime * SwipeMotionSpeed;
 
             }
         }
         public void StopMotions()
         {
             CurrentMotion = Motions.None;
+            Animator.SetBool(TapHash, false);
         }
         #endregion
     }
