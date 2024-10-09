@@ -1,21 +1,27 @@
 ﻿using System;
-using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Kuantech.Core;
 using Kuantech.Data;
 using Newtonsoft.Json.Linq;
 using Sirenix.OdinInspector;
+using UnityEngine;
+
+#if UNITY_EDITOR
+    using UnityEditor;
+#endif
 
 namespace Kuantech.Puzzle
 {
     public class LevelDesignManager : SubManager
     {
+        [Header("Remote Data")]
         public SheetReader SheetReader;
         public string LevelDesignSheetRange;
         public string ClassName;
         private JObject _sheetData;
 
-        public List<LevelDesignAsset> DesignAssets;
+        public LevelDesignDataCollection LevelDesignsCollection;
+        //public List<LevelDesignAsset> DesignAssets;
 
         public bool UseSheetReader = true;
         [NonSerialized] public bool SheetRead;
@@ -30,6 +36,10 @@ namespace Kuantech.Puzzle
             {
                 SheetRead = true;
                 _sheetData = readData;
+                if (LevelDesignsCollection != null)
+                {
+                    LevelDesignsCollection.UpdateFromSheetData(_sheetData);
+                }
             });
             await SheetReader.GetSheetData(LevelDesignSheetRange);
         }
@@ -43,34 +53,23 @@ namespace Kuantech.Puzzle
         {
             var context = LevelDesignManager.GetContext<LevelDesignManager>();
             if (context == null) return null;
+
+            if (context.LevelDesignsCollection != null)
+            {
+                //Try to get from assets array
+                return context.LevelDesignsCollection.GetLevelDesignData(levelIndex);
+            }
+            
             var classType = Type.GetType(context.ClassName);
             if (classType == null || !typeof(LevelDesignData).IsAssignableFrom(classType)) return null;
             LevelDesignData levelDesignData = (LevelDesignData)Activator.CreateInstance(classType);
-
-            if(context._sheetData != null && context.SheetRead)
-            {
-                if (levelDesignData.CreateFromSheetData(context._sheetData, levelIndex))
-                {
-                    return levelDesignData;
-                }
-            }
-            
-            //Try to get from assets array
-            LevelDesignAsset designAsset = context.GetLevelDesignAsset(levelIndex);
-            if (designAsset != null)
-            {
-                levelDesignData.CreateFromDesignAsset(designAsset);
-                return levelDesignData;
-            }
-
-            return null;
+            levelDesignData.CreateFromSheetData(context._sheetData, levelIndex);
+            return levelDesignData;
         }
 
-        private LevelDesignAsset GetLevelDesignAsset(int levelIndex)
+        private LevelDesignData GetLevelDesignAsset(int levelIndex)
         {
-            if (DesignAssets == null) return null;
-            if (levelIndex >= DesignAssets.Count) return DesignAssets[DesignAssets.Count - 1];
-            return DesignAssets[levelIndex];
+            return LevelDesignsCollection.GetLevelDesignData(levelIndex);
         }
         
         [Button("Update Design Assets")]
@@ -82,15 +81,12 @@ namespace Kuantech.Puzzle
             });
             await SheetReader.GetSheetData(LevelDesignSheetRange);
         }
-
+        
         private void UpdateForEditor(JObject sheetData)
         {
 #if UNITY_EDITOR
             if (sheetData == null) return;
-            for (int i = 0; i < DesignAssets.Count; ++i)
-            {
-                DesignAssets[i].UpdateFromSheetData((JArray)sheetData["values"], i);
-            }
+            LevelDesignsCollection.UpdateFromSheetData(sheetData);
 #endif
         }
     }
