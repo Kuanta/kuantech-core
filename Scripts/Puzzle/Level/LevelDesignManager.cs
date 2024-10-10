@@ -43,6 +43,11 @@ namespace Kuantech.Puzzle
             });
             await SheetReader.GetSheetData(LevelDesignSheetRange);
         }
+
+        public async void UpdateDataFromRemote()
+        {
+            await SheetReader.GetSheetData(LevelDesignSheetRange);
+        }
         
         /// <summary>
         /// Gets level design data
