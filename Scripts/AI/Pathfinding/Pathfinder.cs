@@ -51,7 +51,7 @@ namespace Kuantech.AI.Pathfinding
                 }
                 foreach (PathNode neighbor in currentNode.GetConnectedNodes())
                 {
-                    if(neighbor == null) continue;
+                    if(neighbor == null || !neighbor.IsPassable()) continue;
                     if (closedList.Contains(neighbor))
                     {
                         continue; // Ignore already evaluated nodes
@@ -110,6 +110,10 @@ namespace Kuantech.AI.Pathfinding
 
             while (currentNode != startNode)
             {
+                if (!currentNode.IsPassable())
+                {
+                    Debug.LogError("Passed a non passable node");
+                }
                 path.Add(currentNode);
                 currentNode = currentNode.ParentNode;
             }
