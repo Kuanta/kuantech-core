@@ -87,7 +87,7 @@ namespace Kuantech.Core
         /// </summary>
         /// <param name="levelIndex"></param>
         [Button("SetLevel")]
-        public void SetLevel(int levelIndex)
+        public void SetLevel(int levelIndex, bool clearLevelState = false)
         {
             levelIndex = Mathf.Max(levelIndex, 0);
             CurrentLevelIndex = levelIndex;
@@ -104,7 +104,7 @@ namespace Kuantech.Core
             int powerLevel = levelIndex;
             CurrentLevel.PowerLevel = MaxPowerLevel > 0 ? Mathf.Min(MaxPowerLevel, powerLevel) : powerLevel;
             LevelSetEvent?.Invoke(this, CurrentLevelIndex);
-            CurrentLevel.OnLevelSet();
+            if(clearLevelState) CurrentLevel.OnLevelSet();
             CurrentLevel.SetupLevel(); //todo(optimization): This may be unefficient
             UpdateLevelIndex();
         }
@@ -112,7 +112,7 @@ namespace Kuantech.Core
         [ConsoleMethod("setLevel", "Sets the level")]
         public static void SetLevelCC(int levelIndex)
         {
-            GetContext<LevelManager>().SetLevel(levelIndex);
+            GetContext<LevelManager>().SetLevel(levelIndex, true);
         }
 
         [ConsoleMethod("resetLevel", "Resets the level")]
