@@ -1,3 +1,4 @@
+using System.Collections;
 using Kuantech.Utils;
 using UnityEngine;
 
@@ -12,6 +13,18 @@ namespace Kuantech.Core.Utils
         public float FollowLerpFactor = 10f;
         private Vector3 _targetPosition;
         public GameObject Visual;
+
+        public float TapDistanceThresh = 10;
+        public float TapTime = 0.1f;
+        private float _tapStartTime;
+        private Vector3 _tapStartPosition;
+        
+        [Header("Animations")]
+        public Animator Animator;
+
+        public float TapAnimationTime = 1;
+        private static readonly int Tap = Animator.StringToHash("Tap");
+
         private void Enable()
         {
             transform.position = GetCursorPosition();
@@ -23,15 +36,43 @@ namespace Kuantech.Core.Utils
             transform.position = Vector3.Lerp(transform.position, _targetPosition, Time.deltaTime * FollowLerpFactor);
             if(Input.GetMouseButtonDown(0))
             {
-                if (!Helpers.IsCursorOnUI()) Visual.SetActive(true);
+                if (!Helpers.IsCursorOnUI())
+                {
+                    transform.position = _targetPosition;
+                    _tapStartPosition = transform.position;
+                    _tapStartTime = Time.time;
+                    if (Animator != null)
+                    {
+                        Animator.SetBool(Tap, false);
+                        Animator.Rebind();
+                    }
+                    Visual.SetActive(true);
+                }
                
             }
             else if(Input.GetMouseButtonUp(0))
             {
-                Visual.SetActive(false);
+                //Is this a tap?
+
+                if (Vector3.Distance(transform.position, _tapStartPosition) <= TapDistanceThresh &&
+                    (Time.time - _tapStartTime) <= TapTime)
+                {
+                    if(Animator != null) Animator.SetBool(Tap, true);
+                    StartCoroutine(TapAnimateEndRoutine());
+                }
+                else
+                {
+                    Visual.SetActive(false);
+                }
             }
         }
 
+        private IEnumerator TapAnimateEndRoutine()
+        {
+            yield return new WaitForSeconds(TapAnimationTime);
+            Visual.SetActive(false);
+        }
+        
         private Vector3 GetCursorPosition()
         {
             Vector3 mousePosition = Input.mousePosition;
