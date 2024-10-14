@@ -10,10 +10,16 @@ namespace Kuantech.Core.HyperCasual.UI
     {
         [SerializeField] private TMP_Text LevelIndexText;
         [SerializeField] private string LevelPrefix = "Level";
-
+        [SerializeField] private GameObject HardLevelIndicator;
         public void SetLevelIndex(int levelIndex)
         {
             LevelIndexText.text = $"{LevelPrefix} {(levelIndex).ToString()}";
+        }
+
+        public void SetHardLevel(bool isHardLevel)
+        {
+            if (HardLevelIndicator == null) return;
+            HardLevelIndicator.SetActive(isHardLevel);
         }
     }
 }

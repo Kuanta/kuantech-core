@@ -47,6 +47,11 @@ namespace Kuantech.Puzzle
             GetStateModel()?.SetCurrentLevel(this);
             base.SetupLevel();
         }
+
+        public virtual bool IsHardLevel()
+        {
+            return false;
+        }
         
         /// <summary>
         /// Finds the level design data. If succesfful, loads it to level

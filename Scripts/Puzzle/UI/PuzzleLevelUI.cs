@@ -13,8 +13,6 @@ namespace Kuantech.Puzzle.UI
     {
         [Header("Widgets")]
         [SerializeField] private LevelIndicator LevelIndicator;
-        // [SerializeField] private TMP_Text LevelIndexText;
-        // [SerializeField] private string LevelLabel = "Level";
 
         [Header("Buttons")] 
         [SerializeField] private ConfirmPanelButton RestartButton;
@@ -28,7 +26,8 @@ namespace Kuantech.Puzzle.UI
         public BoostersHUD BoostersHUD;
         public float CompletePanelShowDelay = 0f;
         public float FailedPanelShowDelay = 0f;
-
+        public HardLevelIntro HardLevelIntroPanel;
+        
         [Header("Tutorial")] 
         [SerializeField] public TutorialHand TutorialHand;
         [NonSerialized] public PuzzleLevel CurrentLevel;
@@ -70,6 +69,16 @@ namespace Kuantech.Puzzle.UI
             {
                 BoostersHUD.OnLevelSetup(level);
             }
+
+            if (level.IsHardLevel() && HardLevelIntroPanel != null)
+            {
+                HardLevelIntroPanel.gameObject.SetActive(true);
+                HardLevelIntroPanel.PlayAnimation();
+            }else if (HardLevelIntroPanel != null && !level.IsHardLevel())
+            {
+                HardLevelIntroPanel.gameObject.SetActive(false);
+            }
+            LevelIndicator.SetHardLevel(level.IsHardLevel());
         }
 
         private void OnLevelStateChange(LevelStateChangeData levelStateChangeData)
