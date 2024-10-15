@@ -13,19 +13,16 @@ namespace Kuantech.ArcadeIdle
         [SerializeField] private int RowCount;
         [SerializeField] protected Transform AnchorPoint;
 
-        public void StackObject(ResourceVisual visual, int index, bool flyToPosition = false)
+        public void StackObject(IResourcePositioner visual, int index, bool flyToPosition = false)
         {
             WorldPoint point = GetLocalPosition(index);
             Transform parent = AnchorPoint != null ? AnchorPoint : transform;
             point.Target = parent;
-
             if (flyToPosition)
             {
-                visual.FlyToTarget(point);
+                visual.GoToTarget(point);
             }else{
-                visual.transform.SetParent(parent);
-                visual.transform.localPosition = point.LocalPosition;
-                visual.transform.localRotation = point.LocalRotation;
+                visual.WarpToPoint(point);
             }
         }
 

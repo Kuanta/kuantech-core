@@ -9,7 +9,7 @@ using UnityEngine.Events;
 namespace Kuantech.ArcadeIdle
 {
     //todo: Implement Throwable Mover here
-    public class ResourceVisual : MonoBehaviour
+    public class ResourceVisual : MonoBehaviour, IResourcePositioner
     {
         [NonSerialized] public string ResourceId;
         public AnimationCurve SpeedCurve;
@@ -107,6 +107,18 @@ namespace Kuantech.ArcadeIdle
         {
             ReachedTargetHandler = null; //Clear subscribers
             GameManager.Instance.Pool.PoolObject(gameObject);
+        }
+
+        public void GoToTarget(WorldPoint targetPoint)
+        {
+            FlyToTarget(targetPoint);
+        }
+
+        public void WarpToPoint(WorldPoint targetPoint)
+        {
+            transform.SetParent(targetPoint.Target);
+            transform.localPosition = targetPoint.LocalPosition;
+            transform.localRotation = targetPoint.LocalRotation;
         }
     }
 }
