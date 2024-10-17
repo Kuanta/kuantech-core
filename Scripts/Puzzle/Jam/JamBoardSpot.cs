@@ -6,15 +6,37 @@ namespace Kuantech.Puzzle.Jam
     public class JamBoardSpot : MonoBehaviour
     {
         public JamBoard ParentBoard;
-        public JamBoardElement CurrentElement;
+        private JamBoardElement CurrentElement;
+        private JamBoardElement IncomingElement;
+
+        public JamBoardElement GetOccupyingElement()
+        {
+            return CurrentElement;
+        }
         
         public bool IsSpotOccupied()
         {
-            return CurrentElement != null;
+            return CurrentElement != null || IncomingElement != null;
         }
 
+        public void ReserveSpot(JamBoardElement incomingElement)
+        {
+            if (CurrentElement != null)
+            {
+                Debug.LogError("Trying to set incoming element while there is already an element");
+            }
+
+            IncomingElement = incomingElement;
+            IncomingElement.AssignedSpot = this;
+        }
         public void AssignElement(JamBoardElement element)
         {
+            if (IncomingElement != null && element != IncomingElement)
+            {
+                Debug.LogError("Big error");
+            }
+
+            IncomingElement = null;
             CurrentElement = element;
             CurrentElement.OnAssignedToSpot(this);
         }
@@ -23,6 +45,7 @@ namespace Kuantech.Puzzle.Jam
         {
             return new WorldPoint()
             {
+                Target = transform,
                 Position = transform.position,
                 Rotation = transform.rotation,
             };
