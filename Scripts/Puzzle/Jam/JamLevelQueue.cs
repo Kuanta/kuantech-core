@@ -34,6 +34,7 @@ namespace Kuantech.Puzzle.Jam
         {
             
             _queues = new Dictionary<int, Queue<TElementDataType>>();
+            if (PuzzleLevelElementStates == null) return;
             foreach (var pair in PuzzleLevelElementStates)
             {
                 int startingIndex = 0;

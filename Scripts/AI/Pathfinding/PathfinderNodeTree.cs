@@ -40,11 +40,15 @@ namespace Kuantech.AI.Pathfinding
 
             return closestNode;
         }
-        
+
+        public void DetectChildNodes()
+        {
+            NodeComponents = GetComponentsInChildren<PathNodeComponent>().ToList();
+        }
         [Button("Connect Nodes")]
         public void AutoConnectNodes()
         {
-            NodeComponents = GetComponentsInChildren<PathNodeComponent>().ToList();
+            DetectChildNodes();
             foreach (var nodeComp in NodeComponents)
             {
                 nodeComp.PathNode.ConnectedNodes = new List<PathNode>();
