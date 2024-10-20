@@ -27,7 +27,7 @@ namespace Kuantech.Core.FX
                 ParticleEffect.Emit(emitParams, EmitCount);
                 return;
             }
-            ParticleEffect.Play();
+            if(ParticleEffect !=null) ParticleEffect.Play();
         }
 
       

@@ -149,6 +149,10 @@ namespace Kuantech.Core.FX
             AudioLibrary audioLibrary = EffectsLibrary.GetAudioLibrary();
             if(audioLibrary == null) return 0;
             if (sound.AudioId.IsNullOrEmpty()) return 0;
+            if (audioLibrary._lastPlayedTimes == null)
+            {
+                audioLibrary._lastPlayedTimes = new Dictionary<string, SoundPlayInfo>();
+            }
             if(!audioLibrary._lastPlayedTimes.ContainsKey(sound.AudioId)) return 0;
             float elapsedTime = audioLibrary.GetElapsedTime(sound.AudioId);
             if(elapsedTime < sound.ComboCooldown && sound.ComboCooldown > 0)
