@@ -41,6 +41,12 @@ namespace Kuantech.Puzzle.Jam
             CurrentElement.OnAssignedToSpot(this);
         }
 
+        public void ClearSpot()
+        {
+            CurrentElement = null;
+            IncomingElement = null;
+        }
+        
         public WorldPoint GetWorldPoint()
         {
             return new WorldPoint()

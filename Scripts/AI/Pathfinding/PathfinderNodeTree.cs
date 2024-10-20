@@ -15,7 +15,7 @@ namespace Kuantech.AI.Pathfinding
             foreach (var nodeComp in NodeComponents)
             {
                 nodeComp.Initialize();
-                Nodes.Add(nodeComp.PathNode);
+                Nodes.Add(nodeComp.GetPathNode());
             }
         }
 
@@ -51,9 +51,9 @@ namespace Kuantech.AI.Pathfinding
             DetectChildNodes();
             foreach (var nodeComp in NodeComponents)
             {
-                nodeComp.PathNode.ConnectedNodes = new List<PathNode>();
+                nodeComp.GetPathNode().ConnectedNodes = new List<PathNode>();
                 nodeComp.ConnectedNodesGameObjects = new List<GameObject>();
-                nodeComp.PathNode.ParentNodeComponent = nodeComp;
+                nodeComp.GetPathNode().ParentNodeComponent = nodeComp;
                 
                 //Check must connect nodes
                 foreach (var mustConnect in nodeComp.MustConnectNodes)

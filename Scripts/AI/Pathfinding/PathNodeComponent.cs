@@ -5,7 +5,7 @@ namespace Kuantech.AI.Pathfinding
 {
     public class PathNodeComponent : MonoBehaviour
     {
-        public PathNode PathNode;
+        private PathNode PathNode = null;
         public float AutoConnectRange = 5.0f;
         public float ConnectAngleRange = 360.0f;
         public List<PathNodeComponent> MaskedNodes;
@@ -15,10 +15,7 @@ namespace Kuantech.AI.Pathfinding
         
         public void Initialize()
         {
-            PathNode ??= new PathNode();
-            PathNode.ParentNodeComponent = this;
-            PathNode.Position = transform.position;
-            PathNode.Rotation = transform.rotation;
+            CreatePathNode();
             if (ConnectedNodesGameObjects != null)
             {
                 PathNode.ConnectedNodes = new List<PathNode>();
@@ -38,6 +35,16 @@ namespace Kuantech.AI.Pathfinding
             }
         }
 
+        public void CreatePathNode()
+        {
+            if (PathNode != null) return;
+            PathNode ??= new PathNode();
+            PathNode.ParentNodeComponent = this;
+            PathNode.Position = transform.position;
+            PathNode.Rotation = transform.rotation;
+            PathNode.ConnectedNodes = new List<PathNode>();
+        }
+        
         public bool CanConnectToNode(PathNodeComponent otherNode)
         {
             if (MaskedNodes.Contains(otherNode)) return false;
@@ -70,15 +77,20 @@ namespace Kuantech.AI.Pathfinding
         
         public void ConnectToNode(PathNode node)
         {
-            PathNode.ConnectedNodes.Add(node);
+            GetPathNode().ConnectedNodes.Add(node);
         }
 
         public void ConnectToNode(PathNodeComponent nodeComponent)
         {
-            if (nodeComponent == null || nodeComponent.PathNode == null)
+            if (nodeComponent.PathNode == null)
             {
-                Debug.LogError($"Disconnection between paths at {gameObject.name}");
-                return;
+                nodeComponent.CreatePathNode();
+            }
+
+            if (PathNode == null)
+            {
+                CreatePathNode();
+                
             }
 
             if (ConnectedNodesGameObjects == null) ConnectedNodesGameObjects = new List<GameObject>();
@@ -87,7 +99,7 @@ namespace Kuantech.AI.Pathfinding
                 ConnectedNodesGameObjects.Add(nodeComponent.gameObject);
             }
             if (IsConnectedToNode(nodeComponent)) return;
-            ConnectToNode(nodeComponent.PathNode);
+            ConnectToNode(nodeComponent.GetPathNode());
         }
         public bool IsConnectedToNode(PathNode node)
         {
@@ -102,6 +114,12 @@ namespace Kuantech.AI.Pathfinding
         {
             if (nodeComponent == null || nodeComponent.PathNode == null) return false;
             return IsConnectedToNode(nodeComponent.PathNode);
+        }
+
+        public PathNode GetPathNode()
+        {
+            CreatePathNode();
+            return PathNode;
         }
         #region Editor
 #if UNITY_EDITOR

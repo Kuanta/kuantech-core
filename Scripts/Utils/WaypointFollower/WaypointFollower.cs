@@ -376,7 +376,7 @@ namespace Kuantech.Utils
         }
         public bool IsMoving()
         {
-            return CurrentWaypoint != null;
+            return Moving;
         }
     }
 }
