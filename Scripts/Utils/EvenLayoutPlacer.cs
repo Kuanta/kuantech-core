@@ -9,7 +9,7 @@ namespace Kuantech.Utils
         public float InnerPadding = 1;
         public float OuterPadding = 1;
         public Vector3 LocalDirection = new Vector3(1, 0, 0);
-        private List<GameObject> Children;
+        public List<GameObject> Children = new List<GameObject>();
         
         public void SetChildren(List<GameObject> children)
         {

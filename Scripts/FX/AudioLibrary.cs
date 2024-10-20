@@ -77,7 +77,7 @@ namespace Kuantech.Core.FX
         {
             if (_audios == null || !_audios.ContainsKey(audioType)) return;
             if (_audios[audioType] == null) return;
-            _audios[audioType].Play();
+            PlaySound(_audios[audioType]);
         }
 
         public void StopSound(int audioType, float fadeOutDuration=0)
