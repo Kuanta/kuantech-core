@@ -23,5 +23,16 @@ namespace Kuantech.Utils
         {
             return Target != null ? Target.rotation * LocalRotation : Rotation;
         }
+
+        public void PositionGameObject(GameObject gameObject)
+        {
+            if (Target != null)
+            {
+                gameObject.transform.SetParent(Target);
+            }
+
+            gameObject.transform.position = GetTargetPosition();
+            gameObject.transform.rotation = GetRotation();
+        }
     }
 }
