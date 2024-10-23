@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Random = System.Random;
 
 namespace Kuantech.Core.Utils
 {
@@ -9,7 +10,7 @@ namespace Kuantech.Core.Utils
     public class WeightedProbabilityArray<T>
     {
         [Serializable]
-        public struct WPAElement
+        public class WPAElement
         {
             public T Element;
             public float Probability;
@@ -44,34 +45,59 @@ namespace Kuantech.Core.Utils
             //totalWeight += weight;
         }
 
+        public float GetTotalWeight()
+        {
+            float totalWeight = 0f;
+
+            // Calculate the new total weight after decay
+            foreach (var element in Elements)
+            {
+                totalWeight += element.Probability;
+            }
+
+            return totalWeight;
+        }
         public void NormalizeWeights()
         {
-            float total = Elements.Sum(element => element.Probability);
-            for (int i = 0; i < Elements.Count; ++i)
+            float totalWeight = 0f;
+
+            // Calculate the new total weight after decay
+            foreach (var element in Elements)
+            {
+                totalWeight += element.Probability;
+            }
+
+            // Scale all weights so they sum back to a consistent total (e.g., 1)
+            for (int i = 0; i < Elements.Count; i++)
             {
                 WPAElement element = Elements[i];
-                element.Probability /= total;
+                element.Probability /= totalWeight; // Normalize to make the sum equal 1
                 Elements[i] = element;
             }
-            //totalWeight = 1;
 
         }
         public T Sample(float weightDecay=1)
         {
-            if (Elements.Count == 0 )
+            if (Elements.Count == 0)
             {
                 throw new InvalidOperationException("WeightedProbabilityArray is empty.");
             }
+
             weightDecay = Mathf.Clamp(weightDecay, 0, 1);
             float totalWeight = 0f;
+
+            // Calculate the total weight
             for (int i = 0; i < Elements.Count; ++i)
             {
                 totalWeight += Elements[i].Probability;
             }
-            
-            float randomValue = UnityEngine.Random.value * totalWeight;
+
+            // Randomly choose a point within the weight range
+            float randomValue = UnityEngine.Random.Range(0f, totalWeight);
             float sum = 0f;
             int elementIndex = 0;
+
+            // Find which element corresponds to the random value
             for (int i = 0; i < Elements.Count; i++)
             {
                 sum += Elements[i].Probability;
@@ -82,12 +108,19 @@ namespace Kuantech.Core.Utils
                 }
             }
 
-            // If for some reason the random value exceeds the total weight,
-            // return the last element as a fallback.
+            // Apply weight decay to the selected element
             WPAElement wpaElement = Elements[elementIndex];
-            wpaElement.Probability *= weightDecay;
-            NormalizeWeights();
+            wpaElement.Probability *= weightDecay; // Decay the probability
+
+            // Enforce a minimum probability if needed to avoid zeroing out
+            float minProbability = totalWeight * 0.01f; // Ensure at least 1% chance remains
+            wpaElement.Probability = Mathf.Max(wpaElement.Probability, minProbability);
+
             Elements[elementIndex] = wpaElement;
+
+            // Renormalize the weights to maintain a balanced probability distribution
+            NormalizeWeights();
+
             return wpaElement.Element;
         }
 

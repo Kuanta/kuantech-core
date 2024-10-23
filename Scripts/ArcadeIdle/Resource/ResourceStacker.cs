@@ -8,13 +8,11 @@ namespace Kuantech.ArcadeIdle
     {
         [Header("Properties")] 
         [SerializeField] private Vector3 CellSize;
-
         [SerializeField] private Vector3 Paddings;
         [SerializeField] private Vector2 AnchorPoints = new Vector2(0, 0);
         [SerializeField] private int ColumnCount;
         [SerializeField] private int RowCount;
         [SerializeField] protected Transform AnchorPoint;
-
         public void SetRowCount(int rowCount)
         {
             RowCount = rowCount;
