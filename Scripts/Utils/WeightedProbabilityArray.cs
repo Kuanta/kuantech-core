@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
-using Random = System.Random;
 
 namespace Kuantech.Core.Utils
 {
@@ -111,7 +109,8 @@ namespace Kuantech.Core.Utils
             // Apply weight decay to the selected element
             WPAElement wpaElement = Elements[elementIndex];
             wpaElement.Probability *= weightDecay; // Decay the probability
-
+            Elements[elementIndex] = wpaElement;
+            
             // Enforce a minimum probability if needed to avoid zeroing out
             float minProbability = totalWeight * 0.01f; // Ensure at least 1% chance remains
             wpaElement.Probability = Mathf.Max(wpaElement.Probability, minProbability);

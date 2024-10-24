@@ -7,6 +7,7 @@ using Cysharp.Threading.Tasks;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Services;
 using Google.Apis.Sheets.v4;
+using Google.Apis.Sheets.v4.Data;
 using Google.Apis.Util.Store;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
@@ -27,7 +28,6 @@ namespace Kuantech.Data
         public UnityAction OnSheetFailedToRead;
         public UnityAction OnSheetWritten;
         public UnityAction OnSheetFailedToWrite;
-        
         public string GetRequestUrl(string SheetRange)
         {
             return $"https://sheets.googleapis.com/v4/spreadsheets/{SheetId}/values/{SheetRange}?key={ApiKey}";
@@ -113,10 +113,22 @@ namespace Kuantech.Data
             }
         }
 
+        public async UniTask ClearCells(string SheetRange)
+        {
+            if (service == null) return;
+            var request = service.Spreadsheets.Values.Clear(new ClearValuesRequest(), SheetId, SheetRange);
+            await request.ExecuteAsync();
+        }
+        
         #region Auth
         private SheetsService service;
         static string[] Scopes = { SheetsService.Scope.Spreadsheets };
         static string ApplicationName = "Sheet Reader";
+
+        public SheetsService GetService()
+        {
+            return service;
+        }
         
         private async Task<string> GetAccessToken()
         {
@@ -152,7 +164,7 @@ namespace Kuantech.Data
             return userCredential.Token.AccessToken;
         }
         
-        public async void AuthenticateAndInitializeService()
+        public async void AuthenticateAndInitializeService(bool forceUpdateToken = false)
         {
             string credentialPath = Path.Combine(Application.streamingAssetsPath, "credentials.json");
 
@@ -166,6 +178,12 @@ namespace Kuantech.Data
                         "user",
                         CancellationToken.None,
                         new FileDataStore("TokenStore", true)); // Token'lar burada saklanıyor
+
+                    // Token süresi dolmuşsa yenile
+                    if (forceUpdateToken)
+                    {
+                        await credential.RefreshTokenAsync(CancellationToken.None);
+                    }
 
                     // Google Sheets API hizmetini oluştur
                     service = new SheetsService(new BaseClientService.Initializer()
