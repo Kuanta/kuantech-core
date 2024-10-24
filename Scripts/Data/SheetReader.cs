@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -127,13 +128,30 @@ namespace Kuantech.Data
 
             // Kullanıcıdan yetkilendirme isteyin
             UserCredential userCredential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
-                clientSecrets, // ClientSecrets kullanın
+                clientSecrets, 
                 new[] { SheetsService.Scope.Spreadsheets },
                 "user",
-                CancellationToken.None);
+                CancellationToken.None,
+                new FileDataStore("TokenStore", true)); 
+
+            // Token süresini kontrol et ve gerekiyorsa yenile
+            var token = userCredential.Token;
+            var expiresIn = token.ExpiresInSeconds ?? 0;
+            var currentTimeUtc = DateTime.UtcNow;
+
+            if (currentTimeUtc >= token.Issued.AddSeconds(expiresIn - 60))  // Token süresi dolmak üzere
+            {
+                await userCredential.RefreshTokenAsync(CancellationToken.None);
+                Debug.Log("Token refreshed.");
+            }
+            else
+            {
+                Debug.Log("Token is still valid.");
+            }
 
             return userCredential.Token.AccessToken;
         }
+        
         public async void AuthenticateAndInitializeService()
         {
             string credentialPath = Path.Combine(Application.streamingAssetsPath, "credentials.json");
@@ -147,7 +165,7 @@ namespace Kuantech.Data
                         Scopes,
                         "user",
                         CancellationToken.None,
-                        new FileDataStore("TokenStore", true));
+                        new FileDataStore("TokenStore", true)); // Token'lar burada saklanıyor
 
                     // Google Sheets API hizmetini oluştur
                     service = new SheetsService(new BaseClientService.Initializer()
