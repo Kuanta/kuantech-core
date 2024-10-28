@@ -38,6 +38,8 @@ namespace Kuantech.Utils
 
         [Header("Offset")] 
         public Transform AnchorPoint;
+
+        public float SnapToPositionDelay = 0.05f;
         
         [NonSerialized] public bool Moving;
         [NonSerialized] public List<Waypoint> WaypointsList;
@@ -186,8 +188,16 @@ namespace Kuantech.Utils
                 Position = worldPoint.GetTargetPosition(),
                 Rotation = worldPoint.GetRotation(),
             };
+            Waypoint currentWaypoint = new Waypoint()
+            {
+                Position = transform.position,
+                Rotation = transform.rotation,
+            };
+            List<Waypoint> waypoints = new List<Waypoint>();
+            waypoints.Add(currentWaypoint); 
+            waypoints.Add(singleWaypoint);
             singleWaypoint.FollowerReachedWaypoint = onReachedAction;
-            SetWaypoint(singleWaypoint);
+            SetWaypoints(waypoints);
             FollowPath();
         }
         private void Update()
@@ -368,10 +378,19 @@ namespace Kuantech.Utils
         
         private void SnapToPosition(Vector3 position, Quaternion rotation)
         {
-            _moveTween = DOTween.To(GetCurrentPosition, SetPosition, position, 0.05f).OnComplete(()=>{
+            if (SnapToPositionDelay > 0)
+            {
+                _moveTween = DOTween.To(GetCurrentPosition, SetPosition, position, SnapToPositionDelay).OnComplete(()=>{
+                    OnReachedFinalTarget?.Invoke();
+                });
+                _rotateTween = transform.DORotate(rotation.eulerAngles, SnapToPositionDelay).SetEase(Ease.InOutQuad);
+            }
+            else
+            {
+                SetPosition(position);
+                transform.rotation = rotation;
                 OnReachedFinalTarget?.Invoke();
-            });
-            _rotateTween = transform.DORotate(rotation.eulerAngles, 0.05f).SetEase(Ease.InOutQuad);
+            }
 
         }
         public bool IsMoving()
