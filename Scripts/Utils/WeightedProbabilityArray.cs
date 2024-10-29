@@ -123,7 +123,7 @@ namespace Kuantech.Core.Utils
             return wpaElement.Element;
         }
 
-        public void SetElementWeight(int elementIndex, float weight)
+        public void SetElementWeightByIndex(int elementIndex, float weight)
         {
             float newTotal = weight;
             for (int i = 0; i < Elements.Count; ++i)
@@ -141,6 +141,44 @@ namespace Kuantech.Core.Utils
             }
         }
 
+        public void SetElementWeight(T element, float weight)
+        {
+            for (int i = 0; i < Elements.Count; ++i)
+            {
+                WPAElement existing = Elements[i];
+                if (existing.Element.Equals(element))
+                {
+                    existing.Probability = weight;
+                    Elements[i] = existing;
+                }
+            }
+        }
+
+        public void DecayElementWeight(T element, float weight)
+        {
+            for (int i = 0; i < Elements.Count; ++i)
+            {
+                WPAElement existing = Elements[i];
+                if (existing.Element.Equals(element))
+                {
+                    existing.Probability = weight * existing.Probability; //Decay the prob
+                    Elements[i] = existing;
+                }
+            }
+        }
+        
+        public float GetElementWeight(T element)
+        {
+            for (int i = 0; i < Elements.Count; ++i)
+            {
+                WPAElement existing = Elements[i];
+                if (existing.Element.Equals(element))
+                {
+                    return existing.Probability;
+                }
+            } 
+            return 0;
+        }
         public void Clear()
         {
             Elements.Clear();
