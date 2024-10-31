@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Kuantech.Utils;
+using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -16,7 +17,7 @@ namespace Kuantech.ArcadeIdle
         
         //Currently spawned entities
         public Queue<IWaitingQueueElement> WaitingElements;
-        private float totalDistance = 0f;
+        protected float totalDistance = 0f;
         public bool IsQueueFull()
         {
             if (WaitingElements == null) return false;
@@ -84,6 +85,7 @@ namespace Kuantech.ArcadeIdle
             return element;
         }
         
+        [Button("Update Positions")]
         public void UpdateQueuePositions(bool warpToPosition)
         {
             int index = 0;
@@ -114,7 +116,7 @@ namespace Kuantech.ArcadeIdle
         /// </summary>
         /// <param name="index"></param>
         /// <returns></returns>
-        public WorldPoint GetQueuePosition(int index)
+        public virtual WorldPoint GetQueuePosition(int index)
         {
             if (WaitingPoints.Count > index)
             {
