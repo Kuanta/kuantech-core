@@ -52,6 +52,11 @@ namespace Kuantech.Puzzle
         {
             return false;
         }
+
+        public virtual bool IsBonusLevel()
+        {
+            return false;
+        }
         
         /// <summary>
         /// Finds the level design data. If succesfful, loads it to level

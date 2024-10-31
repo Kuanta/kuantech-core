@@ -2,7 +2,7 @@
 
 namespace Kuantech.Puzzle
 {
-    public class HardLevelIntro : MonoBehaviour
+    public class LevelIntroPanel : MonoBehaviour
     { 
         [SerializeField] private Animator Animator;
         [SerializeField] private float HideAfterSeconds = 1.15f;

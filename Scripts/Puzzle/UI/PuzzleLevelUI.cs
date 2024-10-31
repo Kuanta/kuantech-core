@@ -6,6 +6,7 @@ using Kuantech.Core.UI;
 using Kuantech.HyperCasual.UI;
 using Kuantech.UI;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Kuantech.Puzzle.UI
 {
@@ -26,7 +27,10 @@ namespace Kuantech.Puzzle.UI
         public BoostersHUD BoostersHUD;
         public float CompletePanelShowDelay = 0f;
         public float FailedPanelShowDelay = 0f;
-        public HardLevelIntro HardLevelIntroPanel;
+       
+        [Header("Intro Panels")]
+        public LevelIntroPanel HardLevelIntroPanel;
+        public LevelIntroPanel BonusLevelIntroPanel;
         
         [Header("Tutorial")] 
         [SerializeField] public TutorialHand TutorialHand;
@@ -78,6 +82,17 @@ namespace Kuantech.Puzzle.UI
             {
                 HardLevelIntroPanel.gameObject.SetActive(false);
             }
+
+            if (level.IsBonusLevel() && BonusLevelIntroPanel != null)
+            {
+                BonusLevelIntroPanel.gameObject.SetActive(true);
+                BonusLevelIntroPanel.PlayAnimation();
+            }
+            else
+            {
+                BonusLevelIntroPanel.gameObject.SetActive(false);
+            }
+            
             LevelIndicator.SetHardLevel(level.IsHardLevel());
         }
 
