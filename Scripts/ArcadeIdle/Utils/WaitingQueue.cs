@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Kuantech.Utils;
 using Sirenix.OdinInspector;
+using Sirenix.OdinInspector.Editor.TypeSearch;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -18,6 +19,11 @@ namespace Kuantech.ArcadeIdle
         //Currently spawned entities
         public Queue<IWaitingQueueElement> WaitingElements;
         protected float totalDistance = 0f;
+
+        public virtual void Initialize()
+        {
+            
+        }
         public bool IsQueueFull()
         {
             if (WaitingElements == null) return false;
@@ -50,7 +56,7 @@ namespace Kuantech.ArcadeIdle
             return WaitingElements.Peek();
         }
         
-        public void QueueElement(IWaitingQueueElement element, bool updatePositions=true)
+        public virtual void QueueElement(IWaitingQueueElement element, bool updatePositions=true)
         {
             if (IsQueueFull()) return;
             WaitingElements ??= new Queue<IWaitingQueueElement>();
@@ -86,7 +92,7 @@ namespace Kuantech.ArcadeIdle
         }
         
         [Button("Update Positions")]
-        public void UpdateQueuePositions(bool warpToPosition)
+        public virtual void UpdateQueuePositions(bool warpToPosition)
         {
             int index = 0;
             totalDistance = 0f;
@@ -101,16 +107,25 @@ namespace Kuantech.ArcadeIdle
                 totalDistance += actor.GetSize();
                 if (warpToPosition)
                 {
-                    actor.WarpToPosition(worldPoint);
+                    WarpActorToPosition(actor, worldPoint);
                 }
                 else
                 {
-                    actor.GoToPosition(worldPoint);
+                    SendActorToPosition(actor, worldPoint);
                 }
                 index++;
             }
         }
-  
+
+        protected virtual void WarpActorToPosition(IWaitingQueueElement actor, WorldPoint worldPoint)
+        {
+            actor.WarpToPosition(worldPoint);
+        }
+
+        protected virtual void SendActorToPosition(IWaitingQueueElement actor, WorldPoint worldPoint)
+        {
+            actor.GoToPosition(worldPoint);
+        }
         /// <summary>
         /// Returns the world point for element at index i in the row
         /// </summary>

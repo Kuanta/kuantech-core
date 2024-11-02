@@ -7,7 +7,7 @@ namespace Kuantech.Core.Utils
     public class CursorSprite : MonoBehaviour
     {
         public Camera Camera;
-
+        public bool AlwaysShow = false;
         [SerializeField]
         private float distanceFromCamera = 10f;
         public float FollowLerpFactor = 10f;
@@ -28,7 +28,7 @@ namespace Kuantech.Core.Utils
         private void Enable()
         {
             transform.position = GetCursorPosition();
-            Visual.SetActive(false);
+            Visual.SetActive(AlwaysShow);
         }
         private void Update()
         {
@@ -62,7 +62,7 @@ namespace Kuantech.Core.Utils
                 }
                 else
                 {
-                    Visual.SetActive(false);
+                   if(!AlwaysShow) Visual.SetActive(false);
                 }
             }
         }
@@ -70,7 +70,7 @@ namespace Kuantech.Core.Utils
         private IEnumerator TapAnimateEndRoutine()
         {
             yield return new WaitForSeconds(TapAnimationTime);
-            Visual.SetActive(false);
+            if(!AlwaysShow)  Visual.SetActive(false);
         }
         
         private Vector3 GetCursorPosition()

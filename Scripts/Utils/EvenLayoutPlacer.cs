@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Kuantech.Utils
@@ -16,6 +17,7 @@ namespace Kuantech.Utils
             Children = children;
         }
         
+        [Button("Update Positions")]
         public void DistributeChilds()
         {
             float totatlSize = Children.Count * ChildSize + Mathf.Max(Children.Count - 1, 0) * InnerPadding;

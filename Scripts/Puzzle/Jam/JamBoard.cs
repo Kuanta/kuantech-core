@@ -7,7 +7,7 @@ namespace Kuantech.Puzzle.Jam
     {
         public List<JamBoardSpot> Spots;
 
-        public void Initialize()
+        public virtual void Initialize()
         {
             foreach (var spot in Spots)
             {
@@ -63,7 +63,7 @@ namespace Kuantech.Puzzle.Jam
             return true;
         }
         
-        public void Reset()
+        public virtual void Reset()
         {
             foreach (var spot in Spots)
             {

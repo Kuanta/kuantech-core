@@ -94,6 +94,7 @@ namespace Kuantech.Puzzle.UI
             }
             
             LevelIndicator.SetHardLevel(level.IsHardLevel());
+            LevelIndicator.SetBonusLevel(level.IsBonusLevel());
         }
 
         private void OnLevelStateChange(LevelStateChangeData levelStateChangeData)

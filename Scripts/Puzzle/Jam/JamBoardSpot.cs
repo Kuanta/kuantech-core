@@ -29,6 +29,7 @@ namespace Kuantech.Puzzle.Jam
             IncomingElement = incomingElement;
             IncomingElement.AssignedSpot = this;
         }
+        
         public void AssignElement(JamBoardElement element)
         {
             if (IncomingElement != null && element != IncomingElement)

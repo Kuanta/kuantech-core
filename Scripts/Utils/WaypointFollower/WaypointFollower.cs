@@ -23,11 +23,8 @@ namespace Kuantech.Utils
         [Header("Properties")] 
         public float Speed;
         public float RotationLerpFactor = 10.0f;
-        public float Acceleration = 5.0f;
         public float TargetReachThresh = 0.1f;
         public float UpdateRotationThresh = 0.1f;
-        public float MaxTurnAngle = 30.0f;
-        public float MinTurnSpeedFactor = 0.5f;
 
         [Header("Spline")] public int SegmentPerSpline = 4;
         [Tooltip("If set to true, a spline will be calculated and agent will follow the spline. However this will prevent events for middle waypoints")]
@@ -35,7 +32,6 @@ namespace Kuantech.Utils
         public int SplineDegree = 5;
         public int SplineRotationLookAhead = 1;
         public float SplineSpeed = 5;
-        public float SplineMovementLerpFactor = 20;
         public bool SnapToPositionForSpline = false;
 
         [Header("Offset")] 
@@ -190,6 +186,12 @@ namespace Kuantech.Utils
                 Position = worldPoint.GetTargetPosition(),
                 Rotation = worldPoint.GetRotation(),
             };
+            if (IsMoving() && !_useSpline)
+            {
+                WaypointsQueue.Enqueue(singleWaypoint);
+                return;
+            }
+            
             Waypoint currentWaypoint = new Waypoint()
             {
                 Position = transform.position,
@@ -228,28 +230,19 @@ namespace Kuantech.Utils
         protected virtual void UpdatePosition()
         {
             if(CurrentWaypoint == null && !_useSpline) return;
-      
             Vector3 error = _targetPosition - GetCurrentPosition();
             float errorMag = error.sqrMagnitude;
             if(errorMag <= TargetReachThresh*TargetReachThresh)
             {
-                if (!_useSpline)
-                {
-                    OnReachedWaypoint?.Invoke(CurrentWaypoint);
-                    CurrentWaypoint.FollowerReachedWaypoint?.Invoke(this);
-                }
+             
                 SetNextWaypoint();
                 return;
             }
             float deltaTime = Time.deltaTime;
             Vector3 direction = error.normalized;
             Vector3 moveDirection = direction;
-            // if (LockForwardMovement)
-            // {
-            //     moveDirection = transform.forward;
-            // }
-            Vector3 positionUpdate =  moveDirection * deltaTime * Speed;
-
+         
+            Vector3 positionUpdate =  moveDirection * Mathf.Min(deltaTime * Speed, errorMag);
             SetRotation(Quaternion.LookRotation(direction));
             SetPosition(GetCurrentPosition() + positionUpdate);
         }
@@ -264,14 +257,6 @@ namespace Kuantech.Utils
 
             float targetSpeed = _splineTSpeed;
             targetSpeed = Mathf.Min(targetSpeed, _splineTSpeed);
-            // if (_currentSplineTSpeed > targetSpeed)
-            // {
-            //  _currentSplineTSpeed -= Acceleration * Time.deltaTime;
-            // }
-            // else if(_currentSplineTSpeed < targetSpeed)
-            // {
-            //  _currentSplineTSpeed += Acceleration * Time.deltaTime;
-            // }
             _currentSplineTSpeed = targetSpeed;
             _splineT += Time.deltaTime * (_currentSplineTSpeed / GetArcTotalLength());
             _splineT = Mathf.Min(_splineT, 1.0f);
@@ -332,7 +317,6 @@ namespace Kuantech.Utils
         }
         private void SetNextWaypoint()
         {
-            _targetPosition = GetTargetPosition();
             WaypointsQueue ??= new Queue<Waypoint>();
             if(WaypointsQueue.Count == 0)
             {
@@ -343,8 +327,8 @@ namespace Kuantech.Utils
                 Moving = false;
                 return;
             }
-
             CurrentWaypoint = WaypointsQueue.Dequeue();
+            _targetPosition = GetTargetPosition();
         }
 
         private Vector3 GetCurrentPosition()
