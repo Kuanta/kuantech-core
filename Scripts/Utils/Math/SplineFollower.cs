@@ -66,6 +66,11 @@ namespace Kuantech.Utils.Math
 
         #region Follow
 
+        public void SetCurrentDistance(float distance)
+        {
+            _currentDistance = distance;
+        }
+        
         private void ReachedTarget()
         {
             OnReachedTarget?.Invoke();

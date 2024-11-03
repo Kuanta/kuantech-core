@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using Kuantech.Utils;
 using Sirenix.OdinInspector;
-using Sirenix.OdinInspector.Editor.TypeSearch;
 using UnityEngine;
 using UnityEngine.Events;
 
