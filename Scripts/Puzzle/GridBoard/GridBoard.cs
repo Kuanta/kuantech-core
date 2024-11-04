@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using Kuantech.AI.Pathfinding;
 using Kuantech.Core.FX;
+using Kuantech.Puzzle.Pathfinding;
 using Kuantech.Utils;
 using Sirenix.OdinInspector;
 using UnityEditor;
@@ -42,9 +44,12 @@ namespace Kuantech.Puzzle
         [Header("BackgroundTile object")] 
         public GridTileBackground BackgroundGameObjectPrefab;
 
+        [Header("Pathfinding")] 
+        public GridBoardPathTree GridBoardPathTree;
+        
         [Header("Editor Background")] [SerializeField]
         private GameObject Editorbackground;
-
+        
         public List<GridTile[,]> Tiles; //A list of list to represent layered tiles
         //public GridTile[,] Tiles;
         public GridTileBackground[,] BackgroundObjects;
@@ -75,6 +80,11 @@ namespace Kuantech.Puzzle
             if (Editorbackground != null)
             {
                 Editorbackground.gameObject.SetActive(false);
+            }
+
+            if (GridBoardPathTree != null)
+            {
+                GridBoardPathTree.CreateNodes(this);
             }
         }
         
@@ -113,6 +123,11 @@ namespace Kuantech.Puzzle
             foreach (var tile in existingTiles)
             {
                 GridTileCoordinate coord = GetRowColFromPosition(tile.transform.position);
+                if (!IsCoordinateValid(coord))
+                {
+                    Debug.LogError($"Coordinate:{coord.Row} - {coord.Column} is invalid");
+                    continue;
+                }
                 coord.Layer = layer;
                 if (_existingTilesDict.ContainsKey(coord))
                 {
@@ -123,14 +138,24 @@ namespace Kuantech.Puzzle
                 tile.DestroyOnDespawn = false; //Existing tiles should be deactivated on despawn, not destroyed
                 _existingTilesSet.Add(tile);
                 _existingTilesDict[coord] = tile;
-                SetTile(tile, coord.Row, coord.Column, coord.Layer);
-                tile.Spawn();
+                if (!CanTileBePlaced(tile, coord.Row, coord.Column, coord.Layer))
+                {
+                    tile.Despawn(false);
+                    continue;
+                }
+                SpawnExistingTile(tile, coord);
 
                 if (tile is GridBoardUnpassableTile unpassableTile)
                 {
                     BackgroundMask[coord.Row, coord.Column] = true;
                 }
             }
+        }
+
+        protected virtual void SpawnExistingTile(GridTile tile, GridTileCoordinate coord)
+        {
+            SetTile(tile, coord.Row, coord.Column, coord.Layer);
+            tile.Spawn(true);
         }
         
         /// <summary>
@@ -254,10 +279,10 @@ namespace Kuantech.Puzzle
         /// <param name="setPosition">If flag is set to true, the position will be set</param>
         public virtual void SetTile(GridTile gridTile, int row, int col, int layer=0, bool setPosition = true)
         {
-            if (!IsCoordinateValid(row, col) || !IsLayerValid(layer)) return;
+            if (!IsCoordinateValid(row, col) || !IsLayerValid(layer) || !CanTileBePlaced(gridTile, row, col,layer)) return;
             gridTile.ParentBoard = this;
-            Tiles[layer][row, col] = gridTile;
             gridTile.SetRowCol(row, col, layer);
+            SetTileArrayForTile(gridTile, row, col, layer);
             if(setPosition)
             {
                 gridTile.transform.SetParent(transform);
@@ -266,12 +291,56 @@ namespace Kuantech.Puzzle
                 gridTile.transform.localScale = Vector3.one;
             }
         }
+        
+        /// <summary>
+        /// Simply fills the tile array.
+        /// </summary>
+        /// <param name="tile"></param>
+        /// <param name="anchorRow"></param>
+        /// <param name="anchorColumn"></param>
+        /// <param name="anchorLayer"></param>
+        private void SetTileArrayForTile(GridTile tile, int anchorRow, int anchorColumn, int anchorLayer)
+        {
+            Tiles[anchorLayer][anchorRow , anchorColumn] = tile;
+            foreach (var localCoordinte in tile.Coordinates)
+            {
+                Tiles[anchorLayer][anchorRow + localCoordinte.Row, anchorColumn + localCoordinte.Column] = tile;
+            }
+            
+        }
 
+        private void ClearTileArrayForTile(GridTile tile,int anchorRow, int anchorCol, int anchorLayer=0)
+        {
+            Tiles[anchorLayer][anchorRow, anchorCol] = null;
+            foreach (var localCoord in tile.Coordinates)
+            {
+                int row = anchorRow + localCoord.Row;
+                int col = anchorCol + localCoord.Column;
+                int layer = anchorLayer + localCoord.Layer;
+                if (Tiles[layer][row, col] == tile)
+                {
+                    Tiles[layer][row, col] = null;
+                }
+            }
+        }
+        public bool CanTileBePlaced(GridTile tile, int anchorRow, int anchorCol, int anchorLayer = 0)
+        {
+            foreach (var localCoord in tile.Coordinates)
+            {
+                int row = anchorRow + localCoord.Row;
+                int col = anchorCol + localCoord.Column;
+                int layer = anchorLayer + localCoord.Layer;
+                if (IsTileOccupied(row, col, layer)) return false;
+            }
+
+            return true;
+        }
+        
         public void ClearTile(int row, int col, int layer=0)
         {
             if (!IsCoordinateValid(row, col) || IsLayerValid(layer)) return;
-            Tiles[layer][row, col] = null;
-
+            GridTile tile = GetTile(row, col, layer);
+            UnsetTile(tile);
         }
 
         /// <summary>
@@ -281,11 +350,11 @@ namespace Kuantech.Puzzle
         /// <param name="col"></param>
         /// <param name="layer"></param>
         /// <returns></returns>
-        public void UnsetTile(int row, int col, int layer=0)
+        public void UnsetTile(int anchorRow, int anchorCol, int anchorLayer=0)
         {
-            GridTile tile = GetTile(row, col, layer);
+            GridTile tile = GetTile(anchorRow, anchorCol, anchorLayer);
             if (tile == null) return;
-            Tiles[layer][row, col] = null;
+            ClearTileArrayForTile(tile, anchorRow, anchorCol, anchorLayer);
             tile.ParentBoard = null;
         }
         
@@ -299,7 +368,7 @@ namespace Kuantech.Puzzle
         
         public void UnsetTile(GridTile tile)
         {
-            UnsetTile(tile.Row, tile.Column, tile.Layer);
+            UnsetTile(tile.AnchorRow, tile.AnchorColumn, tile.AnchorLayer);
         }
         
         /// <summary>
@@ -325,11 +394,7 @@ namespace Kuantech.Puzzle
             {
                 return null;
             }
-            
-            if(Tiles[layer][row,col] != null && (Tiles[layer][row,col].Row != row || Tiles[layer][row,col].Column != col))
-            {
-                Debug.LogError("WE HAVE ROW COL MISMATCH!");
-            }
+            //todo: Do a safety check here maybe?
             return Tiles[layer][row, col];
         }
         
@@ -464,7 +529,29 @@ namespace Kuantech.Puzzle
 
             return neighs;
         }
-        
+
+        public List<GridBoardPathNode> Get4NeighsPathNodes(int row, int col, int layer=0)
+        {
+            List<GridBoardPathNode> neighs = new List<GridBoardPathNode>();
+            for (int i = -1; i < 2; ++i)
+            {
+                for (int j = -1; j < 2; ++j)
+                {
+                    if(i==j || (i != 0 && j != 0)) continue; //4 neighs condition
+                    GridTileCoordinate coordinate = new GridTileCoordinate()
+                    {
+                        Row = row+i,
+                        Column = col+j,
+                        Layer = layer,
+                    };
+                    GridBoardPathNode pathNode = GetPathNodeAtCoordinate(coordinate);
+                    if(pathNode == null) continue;
+                    neighs.Add(pathNode);
+                }
+            }
+
+            return neighs;
+        }
         /// <summary>
         /// Returns the background object for given row and col
         /// </summary>
@@ -517,7 +604,7 @@ namespace Kuantech.Puzzle
         public GridTileCoordinate GetRowColFromPointOnBoard(Vector3 pointOnGrid)
         {
             GridTileCoordinate coord = new GridTileCoordinate();
-            Vector3 localBotLeft = -ForwardVector * GetDepth() * 0.5f - RightVector * GetWidth() * 0.5f;
+            Vector3 localBotLeft = ForwardVector * GetDepth() * OriginOffset.y + RightVector * GetWidth() * OriginOffset.x;
             Vector3 botLeftPoint = transform.TransformPoint(localBotLeft);
             Vector3 diff = pointOnGrid - botLeftPoint;
             Vector3 localDiff = transform.InverseTransformDirection(diff);
@@ -539,7 +626,6 @@ namespace Kuantech.Puzzle
                 }
             }
         }
-
 
         /// <summary>
         /// Returns the flattened coordinates from row and col
@@ -629,6 +715,15 @@ namespace Kuantech.Puzzle
 
         #endregion
 
+        #region PathFinding
+
+        public GridBoardPathNode GetPathNodeAtCoordinate(GridTileCoordinate coordinate)
+        {
+            if (GridBoardPathTree == null) return null;
+            return GridBoardPathTree.GetPathNodeAtCoordinate(coordinate);
+        }
+        #endregion
+        
         #if UNITY_EDITOR
         [Button("Select Tile")]
         public void SelectTile(int row, int col, int layer=0)

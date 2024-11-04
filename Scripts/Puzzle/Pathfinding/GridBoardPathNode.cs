@@ -1,8 +1,11 @@
-﻿using Kuantech.AI.Pathfinding;
+﻿using System;
+using System.Collections.Generic;
+using Kuantech.AI.Pathfinding;
 using UnityEngine;
 
 namespace Kuantech.Puzzle.Pathfinding
 {
+    [Serializable]
     public class GridBoardPathNode : PathNode
     {
         public GridTileCoordinate TileCoordinate;
@@ -29,6 +32,31 @@ namespace Kuantech.Puzzle.Pathfinding
         public override Vector3 GetPosition()
         {
             return _parentBoard.GetGlobalPosition(Row, Column);
+        }
+
+        public override bool IsPassable()
+        {
+            if (_parentBoard.IsTileOccupied(TileCoordinate.Row, TileCoordinate.Column, TileCoordinate.Layer))
+                return false;
+            return base.IsPassable();
+        }
+
+        public override List<PathNode> GetConnectedNodes()
+        {
+            List<PathNode> connectedNodes = new List<PathNode>();
+            List<GridBoardPathNode> neighsPathNodes = _parentBoard.Get4NeighsPathNodes(Row, Column);
+            if (ConnectedNodes != null)
+            {
+                foreach (var connected in ConnectedNodes)
+                {
+                    connectedNodes.Add(connected);
+                }
+            }
+            foreach (var node in neighsPathNodes)
+            {
+                connectedNodes.Add(node);
+            }
+            return connectedNodes;
         }
     }
 }

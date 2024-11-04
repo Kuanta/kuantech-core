@@ -137,8 +137,8 @@ namespace Kuantech.Puzzle
 
             emptyTileObject.transform.SetParent(GroupParent != null ? GroupParent : GridBoard.transform);
             GridTile tile = newTileObject.GetComponent<GridTile>();
-            tile.Row = row;
-            tile.Column = col;
+            tile.AnchorRow = row;
+            tile.AnchorColumn = col;
             editorTileComp.Prefab = CurrentlySelectedTile;
             editorTileComp.Row = row;
             editorTileComp.Column = col;

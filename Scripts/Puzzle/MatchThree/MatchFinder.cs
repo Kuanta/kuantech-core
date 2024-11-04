@@ -61,10 +61,10 @@ namespace Kuantech.Puzzle.MatchThree
             if(traversedTiles.Contains(currentTile)) return;
             traversedTiles.Add(currentTile);
 
-            MatchThreeElement upElement = Board.GetTile(currentTile.Row + 1, currentTile.Column, currentTile.Layer) as MatchThreeElement;
-            MatchThreeElement downElement = Board.GetTile(currentTile.Row - 1, currentTile.Column, currentTile.Layer) as MatchThreeElement;
-            MatchThreeElement leftElement = Board.GetTile(currentTile.Row, currentTile.Column - 1, currentTile.Layer) as MatchThreeElement;
-            MatchThreeElement rightElement = Board.GetTile(currentTile.Row, currentTile.Column + 1, currentTile.Layer) as MatchThreeElement;
+            MatchThreeElement upElement = Board.GetTile(currentTile.AnchorRow + 1, currentTile.AnchorColumn, currentTile.AnchorLayer) as MatchThreeElement;
+            MatchThreeElement downElement = Board.GetTile(currentTile.AnchorRow - 1, currentTile.AnchorColumn, currentTile.AnchorLayer) as MatchThreeElement;
+            MatchThreeElement leftElement = Board.GetTile(currentTile.AnchorRow, currentTile.AnchorColumn - 1, currentTile.AnchorLayer) as MatchThreeElement;
+            MatchThreeElement rightElement = Board.GetTile(currentTile.AnchorRow, currentTile.AnchorColumn + 1, currentTile.AnchorLayer) as MatchThreeElement;
 
             if (upElement != null && downElement != null && currentTile.IsSameType(upElement) && currentTile.IsSameType(downElement))
             {

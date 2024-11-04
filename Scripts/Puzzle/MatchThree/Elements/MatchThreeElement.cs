@@ -32,9 +32,9 @@ namespace Kuantech.Puzzle.MatchThree
         [NonSerialized] public bool ToBeDestroyed;
         protected MatchThreeBoard ParentMatchThreeBoard;
 
-        public override void Spawn()
+        public override void Spawn(bool isExisting = false)
         {
-            base.Spawn();
+            base.Spawn(isExisting);
             _currentTakenHit = 0;
             if(CurrentVisual != null && HideVisual)
             {
@@ -135,7 +135,7 @@ namespace Kuantech.Puzzle.MatchThree
                 Debug.LogError("An edge case about angle:"+angle);
                 return;
             }
-            MatchThreeElement otherElement = ParentBoard.GetTile(Row + direction.y, Column+direction.x, Layer) as MatchThreeElement;
+            MatchThreeElement otherElement = ParentBoard.GetTile(AnchorRow + direction.y, AnchorColumn+direction.x, AnchorLayer) as MatchThreeElement;
             if(otherElement != null && otherElement._canBeMoved)
             {
                 (ParentBoard as MatchThreeBoard).MakeAMove(this, otherElement);
@@ -149,7 +149,7 @@ namespace Kuantech.Puzzle.MatchThree
             }
             if(ParentMatchThreeBoard == null) return;
             WaypointFollower.Waypoint newWaypoint = new WaypointFollower.Waypoint{
-                Position = ParentBoard.GetLocalPosition(Row, Column),
+                Position = ParentBoard.GetLocalPosition(AnchorRow, AnchorColumn),
                 IsLocal = true,
             };
             WaypointFollower.AddWaypoint(newWaypoint);
@@ -194,7 +194,7 @@ namespace Kuantech.Puzzle.MatchThree
             //todo: Play destroy effect 
             if(CurrentData != null && CurrentData.EffectPlayer != null)
             {
-                CurrentData.EffectPlayer.PlayEffectAtPosition(ParentBoard.GetGlobalPosition(Row, Column), 
+                CurrentData.EffectPlayer.PlayEffectAtPosition(ParentBoard.GetGlobalPosition(AnchorRow, AnchorColumn), 
                 Quaternion.identity);
             }
         }

@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using Kuantech.AI.Pathfinding;
 using UnityEngine;
 
 namespace Kuantech.Puzzle
@@ -22,10 +24,11 @@ namespace Kuantech.Puzzle
     {
         public bool DestroyOnDespawn = true;
         public bool StayOnBoardAfterDespawn = false;
+        public List<GridTileCoordinate> Coordinates;
         [NonSerialized] public GridBoard ParentBoard;
-        [NonSerialized] public int Row;
-        [NonSerialized] public int Column;
-        [NonSerialized] public int Layer;
+        [NonSerialized] public int AnchorRow;
+        [NonSerialized] public int AnchorColumn;
+        [NonSerialized] public int AnchorLayer;
         
         [Header("Visual")] 
         public Transform VisualParent;
@@ -35,9 +38,9 @@ namespace Kuantech.Puzzle
         /// <summary>
         /// Called when spawned from the grid board
         /// </summary>
-        public virtual void Spawn()
+        public virtual void Spawn(bool isExisting=false)
         {
-        
+            
         }
 
         public virtual void Despawn(bool clearingBoard)
@@ -62,9 +65,9 @@ namespace Kuantech.Puzzle
         
         public virtual void SetRowCol(int row, int col, int layer)
         {
-            Row = row;
-            Column = col;
-            Layer = layer;
+            AnchorRow = row;
+            AnchorColumn = col;
+            AnchorLayer = layer;
         }
         
         public void SetLocalPosition(Vector3 localPosition)
@@ -84,6 +87,27 @@ namespace Kuantech.Puzzle
             CurrentVisual.transform.SetParent(visualParent);
             CurrentVisual.transform.localPosition = Vector3.zero;
             CurrentVisual.transform.localRotation = Quaternion.identity;
+        }
+        
+        /// <summary>
+        /// Returns the path node on currently standing tile
+        /// </summary>
+        /// <returns></returns>
+        public virtual PathNode GetCurrentPathNode()
+        {
+            if (ParentBoard == null) return null;
+            return ParentBoard.GetPathNodeAtCoordinate(new GridTileCoordinate()
+            {
+                Row = AnchorRow,
+                Column = AnchorColumn,
+                Layer = AnchorLayer,
+            });
+        }
+
+        public void RemoveFromBoard()
+        {
+            if (ParentBoard == null) return;
+            ParentBoard.UnsetTile(this);
         }
     }
 }

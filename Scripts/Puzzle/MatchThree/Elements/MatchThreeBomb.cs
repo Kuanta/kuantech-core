@@ -18,14 +18,14 @@ namespace Kuantech.Puzzle.MatchThree
 
         [Header("Explosion Effect")]
         [SerializeField] private EffectPlayer ExplosionEffect;
-        public override void Spawn()
+        public override void Spawn(bool isExisting = false)
         {
             Interactable = true;
-            base.Spawn();
+            base.Spawn(isExisting);
         }
         public override void Interact()
         {
-            ExplosionEffect.PlayEffectAtPosition(ParentBoard.GetGlobalPosition(Row, Column), Quaternion.identity);
+            ExplosionEffect.PlayEffectAtPosition(ParentBoard.GetGlobalPosition(AnchorRow, AnchorColumn), Quaternion.identity);
             //Destroy nearby elements
             List<MatchThreeElement> elements = GetElementsToDestroy();
             foreach(var element in elements)
@@ -57,7 +57,7 @@ namespace Kuantech.Puzzle.MatchThree
                 for (int c = -1; c < 2; ++c)
                 {
                     if (r == 0 && c == 0) continue;
-                    MatchThreeElement element = ParentMatchThreeBoard.GetMatchThreeElement(Row - r, Column - c);
+                    MatchThreeElement element = ParentMatchThreeBoard.GetMatchThreeElement(AnchorRow - r, AnchorColumn - c);
                     if(element == null) continue;
                     elements.Add(element);
                 }
@@ -70,7 +70,7 @@ namespace Kuantech.Puzzle.MatchThree
             List<MatchThreeElement> elements = new List<MatchThreeElement>();
             for (int c = 0; c < ParentMatchThreeBoard.ColumnCount; ++c)
             {
-                MatchThreeElement element = ParentMatchThreeBoard.GetMatchThreeElement(Row, c);
+                MatchThreeElement element = ParentMatchThreeBoard.GetMatchThreeElement(AnchorRow, c);
                 if(element == null) continue;
                 elements.Add(element);
             }
@@ -82,7 +82,7 @@ namespace Kuantech.Puzzle.MatchThree
             List<MatchThreeElement> elements = new List<MatchThreeElement>();
             for (int r = 0; r < ParentMatchThreeBoard.RowCount; ++r)
             {
-                MatchThreeElement element = ParentMatchThreeBoard.GetMatchThreeElement(r, Column);
+                MatchThreeElement element = ParentMatchThreeBoard.GetMatchThreeElement(r, AnchorColumn);
                 if (element == null) continue;
                 elements.Add(element);
             }

@@ -1,4 +1,5 @@
-﻿using Kuantech.Utils;
+﻿using Kuantech.AI.Pathfinding;
+using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Puzzle.Jam
@@ -6,10 +7,11 @@ namespace Kuantech.Puzzle.Jam
     public class JamBoardSpot : MonoBehaviour
     {
         public JamBoard ParentBoard;
-        private JamBoardElement CurrentElement;
-        private JamBoardElement IncomingElement;
-
-        public JamBoardElement GetOccupyingElement()
+        public PathNodeComponent PathNodeComponent;
+        private IJamBoardElement CurrentElement;
+        private IJamBoardElement IncomingElement;
+        
+        public IJamBoardElement GetOccupyingElement()
         {
             return CurrentElement;
         }
@@ -19,7 +21,7 @@ namespace Kuantech.Puzzle.Jam
             return CurrentElement != null || IncomingElement != null;
         }
 
-        public void ReserveSpot(JamBoardElement incomingElement)
+        public void ReserveSpot(IJamBoardElement incomingElement)
         {
             if (CurrentElement != null)
             {
@@ -27,9 +29,9 @@ namespace Kuantech.Puzzle.Jam
             }
 
             IncomingElement = incomingElement;
-            IncomingElement.AssignedSpot = this;
+            IncomingElement.SetAssignedSpot(this);
         }
-        public void AssignElement(JamBoardElement element)
+        public void AssignElement(IJamBoardElement element)
         {
             if (IncomingElement != null && element != IncomingElement)
             {
@@ -38,7 +40,7 @@ namespace Kuantech.Puzzle.Jam
 
             IncomingElement = null;
             CurrentElement = element;
-            CurrentElement.OnAssignedToSpot(this);
+            CurrentElement.SetAssignedSpot(this);
         }
 
         public void ClearSpot()
@@ -61,7 +63,7 @@ namespace Kuantech.Puzzle.Jam
             if (CurrentElement != null)
             {
                 //Should we destroy it?
-                Destroy(CurrentElement.gameObject);
+                CurrentElement.Despawn();
             }
             CurrentElement = null;
         }
