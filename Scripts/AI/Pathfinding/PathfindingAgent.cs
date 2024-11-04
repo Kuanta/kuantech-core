@@ -20,18 +20,38 @@ namespace Kuantech.AI.Pathfinding
             WaypointFollower.OnReachedWaypoint += OnReachedWaypoint;
             WaypointFollower.OnReachedFinalTarget += OnReachedTarget;
         }
+
+        public bool IsMoving()
+        {
+            return WaypointFollower.IsMoving();
+        }
+
+        public Path GetShortestPath(PathNode node)
+        {
+            return Pathfinder.GetShortestPath(CurrentNode, node);
+        }
+
+        public Path GetShortestPath(PathNode startNode, PathNode endNode)
+        {
+            return Pathfinder.GetShortestPath(startNode, endNode);
+        }
         
         public bool GoToNode(PathNode node)
         {
-            Path shortestPath = Pathfinder.GetShortestPath(CurrentNode, node);
+            Path shortestPath = GetShortestPath(node);
             if (shortestPath.PathNodes.IsNullOrEmpty())
             {
                 Debug.LogError($"No Path to {node.Name}");
                 return false;
             }
-            SetPath(shortestPath.PathNodes.ToArray());
+            SetPath(shortestPath);
             FollowPath();
             return true;
+        }
+
+        public void SetPath(Path path)
+        {
+            SetPath(path.PathNodes.ToArray());
         }
         
         public void SetPath(PathNode[] nodes)

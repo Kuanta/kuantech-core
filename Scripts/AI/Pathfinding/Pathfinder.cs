@@ -1,12 +1,29 @@
 ﻿using System.Collections.Generic;
+using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.AI.Pathfinding
 {
-    public struct Path
+    public class Path
     {
         public List<PathNode> PathNodes;
         public float TotalCost;
+        
+        /// <summary>
+        /// Is this path shorter?
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        public bool IsShorter(Path path)
+        {
+            if (!IsValidPath()) return false;
+            return TotalCost < path.TotalCost;
+        }
+
+        public bool IsValidPath()
+        {
+            return !PathNodes.IsNullOrEmpty();
+        }
     }
     /// <summary>
     /// Node based path finder using A* algorithm
@@ -51,7 +68,10 @@ namespace Kuantech.AI.Pathfinding
                 }
                 foreach (PathNode neighbor in currentNode.GetConnectedNodes())
                 {
-                    if(neighbor == null || !neighbor.IsPassable()) continue;
+                    if (neighbor == null || !neighbor.IsPassable())
+                    {
+                        continue;
+                    }
                     if (closedList.Contains(neighbor))
                     {
                         continue; // Ignore already evaluated nodes

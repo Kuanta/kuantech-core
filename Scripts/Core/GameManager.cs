@@ -112,6 +112,14 @@ namespace Kuantech.Core
         
         #region pool
 
+        public static GameObject GetObjectFromPool(GameObject prefab)
+        {
+            return GameManager.Instance.Pool.GetObject(prefab);
+        }
+        public static void PoolObject(GameObject objectToPool, float delay=0)
+        {
+            GameManager.Instance.PoolObjectAfterTime(objectToPool, delay);
+        }
         public IEnumerator PoolObjectAfterTime(GameObject objToPool, float delay, UnityAction handler = null)
         {
             IEnumerator coroutine = PoolRoutine(objToPool, delay, handler);

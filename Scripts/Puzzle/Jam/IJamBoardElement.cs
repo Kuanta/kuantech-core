@@ -1,25 +1,20 @@
 ﻿using System;
-using UnityEngine;
 
 namespace Kuantech.Puzzle.Jam
 {
-    public class JamBoardElement : MonoBehaviour, IJamBoardElement
+    public interface IJamBoardElement
     {
-        [NonSerialized] public JamBoardSpot AssignedSpot;
-        
         public void SetAssignedSpot(JamBoardSpot spot)
         {
-            AssignedSpot = spot;
         }
 
         public void RemoveFromSpot()
         {
-            
         }
 
         public void Despawn()
         {
-            Destroy(gameObject);
+            
         }
     }
 }

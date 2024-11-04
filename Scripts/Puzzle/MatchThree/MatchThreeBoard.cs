@@ -244,12 +244,12 @@ namespace Kuantech.Puzzle.MatchThree
                     //Which element caused this?
                     if(group.Contains(element1))
                     {
-                        rowToSpawn = element1.Row;
-                        colToSpawn = element1.Column;
+                        rowToSpawn = element1.AnchorRow;
+                        colToSpawn = element1.AnchorColumn;
                     }else if(group.Contains(element2))
                     {
-                        rowToSpawn = element2.Row;
-                        colToSpawn = element2.Column;
+                        rowToSpawn = element2.AnchorRow;
+                        colToSpawn = element2.AnchorColumn;
                     }
                     MatchThreeElement booster = BoosterCollection.GetBooster(shape);
                     if(booster != null)
@@ -369,11 +369,11 @@ namespace Kuantech.Puzzle.MatchThree
                 {
                     el.Interact();
                 }
-                int row = el.Row;
-                int col = el.Column;
-                if (GetTile(el.Row, el.Column, el.Layer) == el)
+                int row = el.AnchorRow;
+                int col = el.AnchorColumn;
+                if (GetTile(el.AnchorRow, el.AnchorColumn, el.AnchorLayer) == el)
                 {
-                    Tiles[el.Layer][el.Row, el.Column] = null;
+                    Tiles[el.AnchorLayer][el.AnchorRow, el.AnchorColumn] = null;
                 }
                 el.Despawn();
 
@@ -419,24 +419,24 @@ namespace Kuantech.Puzzle.MatchThree
         public void DestroyElement(MatchThreeElement element)
         {
             if(element == null || element.Indestructible) return;
-            Tiles[element.Layer][element.Row, element.Column] = null;
+            Tiles[element.AnchorLayer][element.AnchorRow, element.AnchorColumn] = null;
             element.Despawn();
         }
 
         public void SwapElements(MatchThreeElement element1, MatchThreeElement element2, int layer=0)
         {
-            Vector2Int element1Position = new Vector2Int(element1.Column, element1.Row); 
-            Vector2Int element2Position = new Vector2Int(element2.Column, element2.Row);
+            Vector2Int element1Position = new Vector2Int(element1.AnchorColumn, element1.AnchorRow); 
+            Vector2Int element2Position = new Vector2Int(element2.AnchorColumn, element2.AnchorRow);
             
             //Swap references
             Tiles[layer][element1Position.y, element1Position.x] = element2;
             Tiles[layer][element2Position.y, element2Position.x] = element1;
             
             //Swap Row & Col fields 
-            element1.Row = element2Position.y;
-            element1.Column = element2Position.x;
-            element2.Row = element1Position.y;
-            element2.Column = element1Position.x;
+            element1.AnchorRow = element2Position.y;
+            element1.AnchorColumn = element2Position.x;
+            element2.AnchorRow = element1Position.y;
+            element2.AnchorColumn = element1Position.x;
 
             element1.MoveToRowCol(element2Position.y, element2Position.x, TileSpeed);
             element2.MoveToRowCol(element1Position.y, element1Position.x, TileSpeed);

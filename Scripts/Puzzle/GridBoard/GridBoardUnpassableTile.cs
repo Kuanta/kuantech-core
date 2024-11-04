@@ -8,7 +8,7 @@ namespace Kuantech.Puzzle
     public class GridBoardUnpassableTile : GridTile
     {
         public GameObject EditorVisual;
-        public override void Spawn()
+        public override void Spawn(bool isExisting = false)
         {
             base.Spawn();
             if (EditorVisual == null) return;

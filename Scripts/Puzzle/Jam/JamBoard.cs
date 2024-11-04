@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Puzzle.Jam
@@ -7,14 +8,32 @@ namespace Kuantech.Puzzle.Jam
     {
         public List<JamBoardSpot> Spots;
 
-        public virtual void Initialize()
+        [SerializeField] private JamBoardSpot SpotPrefab;
+        [SerializeField] private EvenLayoutPlacer LayoutPlacer;
+        
+        public void Initialize()
         {
             foreach (var spot in Spots)
             {
                 spot.ParentBoard = this;
+                spot.PathNodeComponent.Initialize();
             }
         }
 
+        public void BuildDock(int dockSize)
+        {
+            List<GameObject> spotObjects = new List<GameObject>();
+            Spots = new List<JamBoardSpot>();
+            for (int i = 0; i < dockSize; ++i)
+            {
+                JamBoardSpot waitingSpot = Instantiate(SpotPrefab);
+                Spots.Add(waitingSpot);
+                spotObjects.Add(waitingSpot.gameObject);
+            }
+            LayoutPlacer.SetChildren(spotObjects);
+            LayoutPlacer.DistributeChilds();
+        }
+        
         public bool IsBoardFull()
         {
             foreach (var spot in Spots)

@@ -38,7 +38,7 @@ namespace Kuantech.AI.Pathfinding
             if (ParentNodeComponent != null) return ParentNodeComponent.transform.rotation;
             return Rotation;
         }
-        public List<PathNode> GetConnectedNodes()
+        public virtual List<PathNode> GetConnectedNodes()
         {
             return ConnectedNodes;
         }
@@ -52,7 +52,7 @@ namespace Kuantech.AI.Pathfinding
             ConnectedNodes.Add(pathNode);
         }
 
-        public bool IsPassable()
+        public virtual bool IsPassable()
         {
             if (ParentNodeComponent != null)
             {

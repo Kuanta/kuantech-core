@@ -76,15 +76,15 @@ namespace Kuantech.Puzzle.MatchThree
             List<MatchThreeElement> matchList = match.ToList();
             bool sameRows = true;
             bool sameCols = true;
-            int previousRow = matchList[0].Row;
-            int previousCol = matchList[0].Column;
+            int previousRow = matchList[0].AnchorRow;
+            int previousCol = matchList[0].AnchorColumn;
             for(int i=0;i<matchList.Count;++i)
             {
                 MatchThreeElement element = matchList[i];
-                sameRows = element.Row == previousRow && sameRows;
-                sameCols = element.Column == previousCol && sameCols;
-                previousRow = element.Row;
-                previousCol = element.Column;
+                sameRows = element.AnchorRow == previousRow && sameRows;
+                sameCols = element.AnchorColumn == previousCol && sameCols;
+                previousRow = element.AnchorRow;
+                previousCol = element.AnchorColumn;
             }
 
             if(sameRows && sameCols)
