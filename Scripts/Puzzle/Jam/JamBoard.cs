@@ -15,8 +15,7 @@ namespace Kuantech.Puzzle.Jam
         {
             foreach (var spot in Spots)
             {
-                spot.ParentBoard = this;
-                spot.PathNodeComponent.Initialize();
+                spot.Initialize(this);
             }
         }
 

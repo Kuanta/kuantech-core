@@ -1,5 +1,4 @@
-﻿using Kuantech.AI.Pathfinding;
-using Kuantech.Utils;
+﻿using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Puzzle.Jam
@@ -7,15 +6,30 @@ namespace Kuantech.Puzzle.Jam
     public class JamBoardSpot : MonoBehaviour
     {
         public JamBoard ParentBoard;
-        public PathNodeComponent PathNodeComponent;
+        private JamBoardPathNode PathNode;
+        //public PathNodeComponent PathNodeComponent;
         private IJamBoardElement CurrentElement;
         private IJamBoardElement IncomingElement;
-        
+
+        public void Initialize(JamBoard parentBoard)
+        {
+            ParentBoard = parentBoard;
+            PathNode = new JamBoardPathNode(this);
+        }
         public IJamBoardElement GetOccupyingElement()
         {
             return CurrentElement;
         }
-        
+
+        public JamBoardPathNode GetPathNode()
+        {
+            if (PathNode == null)
+            {
+                PathNode = new JamBoardPathNode(this);
+            }
+
+            return PathNode;
+        }
         public bool IsSpotOccupied()
         {
             return CurrentElement != null || IncomingElement != null;
