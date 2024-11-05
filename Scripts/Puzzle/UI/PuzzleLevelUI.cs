@@ -74,23 +74,29 @@ namespace Kuantech.Puzzle.UI
                 BoostersHUD.OnLevelSetup(level);
             }
 
-            if (level.IsHardLevel() && HardLevelIntroPanel != null)
+            if (HardLevelIntroPanel != null)
             {
-                HardLevelIntroPanel.gameObject.SetActive(true);
-                HardLevelIntroPanel.PlayAnimation();
-            }else if (HardLevelIntroPanel != null && !level.IsHardLevel())
-            {
-                HardLevelIntroPanel.gameObject.SetActive(false);
+                if (level.IsHardLevel() && HardLevelIntroPanel != null)
+                {
+                    HardLevelIntroPanel.gameObject.SetActive(true);
+                    HardLevelIntroPanel.PlayAnimation();
+                }else if (HardLevelIntroPanel != null && !level.IsHardLevel())
+                {
+                    HardLevelIntroPanel.gameObject.SetActive(false);
+                }
             }
 
-            if (level.IsBonusLevel() && BonusLevelIntroPanel != null)
+            if (BonusLevelIntroPanel != null)
             {
-                BonusLevelIntroPanel.gameObject.SetActive(true);
-                BonusLevelIntroPanel.PlayAnimation();
-            }
-            else
-            {
-                BonusLevelIntroPanel.gameObject.SetActive(false);
+                if (level.IsBonusLevel() && BonusLevelIntroPanel != null)
+                {
+                    BonusLevelIntroPanel.gameObject.SetActive(true);
+                    BonusLevelIntroPanel.PlayAnimation();
+                }
+                else
+                {
+                    BonusLevelIntroPanel.gameObject.SetActive(false);
+                }
             }
             
             LevelIndicator.SetHardLevel(level.IsHardLevel());
