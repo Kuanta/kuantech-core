@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Kuantech.AI.Pathfinding;
 using Kuantech.Core.FX;
 using Kuantech.Puzzle.Pathfinding;
 using Kuantech.Utils;
@@ -20,9 +19,9 @@ namespace Kuantech.Puzzle
 
     public class GridBoard : MonoBehaviour
     {
-        public enum DirectionTypes : uint
+        public enum Directions : uint
         {
-            Top = 0, Right = 1, Bottom = 2, Left = 3, TopLeft = 4, TopRight = 5, BottomLeft = 6, BottomRight = 7, Invalid
+            Top = 0, Right = 1, Bottom = 2, Left = 3,
         }
         
         [Header("Board Size")]
@@ -77,6 +76,7 @@ namespace Kuantech.Puzzle
             AddLayer(); //Add at least a single layer
             FindExistingTiles();
             SetBackgroundTiles();
+            UpdateDirectionalTiles();
             if (Editorbackground != null)
             {
                 Editorbackground.gameObject.SetActive(false);
@@ -125,7 +125,6 @@ namespace Kuantech.Puzzle
                 GridTileCoordinate coord = GetRowColFromPosition(tile.transform.position);
                 if (!IsCoordinateValid(coord))
                 {
-                    Debug.LogError($"Coordinate:{coord.Row} - {coord.Column} is invalid");
                     continue;
                 }
                 coord.Layer = layer;
@@ -290,7 +289,22 @@ namespace Kuantech.Puzzle
                 PositionTileAtCoordinate(gridTile, row, col, layer);
             }
         }
-        
+
+        private void UpdateDirectionalTiles()
+        {
+            for(int r=0;r<RowCount;++r)
+            {
+                for (int c = 0; c < ColumnCount; ++c)
+                {
+                    GridTile tile = GetTile(r, c, 0);
+                    if(tile == null) continue;
+                    if (tile.TryGetComponent(out DirectionalVisualSelector dvs))
+                    {
+                        dvs.SetVisual();
+                    }
+                }
+            }
+        }
         /// <summary>
         /// Just sets the position of a tile without setting its coordinates
         /// </summary>
@@ -415,6 +429,35 @@ namespace Kuantech.Puzzle
             }
             //todo: Do a safety check here maybe?
             return Tiles[layer][row, col];
+        }
+        
+        /// <summary>
+        /// Gets the tile at relative direction of given tile
+        /// </summary>
+        /// <param name="direction"></param>
+        /// <param name="tile"></param>
+        /// <returns></returns>
+        public GridTile GetTileAtDirection(Directions direction, GridTile tile)
+        {
+            int row = tile.AnchorRow;
+            int col = tile.AnchorColumn;
+            int layer = tile.AnchorLayer;
+            switch (direction)
+            {
+                case Directions.Bottom:
+                    row -= 1;
+                    break;
+                case Directions.Left:
+                    col -= 1;
+                    break;
+                case Directions.Top:
+                    row += 1;
+                    break;
+                case Directions.Right:
+                    col += 1;
+                    break;
+            }
+            return GetTile(row, col, layer);
         }
         
         public bool IsTileOccupied(int row, int col, int layer=0)

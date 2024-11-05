@@ -32,7 +32,7 @@ namespace Kuantech.Puzzle
         [NonSerialized] public int AnchorLayer;
         [NonSerialized] public Vector3Int MinCoords;
         [NonSerialized] public Vector3Int MaxCoords;
-        
+
         [Header("Visual")] public bool MaskBackground = false;
         public Transform VisualParent;
         [NonSerialized] public GameObject CurrentVisual;
