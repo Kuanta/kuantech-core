@@ -29,8 +29,8 @@ namespace Kuantech.Puzzle
         [NonSerialized] public int AnchorRow;
         [NonSerialized] public int AnchorColumn;
         [NonSerialized] public int AnchorLayer;
-        
-        [Header("Visual")] 
+
+        [Header("Visual")] public bool MaskBackground = false;
         public Transform VisualParent;
         [NonSerialized] public GameObject CurrentVisual;
         public bool LockVisual = false;
@@ -47,6 +47,7 @@ namespace Kuantech.Puzzle
         {
             if (!clearingBoard && StayOnBoardAfterDespawn)
             {
+                gameObject.SetActive(false);
                 return;
             }
             if (ParentBoard != null)

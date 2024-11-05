@@ -79,7 +79,7 @@ namespace Kuantech.Puzzle.Jam
                 //Should we destroy it?
                 CurrentElement.Despawn();
             }
-            CurrentElement = null;
+            ClearSpot();
         }
     }
 }

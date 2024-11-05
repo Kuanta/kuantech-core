@@ -148,12 +148,16 @@ namespace Kuantech.Puzzle
                 if (tile is GridBoardUnpassableTile unpassableTile)
                 {
                     BackgroundMask[coord.Row, coord.Column] = true;
+                }else if (tile.MaskBackground)
+                {
+                    BackgroundMask[coord.Row, coord.Column] = true;
                 }
             }
         }
 
         protected virtual void SpawnExistingTile(GridTile tile, GridTileCoordinate coord)
         {
+            tile.gameObject.SetActive(true);
             SetTile(tile, coord.Row, coord.Column, coord.Layer);
             tile.Spawn(true);
         }
@@ -184,9 +188,7 @@ namespace Kuantech.Puzzle
                 GridTileCoordinate coord = pair.Key;
                 GridTile existing = pair.Value;
                 if (existing == null) continue;
-                existing.gameObject.SetActive(true);
-                SetTile(existing, coord.Row, coord.Column, coord.Layer);
-                existing.Spawn();
+                SpawnExistingTile(existing, coord);
             }
         }
         

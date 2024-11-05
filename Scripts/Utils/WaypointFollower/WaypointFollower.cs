@@ -25,6 +25,7 @@ namespace Kuantech.Utils
         public float RotationLerpFactor = 10.0f;
         public float TargetReachThresh = 0.1f;
         public float UpdateRotationThresh = 0.1f;
+        public bool ShouldUpdateRotation = true;
 
         [Header("Spline")] public int SegmentPerSpline = 4;
         [Tooltip("If set to true, a spline will be calculated and agent will follow the spline. However this will prevent events for middle waypoints")]
@@ -192,13 +193,13 @@ namespace Kuantech.Utils
                 return;
             }
             
-            Waypoint currentWaypoint = new Waypoint()
-            {
-                Position = transform.position,
-                Rotation = transform.rotation,
-            };
+            // Waypoint currentWaypoint = new Waypoint()
+            // {
+            //     Position = transform.position,
+            //     Rotation = transform.rotation,
+            // };
             List<Waypoint> waypoints = new List<Waypoint>();
-            waypoints.Add(currentWaypoint); 
+            //waypoints.Add(currentWaypoint); 
             waypoints.Add(singleWaypoint);
             singleWaypoint.FollowerReachedWaypoint = onReachedAction;
             SetWaypoints(waypoints);
@@ -356,6 +357,7 @@ namespace Kuantech.Utils
 
         public void SetRotation(Quaternion rotation)
         {
+            if (!ShouldUpdateRotation) return;
             transform.rotation = rotation;
         }
         
