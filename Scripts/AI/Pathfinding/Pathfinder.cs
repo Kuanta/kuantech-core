@@ -17,6 +17,7 @@ namespace Kuantech.AI.Pathfinding
         public bool IsShorter(Path path)
         {
             if (!IsValidPath()) return false;
+            if (!path.IsValidPath()) return true;
             return TotalCost < path.TotalCost;
         }
 
