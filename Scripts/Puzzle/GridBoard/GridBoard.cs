@@ -287,13 +287,24 @@ namespace Kuantech.Puzzle
             SetTileArrayForTile(gridTile, row, col, layer);
             if(setPosition)
             {
-                gridTile.transform.SetParent(transform);
-                gridTile.SetLocalPosition(GetLocalPosition(row, col));
-                gridTile.transform.localRotation = Quaternion.identity;
-                gridTile.transform.localScale = Vector3.one;
+                PositionTileAtCoordinate(gridTile, row, col, layer);
             }
         }
         
+        /// <summary>
+        /// Just sets the position of a tile without setting its coordinates
+        /// </summary>
+        /// <param name="tile"></param>
+        /// <param name="row"></param>
+        /// <param name="col"></param>
+        /// <param name="layer"></param>
+        public void PositionTileAtCoordinate(GridTile tile, int row, int col, int layer)
+        {
+            tile.transform.SetParent(transform);
+            tile.SetLocalPosition(GetLocalPosition(row, col));
+            tile.transform.localRotation = Quaternion.identity;
+            tile.transform.localScale = Vector3.one;
+        }
         /// <summary>
         /// Simply fills the tile array.
         /// </summary>
@@ -332,6 +343,12 @@ namespace Kuantech.Puzzle
                 int row = anchorRow + localCoord.Row;
                 int col = anchorCol + localCoord.Column;
                 int layer = anchorLayer + localCoord.Layer;
+                GridTile tileAtCoord = GetTile(row, col, layer);
+                if (tileAtCoord == tile)
+                {
+                    //Self occupation is ok
+                    continue;
+                }
                 if (IsTileOccupied(row, col, layer)) return false;
             }
 
