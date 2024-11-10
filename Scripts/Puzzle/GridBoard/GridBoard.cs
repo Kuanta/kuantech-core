@@ -22,6 +22,7 @@ namespace Kuantech.Puzzle
         public enum Directions : uint
         {
             Top = 0, Right = 1, Bottom = 2, Left = 3,
+            TopRight=4,BottomRight=5,BottomLeft=6,TopLeft=7,
         }
         
         [Header("Board Size")]
@@ -298,9 +299,9 @@ namespace Kuantech.Puzzle
                 {
                     GridTile tile = GetTile(r, c, 0);
                     if(tile == null) continue;
-                    if (tile.TryGetComponent(out DirectionalVisualSelector dvs))
+                    if (tile.TryGetComponent(out ModularTileVisual modularTile))
                     {
-                        dvs.SetVisual();
+                        modularTile.SetVisual(tile);
                     }
                 }
             }
@@ -455,6 +456,22 @@ namespace Kuantech.Puzzle
                     break;
                 case Directions.Right:
                     col += 1;
+                    break;
+                case Directions.TopRight:
+                    row += 1;
+                    col += 1;
+                    break;
+                case Directions.BottomRight:
+                    row -= 1;
+                    col += 1;
+                    break;
+                case Directions.BottomLeft:
+                    row -= 1;
+                    col -= 1;
+                    break;
+                case Directions.TopLeft:
+                    row += 1;
+                    col -= 1;
                     break;
             }
             return GetTile(row, col, layer);

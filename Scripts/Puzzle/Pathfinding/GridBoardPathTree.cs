@@ -1,5 +1,4 @@
-﻿using Kuantech.AI.Pathfinding;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Kuantech.Puzzle.Pathfinding
 {
