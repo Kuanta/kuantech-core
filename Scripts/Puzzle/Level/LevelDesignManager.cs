@@ -23,6 +23,9 @@ namespace Kuantech.Puzzle
         public LevelDesignDataCollection LevelDesignsCollection;
         //public List<LevelDesignAsset> DesignAssets;
 
+        [Header("Level Design Fetcher")] [SerializeField]
+        private LevelDesignFetcher LevelDesignFetcher;
+        
         public bool UseSheetReader = true;
         [NonSerialized] public bool SheetRead;
         public override async UniTask Initialize(GameManager gameManager)
