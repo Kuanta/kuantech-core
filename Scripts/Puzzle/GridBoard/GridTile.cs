@@ -23,6 +23,8 @@ namespace Kuantech.Puzzle
     }
     public class GridTile : MonoBehaviour
     {
+        [Tooltip("Unique id for the tile type")]
+        public int GridTypeId;
         public bool DestroyOnDespawn = true;
         public bool StayOnBoardAfterDespawn = false;
         public List<GridTileCoordinate> Coordinates;
@@ -32,8 +34,10 @@ namespace Kuantech.Puzzle
         [NonSerialized] public int AnchorLayer;
         [NonSerialized] public Vector3Int MinCoords;
         [NonSerialized] public Vector3Int MaxCoords;
+        [NonSerialized] public bool IsExisting;
 
-        [Header("Visual")] public bool MaskBackground = false;
+        [Header("Visual")]
+        public bool MaskBackground = false;
         public Transform VisualParent;
         [NonSerialized] public GameObject CurrentVisual;
         public bool LockVisual = false;
@@ -43,7 +47,7 @@ namespace Kuantech.Puzzle
         /// </summary>
         public virtual void Spawn(bool isExisting=false)
         {
-            
+            IsExisting = isExisting;
         }
 
         public virtual void Despawn(bool clearingBoard)
@@ -147,6 +151,11 @@ namespace Kuantech.Puzzle
         {
             if (ParentBoard == null) return;
             ParentBoard.UnsetTile(this);
+        }
+
+        public virtual void Reset()
+        {
+            
         }
     }
 }

@@ -70,5 +70,10 @@ namespace Kuantech.Utils
             IsMoving = false;
             ReachedTargetHandler?.Invoke();
         }
+
+        public void Stop()
+        {
+            IsMoving = false;
+        }
     }
 }

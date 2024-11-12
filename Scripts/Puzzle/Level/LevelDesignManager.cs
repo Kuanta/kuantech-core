@@ -14,7 +14,7 @@ namespace Kuantech.Puzzle
 {
     public class LevelDesignManager : SubManager
     {
-        [Header("Remote Data")]
+        [Header("Sheer Remote Data")]
         public SheetReader SheetReader;
         public string LevelDesignSheetRange;
         public string ClassName;
@@ -23,21 +23,23 @@ namespace Kuantech.Puzzle
         public LevelDesignDataCollection LevelDesignsCollection;
         //public List<LevelDesignAsset> DesignAssets;
 
-        [Header("Level Design Fetcher")] [SerializeField]
-        private LevelDesignFetcher LevelDesignFetcher;
         
         public bool UseSheetReader = true;
-        [NonSerialized] public bool SheetRead;
         public override async UniTask Initialize(GameManager gameManager)
         {
             await base.Initialize(gameManager);
-            SheetRead = false;
-            if (!UseSheetReader) return;
+            if (!UseSheetReader)
+            {
+                if (LevelDesignsCollection == null) return;
+                await LevelDesignsCollection.Initialize();
+                return;
+            }
+            
+            //Rest is for backward compability
             _sheetData = null;
             if (SheetReader == null) return;
             SheetReader.OnSheetRead += (readData =>
             {
-                SheetRead = true;
                 _sheetData = readData;
                 if (LevelDesignsCollection != null)
                 {

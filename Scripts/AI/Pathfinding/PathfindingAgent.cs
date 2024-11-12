@@ -82,5 +82,10 @@ namespace Kuantech.AI.Pathfinding
         {
             OnReachedNodeEvent?.Invoke();
         }
+
+        public void Stop()
+        {
+            WaypointFollower.Stop();
+        }
     }
 }

@@ -24,6 +24,13 @@ namespace Kuantech.Puzzle
             Top = 0, Right = 1, Bottom = 2, Left = 3,
             TopRight=4,BottomRight=5,BottomLeft=6,TopLeft=7,
         }
+
+        public struct ExistingTileData
+        {
+            public GridTileCoordinate Coordinate;
+            public GridTile ExistingTile;
+            public bool IsPrefab; //If prefab, this existing tile should be instantiated probably
+        }
         
         [Header("Board Size")]
         public int RowCount = 5;
@@ -40,6 +47,9 @@ namespace Kuantech.Puzzle
 
         [Header("Existing Tiles")] 
         public List<GameObject> ExistingLayers;
+
+        [Header("Tile Collection")] 
+        public TileCollection TileCollection;
         
         [Header("BackgroundTile object")] 
         public GridTileBackground BackgroundGameObjectPrefab;
@@ -55,8 +65,8 @@ namespace Kuantech.Puzzle
         public GridTileBackground[,] BackgroundObjects;
         public bool[,] BackgroundMask; //A background object can't be placed if its masked here
 
-        protected Dictionary<GridTileCoordinate, GridTile> _existingTilesDict;
-        protected HashSet<GridTile> _existingTilesSet = new HashSet<GridTile>();
+        protected List<ExistingTileData> ExistingTiles;
+        //protected HashSet<GridTile> _existingTilesSet = new HashSet<GridTile>();
 
         //Masked tiles are tiles that are empty but 'blocked' tiles. 
         public HashSet<GridTileCoordinate> MaskedTiles = new HashSet<GridTileCoordinate>();
@@ -76,6 +86,7 @@ namespace Kuantech.Puzzle
             
             AddLayer(); //Add at least a single layer
             FindExistingTiles();
+            SpawnExistingTiles();
             SetBackgroundTiles();
             UpdateDirectionalTiles();
             if (Editorbackground != null)
@@ -92,9 +103,9 @@ namespace Kuantech.Puzzle
         /// <summary>
         /// Finds existing tiles on the board
         /// </summary>
-        private void FindExistingTiles()
+        protected virtual void FindExistingTiles()
         {
-            _existingTilesDict = new Dictionary<GridTileCoordinate, GridTile>();
+            ExistingTiles = new List<ExistingTileData>();
             if (ExistingLayers == null)
             {
                 //Single layer
@@ -114,6 +125,26 @@ namespace Kuantech.Puzzle
             }
         }
 
+        public void AddExistingTileData(GridTileCoordinate tileCoordinate, GridTile existingTile, bool isPrefab)
+        {
+            if (ExistingTiles == null) ExistingTiles = new List<ExistingTileData>();
+            ExistingTiles.Add(new ExistingTileData()
+            {
+                Coordinate = tileCoordinate,
+                ExistingTile = existingTile,
+                IsPrefab = isPrefab,
+            });
+        }
+        /// <summary>
+        /// Spawns the found existing tiles on the board
+        /// </summary>
+        protected virtual void SpawnExistingTiles()
+        {
+            foreach (var data in ExistingTiles)
+            {
+                SpawnExistingTile(data);
+            }
+        }
         private void AddLayer()
         {
             Tiles.Add(new GridTile[RowCount, ColumnCount]);
@@ -129,34 +160,25 @@ namespace Kuantech.Puzzle
                     continue;
                 }
                 coord.Layer = layer;
-                if (_existingTilesDict.ContainsKey(coord))
-                {
-                    Destroy(tile.gameObject);
-                    continue;
-                }
-
                 tile.DestroyOnDespawn = false; //Existing tiles should be deactivated on despawn, not destroyed
-                _existingTilesSet.Add(tile);
-                _existingTilesDict[coord] = tile;
-                if (!CanTileBePlaced(tile, coord.Row, coord.Column, coord.Layer))
-                {
-                    tile.Despawn(false);
-                    continue;
-                }
-                SpawnExistingTile(tile, coord);
-
-                if (tile is GridBoardUnpassableTile unpassableTile)
-                {
-                    BackgroundMask[coord.Row, coord.Column] = true;
-                }else if (tile.MaskBackground)
-                {
-                    BackgroundMask[coord.Row, coord.Column] = true;
-                }
+                AddExistingTileData(coord, tile, false);
             }
         }
 
-        protected virtual void SpawnExistingTile(GridTile tile, GridTileCoordinate coord)
+        protected virtual void SpawnExistingTile(ExistingTileData data)
         {
+            GridTileCoordinate coord = data.Coordinate;
+            GridTile tile = data.ExistingTile;
+            if (data.IsPrefab)
+            {
+                tile = Instantiate(data.ExistingTile);
+            }
+            if (!CanTileBePlaced(tile, coord.Row, coord.Column, coord.Layer))
+            {
+                tile.Despawn(false);
+                return;
+            }
+            tile.DestroyOnDespawn = false;
             tile.gameObject.SetActive(true);
             SetTile(tile, coord.Row, coord.Column, coord.Layer);
             tile.Spawn(true);
@@ -178,20 +200,6 @@ namespace Kuantech.Puzzle
             }
         }
         
-        /// <summary>
-        /// Resets the existing tiles
-        /// </summary>
-        private void RespawnExistingTiles()
-        {
-            foreach (var pair in _existingTilesDict)
-            {
-                GridTileCoordinate coord = pair.Key;
-                GridTile existing = pair.Value;
-                if (existing == null) continue;
-                SpawnExistingTile(existing, coord);
-            }
-        }
-        
         public virtual void AddBackgroundObject(int row, int col)
         {
             if (BackgroundGameObjectPrefab != null)
@@ -206,7 +214,7 @@ namespace Kuantech.Puzzle
         public virtual void RestartBoard()
         {
             ClearBoard();
-            RespawnExistingTiles();
+            SpawnExistingTiles();
         }
         
         #region Move
