@@ -24,6 +24,10 @@ namespace Kuantech.Core
         {
             Pool = new PrefabPool(transform, 1000);
             DontDestroyOnLoad(gameObject);
+            if (LoadingScreen != null)
+            {
+                LoadingScreen.gameObject.SetActive(true);
+            }
         }
 
         protected virtual void Start()

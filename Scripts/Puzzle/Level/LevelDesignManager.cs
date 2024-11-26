@@ -53,7 +53,12 @@ namespace Kuantech.Puzzle
         {
             await SheetReader.GetSheetData(LevelDesignSheetRange);
         }
-        
+
+        public async void UpdateLevelDataCollection()
+        {
+            if (LevelDesignsCollection == null) return;
+            await LevelDesignsCollection.UpdateData();
+        }
         /// <summary>
         /// Gets level design data
         /// </summary>

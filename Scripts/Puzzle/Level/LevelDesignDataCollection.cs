@@ -11,7 +11,11 @@ namespace Kuantech.Puzzle
         {
             
         }
-        
+
+        public virtual async UniTask UpdateData()
+        {
+            
+        }
         public virtual LevelDesignData GetLevelDesignData(int levelIndex)
         {
             throw new NotImplementedException();

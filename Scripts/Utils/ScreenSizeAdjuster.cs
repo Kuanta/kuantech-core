@@ -1,4 +1,6 @@
+using DG.Tweening;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace Kuantech.Core.Utils
 {
@@ -12,20 +14,52 @@ namespace Kuantech.Core.Utils
 
         [Header("Angles")] 
         public float PitchAngle;
-
         public float YawAngle;
         
         [Header("Perspective")]
         public bool FitOnUpdate = true;
 
+        [Header("Animation")] public AnimationCurve EaseAnimationCurve;
+        public float AnimationDuration = 2;
         public Camera CameraToFit;
+
+        private Vector3 _targetPosition;
+        private Vector3 _targetNormal;
         protected virtual void Update()
         {
             if(!FitOnUpdate) return;
+            CalculateTargetParameters();
             Fit();
         }
 
+        public void SetNewAnchors(GameObject top, GameObject right, GameObject bottom, GameObject left)
+        {
+            TopAnchor = top;
+            RightAnchor = right;
+            BottomAnchor = bottom;
+            LeftAnchor = left;
+            CalculateTargetParameters();
+        }
+
+        public void GoToTargetPosition(float duration, UnityAction onReached)
+        {
+            if (CameraToFit == null) return;
+            CameraToFit.transform.DOMove(_targetPosition, AnimationDuration).OnComplete(() =>
+            {
+                onReached?.Invoke();
+            }).SetEase(EaseAnimationCurve);
+            Quaternion targetRot = Quaternion.LookRotation(_targetNormal, Vector3.up);
+            CameraToFit.transform.DORotate(targetRot.eulerAngles, duration);
+        }
+        
         public void Fit()
+        {
+            if (CameraToFit == null) return;
+            CameraToFit.transform.forward = _targetNormal;
+            CameraToFit.transform.position = _targetPosition;
+        }
+
+        private void CalculateTargetParameters()
         {
             if (CameraToFit == null) return;
             // Get the positions of the anchor points
@@ -59,11 +93,11 @@ namespace Kuantech.Core.Utils
             float distanceFromLookPoint = Mathf.Max(verticalCameraDistane, horizontalCameraDistane);
             Vector3 bottomLeft = bottomPosition - right * (rightPosition - leftPosition).magnitude * 0.5f;
             Vector3 lookPoint = bottomLeft + right * horizontalLookPosition + forward * verticalLookPosition;
-            CameraToFit.transform.forward = -normal;
-            CameraToFit.transform.position = lookPoint + normal * distanceFromLookPoint;
+
+            _targetNormal = -normal;
+            _targetPosition = lookPoint + normal * distanceFromLookPoint;
         }
-
-
+        
         private void GetTargetParameters(Vector3 startPlanePoint, Vector3 endPlanePoint, float fov, float nearPlaneSize, float angle, out float cameraLookPosition, out float cameraDistance)
         {
             Vector3 forward = endPlanePoint - startPlanePoint;

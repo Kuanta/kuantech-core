@@ -4,6 +4,7 @@ using IngameDebugConsole;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using Kuantech.Core.HyperCasual;
+using Kuantech.Puzzle;
 
 namespace Kuantech.Core
 {
@@ -108,13 +109,27 @@ namespace Kuantech.Core
             CurrentLevel.SetupLevel(); //todo(optimization): This may be unefficient
             UpdateLevelIndex();
         }
-
+        
+        public void SetStage(int stageIndex)
+        {
+            if (CurrentLevel is PuzzleLevel puzzleLevel)
+            {
+                puzzleLevel.SetStage(stageIndex);
+            }
+        }
+        
         [ConsoleMethod("setLevel", "Sets the level")]
         public static void SetLevelCC(int levelIndex)
         {
             GetContext<LevelManager>().SetLevel(levelIndex, true);
         }
-
+        
+        [ConsoleMethod("setStage", "Sets the stage")]
+        public static void SetStageCC(int stageIndex)
+        {
+            GetContext<LevelManager>().SetStage(stageIndex);
+        }
+        
         [ConsoleMethod("resetLevel", "Resets the level")]
         public static void ResetLevelCC()
         {

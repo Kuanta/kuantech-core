@@ -72,6 +72,7 @@ namespace Kuantech.Data.Firebase
             if (request.result == UnityWebRequest.Result.Success)
             {
                 OnDataWrittenSuccesfully?.Invoke();
+                Debug.Log("Data written succesfully!");
             }
             else
             {
@@ -105,6 +106,7 @@ namespace Kuantech.Data.Firebase
                     var responseJson = JObject.Parse(request.downloadHandler.text);
                     var documents = responseJson["documents"];
                     OnCollectionReadSuccesfully?.Invoke(documents);
+                    Debug.Log("Level Design Data read succesfully!");
                 }
                 else
                 {

@@ -289,7 +289,11 @@ namespace Kuantech.Puzzle
         /// <param name="setPosition">If flag is set to true, the position will be set</param>
         public virtual void SetTile(GridTile gridTile, int row, int col, int layer=0, bool setPosition = true)
         {
-            if (!IsCoordinateValid(row, col) || !IsLayerValid(layer) || !CanTileBePlaced(gridTile, row, col,layer)) return;
+            if (!IsCoordinateValid(row, col) || !IsLayerValid(layer) || !CanTileBePlaced(gridTile, row, col, layer))
+            {
+                Debug.LogError("Couldn't set tile!");
+                return;
+            }
             gridTile.ParentBoard = this;
             gridTile.SetRowCol(row, col, layer);
             SetTileArrayForTile(gridTile, row, col, layer);
@@ -372,7 +376,11 @@ namespace Kuantech.Puzzle
                     //Self occupation is ok
                     continue;
                 }
-                if (IsTileOccupied(row, col, layer)) return false;
+
+                if (IsTileOccupied(row, col, layer))
+                {
+                    return false;
+                }
             }
 
             return true;

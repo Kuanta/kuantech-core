@@ -17,6 +17,7 @@ namespace Kuantech.Puzzle
         }
 
         public bool AutoCompleteStage = true; //If set true, stages will be completed automatically.
+        public int StageCount;
         [NonSerialized] public List<PuzzleLevelStage> Stages = null;
         private int _currentStageIndex = 0;
         
@@ -40,6 +41,7 @@ namespace Kuantech.Puzzle
         
         public int GetStageCount()
         {
+            if(Stages == null) return StageCount;
             return Stages.Count;
         }
         
@@ -50,7 +52,8 @@ namespace Kuantech.Puzzle
         
         public void AdvanceStage()
         {
-            if (_currentStageIndex == Stages.Count - 1)
+            int stageCount = GetTotalStageCount();
+            if (_currentStageIndex == stageCount - 1)
             {
                 //All stages are completed
                 OnAllStagesCompleted?.Invoke();
@@ -72,7 +75,7 @@ namespace Kuantech.Puzzle
         /// <returns></returns>
         public PuzzleLevelStage GetStage(int stageIndex)
         {
-            if (stageIndex >= Stages.Count)
+            if (stageIndex >= GetTotalStageCount())
             {
                 return null;
             }
@@ -87,12 +90,16 @@ namespace Kuantech.Puzzle
         /// <returns></returns>
         public bool GoToStage(int stageIndex)
         {
-            if (stageIndex >= Stages.Count) return false;
+            if (stageIndex >= GetTotalStageCount()) return false;
             _currentStageIndex = stageIndex;
             OnNewStage?.Invoke(stageIndex);
             return true;
         }
-        
+
+        private int GetTotalStageCount()
+        {
+            return Stages?.Count ?? StageCount;
+        }
         public PuzzleLevelStage GetCurrentStage()
         {
             return Stages[Mathf.Min(_currentStageIndex, Stages.Count-1)];

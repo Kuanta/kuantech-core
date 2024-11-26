@@ -58,7 +58,10 @@ namespace Kuantech.Puzzle.UI
         public virtual void OnLevelSetup(PuzzleLevel level)
         {
             CurrentLevel = level;
-            if(LevelIndicator != null) LevelIndicator.SetLevelIndex(level.LevelNumber + 1);
+            if (LevelIndicator != null)
+            {
+                LevelIndicator.SetLevelIndex(level.LevelNumber + 1);
+            }
             level.OnStateChange += OnLevelStateChange;
             
             //Set win conditions
@@ -85,7 +88,7 @@ namespace Kuantech.Puzzle.UI
                     HardLevelIntroPanel.gameObject.SetActive(false);
                 }
             }
-
+            
             if (BonusLevelIntroPanel != null)
             {
                 if (level.IsBonusLevel() && BonusLevelIntroPanel != null)
@@ -98,11 +101,16 @@ namespace Kuantech.Puzzle.UI
                     BonusLevelIntroPanel.gameObject.SetActive(false);
                 }
             }
-            
+
+            LevelIndicator.SetStageCount(tracker?.GetStageCount() ?? 1);
             LevelIndicator.SetHardLevel(level.IsHardLevel());
             LevelIndicator.SetBonusLevel(level.IsBonusLevel());
         }
 
+        public virtual void OnPlayLevel()
+        {
+            if(LevelIndicator != null) LevelIndicator.SetCurrentStage(CurrentLevel.GetCurrentStage());
+        }
         private void OnLevelStateChange(LevelStateChangeData levelStateChangeData)
         {
             if(levelStateChangeData.NewState == LevelState.Completed)
@@ -157,12 +165,16 @@ namespace Kuantech.Puzzle.UI
 
         public void OnStageCompleted(int completedStageIndex)
         {
-            WinConditionIndicatorPanel.OnStageCompleted();  
+            if(WinConditionIndicatorPanel != null) WinConditionIndicatorPanel.OnStageCompleted();  
         }
         
         public void OnNewStage(int newStageIndex)
         {
-            WinConditionIndicatorPanel.OnNewStage(newStageIndex);
+            if(WinConditionIndicatorPanel != null) WinConditionIndicatorPanel.OnNewStage(newStageIndex);
+            if (LevelIndicator != null)
+            {
+                LevelIndicator.SetCurrentStage(newStageIndex);
+            }
         }
         #endregion
         

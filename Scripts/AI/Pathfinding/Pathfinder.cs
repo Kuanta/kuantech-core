@@ -33,6 +33,10 @@ namespace Kuantech.AI.Pathfinding
     {
         public static Path GetShortestPath(PathNode startNode, PathNode endNode)
         {
+            if (startNode == null || endNode == null)
+            {
+                return null;
+            }
             List<PathNode> nodes = new List<PathNode>();
             List<PathNode> openList = new List<PathNode>();
             List<PathNode> closedList = new List<PathNode>();

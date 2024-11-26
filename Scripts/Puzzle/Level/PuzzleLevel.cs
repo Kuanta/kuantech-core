@@ -39,7 +39,6 @@ namespace Kuantech.Puzzle
         {
             //Upmost importance
             FindLevelDesign();
-            
             CreateWinConditionTracker();
             LevelUI = PuzzleUIManager.GetLevelUI(); 
             if(LevelUI != null) LevelUI.OnLevelSetup(this);
@@ -48,6 +47,11 @@ namespace Kuantech.Puzzle
             base.SetupLevel();
         }
 
+        protected override void PlayLevel()
+        {
+            base.PlayLevel();
+            if(LevelUI != null) LevelUI.OnPlayLevel();
+        }
         public virtual bool IsHardLevel()
         {
             return false;
@@ -111,6 +115,17 @@ namespace Kuantech.Puzzle
         
         #region WinCondition Tracker
 
+        public int GetCurrentStage()
+        {
+            if (WinConditionTracker == null) return 0;
+            return WinConditionTracker.GetCurrentStageIndex();
+        }
+
+        public void SetStage(int stageIndex)
+        {
+            if (WinConditionTracker == null) return;
+            WinConditionTracker.GoToStage(stageIndex);
+        }
         public virtual void CreateWinConditionTracker()
         {
             WinConditionTracker = new WinConditionTracker();
