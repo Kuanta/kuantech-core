@@ -35,7 +35,11 @@ namespace Kuantech.AI.Pathfinding
         {
             return Pathfinder.GetShortestPath(startNode, endNode);
         }
-        
+
+        public void GoToWorldPoint(WorldPoint point)
+        {
+            WaypointFollower.GoToWorldPoint(point);
+        }
         public bool GoToNode(PathNode node)
         {
             Path shortestPath = GetShortestPath(node);

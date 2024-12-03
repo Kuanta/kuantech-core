@@ -365,6 +365,11 @@ namespace Kuantech.Puzzle
         }
         public bool CanTileBePlaced(GridTile tile, int anchorRow, int anchorCol, int anchorLayer = 0)
         {
+            if (tile.Coordinates.IsNullOrEmpty())
+            {
+                //Single tile
+                return !IsTileOccupied(anchorRow, anchorCol, anchorLayer);
+            }
             foreach (var localCoord in tile.Coordinates)
             {
                 int row = anchorRow + localCoord.Row;

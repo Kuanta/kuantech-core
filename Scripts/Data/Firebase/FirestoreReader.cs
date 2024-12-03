@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 using Cysharp.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
@@ -92,29 +93,46 @@ namespace Kuantech.Data.Firebase
         public UnityAction OnCollectionReadFailed;
         public async UniTask ReadCollection(string collectionName)
         {
-            string url = $"https://firestore.googleapis.com/v1/projects/{ProjectId}/databases/(default)/documents/{collectionName}?key={ApiKey}";
-
-            using (var request = new UnityWebRequest(url, "GET"))
+            try
             {
-                request.downloadHandler = new DownloadHandlerBuffer();
-                request.SetRequestHeader("Content-Type", "application/json");
+                string url = $"https://firestore.googleapis.com/v1/projects/{ProjectId}/databases/(default)/documents/{collectionName}?key={ApiKey}";
 
-                await request.SendWebRequest();
+                using (var request = new UnityWebRequest(url, "GET"))
+                {
+                    request.downloadHandler = new DownloadHandlerBuffer();
+                    request.SetRequestHeader("Content-Type", "application/json");
 
-                if (request.result == UnityWebRequest.Result.Success)
-                {
-                    var responseJson = JObject.Parse(request.downloadHandler.text);
-                    var documents = responseJson["documents"];
-                    OnCollectionReadSuccesfully?.Invoke(documents);
-                    Debug.Log("Level Design Data read succesfully!");
-                }
-                else
-                {
-                    Debug.LogError("Collection reading failed: " + request.error);
-                    OnCollectionReadFailed?.Invoke();
+                    await request.SendWebRequest();
+
+                    if (request.result == UnityWebRequest.Result.Success)
+                    {
+                        try
+                        {
+                            var responseJson = JObject.Parse(request.downloadHandler.text);
+                            var documents = responseJson["documents"];
+                            OnCollectionReadSuccesfully?.Invoke(documents);
+                            Debug.Log("Level Design Data read successfully!");
+                        }
+                        catch (Exception parseException)
+                        {
+                            Debug.LogError($"Error parsing response JSON: {parseException.Message}");
+                            OnCollectionReadFailed?.Invoke();
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogError("Collection reading failed: " + request.error);
+                        OnCollectionReadFailed?.Invoke();
+                    }
                 }
             }
+            catch (Exception ex)
+            {
+                Debug.LogError($"An error occurred while reading the collection: {ex.Message}");
+                OnCollectionReadFailed?.Invoke();
+            }
         }
+
 
         #endregion
    
