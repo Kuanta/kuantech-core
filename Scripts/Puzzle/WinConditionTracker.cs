@@ -154,7 +154,7 @@ namespace Kuantech.Puzzle
             return true;
         }
         
-        public void Reset()
+        public void Reset(bool resetStageIndex)
         {
             if (Stages != null)
             {
@@ -163,7 +163,7 @@ namespace Kuantech.Puzzle
                     stage.Reset();
                 }
             }
-            _currentStageIndex = 0;
+            if(resetStageIndex) _currentStageIndex = 0;
         }
 
         #region State

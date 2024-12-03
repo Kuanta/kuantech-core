@@ -119,7 +119,7 @@ namespace Kuantech.Core
             }
         }
 
-        public void RestartLevel()
+        public virtual void RestartLevel()
         {
             ResetLevelState();
             StartLevel();

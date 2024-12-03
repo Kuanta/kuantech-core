@@ -87,7 +87,7 @@ namespace Kuantech.Puzzle
         {
             base.ResetLevelState();
             ClearLevelState();
-            if(WinConditionTracker != null) WinConditionTracker.Reset();
+            if(WinConditionTracker != null) WinConditionTracker.Reset(false);
             ResetBoosters();
             ResetUI();
         }

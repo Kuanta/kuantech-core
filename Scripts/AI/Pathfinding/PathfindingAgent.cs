@@ -41,7 +41,6 @@ namespace Kuantech.AI.Pathfinding
             Path shortestPath = GetShortestPath(node);
             if (shortestPath.PathNodes.IsNullOrEmpty())
             {
-                Debug.LogError($"No Path to {node.Name}");
                 return false;
             }
             SetPath(shortestPath);
