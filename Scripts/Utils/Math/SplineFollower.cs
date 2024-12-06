@@ -13,7 +13,6 @@ namespace Kuantech.Utils.Math
 
         public BSpline CurrentSpline = null;
         public float FollowSpeed;
-        public float FollowSpeedT;
         public int Direction = 1;
         public bool IsMoving = false;
         public bool Paused = false;
@@ -25,7 +24,7 @@ namespace Kuantech.Utils.Math
         public FollowMethod CurrentFollowMethod = FollowMethod.FollowWithDistance;
         
         private float _currentT;
-        private float _currentDistance;
+        private float _currentDistance = -1;
 
         private float _targetDistance;
         private float _targetT;
@@ -40,6 +39,7 @@ namespace Kuantech.Utils.Math
             IsMoving = true;
             Paused = false;
         }
+
         #endregion
         private void Update()
         {
