@@ -43,7 +43,7 @@ namespace Kuantech.AI.Pathfinding
         public bool GoToNode(PathNode node)
         {
             Path shortestPath = GetShortestPath(node);
-            if (shortestPath.PathNodes.IsNullOrEmpty())
+            if (!shortestPath.IsValidPath())
             {
                 return false;
             }

@@ -23,8 +23,10 @@ namespace Kuantech.ShopJam
         public bool MoveToInitialPoints;
         public override void Initialize()
         {
-            _spline = new BSpline();
-            _spline.InvertDirection = true;
+            _spline = new BSpline
+            {
+                InvertDirection = true
+            };
             Waypoints = new List<Transform>();
             for (int i = 0; i < WaypointsParent.childCount; ++i)
             {
@@ -66,20 +68,22 @@ namespace Kuantech.ShopJam
             {
                 actor.SetSpline(_spline);
                 var splineFollower = actor.GetSplineFollower();
-
+                
+                //todo: Fix this mess
                 if (!MoveToInitialPoints)
                 {
                     if (!warpToPosition)
                     {
                         splineFollower.FollowSpeed = RegularSpeed;
+                        splineFollower.GoToDistance(totalDistance);
                     }
                     else
                     {
-                        splineFollower.SetPositionWithDistance(initialDistance);
-                        splineFollower.FollowSpeed = initialSpeed;
-                        initialSpeed *= InitialSpeedDecay;
+                        splineFollower.SetPositionWithDistance(totalDistance);
+                        // splineFollower.SetPositionWithDistance(initialDistance);
+                        // splineFollower.FollowSpeed = initialSpeed;
+                        // initialSpeed *= InitialSpeedDecay;
                     }
-                    splineFollower.GoToDistance(totalDistance);
                 }
                 else
                 {
