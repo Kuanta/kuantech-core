@@ -27,9 +27,9 @@ namespace Kuantech.Puzzle.Jam
             {
                 JamBoardSpot waitingSpot = Instantiate(SpotPrefab);
                 Spots.Add(waitingSpot);
+                waitingSpot.transform.SetParent(LayoutPlacer.transform);
                 spotObjects.Add(waitingSpot.gameObject);
             }
-            LayoutPlacer.SetChildren(spotObjects);
             LayoutPlacer.DistributeChilds();
         }
         

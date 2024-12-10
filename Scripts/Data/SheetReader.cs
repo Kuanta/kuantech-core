@@ -39,6 +39,7 @@ namespace Kuantech.Data
             {
                 using (UnityWebRequest request = UnityWebRequest.Get(url))
                 {
+                    request.timeout = 5;
                     var operation = await request.SendWebRequest().ToUniTask();
 
                     if (request.result != UnityWebRequest.Result.Success)
