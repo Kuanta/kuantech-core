@@ -348,6 +348,7 @@ namespace Kuantech.Utils
 
         public void SetPosition(Vector3 position)
         {
+            if (transform == null) return;
             if (AnchorPoint != null)
             {
                 position = position - (transform.forward * AnchorPoint.transform.localPosition.z) ;
@@ -363,6 +364,7 @@ namespace Kuantech.Utils
         
         private void SnapToPosition(Vector3 position, Quaternion rotation)
         {
+            if (gameObject == null || transform == null) return;
             if (SnapToPositionDelay > 0)
             {
                 _moveTween = DOTween.To(GetCurrentPosition, SetPosition, position, SnapToPositionDelay).SetEase(Ease.InOutQuad).OnComplete(()=>{
