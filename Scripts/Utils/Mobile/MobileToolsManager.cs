@@ -1,4 +1,6 @@
-﻿using Kuantech.Core;
+﻿using System.Collections;
+using System.Collections.Generic;
+using Kuantech.Core;
 using UnityEngine;
 using IngameDebugConsole;
 
@@ -8,14 +10,22 @@ using Lofelt.NiceVibrations;
 
 namespace Kuantech.Utils.Mobile
 {
-  
+    public struct HapticPlayData
+    {
+        public float Intensity;
+        public float Magitude;
+        public float Duration;
+    }
+    
     public class MobileToolsManager : SubManager
     {
         #region Haptic Feedback
   
         [Header("Vibrations")]
         [SerializeField] private float VibrationCooldown = 0.2f;
+        private Queue<HapticPlayData> HapticQueue;
         private float _lastVibrationTime;
+        private bool _isHapticsPlaying = false;
         public bool HapticsToggled;
 
         public static void ApplyHaptic(float magnitude, float frequency, float duration)
@@ -28,18 +38,48 @@ namespace Kuantech.Utils.Mobile
                 return;
             }
 
-            if (context.HapticsToggled) return;
-            if (Time.time - context._lastVibrationTime < context.VibrationCooldown)
+            if (!context.HapticsToggled) return;
+
+            context.PlayHapticEffect(new HapticPlayData()
             {
-                return;
-            }
-            
-            context._lastVibrationTime = Time.time;
-            HapticPatterns.PlayConstant(magnitude, frequency, duration);
+                Magitude = magnitude,
+                Intensity = frequency,
+                Duration = duration,
+            });
 #endif
 
         }
 
+        private void PlayHapticEffect(HapticPlayData data)
+        {
+            //Use queue
+            HapticQueue ??= new Queue<HapticPlayData>();
+            if (Time.time -_lastVibrationTime < VibrationCooldown)
+            {
+                return;
+            }
+            
+            _lastVibrationTime = Time.time;
+            Debug.Log("Applied Haptics");
+            HapticQueue.Enqueue(data);
+            if (!_isHapticsPlaying)
+            {
+                StartCoroutine(ProcessQueue());
+            }
+        }
+
+        private IEnumerator ProcessQueue()
+        {
+            _isHapticsPlaying = true;
+            while (HapticQueue.Count > 0)
+            {
+                HapticPlayData palyData = HapticQueue.Dequeue();
+                HapticPatterns.PlayConstant(palyData.Magitude, palyData.Intensity, palyData.Duration);
+                yield return new WaitForSeconds(palyData.Duration);
+            }
+            _isHapticsPlaying = false;
+        }
+        
         public static void ToggleHaptics(bool toggle)
         {
             var context = GetContext<MobileToolsManager>();
