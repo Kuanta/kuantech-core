@@ -60,7 +60,6 @@ namespace Kuantech.Utils.Mobile
             }
             
             _lastVibrationTime = Time.time;
-            Debug.Log("Applied Haptics");
             HapticQueue.Enqueue(data);
             if (!_isHapticsPlaying)
             {
