@@ -76,7 +76,7 @@ namespace Kuantech.Utils.Math
             OnReachedTarget?.Invoke();
             
             //Snap to target?
-            //SetPositionWithDistance(_targetDistance);
+            SetPositionWithDistance(_targetDistance);
             IsMoving = false;
         }
 
