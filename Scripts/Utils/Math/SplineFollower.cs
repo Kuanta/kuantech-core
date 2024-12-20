@@ -1,5 +1,7 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Serialization;
 
 namespace Kuantech.Utils.Math
 {
@@ -10,11 +12,14 @@ namespace Kuantech.Utils.Math
             FollowWithDistance,
             FollowWithT,
         }
-
+        
         public BSpline CurrentSpline = null;
+        public int SplineDegree = 3;
+        public int SplineResolution = 10;
+        public int RotationLookAhead;
         public float FollowSpeed;
         public int Direction = 1;
-        public bool IsMoving = false;
+        public bool Moving = false;
         public bool Paused = false;
         
         [Header("Thresholds")]
@@ -30,26 +35,41 @@ namespace Kuantech.Utils.Math
         private float _targetT;
 
         public UnityAction OnReachedTarget;
-        
+
+        #region Spline Creation
+
+        public void SetSpline(List<Vector3> points)
+        {
+            CurrentSpline = new BSpline();
+            CurrentSpline.SetSplinePoints(points, SplineDegree, SplineResolution);
+            CurrentSpline.RotationLookAhead = RotationLookAhead;
+        }
+
+        #endregion
         #region Controls
         public void GoToDistance(float distance)
         {
             CurrentFollowMethod = FollowMethod.FollowWithDistance;
             _targetDistance = distance;
-            IsMoving = true;
+            Moving = true;
             Paused = false;
         }
 
+        public void GoToPercentage(float t)
+        {
+            t = Mathf.Clamp01(t);
+            float distanceAtT = CurrentSpline.GetTotalDistance() * t;
+            GoToDistance(distanceAtT);
+        }
         #endregion
         private void Update()
         {
-            if (!IsMoving || Paused || CurrentSpline == null) return;
+            if (!Moving || Paused || CurrentSpline == null) return;
             if (CurrentFollowMethod == FollowMethod.FollowWithDistance)
             {
                 UpdateWithDistance();
             }
         }
-        
         private void UpdateWithDistance()
         {
             float error = _targetDistance - _currentDistance;
@@ -63,9 +83,19 @@ namespace Kuantech.Utils.Math
             _currentDistance += movementUpdate;
             SetPositionWithDistance(_currentDistance);
         }
-
         #region Follow
 
+        /// <summary>
+        /// Sets a spline and follows it to the end
+        /// </summary>
+        /// <param name="spline"></param>
+        public void FollowSpline(BSpline spline=null)
+        {
+            if (spline == null && CurrentSpline == null) return;
+            if(spline != null) CurrentSpline = spline;
+            SetPositionWithDistance(0);
+            GoToPercentage(1f);
+        }
         public void SetCurrentDistance(float distance)
         {
             _currentDistance = distance;
@@ -73,16 +103,30 @@ namespace Kuantech.Utils.Math
         
         private void ReachedTarget()
         {
-            OnReachedTarget?.Invoke();
-            
             //Snap to target?
             SetPositionWithDistance(_targetDistance);
-            IsMoving = false;
+            Moving = false;
+            OnReachedTarget?.Invoke();
         }
 
         public void Stop()
         {
-            IsMoving = false;
+            Moving = false;
+        }
+
+        public bool IsMoving()
+        {
+            return Moving && !Paused;
+        }
+    
+        public void Halt()
+        {
+            Paused = true;
+        }
+
+        public void Resume()
+        {
+            Paused = false;
         }
         #endregion
  
@@ -105,7 +149,6 @@ namespace Kuantech.Utils.Math
             transform.position = point.Position;
             transform.rotation = point.Rotation;
         }
-
         #endregion
        
     }

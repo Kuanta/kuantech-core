@@ -20,8 +20,11 @@ namespace Kuantech.Utils.Mobile
     public class MobileToolsManager : SubManager
     {
         #region Haptic Feedback
-  
-        [Header("Vibrations")]
+
+        [Header("Vibrations")] 
+        public float DefaultHapticMagnitude = 1;
+        public float DefaultHapticDuration = 0.1f;
+        public float DefaultHapticFrequency = 1;
         [SerializeField] private float VibrationCooldown = 0.2f;
         private Queue<HapticPlayData> HapticQueue;
         private float _lastVibrationTime;
@@ -49,7 +52,46 @@ namespace Kuantech.Utils.Mobile
 #endif
 
         }
+        
+        public static void ApplyHaptic()
+        {
+#if (UNITY_ANDROID || UNITY_IOS) && ENABLE_UNITYHAPTICS
+            var context = GetContext<MobileToolsManager>();
+            if (context == null)
+            {
+                Debug.LogWarning("Add Mobile tools manager to apply haptic feedback");
+                return;
+            }
 
+            if (!context.HapticsToggled) return;
+
+            context.PlayHapticEffect();
+#endif
+
+        }
+        private void PlayHapticEffect()
+        {
+            //Use queue
+            HapticQueue ??= new Queue<HapticPlayData>();
+            if (Time.time -_lastVibrationTime < VibrationCooldown)
+            {
+                return;
+            }
+            
+            _lastVibrationTime = Time.time;
+            HapticPlayData defaultData = new HapticPlayData()
+            {
+                Magitude = DefaultHapticMagnitude,
+                Duration = DefaultHapticDuration,
+                Intensity = DefaultHapticFrequency,
+            };
+            HapticQueue.Enqueue(defaultData);
+            if (!_isHapticsPlaying)
+            {
+                StartCoroutine(ProcessQueue());
+            }
+        }
+        
         private void PlayHapticEffect(HapticPlayData data)
         {
             //Use queue
@@ -72,9 +114,10 @@ namespace Kuantech.Utils.Mobile
             _isHapticsPlaying = true;
             while (HapticQueue.Count > 0)
             {
-                HapticPlayData palyData = HapticQueue.Dequeue();
-                HapticPatterns.PlayConstant(palyData.Magitude, palyData.Intensity, palyData.Duration);
-                yield return new WaitForSeconds(palyData.Duration);
+                HapticPlayData playData = HapticQueue.Dequeue();
+                //HapticPatterns.PlayPreset(HapticPatterns.PresetType.LightImpact);
+                HapticPatterns.PlayConstant(playData.Magitude, playData.Intensity, playData.Duration);
+                yield return new WaitForSeconds(playData.Duration);
             }
             _isHapticsPlaying = false;
         }
@@ -104,6 +147,39 @@ namespace Kuantech.Utils.Mobile
                 return;
             }
             context.VibrationCooldown = cooldown;
+        }
+        
+        [ConsoleMethod("setHapticMagnitude", "Sets haptic feedback magnitude")]
+        public static void SetHapticMagnitude(float mag)
+        {
+            var context = GetContext<MobileToolsManager>();
+            if (context == null)
+            {
+                return;
+            }
+            context.DefaultHapticMagnitude = mag;
+        }
+        
+        [ConsoleMethod("setHapticDuration", "Sets haptic feedback duration")]
+        public static void SetHapticDuration(float dur)
+        {
+            var context = GetContext<MobileToolsManager>();
+            if (context == null)
+            {
+                return;
+            }
+            context.DefaultHapticDuration = dur;
+        }
+        
+        [ConsoleMethod("setHapticIntensity", "Sets haptic feedback intensity")]
+        public static void SetHapticIntensity(float intensity)
+        {
+            var context = GetContext<MobileToolsManager>();
+            if (context == null)
+            {
+                return;
+            }
+            context.DefaultHapticFrequency = intensity;
         }
         #endregion
 
