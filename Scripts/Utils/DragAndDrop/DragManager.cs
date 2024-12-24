@@ -162,7 +162,6 @@ namespace Kuantech.Utils
             mousePosition.z = _dragCameraDistance;
             return MainCamera.ScreenToWorldPoint(mousePosition);
         }
-
         /// <summary>
         /// Releases the dragging state
         /// </summary>

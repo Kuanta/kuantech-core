@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -35,7 +36,8 @@ namespace Kuantech.Core
 
         public Action<LevelStateChangeData> OnStateChange; //An event bound to level.
 
-        [FormerlySerializedAs("LevelComponents")] [Header("Components")] 
+        [Header("Components")] 
+        public bool AutoDetectLevelElements = false;
         public List<LevelElement> LevelElements;
         
         #region Level Lifecycle
@@ -71,6 +73,10 @@ namespace Kuantech.Core
 
         protected virtual void SetupComponents()
         {
+            if (AutoDetectLevelElements)
+            {
+                LevelElements = GetComponentsInChildren<LevelElement>().ToList();
+            }
             foreach (var component in LevelElements)
             {
                 component.ParentLevel = this;

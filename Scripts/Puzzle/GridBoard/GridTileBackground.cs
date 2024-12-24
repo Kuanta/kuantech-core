@@ -4,7 +4,7 @@ namespace Kuantech.Puzzle
     public class GridTileBackground : MonoBehaviour
     {
         [Header("Highlighting")] 
-        [SerializeField] private Renderer HighlightRenderer;
+        [SerializeField] protected Renderer HighlightRenderer;
         [SerializeField] private string HighlightToggleFieldKey = "_HighlightToggle";
         
         [Header("Even & Odd")]
@@ -18,13 +18,13 @@ namespace Kuantech.Puzzle
             OddBackground.SetActive(!isEven);
         }
 
-        public void Highlight()
+        public virtual void Highlight()
         {
             if (HighlightRenderer == null) return;
             HighlightRenderer.material.SetFloat(HighlightToggleFieldKey, 1);
         }
 
-        public void ClearHighlight()
+        public virtual void ClearHighlight()
         {
             if (HighlightRenderer == null) return;
             HighlightRenderer.material.SetFloat(HighlightToggleFieldKey, 0);

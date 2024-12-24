@@ -102,9 +102,12 @@ namespace Kuantech.Puzzle.UI
                 }
             }
 
-            LevelIndicator.SetStageCount(tracker?.GetStageCount() ?? 1);
-            LevelIndicator.SetHardLevel(level.IsHardLevel());
-            LevelIndicator.SetBonusLevel(level.IsBonusLevel());
+            if (LevelIndicator != null)
+            {
+                LevelIndicator.SetStageCount(tracker?.GetStageCount() ?? 1);
+                LevelIndicator.SetHardLevel(level.IsHardLevel());
+                LevelIndicator.SetBonusLevel(level.IsBonusLevel());
+            }
         }
 
         public virtual void OnPlayLevel()

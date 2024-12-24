@@ -11,8 +11,9 @@ namespace Kuantech.Puzzle
         public HandleDroppedTileHandler DroppedTileHandler;
         
         public delegate bool CanTileDroppedHandler(GridTileDraggable draggableTile, int row, int col);
-        public CanTileDroppedHandler TileDropConditionChecker; 
-        
+        public CanTileDroppedHandler TileDropConditionChecker;
+
+        public bool UseCursorPositionForDropPoint = false;
         
         private void Start()
         {
@@ -41,10 +42,13 @@ namespace Kuantech.Puzzle
 
         public GridTileCoordinate GetRowColFromDraggablePosition(GridTileDraggable draggable)
         {
-            Vector3 anchorTilePosition = draggable.GetAnchorTilePosition(GridBoard);
-            return GridBoard.GetRowColFromPosition(anchorTilePosition);
+            Vector3 positionToCheck;
+            positionToCheck = draggable.GetAnchorTilePosition(GridBoard);
+            return GridBoard.GetRowColFromPosition(positionToCheck);
+
         }
-        
+
+       
         public virtual bool HandleDroppedTile(GridTileDraggable draggableTile, int row, int col)
         {
             if(DroppedTileHandler != null)

@@ -693,8 +693,6 @@ namespace Kuantech.Puzzle
         public GridTileCoordinate GetRowColFromPosition(Vector3 position)
         {
             Vector3 pointOnBoard = GetPointOnPlane(position);
-            Vector3 boardNormal = GetBoardNormal();
-            Vector3 diff = position - transform.position;
             return GetRowColFromPointOnBoard(pointOnBoard);
         }
         /// <summary>

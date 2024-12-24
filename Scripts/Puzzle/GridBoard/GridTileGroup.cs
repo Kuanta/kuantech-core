@@ -114,6 +114,12 @@ namespace Kuantech.Puzzle
             }
         }
 
+        public void SetTilePosition(GridTile tile, GridTileCoordinate coordinate, GridBoard parentBoard)
+        {
+            Vector3 localCoord = GetLocalPosition(parentBoard, coordinate.Row, coordinate.Column);
+            tile.transform.localPosition = localCoord;
+        }
+        
         public Vector3 GetBoundingBoxCenter(GridBoard board)
         {
             Vector2Int rowLimits = new Vector2Int(Int32.MaxValue, Int32.MinValue);

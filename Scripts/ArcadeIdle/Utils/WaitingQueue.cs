@@ -39,6 +39,10 @@ namespace Kuantech.ArcadeIdle
             return WaitingElements.Count <= 0;
         }
         
+        /// <summary>
+        /// Returns the number of elements currently waiting in the queue
+        /// </summary>
+        /// <returns></returns>
         public int GetWaitingElementCount()
         {
             if (WaitingElements == null) return 0;

@@ -235,7 +235,6 @@ namespace Kuantech.Utils
             float errorMag = error.sqrMagnitude;
             if(errorMag <= TargetReachThresh*TargetReachThresh)
             {
-             
                 SetNextWaypoint();
                 return;
             }
