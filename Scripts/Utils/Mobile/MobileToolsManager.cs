@@ -71,6 +71,7 @@ namespace Kuantech.Utils.Mobile
         }
         private void PlayHapticEffect()
         {
+#if (UNITY_ANDROID || UNITY_IOS) && ENABLE_UNITYHAPTICS
             //Use queue
             HapticQueue ??= new Queue<HapticPlayData>();
             if (Time.time -_lastVibrationTime < VibrationCooldown)
@@ -90,6 +91,7 @@ namespace Kuantech.Utils.Mobile
             {
                 StartCoroutine(ProcessQueue());
             }
+#endif
         }
         
         private void PlayHapticEffect(HapticPlayData data)
@@ -111,6 +113,8 @@ namespace Kuantech.Utils.Mobile
 
         private IEnumerator ProcessQueue()
         {
+#if (UNITY_ANDROID || UNITY_IOS) && ENABLE_UNITYHAPTICS
+
             _isHapticsPlaying = true;
             while (HapticQueue.Count > 0)
             {
@@ -120,8 +124,12 @@ namespace Kuantech.Utils.Mobile
                 yield return new WaitForSeconds(playData.Duration);
             }
             _isHapticsPlaying = false;
+            #else
+        yield break;
+            
+#endif
+
         }
-        
         public static void ToggleHaptics(bool toggle)
         {
             var context = GetContext<MobileToolsManager>();
