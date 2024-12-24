@@ -21,19 +21,17 @@ namespace Kuantech.Utils
         }
 
         [Header("Properties")] 
-        public float Speed;
+        [SerializeField] private float Speed;
         public float RotationLerpFactor = 10.0f;
         public float TargetReachThresh = 0.1f;
         public float UpdateRotationThresh = 0.1f;
         public bool ShouldUpdateRotation = true;
 
-        [Header("Spline")] public int SegmentPerSpline = 4;
+        [Header("Spline")]
+        public SplineFollower SplineFollower;
+        
         [Tooltip("If set to true, a spline will be calculated and agent will follow the spline. However this will prevent events for middle waypoints")]
         public bool UseSpline = false;
-        public int SplineDegree = 5;
-        public int SplineRotationLookAhead = 1;
-        public float SplineSpeed = 5;
-        public bool SnapToPositionForSpline = false;
 
         [Header("Offset")] 
         public Transform AnchorPoint;
@@ -45,24 +43,16 @@ namespace Kuantech.Utils
         [NonSerialized] public Queue<Waypoint> WaypointsQueue;
         [NonSerialized] public Waypoint CurrentWaypoint;
         private float _currentSpeed = 0;
-        private Vector3[] _smoothSplinePoints = null;
-        private float[] _arcLengths = null;
-        private float[] _normalizedArcLengths = null;
         private int _currentSplinePointIndex;
         private bool _useSpline = false;
         private Tween _moveTween;
         private Tween _rotateTween;
-        
-        
-        //Spline params
-        private float _splineT;
-        private float _splineTSpeed;
-        private float _splineTSpeedFactor = 1;
+
         
         public Action OnReachedFinalTarget;
         public Action<Waypoint> OnReachedWaypoint;
 
-        public bool Halted = false;
+        private bool Halted = false;
         
         #region Property Setters
         public void AddWaypoint(Waypoint newWaypoint)
@@ -109,73 +99,22 @@ namespace Kuantech.Utils
                 points.Add(wp.Position);
                 if (points.Count <= 1) continue;
             }
-            _splineTSpeed = SplineSpeed;
-            //_smoothSplinePoints = CatmullRomSpline.ConstructSpline(points, SegmentPerSpline).ToArray();
-            _smoothSplinePoints = BSpline.GenerateNURBSPath(points, SplineDegree, null, points.Count*SegmentPerSpline).ToArray();
-            ComputeArcLengths();
-        }
-
-        private void ComputeArcLengths()
-        {
-            int lengthOfArray = _smoothSplinePoints.Length;
-            _arcLengths = new float[lengthOfArray];
-            _normalizedArcLengths = new float[lengthOfArray];
-            _arcLengths[0] = 0.0f;
-            for (int i = 1; i < lengthOfArray; i++)
-            {
-                float segmentLength = Vector3.Distance(_smoothSplinePoints[i - 1], _smoothSplinePoints[i]);
-                _arcLengths[i] = _arcLengths[i - 1] + segmentLength;  // Cumulative distance
-            }
-
-            float totalLength = GetArcTotalLength();
-            for (int i = 0; i < _arcLengths.Length; ++i)
-            {
-                _normalizedArcLengths[i] = _arcLengths[i] / totalLength;
-            }
-        }
-
-        private float GetArcTotalLength()
-        {
-            return _arcLengths[^1];
+            SplineFollower.SetSpline(points);
         }
         #endregion
 
         #region Controls
-
-        public void FollowPath()
+        public void SetSpeed(float speed)
         {
-            KillTweens();
-            Moving = true;
-            if (UseSpline && WaypointsQueue.Count >= 2)
+            Speed = speed;
+        }
+        public void SetSplineSpeed(float splineSpeed)
+        {
+            if (SplineFollower != null)
             {
-                _useSpline = true;
-                _splineT = 0.0f;
-                _currentSplineTSpeed = _splineTSpeed * _splineTSpeedFactor;
-                CalculateSplinePoints();
-                WaypointsQueue.Clear();
+                SplineFollower.FollowSpeed = splineSpeed;
             }
-            else
-            {
-                _useSpline = false;
-            }
-            _targetPosition = GetTargetPosition();
         }
-
-        private void KillTweens()
-        {
-            if(_moveTween != null) _moveTween.Kill();
-            _moveTween = null;
-
-            if (_rotateTween != null) _rotateTween.Kill();
-            _rotateTween = null;
-        }
-        public void Stop()
-        {
-            Moving = false;
-            KillTweens();
-        }
-        #endregion
-        
         /// <summary>
         /// For a single shot use
         /// </summary>
@@ -199,34 +138,83 @@ namespace Kuantech.Utils
             //     Rotation = transform.rotation,
             // };
             List<Waypoint> waypoints = new List<Waypoint>();
-            //waypoints.Add(currentWaypoint); 
             waypoints.Add(singleWaypoint);
             singleWaypoint.FollowerReachedWaypoint = onReachedAction;
             SetWaypoints(waypoints);
             FollowPath();
         }
-        private void Update()
+        
+        public void FollowPath()
         {
-            if (!Moving || Halted) return;
-            if (_useSpline)
+            KillTweens();
+            Moving = true;
+            if (UseSpline && WaypointsQueue.Count >= 2 && SplineFollower != null)
             {
-                UpdatePositionForSpline();
+                _useSpline = true;
+                CalculateSplinePoints();
+                WaypointsQueue.Clear();
+                SplineFollower.OnReachedTarget = () =>
+                {
+                    OnReachedFinalTarget?.Invoke();
+                };
+                SplineFollower.FollowSpline();
             }
             else
             {
-                UpdatePosition();
+                _useSpline = false;
             }
+            _targetPosition = GetTargetPosition();
         }
 
+        private void KillTweens()
+        {
+            if(_moveTween != null) _moveTween.Kill();
+            _moveTween = null;
+
+            if (_rotateTween != null) _rotateTween.Kill();
+            _rotateTween = null;
+        }
+        
+        
         public void PauseMovement()
         {
             Halted = true;
+            if (SplineFollower != null)
+            {
+                SplineFollower.Halt();
+            }
         }
 
         public void ResumeMovement()
         {
             Halted = false;
+            if (SplineFollower != null)
+            {
+                SplineFollower.Resume();
+            }
         }
+        
+        public void Stop()
+        {
+            Moving = false;
+            KillTweens();
+        }
+        #endregion
+        
+    
+        private void Update()
+        {
+            if (!IsMoving()) return;
+            if (!_useSpline)
+            {
+                UpdatePosition();
+            }
+            
+            //Spline update is done by the spline follower
+        }
+
+        #region Regular Position Updates
+
         
         protected virtual void UpdatePosition()
         {
@@ -247,30 +235,7 @@ namespace Kuantech.Utils
             SetPosition(GetCurrentPosition() + positionUpdate);
         }
 
-        private float _currentSplineTSpeed = 0f;
-        private void UpdatePositionForSpline()
-        {
-            Vector3 splineTarget = GetSplineTargetPosition();
-            //Vector3 lerpedPosition = Vector3.Lerp(transform.position, splineTarget, Time.deltaTime * SplineMovementLerpFactor);
-            SetPosition(splineTarget);
-            UpdateRotation(_rotationTarget - transform.position);
 
-            float targetSpeed = _splineTSpeed;
-            targetSpeed = Mathf.Min(targetSpeed, _splineTSpeed);
-            _currentSplineTSpeed = targetSpeed;
-            _splineT += Time.deltaTime * (_currentSplineTSpeed / GetArcTotalLength());
-            _splineT = Mathf.Min(_splineT, 1.0f);
-            if (_splineT >= 1.0f)
-            {
-                var lastWp = WaypointsList[^1];
-                Moving = false;
-                OnReachedFinalTarget?.Invoke();
-                if (SnapToPositionForSpline)
-                {
-                    SnapToPosition(lastWp.Position, lastWp.Rotation);
-                }
-            }
-        }
 
         private void UpdateRotation(Vector3 targetDirection)
         {
@@ -278,43 +243,15 @@ namespace Kuantech.Utils
             SetRotation(Quaternion.Slerp(GetCurrentRotation(), Quaternion.LookRotation(targetDirection),
                 Time.deltaTime * RotationLerpFactor));
         }
+        
         private Vector3 _targetPosition;
         private Vector3 GetTargetPosition()
         {
-            if (!_useSpline)
-            {
-                return CurrentWaypoint.IsLocal ? CurrentWaypoint.Position - transform.localPosition : CurrentWaypoint.Position;
-            }
-            return GetSplineTargetPosition();
+            return CurrentWaypoint.IsLocal ? CurrentWaypoint.Position - transform.localPosition : CurrentWaypoint.Position;
         }
 
         private Vector3 _rotationTarget;
-        private Vector3 GetSplineTargetPosition()
-        {
-            int lengthOfArray = _smoothSplinePoints.Length;
-
-            // Use the normalized arc lengths to map _splineT to the correct segment
-            for (int i = 1; i < _normalizedArcLengths.Length; i++)
-            {
-                if (_splineT <= _normalizedArcLengths[i])
-                {
-                    int minIndex = i - 1;
-                    int maxIndex = i;
-                    int rotationTargetIndex = maxIndex + SplineRotationLookAhead;
-                    rotationTargetIndex = Mathf.Min(rotationTargetIndex, lengthOfArray - 1);
-                    _rotationTarget = _smoothSplinePoints[rotationTargetIndex];
-                    // Find the local t value between the two points
-                    float segmentT = (_splineT - _normalizedArcLengths[minIndex]) / (_normalizedArcLengths[maxIndex] - _normalizedArcLengths[minIndex]);
-
-                    // Interpolate the position
-                    Vector3 floorPos = _smoothSplinePoints[minIndex];
-                    Vector3 ceilPos = _smoothSplinePoints[maxIndex];
-                    return Vector3.Lerp(floorPos, ceilPos, segmentT);
-                }
-            }
-            _rotationTarget = _smoothSplinePoints[^1];
-            return _smoothSplinePoints[lengthOfArray - 1]; 
-        }
+ 
         private void SetNextWaypoint()
         {
             WaypointsQueue ??= new Queue<Waypoint>();
@@ -347,6 +284,7 @@ namespace Kuantech.Utils
 
         public void SetPosition(Vector3 position)
         {
+            if (transform == null) return;
             if (AnchorPoint != null)
             {
                 position = position - (transform.forward * AnchorPoint.transform.localPosition.z) ;
@@ -362,6 +300,7 @@ namespace Kuantech.Utils
         
         private void SnapToPosition(Vector3 position, Quaternion rotation)
         {
+            if (gameObject == null || transform == null) return;
             if (SnapToPositionDelay > 0)
             {
                 _moveTween = DOTween.To(GetCurrentPosition, SetPosition, position, SnapToPositionDelay).SetEase(Ease.InOutQuad).OnComplete(()=>{
@@ -377,9 +316,13 @@ namespace Kuantech.Utils
             }
 
         }
+
+        #endregion
+        
         public bool IsMoving()
         {
-            return Moving;
+            if (_useSpline) return SplineFollower.IsMoving();
+            return Moving && !Halted;
         }
 
         public void OnDespawn()

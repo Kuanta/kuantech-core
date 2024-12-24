@@ -21,7 +21,7 @@ namespace Kuantech.Data
         [Header("Keys")] 
         [SerializeField] private string SheetId;
         [SerializeField] private string ApiKey;
-        //[SerializeField] private string SheetRange;
+        [SerializeField] private string SheetRange;
 
         public UnityAction<JObject> OnSheetRead;
         public UnityAction OnSheetFailedToRead;
@@ -39,6 +39,7 @@ namespace Kuantech.Data
             {
                 using (UnityWebRequest request = UnityWebRequest.Get(url))
                 {
+                    request.timeout = 5;
                     var operation = await request.SendWebRequest().ToUniTask();
 
                     if (request.result != UnityWebRequest.Result.Success)
@@ -79,7 +80,7 @@ namespace Kuantech.Data
                 ["values"] = values
             };
             string jsonBody = body.ToString();
-            string accessToken = await GetAccessToken();
+            string accessToken = "";//await GetAccessToken();
             try
             {
                 using (UnityWebRequest request = new UnityWebRequest(url, "POST"))
@@ -123,7 +124,7 @@ namespace Kuantech.Data
         private SheetsService service;
         static string[] Scopes = { SheetsService.Scope.Spreadsheets };
         static string ApplicationName = "Sheet Reader";
-
+        
         public SheetsService GetService()
         {
             return service;
@@ -133,10 +134,10 @@ namespace Kuantech.Data
         {
             // Google Cloud Console'dan indirdiğiniz JSON dosyasının yolu
             string credentialPath = Path.Combine(Application.streamingAssetsPath, "credentials.json");
-
+        
             // ClientSecrets'i yükleyin
             ClientSecrets clientSecrets = GoogleClientSecrets.FromFile(credentialPath).Secrets;
-
+        
             // Kullanıcıdan yetkilendirme isteyin
             UserCredential userCredential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
                 clientSecrets, 
@@ -144,12 +145,12 @@ namespace Kuantech.Data
                 "user",
                 CancellationToken.None,
                 new FileDataStore("TokenStore", true)); 
-
+        
             // Token süresini kontrol et ve gerekiyorsa yenile
             var token = userCredential.Token;
             var expiresIn = token.ExpiresInSeconds ?? 0;
             var currentTimeUtc = DateTime.UtcNow;
-
+        
             if (currentTimeUtc >= token.Issued.AddSeconds(expiresIn - 60))  // Token süresi dolmak üzere
             {
                 await userCredential.RefreshTokenAsync(CancellationToken.None);
@@ -159,14 +160,14 @@ namespace Kuantech.Data
             {
                 Debug.Log("Token is still valid.");
             }
-
+        
             return userCredential.Token.AccessToken;
         }
         
         public async void AuthenticateAndInitializeService(bool forceUpdateToken = false)
         {
             string credentialPath = Path.Combine(Application.streamingAssetsPath, "credentials.json");
-
+        
             using (var stream = new FileStream(credentialPath, FileMode.Open, FileAccess.Read))
             {
                 try
@@ -177,20 +178,20 @@ namespace Kuantech.Data
                         "user",
                         CancellationToken.None,
                         new FileDataStore("TokenStore", true)); // Token'lar burada saklanıyor
-
+        
                     // Token süresi dolmuşsa yenile
                     if (forceUpdateToken)
                     {
                         await credential.RefreshTokenAsync(CancellationToken.None);
                     }
-
+        
                     // Google Sheets API hizmetini oluştur
                     service = new SheetsService(new BaseClientService.Initializer()
                     {
                         HttpClientInitializer = credential,
                         ApplicationName = ApplicationName,
                     });
-
+        
                     Debug.Log("Google Sheets API authenticated and service initialized!");
                 }
                 catch (Exception e)
