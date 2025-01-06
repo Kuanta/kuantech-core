@@ -74,6 +74,20 @@ namespace Kuantech.Core.Utils
             }
 
         }
+        
+        /// <summary>
+        /// Sets all weights to 1
+        /// </summary>
+        public void UnifyWeights()
+        {
+            for (int i = 0; i < Elements.Count; i++)
+            {
+                WPAElement element = Elements[i];
+                element.Probability = 1;
+                Elements[i] = element;
+            }
+        }
+        
         public T Sample(float weightDecay=1)
         {
             if (Elements.Count == 0)
