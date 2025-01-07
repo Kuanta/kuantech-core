@@ -391,6 +391,23 @@ namespace Kuantech.Puzzle
             return true;
         }
         
+        /// <summary>
+        /// Checks whether 
+        /// </summary>
+        /// <param name="group"></param>
+        /// <returns></returns>
+        public bool CanTileGroupBePlaced(GridTileGroup group)
+        {
+            for (int r = 0; r < RowCount; ++r)
+            {
+                for (int c = 0; c < ColumnCount; ++c)
+                {
+                    if (group.CanBePlacedToBoard(this, r, c)) return true; 
+                }
+            }
+
+            return false;
+        }
         public void ClearTile(int row, int col, int layer=0)
         {
             if (!IsCoordinateValid(row, col) || IsLayerValid(layer)) return;

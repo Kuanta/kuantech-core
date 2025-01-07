@@ -42,7 +42,7 @@ namespace Kuantech.Core
         
         #region Level Lifecycle
         //A simple relayer to LevelManager
-        public void ChangeLevelState(LevelState newState)
+        public virtual void ChangeLevelState(LevelState newState)
         {
             LevelManager levelman = LevelManager.GetContext<LevelManager>();
             if (levelman == null)
