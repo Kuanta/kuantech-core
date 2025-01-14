@@ -6,6 +6,7 @@ using Kuantech.Utils;
 using Sirenix.OdinInspector;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace Kuantech.Puzzle
 {
@@ -72,6 +73,7 @@ namespace Kuantech.Puzzle
         public HashSet<GridTileCoordinate> MaskedTiles = new HashSet<GridTileCoordinate>();
 
         public delegate void TileOperation(GridTile tile);
+
         public virtual void CreateBoard()
         {
             Tiles = new List<GridTile[,]>();

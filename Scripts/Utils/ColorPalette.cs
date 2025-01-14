@@ -1,37 +1,54 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Sirenix.OdinInspector;
 using UnityEditor;
 using UnityEngine;
 
 namespace Kuantech.Core.Utils
 {
+    [Serializable]
+    public struct ColorPaletteEntry
+    {
+        public Color Color;
+        public Material Material;
+        public Sprite Sprite;
+    }
+    
     [CreateAssetMenu(fileName = "Color Palette", menuName = "Kuantech/Utils/Color Palette")]
     public class ColorPalette : ScriptableObject
     {
-        public List<Color> Colors;
-        public List<Material> MaterialPalette;
+        // public List<Color> Colors;
+        // public List<Material> MaterialPalette;
+        public List<ColorPaletteEntry> ColorPaletteEntries;
         
         public Color GetColor(int colorIndex)
         {
-            return Colors[colorIndex];
+            return GetEntry(colorIndex).Color;
         }
 
         public Material GetMaterial(int index)
         {
-            if (MaterialPalette.Count <= index) return null;
-            return MaterialPalette[index];
+            return GetEntry(index).Material;
         }
-        
+
+        public Sprite GetSprite(int index)
+        {
+            return GetEntry(index).Sprite;
+        }
+
+        public ColorPaletteEntry GetEntry(int index)
+        {
+            index = Mathf.Clamp(index, 0, ColorPaletteEntries.Count);
+            return ColorPaletteEntries[index];
+        }
         [Button("Update Material Colors")]
         public void UpdateMaterialColors()
         {
             #if UNITY_EDITOR
-            if (MaterialPalette == null) return;
-            int maxCount = Mathf.Min(Colors.Count, MaterialPalette.Count);
-            for (int i = 0; i < maxCount; ++i)
+            for (int i = 0; i < ColorPaletteEntries.Count; ++i)
             {
-                MaterialPalette[i].SetColor("_BaseColor", Colors[i]);
-                EditorUtility.SetDirty(MaterialPalette[i]);
+                ColorPaletteEntries[i].Material.SetColor("_BaseColor",  ColorPaletteEntries[i].Color);
+                EditorUtility.SetDirty(ColorPaletteEntries[i].Material);
             }
             AssetDatabase.SaveAssets();
             #endif

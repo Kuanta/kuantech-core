@@ -15,7 +15,7 @@ namespace Kuantech.Puzzle.UI
         public Color GetColor()
         {
             if (ColorPalette == null) return SpriteColor;
-            if (ColorPalette.Colors.Count <= ColorPaletteIndex)
+            if (ColorPalette.ColorPaletteEntries.Count <= ColorPaletteIndex)
             {
                 return SpriteColor;
             }

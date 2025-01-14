@@ -1,5 +1,6 @@
 using Kuantech.Utils;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace Kuantech.Puzzle
 {
@@ -14,6 +15,9 @@ namespace Kuantech.Puzzle
         public CanTileDroppedHandler TileDropConditionChecker;
 
         public bool UseCursorPositionForDropPoint = false;
+        
+        
+        public UnityAction<(GridTileCoordinate, GridTileGroup)> OnTileDropped;
         
         private void Start()
         {
@@ -37,7 +41,13 @@ namespace Kuantech.Puzzle
             int row = coord.Row;
             int col = coord.Column;
             if(!gridTileDraggable.CanBeDroppedToSlot(GridBoard, row, col)) return false;
-            return HandleDroppedTile(gridTileDraggable, row, col);
+            bool result = HandleDroppedTile(gridTileDraggable, row, col);
+            if (result)
+            {
+                OnTileDropped?.Invoke((coord, gridTileDraggable.GridTileGroup));
+            }
+
+            return result;
         }
 
         public GridTileCoordinate GetRowColFromDraggablePosition(GridTileDraggable draggable)

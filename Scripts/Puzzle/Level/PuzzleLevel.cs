@@ -25,6 +25,9 @@ namespace Kuantech.Puzzle
         [Header("Level Design")] 
         public LevelDesignAsset LevelDesignAsset;
         
+        [Header("Tutorial")]
+        public int TutorialIndex = -1;
+
         //Boosters
         [NonSerialized] public PuzzleBooster CurrentBooster;
 

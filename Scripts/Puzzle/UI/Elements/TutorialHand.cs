@@ -73,7 +73,18 @@ namespace Kuantech.Puzzle.UI
         /// <param name="to"></param>
         public void DoSwipeMotionUIToWorld(Vector3 from, Vector3 to)
         {
-            
+            Vector2 fromPos = ParentCanvas.GlobalToScreenPosition(from, ParentCanvas.GetGameCamera());
+            Vector2 toPos = ParentCanvas.GlobalToScreenPosition(to, ParentCanvas.GetGameCamera());
+            StartSwipe(ParentCanvas.ScreenPositionToAnchoredPosition(ParentRectTransform, fromPos), 
+                ParentCanvas.ScreenPositionToAnchoredPosition(ParentRectTransform, toPos));
+        }
+
+        public void DoSwipeMotionUIToUI(Vector3 from, Vector3 to)
+        {
+            Vector2 fromPos = ParentCanvas.GlobalToScreenPosition(from, ParentCanvas.GetCanvasCamera());
+            Vector2 toPos = ParentCanvas.GlobalToScreenPosition(to, ParentCanvas.GetCanvasCamera());
+            StartSwipe(ParentCanvas.ScreenPositionToAnchoredPosition(ParentRectTransform, fromPos), 
+                ParentCanvas.ScreenPositionToAnchoredPosition(ParentRectTransform, toPos));
         }
         
         /// <summary>

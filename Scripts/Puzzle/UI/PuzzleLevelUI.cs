@@ -6,7 +6,6 @@ using Kuantech.Core.UI;
 using Kuantech.HyperCasual.UI;
 using Kuantech.UI;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace Kuantech.Puzzle.UI
 {
@@ -33,7 +32,8 @@ namespace Kuantech.Puzzle.UI
         public LevelIntroPanel BonusLevelIntroPanel;
         
         [Header("Tutorial")] 
-        [SerializeField] public TutorialHand TutorialHand;
+        public TutorialHand TutorialHand;
+        public TextBox TutorialTextBox;
         [NonSerialized] public PuzzleLevel CurrentLevel;
 
         public virtual void Initialize()
@@ -52,6 +52,11 @@ namespace Kuantech.Puzzle.UI
             if (BoostersHUD != null)
             {
                 BoostersHUD.Initialize(this);
+            }
+
+            if (TutorialHand != null)
+            {
+                TutorialHand.ParentCanvas = this;
             }
         }
         
@@ -180,7 +185,31 @@ namespace Kuantech.Puzzle.UI
             }
         }
         #endregion
+
+        #region Tutorial
         
+        /// <summary>
+        /// Sets the tutorial text
+        /// </summary>
+        /// <param name="tutorialText"></param>
+        public void SetTutorialText(string tutorialText)
+        {
+            if (TutorialTextBox == null) return;
+            TutorialTextBox.SetText(tutorialText);
+        }
+
+        public void ToggleTutorialText(bool toggle)
+        {
+            if (TutorialTextBox == null) return;
+            TutorialTextBox.gameObject.SetActive(toggle);
+        }
+
+        public void ToggleTutorialHand(bool toggle)
+        {
+            if (TutorialHand == null) return;
+            TutorialHand.gameObject.SetActive(toggle);
+        }
+        #endregion
         public virtual void Reset()
         {
             if(CompletePanel != null) CompletePanel.Close();
@@ -189,7 +218,8 @@ namespace Kuantech.Puzzle.UI
             {
                 WinConditionIndicatorPanel.SetPanelForStage();  
             }
-            if(TutorialHand != null) TutorialHand.gameObject.SetActive(false);
+            ToggleTutorialHand(false);
+            ToggleTutorialText(false);
             if(BoostersHUD != null) BoostersHUD.Reset();
         }
         
