@@ -90,24 +90,24 @@ namespace Kuantech.Puzzle
             if(GridBoard == null) return;
             int colCount = GridBoard.ColumnCount+1;
             int rowCount = GridBoard.RowCount+1;
-            float cellSize = GridBoard.CellHeight;
+            //float cellSize = GridBoard.CellHeight;
             Gizmos.color = Color.white;
 
-            Vector3 startHorizontal = GridBoard.RightVector * ((colCount - 1) * cellSize / 2);
-            Vector3 startDepth = GridBoard.ForwardVector * ((rowCount - 1) * cellSize / 2);
-            Vector3 startPoint = -startHorizontal - startDepth;
+            Vector3 startHorizontal = GridBoard.RightVector * ((colCount - 1) * GridBoard.CellWidth * GridBoard.OriginOffset.x);
+            Vector3 startDepth = GridBoard.ForwardVector * ((rowCount - 1) * GridBoard.CellHeight * GridBoard.OriginOffset.y);
+            Vector3 startPoint = startHorizontal + startDepth;
 
             for (int row = 0; row < rowCount; row++)
             {
                 for (int col = 0; col < colCount; col++)
                 {
-                    Vector3 currentPoint = startPoint + GridBoard.RightVector * (col * cellSize) + GridBoard.ForwardVector * (row * cellSize);
+                    Vector3 currentPoint = startPoint + GridBoard.RightVector * (col * GridBoard.CellWidth) + GridBoard.ForwardVector * (row * GridBoard.CellHeight);
                     Vector3 globalCurrent = GridBoard.transform.TransformPoint(currentPoint);
                     Gizmos.color = DebugLinesColor;
                     // Draw horizontal lines
                     if (col < colCount - 1)
                     {
-                        Vector3 nextPointH = currentPoint + GridBoard.RightVector * cellSize;
+                        Vector3 nextPointH = currentPoint + GridBoard.RightVector * GridBoard.CellWidth;
                         nextPointH = GridBoard.transform.TransformPoint(nextPointH);
                         Gizmos.DrawLine(globalCurrent, nextPointH);
                     }
@@ -115,7 +115,7 @@ namespace Kuantech.Puzzle
                     // Draw vertical lines
                     if (row < rowCount - 1)
                     {
-                        Vector3 nextPointV = currentPoint + GridBoard.ForwardVector * cellSize;
+                        Vector3 nextPointV = currentPoint + GridBoard.ForwardVector * GridBoard.CellHeight;
                         nextPointV = GridBoard.transform.TransformPoint(nextPointV);
                         Gizmos.DrawLine(globalCurrent, nextPointV);
                     }
