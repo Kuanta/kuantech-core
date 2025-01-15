@@ -74,7 +74,15 @@ namespace Kuantech.Puzzle
                 gameObject.SetActive(false);
             }
         }
-        
+
+        public bool IsNeighbourWithTile(GridTile tile)
+        {
+            //Check if this is neighbour with other tile
+            int rowDiff = Mathf.Abs(tile.AnchorRow - AnchorRow);
+            int colDiff = Mathf.Abs(tile.AnchorColumn - AnchorColumn);
+            int layerDiff = Mathf.Abs(tile.AnchorLayer - AnchorLayer);
+            return (rowDiff + colDiff + layerDiff <= 1);
+        }
         /// <summary>
         /// How many rows does this tile requires
         /// </summary>
