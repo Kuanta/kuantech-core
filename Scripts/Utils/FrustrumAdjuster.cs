@@ -4,8 +4,8 @@ namespace Kuantech.Core.Utils
 {
     public class FrustrumAdjuster : MonoBehaviour
     {
-        [SerializeField] private Camera mainCamera;
-        [SerializeField] private Camera cullingCamera;
+        [SerializeField] private UnityEngine.Camera mainCamera;
+        [SerializeField] private UnityEngine.Camera cullingCamera;
         [SerializeField] private float extraFrustumCullRange = 10;
  
         private void Awake()

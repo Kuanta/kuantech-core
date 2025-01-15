@@ -98,7 +98,7 @@ namespace Kuantech.Core.Utils
         private float GetUpdateFrequency()
         {
             if (!UseDistanceBasedBaking) return UpdateFrequency;
-            float dist = (Camera.main.transform.position - transform.position).magnitude;
+            float dist = (UnityEngine.Camera.main.transform.position - transform.position).magnitude;
             if (dist <= MinDistance) dist = 0f;
             float normalizedDist = Mathf.Min(dist / MaxDistance, 1f);
             return  DistanceToFrequencyCurve.Evaluate(normalizedDist) * MaxFreq;

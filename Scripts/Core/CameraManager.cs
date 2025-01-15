@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
 using Cinemachine;
+using Kuantech.Core.Camera;
+using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Core
@@ -9,6 +11,7 @@ namespace Kuantech.Core
     public class CameraDictionary : SerializableDictionary<int, CinemachineVirtualCamera>{}
     public class CameraManager : SubManager
     {
+        public KtCamera KtCamera;
         [SerializeField] private CameraDictionary Cameras;
         public int StartingCameraIndex = 0;
         private int _currentCameraId;
@@ -17,6 +20,7 @@ namespace Kuantech.Core
         public override void OnSubmanagersInitialized()
         {
             base.OnSubmanagersInitialized();
+            if (Cameras.IsNullOrEmpty()) return;
             SwitchToCamera(StartingCameraIndex);
         }
         
@@ -88,6 +92,13 @@ namespace Kuantech.Core
             camera.enabled = false;
             SwitchToCamera(cameraId);
             _switchRoutine = null;
+        }
+
+        public static KtCamera GetKtCamera()
+        {
+            var context = GetContext<CameraManager>();
+            if (context == null) return null;
+            return context.KtCamera;
         }
 
     }

@@ -6,7 +6,7 @@ namespace Kuantech.Core.Utils
 {
     public class CursorSprite : MonoBehaviour
     {
-        public Camera Camera;
+        public UnityEngine.Camera Camera;
         public bool AlwaysShow = false;
         [SerializeField]
         private float distanceFromCamera = 10f;

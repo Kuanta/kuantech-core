@@ -9,7 +9,7 @@ namespace Kuantech.Core.Utils
 {
     public class PhotoshootCamera : MonoBehaviour
     {
-        [SerializeField] private Camera Camera;
+        [SerializeField] private UnityEngine.Camera Camera;
         [SerializeField] private int Width;
         [SerializeField] private int Height;
         //[SerializeField] private RenderTexture _renderTexture;

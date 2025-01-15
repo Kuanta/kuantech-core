@@ -21,7 +21,7 @@ namespace Kuantech.Core.UI
             {
                 return;
             }
-            Vector2 position = ParentUICanvas.GlobalToScreenPosition(worldPosition.transform.position, Camera.main);
+            Vector2 position = ParentUICanvas.GlobalToScreenPosition(worldPosition.transform.position, UnityEngine.Camera.main);
             RectTransform rectTransform = GetComponent<RectTransform>();
             rectTransform.position = ParentUICanvas.transform.TransformPoint(position);
         }

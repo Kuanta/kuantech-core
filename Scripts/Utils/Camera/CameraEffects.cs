@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Kuantech.Core.Camera;
+using UnityEngine;
 
 namespace Kuantech.Core.Utils
 {
@@ -34,7 +35,7 @@ namespace Kuantech.Core.Utils
         /// </summary>
         public bool DeltaMovement = true;
 
-        protected Camera Camera;
+        protected KtCamera KtCamera;
         protected float time = 0;
         protected Vector3 lastPos;
         protected Vector3 nextPos;
@@ -42,32 +43,25 @@ namespace Kuantech.Core.Utils
         protected float nextFoV;
         protected bool destroyAfterPlay;
 
-        /// <summary>
-        /// awake
-        /// </summary>
-        private void Awake()
-        {
-            Camera = GetComponent<Camera>();
-        }
 
         /// <summary>
         /// Do the shake
         /// </summary>
-        public static void ShakeOnce(float duration = 1f, float speed = 10f, Vector3? amount = null, Camera camera = null, bool deltaMovement = true, AnimationCurve curve = null)
+        public void ShakeOnce(float duration = 1f, float speed = 10f, Vector3? amount = null, 
+            UnityEngine.Camera camera = null, bool deltaMovement = true, AnimationCurve curve = null)
         {
             //set data
-            var instance = ((camera != null) ? camera : Camera.main).gameObject.AddComponent<CameraEffects>();
-            instance.Duration = duration;
-            instance.Speed = speed;
+            Duration = duration;
+            Speed = speed;
             if (amount != null)
-                instance.Amount = (Vector3)amount;
+                Amount = (Vector3)amount;
             if (curve != null)
-                instance.Curve = curve;
-            instance.DeltaMovement = deltaMovement;
+               Curve = curve;
+            DeltaMovement = deltaMovement;
 
             //one time
-            instance.destroyAfterPlay = true;
-            instance.Shake();
+            destroyAfterPlay = true;
+            Shake();
         }
 
         /// <summary>
@@ -92,8 +86,8 @@ namespace Kuantech.Core.Utils
                               (Mathf.PerlinNoise(time * Speed * 2, time * Speed) - 0.5f) * Amount.y * transform.up * Curve.Evaluate(1f - time / Duration);
                     nextFoV = (Mathf.PerlinNoise(time * Speed * 2, time * Speed * 2) - 0.5f) * Amount.z * Curve.Evaluate(1f - time / Duration);
 
-                    Camera.fieldOfView += (nextFoV - lastFoV);
-                    Camera.transform.Translate(DeltaMovement ? (nextPos - lastPos) : nextPos);
+                    KtCamera.Camera.fieldOfView += (nextFoV - lastFoV);
+                    KtCamera.Camera.transform.Translate(DeltaMovement ? (nextPos - lastPos) : nextPos);
 
                     lastPos = nextPos;
                     lastFoV = nextFoV;
@@ -111,8 +105,8 @@ namespace Kuantech.Core.Utils
         private void ResetCam()
         {
             //reset the last delta
-            Camera.transform.Translate(DeltaMovement ? -lastPos : Vector3.zero);
-            Camera.fieldOfView -= lastFoV;
+            KtCamera.Camera.transform.Translate(DeltaMovement ? -lastPos : Vector3.zero);
+            KtCamera.Camera.fieldOfView -= lastFoV;
 
             //clear values
             lastPos = nextPos = Vector3.zero;
