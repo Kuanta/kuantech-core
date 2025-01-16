@@ -21,11 +21,13 @@ namespace Kuantech.Puzzle
         public Transform GroupParent;
         public GridTileLibrary TileCollection;
         public Color DebugLinesColor = Color.white;
+        public float LineThickness = 1f;
         [HideInInspector] public EditorMode CurrentMode = EditorMode.None;
         [HideInInspector] public List<GameObject> TileLibrary = new List<GameObject>();
         [HideInInspector] public GameObject CurrentlySelectedTile = null;
         public List<GridBoardEditorTile> EditorTiles = new List<GridBoardEditorTile>();
 
+        public bool ShowAlways;
         //Mode changes
         public void SetMode(GridBoardEditor.EditorMode mode)
         {
@@ -80,9 +82,16 @@ namespace Kuantech.Puzzle
         }
         
         #if UNITY_EDITOR
-       
+        private void OnDrawGizmos()
+        {
+            if (ShowAlways)
+            {
+                DrawGrid();
+            }
+        }
         private void OnDrawGizmosSelected()
         {
+            if (ShowAlways) return;
             DrawGrid();
         }
         private void DrawGrid()
@@ -91,7 +100,7 @@ namespace Kuantech.Puzzle
             int colCount = GridBoard.ColumnCount+1;
             int rowCount = GridBoard.RowCount+1;
             //float cellSize = GridBoard.CellHeight;
-            Gizmos.color = Color.white;
+            Handles.color = DebugLinesColor;
 
             Vector3 startHorizontal = GridBoard.RightVector * ((colCount - 1) * GridBoard.CellWidth * GridBoard.OriginOffset.x);
             Vector3 startDepth = GridBoard.ForwardVector * ((rowCount - 1) * GridBoard.CellHeight * GridBoard.OriginOffset.y);
@@ -103,13 +112,13 @@ namespace Kuantech.Puzzle
                 {
                     Vector3 currentPoint = startPoint + GridBoard.RightVector * (col * GridBoard.CellWidth) + GridBoard.ForwardVector * (row * GridBoard.CellHeight);
                     Vector3 globalCurrent = GridBoard.transform.TransformPoint(currentPoint);
-                    Gizmos.color = DebugLinesColor;
+                    
                     // Draw horizontal lines
                     if (col < colCount - 1)
                     {
                         Vector3 nextPointH = currentPoint + GridBoard.RightVector * GridBoard.CellWidth;
                         nextPointH = GridBoard.transform.TransformPoint(nextPointH);
-                        Gizmos.DrawLine(globalCurrent, nextPointH);
+                        Handles.DrawLine(globalCurrent, nextPointH, LineThickness);
                     }
 
                     // Draw vertical lines
@@ -117,7 +126,7 @@ namespace Kuantech.Puzzle
                     {
                         Vector3 nextPointV = currentPoint + GridBoard.ForwardVector * GridBoard.CellHeight;
                         nextPointV = GridBoard.transform.TransformPoint(nextPointV);
-                        Gizmos.DrawLine(globalCurrent, nextPointV);
+                        Handles.DrawLine(globalCurrent, nextPointV, LineThickness);
                     }
                 }
             }
