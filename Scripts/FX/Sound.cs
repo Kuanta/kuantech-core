@@ -40,11 +40,14 @@ namespace Kuantech.Core.FX
 
         [Header("ChangingPitch")]
         public bool AdjustPitch = false;
+
+        [Tooltip("If set to true, combo count will be the one set by the effect")] public bool UseComboFromEffect;
         public float PitchAdjustmentPerPlay = 0.1f;
         public float PitchResetTime;
 
         public UnityAction OnDeqeued;
 
+        [NonSerialized] public int ComboFromEffect = 0;
         private IEnumerator _fadeOutRoutine = null;
         
         public void Play()
@@ -72,7 +75,11 @@ namespace Kuantech.Core.FX
             }
             else if(AdjustPitch)
             {
-                int comboCount = AudioLibrary.GetComboCount(this);
+                int comboCount = ComboFromEffect;
+                if (!UseComboFromEffect)
+                {
+                    comboCount = AudioLibrary.GetComboCount(this);
+                }
                 pitch = BasePitch + comboCount * PitchAdjustmentPerPlay;
 
             }

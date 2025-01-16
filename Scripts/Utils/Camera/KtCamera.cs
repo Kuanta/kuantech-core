@@ -1,5 +1,4 @@
 ﻿using DG.Tweening;
-using Kuantech.Core.Utils;
 using UnityEngine;
 
 namespace Kuantech.Core.Camera
@@ -8,7 +7,6 @@ namespace Kuantech.Core.Camera
     {
         public UnityEngine.Camera Camera;
         public GameObject Rig;
-        public CameraEffects CameraEffects;
 
         [Header("Camera Shake")] 
         public float ShakeDuration = 0.5f;
@@ -16,11 +14,25 @@ namespace Kuantech.Core.Camera
         public int Vibrato = 10;
         private float Randomness = 90.0f;
         
+        /// <summary>
+        /// Shakes with default values
+        /// </summary>
         public void ShakeCamera()
+        {
+            ShakeCamera(ShakeStrength, ShakeDuration, Vibrato);
+        }
+        
+        /// <summary>
+        /// Shakes the camera with given parameters
+        /// </summary>
+        /// <param name="shakesStrength"></param>
+        /// <param name="shakeDuration"></param>
+        /// <param name="vibrato"></param>
+        public void ShakeCamera(float shakesStrength, float shakeDuration, int vibrato)
         {
             if (Camera != null)
             {
-                Camera.transform.DOShakePosition(ShakeDuration, ShakeStrength, Vibrato, Randomness)
+                Camera.transform.DOShakePosition(shakeDuration, shakesStrength, vibrato, Randomness)
                     .OnComplete(() => Camera.transform.localPosition = Vector3.zero);
             }
         }

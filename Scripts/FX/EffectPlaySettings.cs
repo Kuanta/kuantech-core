@@ -9,7 +9,10 @@ namespace Kuantech.Core.FX
         public float Duration;
         public float EffectCooldown;
         public bool DespawnAfterPlay;
-
+        
+        //Combo
+        public int ComboIndex;
+        
         //Play under parent
         public bool SetPosition; //If true, the position will be set
         public Transform EffectParent;

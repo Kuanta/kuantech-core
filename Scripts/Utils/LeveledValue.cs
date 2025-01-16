@@ -11,8 +11,8 @@ namespace Kuantech.Utils
         [SerializeField] private float ValuePerLevel;
         [SerializeField] private int LevelIntervals;
         [Header("Limits")]
-        [SerializeField] private int MinValue;
-        [SerializeField] private int MaxValue;
+        [SerializeField] private float MinValue;
+        [SerializeField] private float MaxValue;
         [SerializeField] private bool LimitValue;
 
         public float GetValue(int level = 0)

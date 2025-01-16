@@ -93,7 +93,9 @@ namespace Kuantech.Core.FX
 
             if(!EffectsLibrary.PlayAudio(AudioTag))
             {
-                if (Sfx != null) {
+                if (Sfx != null)
+                {
+                    Sfx.ComboFromEffect = playSettings.ComboIndex;
                     Sfx.PlayThroughAudioLibrary();
                 }
             }
