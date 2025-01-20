@@ -11,7 +11,9 @@ namespace Kuantech.Core.HyperCasual
         [SerializeField] private GameObject WholeObject;
         [SerializeField] private GameObject DestroyedObject;
         [SerializeField] private List<DestructibleComponent> DestructibleComponents;
-        [SerializeField] private Effect DestructionEffect;
+
+        [SerializeField] private EffectPlayer DestructionEffect;
+        //[SerializeField] private Effect DestructionEffect;
         [SerializeField] private float DestructionMagnitude;
         [SerializeField] private float HideDelay;
         private List<DestructiblePiece> _pieces;
@@ -49,7 +51,7 @@ namespace Kuantech.Core.HyperCasual
                     piece.Rigidbody.AddForce(distance * DestructionMagnitude, ForceMode.Impulse);
                 }
             }
-            if (DestructionEffect != null) DestructionEffect.Play();
+            DestructionEffect.PlayEffectAtPosition(transform.position, transform.rotation);
             if (DestroyedObject != null)
             {
                 _hideCoroutine = HideDestroyedObject();
@@ -68,6 +70,11 @@ namespace Kuantech.Core.HyperCasual
             DestroyedObject.SetActive(false);
         }
 
+        public float GetHideDelay()
+        {
+            return HideDelay;
+        }
+        
         [Button("Reset")]
         public void Reset()
         {

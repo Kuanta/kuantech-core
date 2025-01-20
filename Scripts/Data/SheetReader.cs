@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
@@ -200,6 +202,35 @@ namespace Kuantech.Data
                 }
             }
         }
+
+        #endregion
+
+        #region Common Utilities
+
+        public static float ReadFloatData(JToken row, int columnIndex, float defaultValue=0)
+        {
+            if(!float.TryParse(row[columnIndex].ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out float result))
+            {
+                return defaultValue;
+            }
+
+            return result;
+        }
+
+        public static int ReadIntData(JToken row, int columnIndex, int defaultValue = 0)
+        {
+            if (row.Count() <= columnIndex)
+            {
+                Debug.LogError($"Column index is {columnIndex}");
+                return defaultValue;
+            }
+            if(!Int32.TryParse(row[columnIndex].ToString(), out int result))
+            {
+                return defaultValue;
+            }
+            return result;
+        }
+        
 
         #endregion
     }

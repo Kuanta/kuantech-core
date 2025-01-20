@@ -21,8 +21,6 @@ namespace Kuantech.Puzzle
         private JObject _sheetData;
 
         public LevelDesignDataCollection LevelDesignsCollection;
-        //public List<LevelDesignAsset> DesignAssets;
-
         
         public bool UseSheetReader = true;
         public override async UniTask Initialize(GameManager gameManager)
@@ -43,7 +41,7 @@ namespace Kuantech.Puzzle
                 _sheetData = readData;
                 if (LevelDesignsCollection != null)
                 {
-                    LevelDesignsCollection.UpdateFromSheetData(_sheetData);
+                    LevelDesignsCollection.UpdateFromSheetData(_sheetData, Type.GetType(ClassName));
                 }
             });
             await SheetReader.GetSheetData(LevelDesignSheetRange);
@@ -81,7 +79,7 @@ namespace Kuantech.Puzzle
             levelDesignData.CreateFromSheetData(context._sheetData, levelIndex);
             return levelDesignData;
         }
-
+        
         private LevelDesignData GetLevelDesignAsset(int levelIndex)
         {
             return LevelDesignsCollection.GetLevelDesignData(levelIndex);
@@ -101,7 +99,7 @@ namespace Kuantech.Puzzle
         {
 #if UNITY_EDITOR
             if (sheetData == null) return;
-            LevelDesignsCollection.UpdateFromSheetData(sheetData);
+            LevelDesignsCollection.UpdateFromSheetData(sheetData, Type.GetType(ClassName));
 #endif
         }
     }

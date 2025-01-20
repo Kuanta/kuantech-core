@@ -14,14 +14,14 @@ namespace Kuantech.Puzzle.Tutorials
         public override void StartTask()
         {
             ParentPuzzleLevel.LevelUI.ToggleTutorialHand(true);
-            SetStartPosition();
-            SetEndPosition();
+            DragStart = GetStartPosition();
+            DragEnd = GetEndPosition();
             ParentPuzzleLevel.LevelUI.TutorialHand.DoSwipeMotionWorldToWorld(DragStart, DragEnd);
             base.StartTask();
         }
 
-        public abstract void SetStartPosition();
+        public abstract Vector3 GetStartPosition();
 
-        public abstract void SetEndPosition();
+        public abstract Vector3 GetEndPosition();
     }
 }
