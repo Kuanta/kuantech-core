@@ -10,6 +10,14 @@ namespace Kuantech.Puzzle
 {
     public class PuzzleLevel : Level
     {
+        [Header("Sub Levels")] 
+        public PuzzleSubLevelCollection SubLevelCollection;
+        public int SubLevelIndex = -1;
+        [NonSerialized] public PuzzleSubLevel CurrentSubLevel;
+                
+        [Header("Tutorial")]
+        public int TutorialIndex = -1;
+        
         [Header("UI")]
         public PuzzleLevelUI LevelUI;
         
@@ -23,10 +31,8 @@ namespace Kuantech.Puzzle
         public WinConditionTracker WinConditionTracker;
 
         [Header("Level Design")] 
+        public bool ShouldFindLevelDesign;
         public LevelDesignAsset LevelDesignAsset;
-        
-        [Header("Tutorial")]
-        public int TutorialIndex = -1;
 
         //Boosters
         [NonSerialized] public PuzzleBooster CurrentBooster;
@@ -40,6 +46,8 @@ namespace Kuantech.Puzzle
         }
         public override void SetupLevel()
         {
+            FindLevelDesign();
+            SetSubLevel();
             CreateWinConditionTracker();
             LevelUI = PuzzleUIManager.GetLevelUI(); 
             if(LevelUI != null) LevelUI.OnLevelSetup(this);
@@ -68,6 +76,7 @@ namespace Kuantech.Puzzle
         /// </summary>
         public virtual void FindLevelDesign()
         {
+            if (!ShouldFindLevelDesign) return;
             LevelDesignData data = LevelDesignManager.GetLevelDesignData(LevelNumber);
             if (data == null && LevelDesignAsset != null)
             {
@@ -78,7 +87,20 @@ namespace Kuantech.Puzzle
             if (data == null) return;
             LoadLevelDesign(data);
         }
-
+        
+        /// <summary>
+        /// Sets the sub-level
+        /// </summary>
+        public virtual void SetSubLevel()
+        {
+            if (SubLevelIndex < 0 && TutorialIndex < 0) return;
+            if (SubLevelCollection == null) return;
+            var prefab = SubLevelCollection.GetSubLevel(SubLevelIndex, TutorialIndex);
+            if (prefab == null) return;
+            CurrentSubLevel = Instantiate(prefab);
+            CurrentSubLevel.gameObject.AttachToParent(transform);
+        }
+            
         protected virtual void LoadLevelDesign(LevelDesignData designData)
         {
             if (designData == null) return;
