@@ -180,6 +180,10 @@ namespace Kuantech.Puzzle
                 tile.Despawn(false);
                 return;
             }
+            if (tile.MaskBackground)
+            {
+                BackgroundMask[coord.Row, coord.Column] = true;
+            }
             tile.DestroyOnDespawn = false;
             tile.gameObject.SetActive(true);
             SetTile(tile, coord.Row, coord.Column, coord.Layer);
