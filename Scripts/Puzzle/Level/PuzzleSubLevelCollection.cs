@@ -1,29 +1,44 @@
-﻿using System.Collections.Generic;
-using Kuantech.Utils;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Kuantech.Puzzle
 {
+    [Serializable]
+    public struct SubLevelCategoryEntry
+    {
+        public string CategoryName;
+        public List<PuzzleSubLevel> SubLevels;
+    }
     [CreateAssetMenu(fileName = "Sublevel Collection", menuName = "Kuantech/Puzzle/SubLevels")]
     public class PuzzleSubLevelCollection : ScriptableObject
     {
         public List<PuzzleSubLevel> TutorialSubLevels;
 
-        public List<PuzzleSubLevel> RegularSubLevels;
-
-        public virtual PuzzleSubLevel GetSubLevel(int subLevelIndex, int tutorialIndex)
+        //public List<PuzzleSubLevel> RegularSubLevels;
+        public List<SubLevelCategoryEntry> SubLevelCategoryEntries;
+        
+        public virtual PuzzleSubLevel GetSubLevel(string subLevelCategory, int subLevelIndex)
         {
-            if (tutorialIndex >= 0 && tutorialIndex < TutorialSubLevels.Count)
+            List<PuzzleSubLevel> subLevels = SubLevelCategoryEntries[0].SubLevels;
+            foreach (var entry in SubLevelCategoryEntries)
             {
-                return TutorialSubLevels[tutorialIndex];
-            }
+                if (string.Equals(entry.CategoryName, subLevelCategory, StringComparison.OrdinalIgnoreCase))
+                {
+                    subLevels = entry.SubLevels;
+                    break;
 
-            if (RegularSubLevels.IsNullOrEmpty())
-            {
-                return null;
+                }
             }
+            
+            //Couldn't found the category
+            int index = subLevelIndex % subLevels.Count;
+            return subLevels[index];
+        }
 
-            return RegularSubLevels[subLevelIndex % RegularSubLevels.Count];
+        public virtual PuzzleSubLevel GetTutorialSubLevel(int tutorialIndex)
+        {
+            return TutorialSubLevels[tutorialIndex];
         }
     }
 }

@@ -40,6 +40,16 @@ namespace Kuantech.Puzzle
                     field.SetValue(this, value);
                     continue;
                 }
+
+                var stringAttribute =
+                    (SheetStringDataColumnAttribute) Attribute.GetCustomAttribute(field,
+                        typeof(SheetStringDataColumnAttribute));
+                if (stringAttribute != null)
+                {
+                    string value = row[stringAttribute.ColumnIndex].ToString();
+                    field.SetValue(this, value);
+                    continue;
+                }
             }
         }
     }

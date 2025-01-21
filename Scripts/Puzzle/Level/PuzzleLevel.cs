@@ -12,6 +12,7 @@ namespace Kuantech.Puzzle
     {
         [Header("Sub Levels")] 
         public PuzzleSubLevelCollection SubLevelCollection;
+        public string SubLevelCategory = "";
         public int SubLevelIndex = -1;
         [NonSerialized] public PuzzleSubLevel CurrentSubLevel;
                 
@@ -95,7 +96,15 @@ namespace Kuantech.Puzzle
         {
             if (SubLevelIndex < 0 && TutorialIndex < 0) return;
             if (SubLevelCollection == null) return;
-            var prefab = SubLevelCollection.GetSubLevel(SubLevelIndex, TutorialIndex);
+            PuzzleSubLevel prefab = null;
+            if (TutorialIndex > 0)
+            {
+                prefab = SubLevelCollection.GetTutorialSubLevel(TutorialIndex);
+            }
+            else
+            {
+                prefab = SubLevelCollection.GetSubLevel(SubLevelCategory, SubLevelIndex);
+            }
             if (prefab == null) return;
             CurrentSubLevel = Instantiate(prefab);
             CurrentSubLevel.gameObject.AttachToParent(transform);
