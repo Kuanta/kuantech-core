@@ -97,7 +97,7 @@ namespace Kuantech.Puzzle
             if (SubLevelIndex < 0 && TutorialIndex < 0) return;
             if (SubLevelCollection == null) return;
             PuzzleSubLevel prefab = null;
-            if (TutorialIndex > 0)
+            if (TutorialIndex >= 0)
             {
                 prefab = SubLevelCollection.GetTutorialSubLevel(TutorialIndex);
             }
