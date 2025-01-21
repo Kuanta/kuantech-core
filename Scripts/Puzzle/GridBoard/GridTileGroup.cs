@@ -177,7 +177,7 @@ namespace Kuantech.Puzzle
         /// <returns></returns>
         public Vector3 GetLocalPosition(GridBoard board, float row, float col)
         {
-            return board.RightVector * (col * board.CellWidth) + board.ForwardVector * (row * board.CellWidth);
+            return board.RightVector * (col * board.CellWidth) + board.ForwardVector * (row * board.CellHeight);
         }
     }
 }

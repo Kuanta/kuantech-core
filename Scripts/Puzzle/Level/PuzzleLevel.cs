@@ -40,8 +40,6 @@ namespace Kuantech.Puzzle
         }
         public override void SetupLevel()
         {
-            //Upmost importance
-            FindLevelDesign();
             CreateWinConditionTracker();
             LevelUI = PuzzleUIManager.GetLevelUI(); 
             if(LevelUI != null) LevelUI.OnLevelSetup(this);
