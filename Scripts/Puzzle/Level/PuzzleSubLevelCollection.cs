@@ -23,7 +23,7 @@ namespace Kuantech.Puzzle
                 return null;
             }
 
-            return RegularSubLevels[tutorialIndex % RegularSubLevels.Count];
+            return RegularSubLevels[subLevelIndex % RegularSubLevels.Count];
         }
     }
 }

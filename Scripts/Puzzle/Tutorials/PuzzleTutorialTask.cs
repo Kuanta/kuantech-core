@@ -1,4 +1,5 @@
 ﻿using Kuantech.Core;
+using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Puzzle.Tutorials
@@ -21,6 +22,7 @@ namespace Kuantech.Puzzle.Tutorials
         {
             base.StartTask();
             if (ParentPuzzleLevel == null) return;
+            if (TutorialText.IsNullOrEmpty()) return;
             ParentPuzzleLevel.LevelUI.SetTutorialText(TutorialText);
             ParentPuzzleLevel.LevelUI.ToggleTutorialText(true);
         }

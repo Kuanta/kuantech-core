@@ -20,6 +20,7 @@ namespace Kuantech.Core.Utils
         // public List<Color> Colors;
         // public List<Material> MaterialPalette;
         public List<ColorPaletteEntry> ColorPaletteEntries;
+        public ColorPaletteEntry InvalidEntry;
         
         public Color GetColor(int colorIndex)
         {
@@ -38,6 +39,7 @@ namespace Kuantech.Core.Utils
 
         public ColorPaletteEntry GetEntry(int index)
         {
+            if (index < 0) return InvalidEntry;
             index = Mathf.Clamp(index, 0, ColorPaletteEntries.Count);
             return ColorPaletteEntries[index];
         }
