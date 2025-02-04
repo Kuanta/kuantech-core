@@ -6,7 +6,6 @@ using Kuantech.Utils;
 using Sirenix.OdinInspector;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Events;
 
 namespace Kuantech.Puzzle
 {
@@ -18,7 +17,7 @@ namespace Kuantech.Puzzle
         public int Col;
     }
 
-    public class GridBoard : MonoBehaviour
+    public class GridBoard : Board
     {
         public enum Directions : uint
         {
@@ -46,9 +45,6 @@ namespace Kuantech.Puzzle
         [Header("Origin Offset")] 
         public Vector2 OriginOffset = new Vector2(-0.5f, -0.5f);
 
-        [Header("Existing Tiles")] 
-        public List<GameObject> ExistingLayers;
-
         [Header("Tile Collection")] 
         public TileCollection TileCollection;
         
@@ -57,9 +53,6 @@ namespace Kuantech.Puzzle
 
         [Header("Pathfinding")] 
         public GridBoardPathTree GridBoardPathTree;
-        
-        [Header("Editor Background")] [SerializeField]
-        private GameObject Editorbackground;
         
         public List<GridTile[,]> Tiles; //A list of list to represent layered tiles
         //public GridTile[,] Tiles;
@@ -74,7 +67,7 @@ namespace Kuantech.Puzzle
 
         public delegate void TileOperation(GridTile tile);
 
-        public virtual void CreateBoard()
+        public override void CreateBoard()
         {
             Tiles = new List<GridTile[,]>();
             BackgroundMask = new bool[RowCount,ColumnCount];
@@ -101,7 +94,8 @@ namespace Kuantech.Puzzle
                 GridBoardPathTree.CreateNodes(this);
             }
         }
-        
+
+
         /// <summary>
         /// Finds existing tiles on the board
         /// </summary>
@@ -735,7 +729,39 @@ namespace Kuantech.Puzzle
             coord.Row = Mathf.FloorToInt(depthDist / CellHeight);
             return coord;
         }
-        
+
+
+        public override BoardTile GetTile(BoardTileCoordinate qbertTileCoordinate)
+        {
+            return GetTile(qbertTileCoordinate.Row, qbertTileCoordinate.Column, 0);
+        }
+
+        protected override void RegisterTile(BoardTile tile, BoardTileCoordinate coordinate)
+        {
+            //throw new NotImplementedException();
+        }
+
+        protected override void UnregisterTile(BoardTile tile)
+        {
+            //throw new NotImplementedException();
+        }
+
+        public override BoardTileCoordinate GetTileCoordinateFromWorldPosition(Vector3 worldPosition)
+        {
+            Vector3 pointOnBoard = GetPointOnPlane(worldPosition);
+            return GetRowColFromPointOnBoard(pointOnBoard);
+        }
+
+        public override Vector3 GetLocalPosition(BoardTileCoordinate tileCoordinate)
+        {
+            return GetLocalPosition(tileCoordinate.Row, tileCoordinate.Column);
+        }
+
+        public override bool IsCoordinateValid(BoardTileCoordinate tileCoordinate)
+        {
+            return IsTileValidAndEmpty(tileCoordinate);
+        }
+
         public void ApplyOperationToTiles(TileOperation operation, int layer=0)
         {
             for(int r=0;r<RowCount;++r)
@@ -806,6 +832,7 @@ namespace Kuantech.Puzzle
         /// </summary>
         /// <param name="row"></param>
         /// <param name="col"></param>
+        /// <param name="originOffset"></param>
         /// <returns></returns>
         public Vector3 GetLocalPosition(float row, float col, Vector2 originOffset)
         {

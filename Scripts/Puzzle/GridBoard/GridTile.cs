@@ -15,13 +15,12 @@ namespace Kuantech.Puzzle
     }
     
     [Serializable]
-    public struct GridTileCoordinate
+    public class GridTileCoordinate : BoardTileCoordinate
     {
-        public int Row;
-        public int Column;
-        public int Layer;
+        public int DummyVar;
     }
-    public class GridTile : MonoBehaviour
+    
+    public class GridTile : BoardTile
     {
         [Tooltip("Unique id for the tile type")]
         public int GridTypeId;
@@ -45,34 +44,6 @@ namespace Kuantech.Puzzle
         public virtual void InitializeExisting()
         {
             
-        }
-        /// <summary>
-        /// Called when spawned from the grid board
-        /// </summary>
-        public virtual void Spawn(bool isExisting=false)
-        {
-            IsExisting = isExisting;
-        }
-
-        public virtual void Despawn(bool clearingBoard)
-        {
-            if (!clearingBoard && StayOnBoardAfterDespawn)
-            {
-                gameObject.SetActive(false);
-                return;
-            }
-            if (ParentBoard != null)
-            {
-                ParentBoard.UnsetTile(this);
-            }
-            if (DestroyOnDespawn)
-            {
-                Destroy(gameObject);
-            }
-            else if(!StayOnBoardAfterDespawn)
-            {
-                gameObject.SetActive(false);
-            }
         }
 
         public bool IsNeighbourWithTile(GridTile tile)

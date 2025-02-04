@@ -12,7 +12,8 @@ namespace Kuantech.Utils.Math
             FollowWithDistance,
             FollowWithT,
         }
-        
+
+        public Vector3 FollowRotationVector = new Vector3(0, 0, 1);
         public BSpline CurrentSpline = null;
         public int SplineDegree = 3;
         public int SplineResolution = 10;
@@ -147,7 +148,7 @@ namespace Kuantech.Utils.Math
         private void SetPosition(WorldPoint point)
         {
             transform.position = point.Position;
-            transform.rotation = point.Rotation;
+            transform.rotation = Quaternion.FromToRotation(FollowRotationVector, point.Rotation * Vector3.forward);
         }
         #endregion
        
