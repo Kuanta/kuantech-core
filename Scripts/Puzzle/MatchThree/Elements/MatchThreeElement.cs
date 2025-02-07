@@ -250,7 +250,7 @@ namespace Kuantech.Puzzle.MatchThree
             }
         }
 
-        public void OnTap()
+        public void OnTap(Vector3 position)
         {
         }
 

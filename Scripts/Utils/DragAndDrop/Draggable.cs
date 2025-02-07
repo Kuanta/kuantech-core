@@ -25,7 +25,7 @@ namespace Kuantech.Utils
         //Events
         public Action OnDragStart; //Called when dragging starts
         public Action OnDragEnd; //Called when dragging ends somehow
-        public Action OnTapped;
+        public Action<Vector3> OnTapped;
         public Action OnDrop;
       
         public virtual bool DragStart()
@@ -197,10 +197,10 @@ namespace Kuantech.Utils
             return DragToggle;
         }
 
-        public virtual void OnTap()
+        public virtual void OnTap(Vector3 hitPoint)
         {
             if (!TapToggle) return;
-            OnTapped?.Invoke();
+            OnTapped?.Invoke(hitPoint);
         }
 
         public Vector3 GetCursorPosition()

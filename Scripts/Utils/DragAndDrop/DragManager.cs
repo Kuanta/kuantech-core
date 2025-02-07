@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Kuantech.Core;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 
@@ -73,10 +74,12 @@ namespace Kuantech.Utils
 
         [Header("Follow Object")]
         public GameObject FollowObject; //If we have a gameobject that follows cursor smoothly, we can use this to get world position
+        
         //Events
         public EventHandler<IDraggable> OnDragStart;
         public EventHandler<IDraggable> OnDragEnd;
-
+        public UnityAction OnClickedEmpty;
+        
         protected Vector3 _startPosition;
         protected float _startTime;
         protected bool _startedClick;
@@ -127,7 +130,7 @@ namespace Kuantech.Utils
                 
                 if (IsPointerClick())
                 {
-                    _draggedInterface.OnTap();
+                    _draggedInterface.OnTap(_lastHit.point);
                 }
                 if(!_startedClick) return;
                 OnCursorUp();
@@ -185,14 +188,20 @@ namespace Kuantech.Utils
             }
             return false;
         }
+
+        private RaycastHit _lastHit;
         protected virtual void CheckWorld()
         {
-
             Ray ray = MainCamera.ScreenPointToRay(GetCursorPosition(false));
             RaycastHit hit;
             if (UnityEngine.Physics.Raycast(ray, out hit, RaycastLength, DraggableLayer.value))
             {
+                _lastHit = hit;
                 HandleRaycastHit(hit);
+            }
+            else
+            {
+                OnClickedEmpty?.Invoke();
             }
         }
 

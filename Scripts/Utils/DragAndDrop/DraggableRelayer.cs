@@ -37,10 +37,10 @@ namespace Kuantech.Utils
             Draggable.OnClickUp();
         }
 
-        public virtual void OnTap()
+        public virtual void OnTap(Vector3 position)
         {
             if (Draggable == null) return;
-            Draggable.OnTap();
+            Draggable.OnTap(position);
         }
 
         public virtual bool DragStart()

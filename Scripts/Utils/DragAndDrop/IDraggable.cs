@@ -10,7 +10,7 @@ namespace Kuantech.Utils
         void DragEnd();
         void OnClickDown();
         void OnClickUp();
-        void OnTap();
+        void OnTap(Vector3 hitPoint);
         virtual Vector3 GetCursorPosition(){
             return Input.mousePosition;
         }
