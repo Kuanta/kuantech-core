@@ -69,6 +69,18 @@ namespace Kuantech.Core.FX
             if (_audios[audioTag] == null) return false;
             return true;
         }
+        
+        /// <summary>
+        /// A static method to play sounds by tag
+        /// </summary>
+        /// <param name="tag"></param>
+        public static void PlaySoundByTag(int tag)
+        {
+            var audioLib = EffectsLibrary.GetAudioLibrary();
+            if (audioLib == null) return;
+            audioLib.PlaySound(tag);
+        }
+        
         /// <summary>
         /// Plays a sound that is on the 
         /// </summary>
