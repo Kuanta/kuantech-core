@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using Kuantech.Core;
 using UnityEngine;
 using IngameDebugConsole;
+using Sirenix.OdinInspector;
+using UnityEditor;
 
 #if ENABLE_UNITYHAPTICS
 using Lofelt.NiceVibrations;
@@ -31,6 +33,21 @@ namespace Kuantech.Utils.Mobile
         private bool _isHapticsPlaying = false;
         public bool HapticsToggled;
 
+        [Button("Enable Haptics")]
+        public void SetHapticsDefine()
+        {
+#if UNITY_EDITOR
+            BuildTargetGroup targetGroup = EditorUserBuildSettings.selectedBuildTargetGroup;
+            string defineSymbol = "ENABLE_UNITYHAPTICS";
+            string defines = PlayerSettings.GetScriptingDefineSymbolsForGroup(targetGroup);
+            if (!defines.Contains(defineSymbol))
+            {
+                defines += $";{defineSymbol}";
+                PlayerSettings.SetScriptingDefineSymbolsForGroup(targetGroup, defines);
+            }
+#endif
+        }
+        
         public static void ApplyHaptic(float magnitude, float frequency, float duration)
         {
 #if (UNITY_ANDROID || UNITY_IOS) && ENABLE_UNITYHAPTICS

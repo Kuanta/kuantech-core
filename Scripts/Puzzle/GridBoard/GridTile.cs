@@ -24,8 +24,6 @@ namespace Kuantech.Puzzle
     {
         [Tooltip("Unique id for the tile type")]
         public int GridTypeId;
-        public bool DestroyOnDespawn = true;
-        public bool StayOnBoardAfterDespawn = false;
         public List<GridTileCoordinate> Coordinates;
         [NonSerialized] public GridBoard ParentBoard;
         [NonSerialized] public int AnchorRow;
