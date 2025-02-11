@@ -22,6 +22,7 @@ namespace Kuantech.Utils
         {
             while(true)
             {
+                yield return new WaitForEndOfFrame();
                 currentFrameTime  += 1.0f / TargetFrameRate;
                 var t = Time.realtimeSinceStartup;
                 var sleepTime = currentFrameTime - t - 0.01f;
