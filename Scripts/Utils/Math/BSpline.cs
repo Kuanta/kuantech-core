@@ -40,7 +40,14 @@ namespace Kuantech.Utils.Math
                 _normalizedArcLengths[i] = _arcLengths[i] / totalLength;
             }
         }
-        
+
+        #region Queries
+
+        public float GetDistanceAtT(float t)
+        {
+            return GetTotalDistance() * t;
+        }
+
         public WorldPoint GetPointAtT(float t)
         {
             int lengthOfArray = SplinePoints.Count;
@@ -75,6 +82,70 @@ namespace Kuantech.Utils.Math
                 Position = SplinePoints[lengthOfArray - 1],
                 Rotation = Quaternion.LookRotation(diff),
             };
+        }
+
+        public float GetTAtWorldPoint(Vector3 worldPosition)
+        {
+            if (SplinePoints == null || SplinePoints.Count < 2)
+            {
+                Debug.LogWarning("Spline oluşturulmadı veya geçersiz!");
+                return 0f;
+            }
+
+            // Binary Search ile en yakın segmenti bul
+            int left = 0, right = SplinePoints.Count - 1;
+            int bestIndex = 0;
+            float minDistance = float.MaxValue;
+
+            while (left < right - 1)
+            {
+                int mid = (left + right) / 2;
+                float distanceMid = Vector3.Distance(worldPosition, SplinePoints[mid]);
+
+                if (distanceMid < minDistance)
+                {
+                    minDistance = distanceMid;
+                    bestIndex = mid;
+                }
+
+                float distanceLeft = Vector3.Distance(worldPosition, SplinePoints[left]);
+                float distanceRight = Vector3.Distance(worldPosition, SplinePoints[right]);
+
+                if (distanceLeft < distanceRight)
+                    right = mid;
+                else
+                    left = mid;
+            }
+
+            // En yakın segmentin iki noktasını belirle
+            int minIndex = bestIndex;
+            int maxIndex = Mathf.Min(bestIndex + 1, SplinePoints.Count - 1);
+
+            // En yakın segment içindeki doğru interpolasyon
+            Vector3 p1 = SplinePoints[minIndex];
+            Vector3 p2 = SplinePoints[maxIndex];
+            Vector3 closestPoint = GetClosestPointOnSegment(p1, p2, worldPosition);
+
+            // "t" değerini interpolasyon ile hesapla
+            float segmentT = (Vector3.Distance(p1, closestPoint) / Vector3.Distance(p1, p2));
+            float globalT = Mathf.Lerp(_normalizedArcLengths[minIndex], _normalizedArcLengths[maxIndex], segmentT);
+
+            return globalT;
+        }
+        
+        private Vector3 GetClosestPointOnSegment(Vector3 p1, Vector3 p2, Vector3 worldPosition)
+        {
+            Vector3 segmentVector = p2 - p1;
+            Vector3 pointVector = worldPosition - p1;
+
+            float segmentLengthSquared = segmentVector.sqrMagnitude;
+            if (segmentLengthSquared == 0f)
+                return p1;
+
+            float projection = Vector3.Dot(pointVector, segmentVector) / segmentLengthSquared;
+            projection = Mathf.Clamp01(projection);
+
+            return p1 + projection * segmentVector;
         }
         
         /// <summary>
@@ -147,6 +218,8 @@ namespace Kuantech.Utils.Math
         {
             return _arcLengths[^1];
         }
+        #endregion
+
         public static List<Vector3> GenerateNURBSPath(List<Vector3> controlPoints, int degree, List<float> weights, int numPoints)
         {
             // Generate the knot vector internally

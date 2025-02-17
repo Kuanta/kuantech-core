@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using Kuantech.ArcadeIdle;
-using Kuantech.Utils;
 using Kuantech.Utils.Math;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
-namespace Kuantech.ShopJam
+namespace Kuantech.Utils
 {
     public class SplineWaitingQueue : WaitingQueue
     {
@@ -57,10 +56,17 @@ namespace Kuantech.ShopJam
             return _spline.GetTotalDistance();
         }
         
+        public override void QueueElement(IWaitingQueueElement element, bool updatePositions=true)
+        {
+            if (IsQueueFull()) return;
+            element.GetSplineFollower().CurrentSpline = _spline;
+            base.QueueElement(element,updatePositions);
+        }
+        
         [Button("Update Positions")]
         public override void UpdateQueuePositions(bool warpToPosition)
         {
-            totalDistance = 0f;
+            totalDistance = _spline.GetTotalDistance();
             if (WaitingElements.IsNullOrEmpty()) return;
             float initialDistance = WaitingElements.Peek().GetSize() * WaitingElements.Count + InitialDistanceOffset;
             float initialSpeed = InitialSpeed;
@@ -90,8 +96,41 @@ namespace Kuantech.ShopJam
                     splineFollower.SetCurrentDistance(totalDistance);
                     actor.GoToPosition(_spline.GetPointAtDistance(totalDistance));
                 }
-                totalDistance += actor.GetSize();
+                totalDistance -= actor.GetSize();
             }
+            
+            // totalDistance = 0f;
+            // if (WaitingElements.IsNullOrEmpty()) return;
+            // float initialDistance = WaitingElements.Peek().GetSize() * WaitingElements.Count + InitialDistanceOffset;
+            // float initialSpeed = InitialSpeed;
+            // foreach (var actor in WaitingElements)
+            // {
+            //     actor.SetSpline(_spline);
+            //     var splineFollower = actor.GetSplineFollower();
+            //     
+            //     //todo: Fix this mess
+            //     if (!MoveToInitialPoints)
+            //     {
+            //         if (!warpToPosition)
+            //         {
+            //             splineFollower.FollowSpeed = RegularSpeed;
+            //             splineFollower.GoToDistance(totalDistance);
+            //         }
+            //         else
+            //         {
+            //             splineFollower.SetPositionWithDistance(totalDistance);
+            //             // splineFollower.SetPositionWithDistance(initialDistance);
+            //             // splineFollower.FollowSpeed = initialSpeed;
+            //             // initialSpeed *= InitialSpeedDecay;
+            //         }
+            //     }
+            //     else
+            //     {
+            //         splineFollower.SetCurrentDistance(totalDistance);
+            //         actor.GoToPosition(_spline.GetPointAtDistance(totalDistance));
+            //     }
+            //     totalDistance += actor.GetSize();
+            // }
         }
 
         
@@ -102,6 +141,7 @@ namespace Kuantech.ShopJam
             _spline = new BSpline();
             _spline.InvertDirection = true;
             Waypoints = new List<Transform>();
+            if (WaypointsParent == null) return;
             for (int i = 0; i < WaypointsParent.childCount; ++i)
             {
                 Waypoints.Add(WaypointsParent.GetChild(i));

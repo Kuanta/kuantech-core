@@ -102,6 +102,16 @@ namespace Kuantech.Utils.Math
             _currentDistance = distance;
         }
         
+        /// <summary>
+        /// Sets the current distance with t
+        /// </summary>
+        /// <param name="t"></param>
+        public void SetCurrentDistanceWithT(float t)
+        {
+            _currentDistance = CurrentSpline.GetDistanceAtT(t);
+            SetPositionWithDistance(_currentDistance);
+        }
+        
         private void ReachedTarget()
         {
             //Snap to target?
@@ -130,7 +140,7 @@ namespace Kuantech.Utils.Math
             Paused = false;
         }
         #endregion
- 
+        
         #region Position Setters
         public void SetPositionWithT(float t)
         {
