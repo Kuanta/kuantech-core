@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Kuantech.Utils;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -139,6 +140,7 @@ namespace Kuantech.Core
             {
                 component.Reset();
             }
+            Helpers.ResetAttributes(this);
             ClearLevel();
         }
         public virtual void ClearLevel()

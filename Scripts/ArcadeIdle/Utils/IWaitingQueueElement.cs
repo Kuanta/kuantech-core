@@ -18,7 +18,9 @@ namespace Kuantech.ArcadeIdle
         }
 
         public void GoToSplineDistance(float distance)
-        {}
+        {
+            
+        }
         #endregion
     }
 }

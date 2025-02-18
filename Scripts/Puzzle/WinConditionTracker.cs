@@ -25,6 +25,7 @@ namespace Kuantech.Puzzle
         public UnityAction<int> OnStageCompleted;
         public UnityAction<int> OnNewStage;
         public UnityAction OnAllStagesCompleted;
+        
         public void SetStages(List<LevelStageEntry> stages)
         {
             Stages = new List<PuzzleLevelStage>();
@@ -100,15 +101,21 @@ namespace Kuantech.Puzzle
         {
             return Stages?.Count ?? StageCount;
         }
+        
         public PuzzleLevelStage GetCurrentStage()
         {
             return Stages[Mathf.Min(_currentStageIndex, Stages.Count-1)];
         }
-
-        public void AddCollectedAmount(string key, int amount)
+        
+        /// <summary>
+        /// Adds score to given key
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="amount"></param>
+        public void AddScore(string key, int amount)
         {
             PuzzleLevelStage currentStage = GetCurrentStage();
-            currentStage.AddCollectedAmount(key, amount);
+            currentStage.AddScore(key, amount);
             if (currentStage.IsStageCompleted() && AutoCompleteStage)
             {
                 AdvanceStage();
@@ -187,6 +194,15 @@ namespace Kuantech.Puzzle
         {
             GoToStage(state.CurrentStageIndex);
             GetCurrentStage().LoadState(state.CurrentStageState);
+        }
+        #endregion
+
+        #region Target Scores
+        public void SetTargetScoreForStage(int stageIndex, string key, int targetAmount)
+        {
+            PuzzleLevelStage stage = GetStage(stageIndex);
+            if (stage == null) return;
+            stage.SetTarget(key, targetAmount);
         }
         #endregion
     }

@@ -84,7 +84,7 @@ namespace Kuantech.Puzzle
             CollectedAmounts[key] = amount;
         }
         
-        public void AddCollectedAmount(string key, int amount)
+        public void AddScore(string key, int amount)
         {
             int existingAmount = GetCollectedAmount(key);
             SetCollectedAmount(key, existingAmount+amount);

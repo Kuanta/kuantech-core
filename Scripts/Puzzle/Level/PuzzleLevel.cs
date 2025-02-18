@@ -131,7 +131,7 @@ namespace Kuantech.Puzzle
         
         public virtual void EarnScore(string scoreKey, int score)
         {
-            if(WinConditionTracker != null) WinConditionTracker.AddCollectedAmount(scoreKey, score);
+            if(WinConditionTracker != null) WinConditionTracker.AddScore(scoreKey, score);
             //CheckWinCondition();
             //Update UI
             LevelUI.SetScore(scoreKey, WinConditionTracker);
@@ -189,6 +189,11 @@ namespace Kuantech.Puzzle
         public void OnStagesCompleted()
         {
             CompleteLevel();
+        }
+
+        public void AddScore(string key, int score)
+        {
+            WinConditionTracker.AddScore(key, score);
         }
         #endregion
         
