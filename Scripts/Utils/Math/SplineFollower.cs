@@ -21,6 +21,7 @@ namespace Kuantech.Utils.Math
         public int Direction = 1;
         public bool Moving = false;
         public bool Paused = false;
+        public bool SetRotation = true;
         
         [Header("Thresholds")]
         public float DistanceThreshold = 0.1f;
@@ -157,7 +158,7 @@ namespace Kuantech.Utils.Math
         private void SetPosition(WorldPoint point)
         {
             transform.position = point.Position;
-            transform.rotation = Quaternion.FromToRotation(FollowRotationVector, point.Rotation * Vector3.forward);
+            if(SetRotation) transform.rotation = Quaternion.FromToRotation(FollowRotationVector, point.Rotation * Vector3.forward);
         }
         #endregion
        
