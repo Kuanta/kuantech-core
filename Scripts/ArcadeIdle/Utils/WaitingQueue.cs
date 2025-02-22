@@ -48,6 +48,7 @@ namespace Kuantech.ArcadeIdle
             if (WaitingElements == null) return 0;
             return WaitingElements.Count;
         }
+      
         
         /// <summary>
         /// Gets the element waiting to be remvoed

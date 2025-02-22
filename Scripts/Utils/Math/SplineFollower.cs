@@ -100,6 +100,7 @@ namespace Kuantech.Utils.Math
         public void SetCurrentDistance(float distance)
         {
             _currentDistance = distance;
+            SetPositionWithDistance(_currentDistance);
         }
         
         /// <summary>

@@ -62,11 +62,21 @@ namespace Kuantech.Utils
             element.GetSplineFollower().CurrentSpline = _spline;
             base.QueueElement(element,updatePositions);
         }
+
+        public float GetStartDistance()
+        {
+            return 0f;
+        }
+
+        public float GetEndDistance()
+        {
+            return _spline.GetTotalDistance();
+        }
         
         [Button("Update Positions")]
         public override void UpdateQueuePositions(bool warpToPosition)
         {
-            totalDistance = _spline.GetTotalDistance();
+            totalDistance = GetEndDistance();
             if (WaitingElements.IsNullOrEmpty()) return;
             float initialDistance = WaitingElements.Peek().GetSize() * WaitingElements.Count + InitialDistanceOffset;
             float initialSpeed = InitialSpeed;
