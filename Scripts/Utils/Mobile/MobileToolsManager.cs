@@ -32,7 +32,15 @@ namespace Kuantech.Utils.Mobile
         private float _lastVibrationTime;
         private bool _isHapticsPlaying = false;
         public bool HapticsToggled;
-
+        
+        public override void OnSubmanagersInitialized()
+        {
+            base.OnSubmanagersInitialized();
+            DefaultHapticMagnitude = ConfigManager.GetFloatConfig("Haptic Magnitude");
+            DefaultHapticDuration = ConfigManager.GetFloatConfig("Haptic Duration");
+            DefaultHapticFrequency = ConfigManager.GetFloatConfig("Haptic Frequency");
+        }
+        
         [Button("Enable Haptics")]
         public void SetHapticsDefine()
         {

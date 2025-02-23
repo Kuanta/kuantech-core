@@ -1,6 +1,7 @@
 ﻿using System;
 using Kuantech.Data;
 using Newtonsoft.Json.Linq;
+using UnityEngine;
 
 namespace Kuantech.Puzzle
 {
@@ -14,9 +15,26 @@ namespace Kuantech.Puzzle
 
         public virtual bool CreateFromSheetData(JObject sheetData, int levelIndex)
         {
-            throw new NotImplementedException();
+            JArray values = (JArray) sheetData["values"];
+            if (values == null)
+            {
+                Debug.LogError("Couldn't read data sheet");
+                return false;
+            }
+            if (values.Count - 1 <= levelIndex)
+            {
+                levelIndex = values.Count - 2; //Last row
+            }
+            
+            JToken row = values[levelIndex + 1];
+            ParseSheetData(row);
+            return true;
         }
 
+        public virtual void ParseSheetData(JToken row)
+        {
+            ParseNumericFields(row);
+        }
         protected void ParseNumericFields(JToken row)
         {
             var fields = GetType().GetFields();
