@@ -8,6 +8,8 @@ namespace Kuantech.Puzzle.UI
 {
     public class WinConditionIndicatorElement : MonoBehaviour
     {
+        [NonSerialized] public object UserData;
+        [NonSerialized] public string Key;
         [SerializeField] private Image Icon;
         [SerializeField] private Image MaskingImage;
         [SerializeField] private TMP_Text ScoreText;
@@ -15,7 +17,11 @@ namespace Kuantech.Puzzle.UI
 
         [Header("Completed Elements")] 
         public GameObject CompletedElements;
-        
+
+        public virtual void Initialize()
+        {
+            
+        }
         public virtual void SetIcon(ColoredSpriteAsset iconSprite)
         {
             if (iconSprite == null) return;
@@ -36,7 +42,7 @@ namespace Kuantech.Puzzle.UI
         {
             bool completed = remainingAmount <= 0;
             ScoreText.gameObject.SetActive(!completed);
-            CompletedElements.gameObject.SetActive(completed);
+            if(CompletedElements != null) CompletedElements.gameObject.SetActive(completed);
             ScoreText.text = ShowRemaining ? remainingAmount.Stringfy() : score.Stringfy();
         }
     }

@@ -230,7 +230,8 @@ namespace Kuantech.Utils
             Vector3 direction = error.normalized;
             Vector3 moveDirection = direction;
          
-            Vector3 positionUpdate =  moveDirection * Mathf.Min(deltaTime * Speed, errorMag);
+           // Vector3 positionUpdate =  moveDirection * Mathf.Min(deltaTime * Speed, errorMag);
+           Vector3 positionUpdate = moveDirection * deltaTime * Speed;
             SetRotation(Quaternion.LookRotation(direction));
             SetPosition(GetCurrentPosition() + positionUpdate);
         }

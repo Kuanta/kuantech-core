@@ -37,6 +37,7 @@ namespace Kuantech.Puzzle
 
         public void AddStage(LevelStageEntry stageEntry)
         {
+            Stages ??= new List<PuzzleLevelStage>();
             Stages.Add(new PuzzleLevelStage(stageEntry.Conditions));
         }
         

@@ -12,6 +12,7 @@ namespace Kuantech.Puzzle
             public string Key;
             public int TargetAmount;
             public bool ShowRemaining; //If set to true, shows the remainin amount in UI
+            public object UserData;
         }
     
         public PuzzleLevelStage(List<PuzzleLevelStage.WinConditionEntry> conditions)
