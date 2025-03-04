@@ -31,7 +31,15 @@ namespace Kuantech.Utils
                 child.localScale = Vector3.one;
                 child.transform.localRotation = Quaternion.identity;
             }
-                
+        }
+        
+        /// <summary>
+        /// Returns the total length of the layout
+        /// </summary>
+        /// <returns></returns>
+        public float GetLength()
+        {
+            return transform.childCount * ChildSize + Mathf.Max(transform.childCount - 1, 0) * InnerPadding + 2 * OuterPadding;    
         }
     }
 }
