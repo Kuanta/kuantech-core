@@ -12,6 +12,7 @@ namespace Kuantech.ArcadeIdle
         public int MaxElementCount;
         public float QueuePadding;
         public List<Transform> WaitingPoints;
+        public int QueueDirection = 1;
 
         public UnityAction<IWaitingQueueElement> OnElementReachedFront;
         
@@ -160,9 +161,8 @@ namespace Kuantech.ArcadeIdle
                 padding = QueuePadding;
                 lastPoint = WaitingPoints[^1];
             }
-
             Vector3 globalPosition = lastPoint.transform.position -
-                                     lastPoint.transform.forward * (totalDistance+padding);
+                                     QueueDirection * lastPoint.transform.forward * (totalDistance+padding*index);
             
             return new WorldPoint()
             {
@@ -174,6 +174,10 @@ namespace Kuantech.ArcadeIdle
 
         public void ClearQueue()
         {
+            foreach (var queueElement in WaitingElements.ToArray())
+            {
+                queueElement.DespawnQueueElement();
+            }
             WaitingElements?.Clear();
             totalDistance = 0f;
         }

@@ -82,6 +82,11 @@ namespace Kuantech.Utils
             return list[index];
         }
         
+        public static bool CheckProbability(float probability)
+        {
+            return Random.Range(0f, 1f) <= probability;
+        }
+        
         /// <summary>
         /// Removes an item from a queue.
         /// </summary>
