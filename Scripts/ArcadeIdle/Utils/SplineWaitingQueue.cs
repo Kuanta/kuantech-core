@@ -164,7 +164,7 @@ namespace Kuantech.Utils
             _spline.SetSplinePoints(controlPoints, SplineDegree, SplineResolution);
             _spline.RotationLookAhead = RotationLookAhead;
         }
-        
+
         private void OnDrawGizmos()
         {
             CreateSplinePoints();
