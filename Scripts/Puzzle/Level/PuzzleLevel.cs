@@ -18,8 +18,9 @@ namespace Kuantech.Puzzle
                 
         [Header("Tutorial")]
         public int TutorialIndex = -1;
-        
-        [Header("UI")]
+
+        [Header("UI")] 
+        public bool HideHUD = false;
         public PuzzleLevelUI LevelUI;
         
         [Header("Screen Size Adjuster")]
@@ -52,6 +53,10 @@ namespace Kuantech.Puzzle
             CreateWinConditionTracker();
             LevelUI = PuzzleUIManager.GetLevelUI(); 
             if(LevelUI != null) LevelUI.OnLevelSetup(this);
+            
+            //Toggle HUD (Useful for CPI levels
+            LevelUI.ToggleHUD(!HideHUD);
+            
             ResetUI();
             GetStateModel()?.SetCurrentLevel(this);
             base.SetupLevel();

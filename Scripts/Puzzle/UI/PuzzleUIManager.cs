@@ -18,12 +18,19 @@ namespace Kuantech.Puzzle.UI
             return context.LevelUI;
         }
 
-        public static void ToggleUI()
+        public static void ToggleUI(bool toggle)
         {
             var context = PuzzleUIManager.GetContext<PuzzleUIManager>();
             if(context == null) return;
             if (context.LevelUI == null) return;
-            context.LevelUI.gameObject.SetActive(!context.LevelUI.gameObject.activeInHierarchy);
+            if (toggle)
+            {
+                context.LevelUI.Show();
+            }
+            else
+            {
+                context.LevelUI.Close();
+            }
         }
     }
 }

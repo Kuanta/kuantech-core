@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Kuantech.Utils;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -77,6 +78,50 @@ namespace Kuantech.ArcadeIdle
                 WaitingElements.Enqueue(elements[i]);       
             }
             UpdateQueuePositions(warpToPositions);
+        }
+        
+        /// <summary>
+        /// Removes an element from any position in queue
+        /// </summary>
+        /// <param name="elementToRemove"></param>
+        /// <returns></returns>
+        public bool RemoveElement(IWaitingQueueElement elementToRemove)
+        {
+            if (WaitingElements.IsNullOrEmpty()) return false;
+            List<IWaitingQueueElement> currentElements = WaitingElements.ToList();
+            currentElements.Remove(elementToRemove);
+            WaitingElements.Clear();
+            WaitingElements = new Queue<IWaitingQueueElement>();
+            foreach (var element in currentElements)
+            {
+                WaitingElements.Enqueue(element);
+            }
+
+            return true;
+        }
+        
+        /// <summary>
+        /// Removes multiple elements from any position in queue
+        /// </summary>
+        /// <param name="elementsToRemove"></param>
+        /// <returns></returns>
+        public bool RemoveElements(List<IWaitingQueueElement> elementsToRemove)
+        {
+            if (WaitingElements.IsNullOrEmpty()) return false;
+            List<IWaitingQueueElement> currentElements = WaitingElements.ToList();
+            foreach (var elementToRemove in elementsToRemove)
+            {
+                currentElements.Remove(elementToRemove);
+            }
+            
+            WaitingElements.Clear();
+            WaitingElements = new Queue<IWaitingQueueElement>();
+            foreach (var element in currentElements)
+            {
+                WaitingElements.Enqueue(element);
+            }
+
+            return true;
         }
         
         public IWaitingQueueElement DequeueElement()

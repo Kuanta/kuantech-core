@@ -1,5 +1,7 @@
 ﻿using DG.Tweening;
+using Kuantech.Utils;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace Kuantech.Core.Camera
 {
@@ -13,7 +15,8 @@ namespace Kuantech.Core.Camera
         public float ShakeStrength = 1.0f;
         public int Vibrato = 10;
         private float Randomness = 90.0f;
-        
+
+        #region Camera Effects
         /// <summary>
         /// Shakes with default values
         /// </summary>
@@ -36,5 +39,14 @@ namespace Kuantech.Core.Camera
                     .OnComplete(() => Camera.transform.localPosition = Vector3.zero);
             }
         }
+        #endregion
+
+
+        public void SetCameraPosition(WorldPoint point)
+        {
+            transform.position = point.GetTargetPosition();
+            transform.rotation = point.GetRotation();
+        }
+
     }
 }

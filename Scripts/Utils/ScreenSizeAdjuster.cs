@@ -1,5 +1,6 @@
 using DG.Tweening;
 using Kuantech.Core.Camera;
+using Kuantech.Utils;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -66,6 +67,14 @@ namespace Kuantech.Core.Utils
         private void CalculateTargetParameters()
         {
             if (CameraRig == null) return;
+            WorldPoint targetPoint = GetTargetPoint();
+            _targetPosition = targetPoint.GetTargetPosition();
+            _targetNormal = targetPoint.GetRotation() * Vector3.forward;
+        }
+
+        public WorldPoint GetTargetPoint()
+        {
+            WorldPoint targetPoint = new WorldPoint();
             // Get the positions of the anchor points
             Vector3 topPosition = TopAnchor.transform.position;
             Vector3 leftPosition = LeftAnchor.transform.position;
@@ -112,10 +121,13 @@ namespace Kuantech.Core.Utils
             Vector3 bottomLeft = bottomPosition - right * (rightPosition - leftPosition).magnitude * 0.5f;
             Vector3 lookPoint = bottomLeft + right * horizontalLookPosition + forward * verticalLookPosition;
 
-            _targetNormal = -normal;
             Vector3 planeForward =  bottomPosition - topPosition;
             planeForward.Normalize();
-            _targetPosition = lookPoint + normal * distanceFromLookPoint - planeForward * backOffset;
+            Vector3 targetPosition = lookPoint + normal * distanceFromLookPoint - planeForward * backOffset;
+            
+            targetPoint.Position = targetPosition;
+            targetPoint.Rotation = Quaternion.LookRotation(-normal, Vector3.up);
+            return targetPoint;
         }
         
         private void GetTargetParameters(Vector3 startPlanePoint, Vector3 endPlanePoint, float fov, float nearPlaneSize, float angle, out float cameraLookPosition, out float cameraDistance)
