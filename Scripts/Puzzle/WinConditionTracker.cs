@@ -132,7 +132,19 @@ namespace Kuantech.Puzzle
         {
             return GetCurrentStage().GetCollectedAmount(key);
         }
-        
+
+        public int GetTotalColelctedAmount()
+        {
+            int total = 0;
+            for (int i = 0; i < Stages.Count; ++i)
+            {
+                foreach (var pair in Stages[i].CollectedAmounts)
+                {
+                    total += pair.Value;
+                }
+            }
+            return total;
+        }
         /// <summary>
         /// Returns the target for current
         /// </summary>
