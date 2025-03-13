@@ -1,8 +1,9 @@
 ﻿using System;
+using Kuantech.Core;
 using Kuantech.Rpg;
 using UnityEngine;
 
-namespace Kuantech.ActionSequencer
+namespace Kuantech.AI.ActionSequencer
 {
     /// <summary>
     /// Movement action that moves the actor from a waypoint to another. Requires a movement component
@@ -12,14 +13,15 @@ namespace Kuantech.ActionSequencer
     {
         [SerializeField] private Transform Waypoint;
         [SerializeField] private float Threshold = 0.1f;
+        [SerializeField] private float MoveSpeed = 1;
 
-        private RpgActor _actor;
+        private Actor _actor;
         private MovementModule _mm;
         public override void Execute()
         {
             base.Execute();
-            if(_actor == null) _actor = Parent.GetComponent<RpgActor>();
-            _mm = _actor.MovementModule;
+            if(_actor == null) _actor = Parent.GetComponent<Actor>();
+            _mm = _actor.GetModule<MovementModule>();
             if (_mm != null) return;
             IsComplete = true;
         }
@@ -43,7 +45,8 @@ namespace Kuantech.ActionSequencer
             diffVec.y = 0;
             diffVec.Normalize();
             _mm.SetGlobalMovementVector(new Vector2(diffVec.x, diffVec.z));
-            _mm.SetMaxSpeed(_actor.Stats.GetStat(StatTypes.MovementSpeed),_actor.Stats.GetStat(StatTypes.MovementSpeed));
+            _mm.SetMaxSpeed(MoveSpeed);
+            
         }
     }
 }

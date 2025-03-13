@@ -7,49 +7,42 @@ namespace Kuantech.Rpg.Inventory
 {
     public class Weapon : Item
     {
-        public Enums.WeaponType WeaponType = Enums.WeaponType.OneHanded;
-        public float Damage = 1;
-        public bool Ranged = false; //If Ranged, primary attack patterns are RangedAttackPatters
-        public bool IsOffHand = false;
-        public int SlotSize = 1;
-        public GameObject ProjectilePrefab = null;
-        public List<WeaponAttackPattern> AttackPatterns;
-        public WeaponAttackPattern AlternativeAttackPattern; //For ranged weapons
-        public List<int> SupportedSkills;
-        public EquipmentModel EquipmentModel;
-        public float ScalingFactor;
-        public float StatScalingFactor = 0.2f;
+        public WeaponData WeaponData;
         public Weapon(WeaponData data) : base(data)
         {
-            AttackPatterns = data.AttackPatterns;
-            AlternativeAttackPattern = data.alternativeAttackPattern;
-            Ranged = data.ranged;
-            Damage = data.damage;
-            IsOffHand = data.isOffHand;
-            ProjectilePrefab = Librarian.Instance.GetProjectilePrefab(data.projectilePrefabId);
-            SupportedSkills = data.skills;
-            Type = Enums.ItemType.Weapon;
-            ScalingFactor = data.scalingFactor;
-            WeaponType = data.weaponType;
+            WeaponData = data;
         }
 
         public float GetDamage(int comboIndex)
         {
             //todo: Base stat???
-            float baseDamage = Damage * (1 + StateData.ItemLevel * ScalingFactor);
-            if (BaseStat != StatTypes.None)
+            WeaponAttackPattern attackPattern = WeaponData.AttackPatterns[comboIndex];
+            float damageAmount = attackPattern.GetDamageInfo().DamageAmount;
+            float baseDamage = damageAmount * (1 + StateData.ItemLevel * WeaponData.ScalingFactor);
+            if (WeaponData.BaseStat != null)
             {
-                baseDamage += Owner.Stats.GetStat(BaseStat) * StatScalingFactor;
+                StatsModule sm = ParentInvetory.Actor.GetModule<StatsModule>();
+                if (sm != null)
+                {
+                    baseDamage += sm.GetAttributeValue(WeaponData.BaseStat) * WeaponData.ScalingFactor;
+                }
             }
             return baseDamage;
         }
 
         public float GetAlternativeDamage()
         {
-            float baseDamage = AlternativeAttackPattern.Damage * (1 + StateData.ItemLevel * ScalingFactor);
-            if (BaseStat != StatTypes.None)
+            WeaponAttackPattern attackPattern = WeaponData.AlternativeAttackPatterns;
+            if (attackPattern == null) return 0f;
+            float damageAmount = attackPattern.GetDamageInfo().DamageAmount;
+            float baseDamage = damageAmount * (1 + StateData.ItemLevel * WeaponData.ScalingFactor);
+            if (WeaponData.BaseStat != null)
             {
-                baseDamage += Owner.Stats.GetStat(BaseStat) * StatScalingFactor;
+                StatsModule sm = ParentInvetory.Actor.GetModule<StatsModule>();
+                if (sm != null)
+                {
+                    baseDamage += sm.GetAttributeValue(WeaponData.BaseStat) * WeaponData.ScalingFactor;
+                }
             }
             return baseDamage;
         }

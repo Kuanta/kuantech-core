@@ -1,12 +1,9 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
-using Kuantech.Core;
-using Kuantech.Core.AI.ActionSequencer;
 using Kuantech.Core.Utils;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
-namespace Kuantech.ActionSequencer
+namespace Kuantech.AI.ActionSequencer
 {
     public enum ActionTypes
     {

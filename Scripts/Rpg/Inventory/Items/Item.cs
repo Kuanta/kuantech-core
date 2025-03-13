@@ -2,22 +2,32 @@
 using System.Collections.Generic;
 using Kuantech.Core;
 using Kuantech.Core.Combat;
-using Kuantech.Data;
 using Kuantech.Utils;
 using UnityEngine;
 using UnityEngine.Serialization;
+using Object = UnityEngine.Object;
 
 namespace Kuantech.Rpg.Inventory
 {
     [Serializable]
+    public enum ItemType
+    {
+        Default = -1,
+        Weapon,
+        Armor,
+        Trinket,
+        Consumable,
+    }
+    
+    [Serializable]
     public class ItemStateData
     {
-        public int ItemId;
+        public string ItemId;
         public int InventoryId;
         public int ItemLevel;
         public ItemRarities ItemRarity;
         public bool Equipped;
-        public Dictionary<StatTypes, StatModifier> StatModifiers;
+        public Dictionary<StatAttributeAsset, StatModifier> StatModifiers;
         public bool IsNew;
     }
 
@@ -25,13 +35,15 @@ namespace Kuantech.Rpg.Inventory
     /// Set of parameters for a single attack parameter of a weapon
     /// </summary>
     [Serializable]
-    public struct WeaponAttackPattern
+    public class WeaponAttackPattern
     {
         public AttackTypes AttackType;
-        public float Damage;
+        public DamageInfo DamageInfo;
         public float MovementSlow; //Factor between 0-1, movement speed while attacking will be MovementSpeed * (1-MovementSlow)
         public float DamageTime;
         public float AnimationTime;
+        public float WindupTime;
+        public float Cooldown;
         public float Range;
         public float Angle;
         public float Width;
@@ -42,31 +54,33 @@ namespace Kuantech.Rpg.Inventory
         //public float ProjectileRisHeight;
         public bool TargetedProjectile;
         public GameObject ProjectilePrefab;
+
+        public DamageInfo GetDamageInfo()
+        {
+            return DamageInfo;
+        }
     }
 
-    [Serializable]
-    public struct TemplateData
-    {
-        public int prefabId;
-        public int iconId;
-        public bool inPlace;
-    }
+
     
     [Serializable]
     public class ItemData
     {
         // Common mandotary
-        public int id;
-        public string name;
-        public string slotType = "None";
-        public string baseStat = "None";
+        public string Id;
+        public string Name;
         public float weight;
         public float value;
         public bool stackable = false;
-        public Enums.ItemType ItemType;
-        public TemplateData Template;
+        public List<EquipmentSlotType> SuitableSlots; //Which slot can this be equipped to
+        public List<EquipmentSlotType> OccupiedSlots; //Which slots does this occupy?
+        public ItemType ItemType;
         public int minPowerLevel;
         public int maxPowerLevel;
+        
+        //Visuals
+        public string ItemTemplateId;
+        public ItemVisual ItemVisualPrefab;
         
         // Icon
         public int iconId;
@@ -76,17 +90,15 @@ namespace Kuantech.Rpg.Inventory
     [Serializable]
     public class WeaponData : ItemData
     {
-        public float damage = 1f;
-        public bool ranged = false;
-        public int projectilePrefabId = -1;
-        public int slotSize = 1; //1 for 1 handed, >1 for two handed
+        public StatAttributeAsset BaseStat;
+        public bool Ranged = false;
+        public Projectile ProjectilePrefab;
+        public int SlotSize = 1; //1 for 1 handed, >1 for two handed
         public List<WeaponAttackPattern> AttackPatterns;
-        public WeaponAttackPattern alternativeAttackPattern;
-        public List<int> skills;
+        public WeaponAttackPattern AlternativeAttackPatterns;
+        public List<int> Skills;
         public float blockAmount = 0; //Additional armor value
-        public bool isOffHand = false;
-        public float scalingFactor = 1;
-        public Enums.WeaponType weaponType;
+        public float ScalingFactor = 1;
     }
 
     [Serializable]
@@ -94,57 +106,73 @@ namespace Kuantech.Rpg.Inventory
     {
         public float armorValue = 0f;
         public float scalingFactor = 1;
-        [FormerlySerializedAs("armorType")] public Enums.ArmorType armorType;
     }
     
     [Serializable]
     public class Item
     {
-        public int Id; //Id for each player
-        public string name = "Item";
-        public Enums.ItemType Type = Enums.ItemType.Default;
-        public StatTypes BaseStat = StatTypes.None;
-        public bool equipable = false;
-        public bool stackable = false;
-        public Enums.EquipmentSlotType slotType = Enums.EquipmentSlotType.None;
-        public float durability;
-        public RpgActor Owner;
-        public int amount = 1;
-        public int Weight = 1;
-        public ItemData data;
-        //public ItemTemplate templateData = null;
+        public InventoryModule ParentInvetory;
+        public int Amount = 1;
+        public ItemData Data;
         
         //Stats
         public ItemStateData StateData;
         
+        //Runtime
+        public float CurrentDurability;
+        public EquipmentSlotType CurrentSlot;
+        
         public Item(ItemData data)
         {
-            Id = data.id;
-            name = data.name;
-            slotType = (Enums.EquipmentSlotType)Enum.Parse(typeof(Enums.EquipmentSlotType), data.slotType);
-            BaseStat = (StatTypes) Enum.Parse(typeof(StatTypes), data.baseStat);
-            Type = data.ItemType;
-            equipable = slotType!= Enums.EquipmentSlotType.None;
-            amount = 1;
             
-            this.data = data;
-            // if (Librarian.Instance.itemTemplates.ContainsKey(data.templateId))
-            // {
-            //     templateData = Librarian.Instance.itemTemplates[data.templateId];
-            // }
-
-            StateData = new ItemStateData()
-            {
-                ItemId = Id,
-                ItemLevel = 1,
-                ItemRarity = ItemRarities.Common,
-                StatModifiers = new Dictionary<StatTypes, StatModifier>(),
-            };
+            Amount = 1;
+            Data = data;
         }
 
+        #region Equip
+
+        public bool IsEquipable()
+        {
+            return !Data.SuitableSlots.IsNullOrEmpty(); //Check none?
+        }
+
+        public bool CanBeEquippedToSlot(EquipmentSlotType slotType)
+        {
+            if (!IsEquipable()) return false;
+            return Data.SuitableSlots.Contains(slotType);
+        }
+
+        public EquipmentSlotType[] GetOccupyingSlots(EquipmentSlotType equippedSlotType)
+        {
+            if (Data.OccupiedSlots.IsNullOrEmpty())
+            {
+                return new EquipmentSlotType[]
+                {
+                    equippedSlotType
+                };
+            }
+
+            return Data.OccupiedSlots.ToArray();
+        }
+        #endregion
+
+        #region Getters
+        /// <summary>
+        /// Returns the item id
+        /// </summary>
+        /// <returns></returns>
+        public string GetId()
+        {
+            return Data.Id;
+        }
+        
+        /// <summary>
+        /// Returns the item name
+        /// </summary>
+        /// <returns></returns>
         public string GetName()
         {
-            string name = data.name;
+            string name = Data.Name;
             switch (StateData.ItemRarity)
             {
   
@@ -164,22 +192,23 @@ namespace Kuantech.Rpg.Inventory
 
             return name;
         }
+
+        #endregion
+       
         public static Item GetItemFromData(ItemData data)
         {
             return data.ItemType switch
             {
-                Enums.ItemType.Weapon => new Weapon((WeaponData)data),
-                Enums.ItemType.Armor => new Armor((ArmorData)data),
+                ItemType.Weapon => new Weapon((WeaponData)data),
+                ItemType.Armor => new Armor((ArmorData)data),
                 _ => new Item(data)
             };
         }
 
         public void Unequip()
         {
-            if (Owner == null) return;
-            InventoryModule invMod = (InventoryModule) Owner.GetModuleByType(typeof(InventoryModule));
-            if (invMod == null) return;
-            invMod.UnequipItem(this);
+            if (ParentInvetory== null) return;
+            ParentInvetory.UnequipItem(this);
         }
         
         #region States
@@ -206,15 +235,6 @@ namespace Kuantech.Rpg.Inventory
         public void SetItemRarity(ItemRarities rarity, bool fillModifiers=true)
         {
             StateData.ItemRarity = rarity;
-            if (fillModifiers)
-            {
-                int currentModifierCount = StateData.StatModifiers.Count;
-                int targetCount = (int) rarity - currentModifierCount;
-                for (int i = 0; i < targetCount; ++i)
-                {
-                    AddRandomModifier();
-                }
-            }
         }
         
         /// <summary>
@@ -246,19 +266,19 @@ namespace Kuantech.Rpg.Inventory
 
         public int GetSellValue()
         {
-            float sellValue = (StateData.ItemLevel * data.value * RpgConfig.ITEM_SELL_VALUE_COEFF) *
+            float sellValue = (StateData.ItemLevel * Data.value * RpgConfig.ITEM_SELL_VALUE_COEFF) *
                               (GetRarityCoeff() * 0.5f);
             return (int)Mathf.Max(sellValue, 1); 
         }
 
         public int GetUpgradeValue()
         {
-            return (int)(data.value*(StateData.ItemLevel + 1) + (StateData.ItemLevel + 1)*RpgConfig.ITEM_UPGRADE_COST_COEFF);
+            return (int)(Data.value*(StateData.ItemLevel + 1) + (StateData.ItemLevel + 1)*RpgConfig.ITEM_UPGRADE_COST_COEFF);
         }
         #endregion
         #region Modifiers
 
-        public StatModifier GetStatModifier(StatTypes statType)
+        public StatModifier GetStatModifier(StatAttributeAsset statType)
         {
             return !StateData.StatModifiers.ContainsKey(statType) ? null : StateData.StatModifiers[statType];
         }
@@ -266,32 +286,7 @@ namespace Kuantech.Rpg.Inventory
         public void AddModifier(StatModifier modifier)
         {
             modifier.Level = StateData.ItemLevel;
-            StateData.StatModifiers.Add(modifier.StatType, modifier);
-        }
-        
-        /// <summary>
-        /// Adds a random modifier from ModifierList stored in Library
-        /// </summary>
-        public void AddRandomModifier()
-        {
-
-            List<StatTypes> availableModifiers = Librarian.Instance.GetAvailableModifiers(this);
-            availableModifiers.Shuffle();
-            for (int i = 0; i < availableModifiers.Count; ++i)
-            {
-                if (StateData.StatModifiers.ContainsKey(availableModifiers[i])) continue; //Don't add same modifier twice
-                StatModifierData modifierData = Librarian.Instance.ModifierDataDictionary[availableModifiers[i]];
-                StatModifier newModifier = new StatModifier()
-                {
-                    Level = StateData.ItemLevel,
-                    StatType = modifierData.StatType,
-                    BaseValue = modifierData.BaseValue,
-                    ModifierType = modifierData.ModifierType,
-                    LevelToValueFactor = modifierData.LevelToValueFactor,
-                };
-                AddModifier(newModifier);
-                return;
-            }
+            StateData.StatModifiers.Add(modifier.AttributeAsset, modifier);
         }
         
         /// <summary>
@@ -305,7 +300,21 @@ namespace Kuantech.Rpg.Inventory
             {
                 pair.Value.Level = itemLevel;
             }
-            Owner.Stats.UpdateStatModifiers();
+
+            StatsModule sm = ParentInvetory.Actor.GetModule<StatsModule>();
+            if (sm != null)
+            {
+                sm.UpdateStatModifiers();
+            }
+        }
+        #endregion
+
+        #region Item Visual
+
+        public ItemVisual CreateItemVisual()
+        {
+            if (Data.ItemVisualPrefab == null) return null;
+            return Object.Instantiate(Data.ItemVisualPrefab).GetComponent<ItemVisual>();
         }
         #endregion
     }

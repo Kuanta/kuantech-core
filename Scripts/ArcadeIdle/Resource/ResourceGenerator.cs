@@ -49,9 +49,9 @@ namespace Kuantech.ArcadeIdle
 
         private ResourceRecipe _currentRecipe;
 
-        public override void Initialize(ActorState actorState = null)
+        public override void Initialize(ActorSerializableData actorSerializableData = null)
         {
-            base.Initialize(actorState);
+            base.Initialize(actorSerializableData);
             SetCurrentRecipe(0); //todo: This can be built upon for generators with multiple recipes
         }
 

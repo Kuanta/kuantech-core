@@ -19,23 +19,12 @@ namespace Kuantech.Rpg
         Epic = 3,
         Legendary = 4,
     }
-    
-    [Serializable]
-    public struct ItemTemplatePrefab
-    {
-        public GameObject ItemPrefab;
-        public GameObject ItemDropPrefab;
-        public Sprite ItemIcon;
-    }
 
-    [Serializable]
-    public class TemplatePrefabDictionary : SerializableDictionary<int, ItemTemplatePrefab>{}
 
     public class Librarian : Singleton<Librarian>
     {
         [Header("Item Prefabs")]
         //public List<ItemTemplatePrefab> templatePrefabs = new List<ItemTemplatePrefab>();
-        public TemplatePrefabDictionary TemplatePrefabs = new TemplatePrefabDictionary();
         public GameObject DefaultDropModel;
         
         [Header("Projectile Prefabs")]
@@ -44,33 +33,17 @@ namespace Kuantech.Rpg
         [Header("Skills")] 
         public DamageDealer DamageDealerPrefab;
 
-        [Header("Modifiers List")] 
-        public ModifierDataDictionary ModifierDataDictionary;
-        private readonly Dictionary<Enums.WeaponType, List<StatTypes>> _weaponModifiers = new Dictionary<Enums.WeaponType, List<StatTypes>>
-        {
-            {Enums.WeaponType.OneHanded, 
-                new List<StatTypes> {StatTypes.Strength, StatTypes.DamageBonus, StatTypes.MaxHealth, StatTypes.MaxEnergy, StatTypes.HealthRegeneration, StatTypes.EnergyRegeneration, StatTypes.AttackSpeedBonus}},
-            {Enums.WeaponType.Bow, 
-                new List<StatTypes> {StatTypes.Dexterity, StatTypes.DamageBonus, StatTypes.MaxHealth, StatTypes.MaxEnergy, StatTypes.HealthRegeneration, StatTypes.EnergyRegeneration, StatTypes.AttackSpeedBonus}},
-            {Enums.WeaponType.Staff, 
-                new List<StatTypes> {StatTypes.Intelligence, StatTypes.DamageBonus, StatTypes.MaxHealth, StatTypes.MaxEnergy, StatTypes.HealthRegeneration, StatTypes.EnergyRegeneration, StatTypes.AttackSpeedBonus}},
-        };
-        private readonly Dictionary<Enums.ArmorType, List<StatTypes>> _armorModifiers = new Dictionary<Enums.ArmorType, List<StatTypes>>
-        {
-            {Enums.ArmorType.Light, 
-                new List<StatTypes> {StatTypes.Intelligence, StatTypes.MaxEnergy, StatTypes.EnergyRegeneration, StatTypes.CooldownReduction}},
-            {Enums.ArmorType.Medium, 
-                new List<StatTypes> {StatTypes.Dexterity, StatTypes.AttackSpeedBonus, StatTypes.DamageBonus, StatTypes.Armor}},
-            {Enums.ArmorType.Heavy, 
-                new List<StatTypes> {StatTypes.Strength, StatTypes.MaxHealth, StatTypes.HealthRegeneration, StatTypes.Armor}}
-        };
-        
         //public const string itemTemplatesPath = "/itemTemplates.yaml";
         public const string weaponsDataPath = "/weapons.yaml";
         public const string armorsDataPath = "/armors.yaml";
-        //public Dictionary<int, ItemTemplate> itemTemplates = new Dictionary<int, ItemTemplate>();
-        public Dictionary<int, ItemData> ItemDatas = new Dictionary<int, ItemData>();
         
+        
+        //Dictionaries
+        public List<ItemData> ItemDatasList;
+        public Dictionary<string, ItemData> ItemDatas = new Dictionary<string, ItemData>();
+        public List<ItemTemplate> ItemTemplatesList = new List<ItemTemplate>();
+        public Dictionary<string, ItemTemplate> ItemTemplates = new Dictionary<string, ItemTemplate>();
+
         public void Initialize()
         {
             ItemDatas.Clear();
@@ -86,8 +59,8 @@ namespace Kuantech.Rpg
             List<WeaponData> weapons = deserializer.Deserialize<List<WeaponData>>(yml);
             foreach (WeaponData data in weapons)
             {
-                data.ItemType = Enums.ItemType.Weapon;
-                ItemDatas.Add(data.id, data);
+                data.ItemType = ItemType.Weapon;
+                ItemDatas.Add(data.Id, data);
             }
        
             
@@ -101,29 +74,31 @@ namespace Kuantech.Rpg
             List<ArmorData> armors = deserializer.Deserialize<List<ArmorData>>(yml);
             foreach (ArmorData data in armors)
             {
-                data.ItemType = Enums.ItemType.Armor;
-                ItemDatas.Add(data.id, data);
+                data.ItemType = ItemType.Armor;
+                ItemDatas.Add(data.Id, data);
             }
-        }
-
-        public List<StatTypes> GetAvailableModifiers(Item item)
-        {
-            if (item is Weapon weapon )
-            {
-                Enums.WeaponType weaponType = weapon.WeaponType;
-                return _weaponModifiers[weaponType];
-            }
-            if (item is Armor armor)
-            {
-                Enums.ArmorType armorType = armor.ArmorType;
-                return _armorModifiers[armorType];
-            }
-
-            return null;
         }
 
         #region Items
-
+        /// <summary>
+        /// Returns item template
+        /// </summary>
+        /// <param name="itemId"></param>
+        /// <returns></returns>
+        public ItemTemplate GetItemTemplate(string itemId)
+        {
+            try
+            {
+                ItemData itemData = ItemDatas[itemId];
+                string templateId = itemData.ItemTemplateId;
+                return GetItemTemplate(templateId);
+            }
+            catch (Exception e)
+            {
+                return null;
+            }
+        }
+        
         public Item GetItemFromStateData(ItemStateData stateData)
         {
             ItemData itemData = ItemDatas[stateData.ItemId];
@@ -133,15 +108,18 @@ namespace Kuantech.Rpg
         }
         
         /// <summary>
-        /// Returns item drop model prefab from template id
+        /// Returns item drop model prefab from item id
         /// </summary>
         /// <param name="itemId"></param>
         /// <returns></returns>
-        public GameObject GetItemDropPrefab(int itemId)
+        public GameObject GetItemDropPrefab(string itemId)
         {
             try
             {
-                return TemplatePrefabs[ItemDatas[itemId].Template.prefabId].ItemDropPrefab;
+                ItemData itemData = ItemDatas[itemId];
+                string templateId = itemData.ItemTemplateId;
+                ItemTemplate template = GetItemTemplate(templateId);
+                return template.ItemVisualPrefab.gameObject;
             }
             catch (Exception e)
             {
@@ -150,25 +128,26 @@ namespace Kuantech.Rpg
         }
         
         /// <summary>
-        /// Returns game object of the item model
+        /// Returns the visual prefab for item
         /// </summary>
         /// <param name="itemId"></param>
         /// <returns></returns>
-        public GameObject GetItemObject(int itemId)
+        public GameObject GetItemVisualPrefab(string itemId)
         {
-            GameObject prefab = GetItemTemplatePrefab(itemId).ItemPrefab;
-            if (prefab == null) return null;
-            return GameManager.Instance.Pool.GetObject(prefab);
+            ItemTemplate itemTemplate = GetItemTemplate(itemId);
+            if (itemTemplate == null) return null;
+            return itemTemplate.ItemVisualPrefab;
         }
+
         
         /// <summary>
         /// Returns drop model for given template. If the drop model for the item is null, returns the default drop model
         /// </summary>
         /// <param name="index"></param>
         /// <returns></returns>
-        public GameObject GetItemDropObject(int index)
+        public GameObject GetItemDropObject(string itemId)
         {
-            GameObject prefab = GetItemDropPrefab(index);
+            GameObject prefab = GetItemDropPrefab(itemId);
             if (prefab == null && DefaultDropModel == null)
             {
                 return null;
@@ -185,28 +164,12 @@ namespace Kuantech.Rpg
             return index == -1 ? null : projectilePrefabs[index];
         }
 
-        // public Sprite GetIconFromItemId(int itemId)
-        // {
-        //     return GetItemTemplatePrefab(itemId).ItemIcon;
-        // }
-        
-        /// <summary>
-        /// Returns item template visuals from item id
-        /// </summary>
-        /// <param name="itemId"></param>
-        /// <returns></returns>
-        public ItemTemplatePrefab GetItemTemplatePrefab(int itemId)
-        {
-            if (ItemDatas[itemId].Template.inPlace)
-            {
-                Debug.LogError("Trying to get a prefab that is labeled as in-place");
-            }
-            return TemplatePrefabs[ItemDatas[itemId].Template.prefabId];
-        }
 
-        public Sprite GetItemIcon(int itemId)
+        public Sprite GetItemIcon(string itemId)
         {
-            return GetItemTemplatePrefab(itemId).ItemIcon;
+            ItemTemplate itemTemplate = GetItemTemplate(itemId);
+            if (itemTemplate == null) return null;
+            return itemTemplate.ItemIcon;
         }
         #endregion
     }

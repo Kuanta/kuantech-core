@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEngine.Events;
 
-namespace Kuantech.ActionSequencer
+namespace Kuantech.AI.ActionSequencer
 {
     public struct UpdateEventArgs
     {

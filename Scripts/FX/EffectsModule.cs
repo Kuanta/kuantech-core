@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Kuantech.Core.Combat;
 using Kuantech.Rpg;
 using Sirenix.Utilities;
 using UnityEngine;
@@ -9,10 +10,8 @@ namespace Kuantech.Core.FX
     /// <summary>
     /// This module handles the effects that are attached to the character
     /// </summary>
-    public class EffectsModule : RpgActorModule
+    public class EffectsModule : ActorModule
     {
-        [SerializeField] private List<Effect> AttackEffects = new List<Effect>(); //Dependent on the weapon
-        [SerializeField] private List<Effect> AlternativeAttackEffects = new List<Effect>();
         public Effect DamageReceiveEffect;
         public Effect JumpEffect;
         public Effect DodgeEffect;
@@ -23,99 +22,10 @@ namespace Kuantech.Core.FX
         public override void Initialize()
         {
             base.Initialize();
-            (Actor as RpgActor).OnDamageReceived += OnReceiveDamage;
-            (Actor as RpgActor).OnDeath += OnDeath;
+            Actor.OnHitEvent += OnReceiveDamage;
         }
 
-        public override void OnModulesInitialized(object sender, EventArgs args)
-        {
-            base.OnModulesInitialized(sender, args);
-            RpgCombatModule cm = (RpgCombatModule)(Actor as RpgActor).GetModuleByType(typeof(RpgCombatModule));
-            cm.AttackStartEvent+= OnAttack;
-            cm.MeleeImpactEvent += OnMeleeImpact;
-            if((Actor as RpgActor).MovementModule != null) (Actor as RpgActor).MovementModule.OnJumpEvent += OnJump;
-            if((Actor as RpgActor).MovementModule != null) (Actor as RpgActor).MovementModule.OnDodgeEvent += OnDodge;
-        }
-
-        public void SetAttackEffects(List<int> effectTypes)
-        {
-            RemoveCurrentAttackEffects();
-            
-            foreach (var effectType in effectTypes)
-            {
-                Effect effect = EffectsLibrary.GetContext<EffectsLibrary>().GetEffectByTag(effectType);
-                AttackEffects.Add(effect);
-                effect.transform.SetParent(transform);
-                effect.transform.localPosition = Vector3.zero;
-                effect.transform.localRotation = Quaternion.identity;
-            }
-        }
-
-        public void SetAlternativesEffects(List<int> effectTypes)
-        {
-            RemoveCurrentAlternativeAttackEffects();
-            foreach (var effectType in effectTypes)
-            {
-                Effect effect = EffectsLibrary.GetContext<EffectsLibrary>().GetEffectByTag(effectType);
-                AlternativeAttackEffects.Add(effect);
-                effect.transform.SetParent(transform);
-                effect.transform.localPosition = Vector3.zero;
-                effect.transform.localRotation = Quaternion.identity;
-            }
-        }
-        public void SetImpactEffect(Effect impactEffectPrefab)
-        {
-            RemoveImpactEffect();
-            _impact = GameManager.Instance.Pool.GetObject(impactEffectPrefab.gameObject).GetComponent<Effect>();
-        }
-        
-        public void RemoveCurrentAttackEffects()
-        {
-            //Clear existing ones
-            foreach (var effect in AttackEffects)
-            {
-                EffectsLibrary.GetContext<EffectsLibrary>().EffectsPool.PoolObject(effect.gameObject);
-            }
-            AttackEffects.Clear();
-        }
-
-        public void RemoveCurrentAlternativeAttackEffects()
-        {
-            //Clear existing ones
-            foreach (var effect in AlternativeAttackEffects)
-            {
-                EffectsLibrary.GetContext<EffectsLibrary>().EffectsPool.PoolObject(effect.gameObject);
-            }
-            AlternativeAttackEffects.Clear();
-        }
-        public void RemoveImpactEffect()
-        {
-            if (_impact != null)
-            {
-                GameManager.Instance.Pool.PoolObject(_impact.gameObject);
-            }
-        }
-        private void OnAttack(object sender, AttackStartData attackStartData)
-        {
-            if (attackStartData is {PlayEffect: true, IsAlternativeAttack: false} && !AttackEffects.IsNullOrEmpty())
-            {
-                AttackEffects[attackStartData.flowIndex % AttackEffects.Count].Play();
-            }else if (attackStartData.PlayEffect && !AlternativeAttackEffects.IsNullOrEmpty() && attackStartData.IsAlternativeAttack)
-            {
-                AlternativeAttackEffects[attackStartData.flowIndex % AlternativeAttackEffects.Count].Play();
-            }
-        }
-
-        private void OnMeleeImpact(object sender, RpgActor target)
-        {
-            if (_impact == null) return;
-            _impact.transform.position = target.transform.position;
-            Vector3 diff = target.transform.position - transform.position;
-            diff.y = 0;
-            _impact.transform.rotation = Quaternion.LookRotation(diff);
-            _impact.Play();
-        }
-        private void OnReceiveDamage(object sender, float damage)
+        private void OnReceiveDamage(HitInfo hitInfo)
         {
             if (DamageReceiveEffect != null)
             {

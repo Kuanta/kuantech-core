@@ -7,7 +7,7 @@ using UnityEngine;
 namespace Kuantech.ArcadeIdle
 {
     [Serializable]
-    public class WalletState : ActorModuleState
+    public class WalletSerializableData : ActorModuleSerializableData
     {
         public Dictionary<string, int> HeldCurrencies = new Dictionary<string, int>();
     }
@@ -20,16 +20,16 @@ namespace Kuantech.ArcadeIdle
         public Action<(string, int)> OnCurrencyRemoved;
         public Dictionary<string, int> HeldCurrencies = new Dictionary<string, int>();
 
-        public override void LoadState(ActorModuleState moduleState)
+        public override void LoadState(ActorModuleSerializableData moduleSerializableData)
         {
-            base.LoadState(moduleState);
-            WalletState walletState = moduleState as WalletState; //todo: Is this by reference
-            HeldCurrencies = walletState.HeldCurrencies; //Create a copy
+            base.LoadState(moduleSerializableData);
+            WalletSerializableData walletSerializableData = moduleSerializableData as WalletSerializableData; //todo: Is this by reference
+            HeldCurrencies = walletSerializableData.HeldCurrencies; //Create a copy
         }
         
-        protected override ActorModuleState InstantiateState()
+        protected override ActorModuleSerializableData InstantiateState()
         {
-            return new WalletState(){
+            return new WalletSerializableData(){
                 ModuleId = ModuleId,
                 HeldCurrencies = HeldCurrencies,
                 };

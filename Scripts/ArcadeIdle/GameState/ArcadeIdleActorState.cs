@@ -2,7 +2,7 @@ using Kuantech.Core;
 
 namespace Kuantech.ArcadeIdle
 {
-    public class VenueActorState : ActorState
+    public class VenueActorSerializableData : ActorSerializableData
     {
         public bool Locked;
 

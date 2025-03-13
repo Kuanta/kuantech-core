@@ -23,7 +23,7 @@ namespace Kuantech.ArcadeIdle
         [NonSerialized] public bool Unlocked;
 
 
-        public override void Initialize(ActorState actorState = null)
+        public override void Initialize(ActorSerializableData actorSerializableData = null)
         {
             if (!UnlockedByDefault) {
                 Toggle(false);
@@ -33,15 +33,15 @@ namespace Kuantech.ArcadeIdle
                 Toggle(true);
                 Unlocked = true;
             }
-            base.Initialize(actorState);
+            base.Initialize(actorSerializableData);
         }
 
-        public override void LoadActorState(ActorState actorState)
+        public override void LoadActorState(ActorSerializableData actorSerializableData)
         {
-            base.LoadActorState(actorState);
-            VenueActorState state = (actorState as VenueActorState);
-            Unlocked = !state.Locked;
-            if (state.Locked && !UnlockedByDefault)
+            base.LoadActorState(actorSerializableData);
+            VenueActorSerializableData serializableData = (actorSerializableData as VenueActorSerializableData);
+            Unlocked = !serializableData.Locked;
+            if (serializableData.Locked && !UnlockedByDefault)
             {
                 gameObject.SetActive(false);
             }else{
@@ -72,9 +72,9 @@ namespace Kuantech.ArcadeIdle
             return !Unlocked && !UnlockedByDefault;
         }
 
-        protected override ActorState InstantiateActorState()
+        protected override ActorSerializableData InstantiateActorState()
         {
-            return new VenueActorState(){
+            return new VenueActorSerializableData(){
                 Locked = !Unlocked,
             };
         }

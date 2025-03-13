@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Kuantech.ArcadeIdle
 {
-    public class ArcadeIdleAnimator : ActorAnimationModule
+    public class ArcadeIdleAnimator : AnimationModule
     {
         public float MaxSpeed = 5.0f;
         private static readonly int Speed = Animator.StringToHash("Speed");

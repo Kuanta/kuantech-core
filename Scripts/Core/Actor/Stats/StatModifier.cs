@@ -1,4 +1,5 @@
 using System;
+using UnityEngine.Serialization;
 
 namespace Kuantech.Core
 {
@@ -11,7 +12,7 @@ namespace Kuantech.Core
     [Serializable]
     public struct StatModifierData
     {
-        public StatAttribute Stat;
+        public StatAttributeAsset Stat;
         public string ModifierTag;
         public float BaseValue;
         public float LevelToValueFactor;
@@ -29,7 +30,7 @@ namespace Kuantech.Core
     {
         public int Level = 0; //Required for items
         public string ModifierTag = "";
-        public StatAttribute Stat;
+        public StatAttributeAsset AttributeAsset;
         public float BaseValue;
         public float LevelToValueFactor = 1;
         private StatModifierData _data;
@@ -41,7 +42,7 @@ namespace Kuantech.Core
             ModifierTag = data.ModifierTag;
             LevelToValueFactor = data.LevelToValueFactor;
             ModifierType = data.ModifierType;
-            Stat = data.Stat;
+            AttributeAsset = data.Stat;
         }
         public float GetValue()
         {

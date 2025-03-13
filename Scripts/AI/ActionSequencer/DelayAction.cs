@@ -1,7 +1,6 @@
-﻿using Kuantech.ActionSequencer;
-using UnityEngine;
+﻿using UnityEngine;
 
-namespace Kuantech.Core.AI.ActionSequencer
+namespace Kuantech.AI.ActionSequencer
 {
     public class DelayAction : SequenceAction
     {

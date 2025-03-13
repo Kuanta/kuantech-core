@@ -8,7 +8,7 @@ namespace Kuantech.ArcadeIdle
     public class VenueState
     {
         [NonSerialized] public bool Dirtied = false;
-        public Dictionary<string, ActorState> VenueActorStates;
+        public Dictionary<string, ActorSerializableData> VenueActorStates;
         public Dictionary<string, bool> ZoneStates;
         public List<CharacterState> WorkerStates;
     }

@@ -1,4 +1,5 @@
-﻿using Kuantech.Rpg;
+﻿using Kuantech.Core;
+using Kuantech.Rpg;
 using UnityEngine;
 
 public class AttackBehaviour : StateMachineBehaviour
@@ -14,7 +15,7 @@ public class AttackBehaviour : StateMachineBehaviour
         if (targetTime == 0f) targetTime = 1f;
         float baseAnimLength = GetBaseAnimationLength(stateInfo);
         float speedMultiplier = baseAnimLength / targetTime;
-        animator.SetFloat(AnimatorModule.AttackSpeed, speedMultiplier);
+        animator.SetFloat(AnimationModule.AttackSpeed, speedMultiplier);
         _multiplierCalculated = true;
     }
     

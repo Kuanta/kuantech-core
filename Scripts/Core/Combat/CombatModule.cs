@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Kuantech.ArcadeIdle;
 using Kuantech.Core.Utils;
 using Kuantech.Rpg;
 using Kuantech.Rpg.Inventory;
@@ -33,7 +32,7 @@ namespace Kuantech.Core.Combat
         public WeaponAttackPattern CurrentAttackPattern;
 
         //Target
-        public CombatModule CurrentTarget;
+        public Actor CurrentTarget;
         public Vector3 CurrentTargetPosition = Vector3.zero;
 
         [Header("Collision")]
@@ -48,17 +47,21 @@ namespace Kuantech.Core.Combat
         public LockVariable SkillLock = new LockVariable();
 
         //States
-        public float AttackStartTime;
-        public bool IsAttacking = false;
-        private bool _damageDone = false; //Checks if DamageTime has passed
-
+        private float _attackStartTime;
+        private bool _isAttacking = false;
+        private bool _attackWindupCompleted = false;
+        private bool _attacked = false;
+        private float _lastAttackTime;
+        private int _attackIndex = 0;
+        private Vector3 _attackDirection = Vector3.forward;
+        private int _lastComboIndex;
+    
         //Events
-        public EventHandler OnDeath;
         private UnityAction AttackCompleteHandler;
 
 
         //Quick module references
-        private ActorAnimationModule _animatorModule;
+        private AnimationModule _animationModule;
         private StatsModule _statModule;
 
         //Animation  hashes
@@ -71,81 +74,60 @@ namespace Kuantech.Core.Combat
             {
                 _combatResources[res] = new CombatResource()
                 {
-                    MaxValueAttribute = res.MaxValueAttribute,
-                    RegenAttribute = res.RegenAttribute,
+                    maxValueAttributeAsset = res.maxValueAttributeAsset,
+                    regenAttributeAsset = res.regenAttributeAsset,
                 };
             }
             Health = new CombatResource()
             {
-                MaxValueAttribute = HealthResourceData.MaxValueAttribute,
-                RegenAttribute = HealthResourceData.MaxValueAttribute,
+                maxValueAttributeAsset = HealthResourceData.maxValueAttributeAsset,
+                regenAttributeAsset = HealthResourceData.maxValueAttributeAsset,
             };
         }
         public override void OnModulesInitialized()
         {
             base.OnModulesInitialized();
-            _animatorModule = Actor.GetModule<ActorAnimationModule>();
+            _animationModule = Actor.GetModule<AnimationModule>();
             _statModule = Actor.GetModule<StatsModule>();
             Refresh();
             
         }
-        
-        #region Stats
-        public DamageData GetDamage()
-        {
-            return new DamageData()
-            {
-                Damage = 0f, //haha
-            };
-        }
-        #endregion
 
-        #region Lifecycle
-        /// <summary>
-        /// Receives damage if actor is still alive
-        /// </summary>
-        /// <param name="damageData"></param>
-        public void ReceiveDamage(CombatModule from, DamageData damageData)
+        private void Update()
         {
-            if(!IsAlive()) return;
-            //Reduce damage 
-            Health.Remove(GetDamage().Damage);
-            if(Health.CurrentValue <= 0)
+            if (!_isAttacking) return;
+            float elapsedTime = Time.time - _attackStartTime;
+            WeaponAttackPattern currentPattern = GetCurrentAttackPattern();
+            if(elapsedTime > GetCurrentAttackPattern().WindupTime && !_attackWindupCompleted)
             {
-                Death();
+                OnAttackWindupCompleted();
+            }
+
+            if (Time.time - _attackStartTime >= currentPattern.DamageTime && !_attacked)
+            {
+                _attacked = true;
+                switch (currentPattern.AttackType)
+                {
+                    case AttackTypes.None:
+                        break;
+                    case AttackTypes.Arc:
+                        break;
+                    case AttackTypes.Linear:
+                        break;
+                    case AttackTypes.Circle:
+                        break;
+                    case AttackTypes.Target:
+                        break;
+                    case AttackTypes.Ranged:
+                        break;
+                }
             }
         }
-
-        /// <summary>
-        /// Checks whether the actor is alive
-        /// </summary>
-        /// <returns></returns>
-        public bool IsAlive()
-        {
-            return Health.CurrentValue > 0;
-        }
-
-        public void Respawn()
-        {
-
-        }
-
-        /// <summary>
-        /// Called once the current health reaches to zero
-        /// </summary>
-        public void Death()
-        {
-            //Play death animation
-
-            //Trigger death event
-            OnDeath?.Invoke(this, EventArgs.Empty);
-        }
-        #endregion
-
+        
         #region CastSkill
         public bool CanUseSkill()
         {
-            return GlobalCooldown.IsOffCooldown() && !SkillLock.IsLocked() && IsAlive();
+            return GlobalCooldown.IsOffCooldown() && !SkillLock.IsLocked() && Actor.IsAlive();
         }
 
         public void CastSkill(Skill skill)
@@ -156,7 +138,72 @@ namespace Kuantech.Core.Combat
         }
         #endregion
 
+        #region Attack Pattern Queries
+
+        public DamageInfo GetDamage()
+        {
+            return CurrentAttackPattern.GetDamageInfo();
+        }
+        
+        #endregion
+        
         #region Attacks
+
+        public void Attack(Vector3 attackDirection)
+        {
+            if (!CanAttack()) return;
+            OnAttackStarted(attackDirection);
+
+            float timeSinceLastAttack = _attackStartTime - _lastAttackTime;
+        }
+
+        private void OnAttackStarted(Vector3 attackDirection)
+        {
+            _isAttacking = true;
+            _attacked = false;
+            _attackWindupCompleted = false;
+            _attackStartTime = Time.time;
+            _attackDirection = attackDirection;
+            
+            //todo: Check server auth
+
+            if (Actor.GetModule<MovementModule>())
+            {
+                //todo: Transform this UE code to unity
+                // if(!ParentActor->HasAuthority()) return;
+                // if(ParentActor->MovementModule == nullptr) return;
+                // attackDirection.Z = 0;
+                // attackDirection.Normalize();
+	               //
+                // if(_currentAttackPattern.ForwardMovementSpeed > 0.0f)
+                // {
+                //     ParentActor->MovementModule->SetForceMovementVector(attackDirection * _currentAttackPattern.ForwardMovementSpeed, true);
+                // }
+                // ParentActor->MovementModule->MovementSpeedScale = _currentAttackPattern.MovementSlow;
+                // if(_currentAttackPattern.ForceTurn)
+                // {
+                //     ParentActor->MovementModule->SetRotationWithDirection(attackDirection, true, true);
+                // }
+                // if(_currentAttackPattern.LockRotation) ParentActor->MovementModule->RotationLock.Lock();
+            }
+        }
+        
+        public bool IsAttacking()
+        {
+            return _isAttacking;
+        }
+
+        public bool IsInAttackRange(Transform target)
+        {
+            float sqrDist = Vector3.SqrMagnitude(target.position - Actor.transform.position);
+            return sqrDist <= CurrentAttackPattern.Range * CurrentAttackPattern.Range;
+        }
+        public WeaponAttackPattern GetCurrentAttackPattern()
+        {
+            if (CurrentAttackPattern == null) return DefaultAttackPattern;
+            return CurrentAttackPattern;
+        }
+        
         /// <summary>
         /// Checks whether the actor can attack or not
         /// </summary>
@@ -164,25 +211,34 @@ namespace Kuantech.Core.Combat
         public bool CanAttack()
         {
             if (CurrentAttackPattern.AttackType == AttackTypes.Target && CurrentTarget == null) return false;
-            return !IsAttacking && GlobalCooldown.IsOffCooldown() && !AttackLock.IsLocked() && IsAlive();
+            return !_isAttacking && GlobalCooldown.IsOffCooldown() && !AttackLock.IsLocked() && Actor.IsAlive();
         }
-
+        
+        //==== Attack Implementations ====
         /// <summary>
         /// Damages the target if in range
         /// </summary>
         public void TargetAttack()
         {
-            DamageData damage = GetDamage();
-            CombatModule target = CurrentTarget;
-            if (target == null ||
-                !target.IsAlive() ||
-                Vector3.Distance(target.transform.position, transform.position) > CurrentAttackPattern.Range) return;
-
-            target.ReceiveDamage(this, damage);
+            DamageInfo damage = GetCurrentAttackPattern().GetDamageInfo();
+            if (CurrentTarget == null ||
+                !CurrentTarget.IsAlive() ||
+                Vector3.Distance(CurrentTarget.transform.position, transform.position) > CurrentAttackPattern.Range) return;
+            CurrentTarget.OnHit(gameObject, damage);
         }
 
         #endregion
+        
+        #region Events
 
+        private void OnAttackWindupCompleted()
+        {
+            _attackWindupCompleted = true;
+            
+            //If collider based melee, toggle weapon colliders
+        }
+        #endregion
+        
         /// <summary>
         /// Refreshes the state, resources, etc.
         /// </summary>

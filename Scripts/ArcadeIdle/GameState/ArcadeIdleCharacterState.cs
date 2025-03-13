@@ -1,6 +1,7 @@
 using System;
 using Kuantech.Core;
 using Kuantech.Utils;
+using UnityEngine.Serialization;
 
 namespace Kuantech.ArcadeIdle
 {
@@ -12,6 +13,6 @@ namespace Kuantech.ArcadeIdle
         public float PosX;
         public float PosZ;
         public float RotY;
-        public ActorState ActorState;
+        [FormerlySerializedAs("ActorState")] public ActorSerializableData actorSerializableData;
     }
 }

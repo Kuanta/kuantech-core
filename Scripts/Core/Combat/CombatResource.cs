@@ -1,13 +1,14 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Kuantech.Core.Combat
 {
     [Serializable]
     public class CombatResource
     {
-        public StatAttribute MaxValueAttribute;
-        public StatAttribute RegenAttribute;
+        [FormerlySerializedAs("MaxValueAttribute")] public StatAttributeAsset maxValueAttributeAsset;
+        [FormerlySerializedAs("RegenAttribute")] public StatAttributeAsset regenAttributeAsset;
         public float CurrentValue;
 
         public void Remove(float value)
@@ -17,7 +18,7 @@ namespace Kuantech.Core.Combat
         }
         public void Refresh(StatsModule statsModule)
         {
-            CurrentValue = statsModule.GetAttributeValue(MaxValueAttribute);
+            CurrentValue = statsModule.GetAttributeValue(maxValueAttributeAsset);
         }
     }
 }

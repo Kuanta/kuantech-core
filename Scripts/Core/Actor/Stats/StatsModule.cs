@@ -3,17 +3,18 @@ using System.Collections.Generic;
 using System.Linq;
 using Kuantech.Utils;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Kuantech.Core
 {
     [Serializable]
-    public class StatDictionary : SerializableDictionary<StatAttribute, Stat> { }
+    public class StatDictionary : SerializableDictionary<StatAttributeAsset, Attribute> { }
 
     [Serializable]
-    public class ModifierDataDictionary : SerializableDictionary<StatAttribute, StatModifierData> { }
+    public class ModifierDataDictionary : SerializableDictionary<StatAttributeAsset, StatModifierData> { }
 
     [Serializable]
-    public class StatsState : ActorModuleState
+    public class StatsSerializableData : ActorModuleSerializableData
     {
         public int Level;
         public int OverflowExperience;
@@ -25,9 +26,9 @@ namespace Kuantech.Core
     /// Stats are increased by the overall level as well as with their ranks. 
     /// </summary>
     [Serializable]
-    public class Stat
+    public class Attribute
     {
-        public StatAttribute Attribute;
+        public StatAttributeAsset attributeAsset;
         [Tooltip("Value at Rank 0 and Level 0")]
         public float BaseValue;
         [Tooltip("Value gained every rank")]
@@ -60,8 +61,8 @@ namespace Kuantech.Core
     public class StatsModule : ActorModule
     {
         [Header("Stats")]
-        public List<Stat> Stats;
-        private Dictionary<string, Stat> _statMap;
+        public List<Attribute> Stats;
+        private Dictionary<string, Attribute> _statMap;
         public static float LevelFormulaX = 0.4f;
 
         //Level
@@ -73,41 +74,78 @@ namespace Kuantech.Core
         public EventHandler<int> LevelUpEvent;
         public EventHandler ExperienceEarnedEvent;
 
-        [NonSerialized] private Dictionary<StatAttribute, HashSet<StatModifier>> Modifiers;
-        [NonSerialized] private Queue<StatAttribute> DirtiedStats = new Queue<StatAttribute>();
+        [NonSerialized] private Dictionary<StatAttributeAsset, HashSet<StatModifier>> Modifiers;
+        [NonSerialized] private Queue<StatAttributeAsset> DirtiedStats = new Queue<StatAttributeAsset>();
 
         public override void Initialize()
         {
             base.Initialize();
-            _statMap = new Dictionary<string, Stat>();
+            _statMap = new Dictionary<string, Attribute>();
             foreach (var stat in Stats)
             {
-                _statMap[stat.Attribute.Id] = stat;
+                if(stat == null) continue;
+                _statMap[stat.attributeAsset.Id] = stat;
             }
         }
 
-        public override void LoadState(ActorModuleState state)
+        public override void LoadState(ActorModuleSerializableData serializableData)
         {
-            base.LoadState(state);
-            StatsState statsState = state as StatsState;
-            SetStatStates(statsState);
+            base.LoadState(serializableData);
+            StatsSerializableData statsSerializableData = serializableData as StatsSerializableData;
+            SetStatStates(statsSerializableData);
         }
 
         #region Attributes
-        public float GetAttributeValue(StatAttribute attribute)
+
+        public Attribute GetAttribute(StatAttributeAsset attributeAsset)
         {
-            if(attribute == null)
+            return GetAttribute(attributeAsset.Id);
+        }
+        
+        public Attribute GetAttribute(string attributeId)
+        {
+            if (!_statMap.ContainsKey(attributeId)) return null;
+            return _statMap[attributeId];
+        }
+        
+        /// <summary>
+        /// Returns the max value for an attribute
+        /// </summary>
+        /// <param name="attributeAsset"></param>
+        /// <returns></returns>
+        public float GetAttributeMaxValue(StatAttributeAsset attributeAsset)
+        {
+            Attribute att = GetAttribute(attributeAsset);
+            if (att == null) return 0f;
+            return att.Limits.y;
+        }
+        
+        /// <summary>
+        /// Returns the minimum value for an attribute
+        /// </summary>
+        /// <param name="attributeAsset"></param>
+        /// <returns></returns>
+        public float GetAttributeMinValue(StatAttributeAsset attributeAsset)
+        {
+            Attribute att = GetAttribute(attributeAsset);
+            if (att == null) return 0f;
+            return att.Limits.x;
+        }
+        
+        public float GetAttributeValue(StatAttributeAsset attributeAsset)
+        {
+            if(attributeAsset == null)
             {
                 Debug.LogError("Trying to get a null attribute");
                 return 0f;
             }
-            return GetAttributeValue(attribute.Id);
+            return GetAttributeValue(attributeAsset.Id);
         }
 
         public float GetAttributeValue(string statId)
         {
-            if(!_statMap.ContainsKey(statId)) return 0f;
-            return _statMap[statId].GetValue(CurrentLevel);
+            Attribute att = GetAttribute(statId);
+            return att.GetValue(CurrentLevel);
         }
 
         /// <summary>
@@ -127,11 +165,11 @@ namespace Kuantech.Core
         /// <summary>
         /// Returns the current rank of the attribute.
         /// </summary>
-        /// <param name="attribute">Attribute object</param>
+        /// <param name="attributeAsset">Attribute object</param>
         /// <returns></returns>
-        public int GetAttributeRank(StatAttribute attribute)
+        public int GetAttributeRank(StatAttributeAsset attributeAsset)
         {
-            return GetAttributeRank(attribute.Id);
+            return GetAttributeRank(attributeAsset.Id);
         }
 
         /// <summary>
@@ -148,11 +186,11 @@ namespace Kuantech.Core
         /// <summary>
         /// Increases the rank of given attribute.
         /// </summary>
-        /// <param name="attribute">Attribute object</param>
+        /// <param name="attributeAsset">Attribute object</param>
         /// <param name="amountToIncrease">Amount to increase</param>
-        public void IncreaseAttributeRank(StatAttribute attribute, int amountToIncrease)
+        public void IncreaseAttributeRank(StatAttributeAsset attributeAsset, int amountToIncrease)
         {
-            IncreaseAttributeRank(attribute.Id, amountToIncrease);
+            IncreaseAttributeRank(attributeAsset.Id, amountToIncrease);
         }
 
         /// <summary>
@@ -178,15 +216,15 @@ namespace Kuantech.Core
 
         public void AddModifier(StatModifier modifier)
         {
-            Modifiers ??= new Dictionary<StatAttribute, HashSet<StatModifier>>();
+            Modifiers ??= new Dictionary<StatAttributeAsset, HashSet<StatModifier>>();
 
-            if (!Modifiers.ContainsKey(modifier.Stat))
+            if (!Modifiers.ContainsKey(modifier.AttributeAsset))
             {
-                Modifiers.Add(modifier.Stat, new HashSet<StatModifier>());
+                Modifiers.Add(modifier.AttributeAsset, new HashSet<StatModifier>());
             }
 
-            Modifiers[modifier.Stat].Add(modifier);
-            DirtyStat(modifier.Stat);
+            Modifiers[modifier.AttributeAsset].Add(modifier);
+            DirtyStat(modifier.AttributeAsset);
 
         }
 
@@ -220,15 +258,15 @@ namespace Kuantech.Core
 
         public void RemoveModifier(StatModifier modifier)
         {
-            if (Modifiers == null || !Modifiers.ContainsKey(modifier.Stat)) return;
-            if (Modifiers[modifier.Stat].Contains(modifier))
+            if (Modifiers == null || !Modifiers.ContainsKey(modifier.AttributeAsset)) return;
+            if (Modifiers[modifier.AttributeAsset].Contains(modifier))
             {
-                Modifiers[modifier.Stat].Remove(modifier);
-                DirtyStat(modifier.Stat);
+                Modifiers[modifier.AttributeAsset].Remove(modifier);
+                DirtyStat(modifier.AttributeAsset);
             }
         }
 
-        public void DirtyStat(StatAttribute statType)
+        public void DirtyStat(StatAttributeAsset statType)
         {
             DirtiedStats.Enqueue(statType);
         }
@@ -239,7 +277,7 @@ namespace Kuantech.Core
         public void UpdateStatModifiers()
         {
             if (DirtiedStats == null || DirtiedStats.Count == 0) return;
-            StatAttribute statType = DirtiedStats.Dequeue();
+            StatAttributeAsset statType = DirtiedStats.Dequeue();
             while (statType != null)
             {
                 float additionMultipliersSum = 0;
@@ -266,10 +304,10 @@ namespace Kuantech.Core
                     }
                     else
                     {
-                        Stat currStat = _statMap[statType.Id];
-                        currStat.AdditionModifier = additionMultipliersSum;
-                        currStat.MultiplicationModifier = multiplicationModifiersSum;
-                        _statMap[statType.Id] = currStat;
+                        Attribute currAttribute = _statMap[statType.Id];
+                        currAttribute.AdditionModifier = additionMultipliersSum;
+                        currAttribute.MultiplicationModifier = multiplicationModifiersSum;
+                        _statMap[statType.Id] = currAttribute;
                     }
 
                     if (DirtiedStats.IsNullOrEmpty())
@@ -357,9 +395,9 @@ namespace Kuantech.Core
         }
         #endregion
 
-        protected override ActorModuleState InstantiateState()
+        protected override ActorModuleSerializableData InstantiateState()
         {
-            return new StatsState(){
+            return new StatsSerializableData(){
                 Level = 0,
                 OverflowExperience = 0,
                 AttributeRanks = new Dictionary<string, int>(),
@@ -369,18 +407,18 @@ namespace Kuantech.Core
         /// <summary>
         /// Loads the state of stats. 
         /// </summary>
-        /// <param name="state"></param>
-        public void SetStatStates(StatsState state)
+        /// <param name="serializableData"></param>
+        public void SetStatStates(StatsSerializableData serializableData)
         {
-            if(state.AttributeRanks != null)
+            if(serializableData.AttributeRanks != null)
             {
-                foreach (var pair in state.AttributeRanks)
+                foreach (var pair in serializableData.AttributeRanks)
                 {
                     SetAttributeRank(pair.Key, pair.Value);
                 }
             }
-            CurrentLevel = state.Level;
-            OverflowExperience = state.OverflowExperience;
+            CurrentLevel = serializableData.Level;
+            OverflowExperience = serializableData.OverflowExperience;
         }
 
         /// <summary>

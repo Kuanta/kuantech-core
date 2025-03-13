@@ -11,7 +11,7 @@ using System.Reflection;
 namespace Kuantech.Core
 {
     [AttributeUsage(AttributeTargets.Field)]
-    public class NonSaveableAttribute : Attribute
+    public class NonSaveableAttribute : System.Attribute
     {
     }
 
@@ -23,7 +23,7 @@ namespace Kuantech.Core
             JsonProperty property = base.CreateProperty(member, memberSerialization);
 
             // Check if the NonSaveableAttribute is applied to the field
-            if (Attribute.IsDefined(member, typeof(NonSaveableAttribute)))
+            if (System.Attribute.IsDefined(member, typeof(NonSaveableAttribute)))
             {
                 property.ShouldSerialize = _ => false;
             }
@@ -63,7 +63,7 @@ namespace Kuantech.Core
             }
             foreach (var field in savedDataType.GetFields())
             {
-                if (!Attribute.IsDefined(field, typeof(NonSaveableAttribute)))
+                if (!System.Attribute.IsDefined(field, typeof(NonSaveableAttribute)))
                 {
                     var loadedValue = field.GetValue(loadedData);
                     field.SetValue(loadedData, loadedValue);

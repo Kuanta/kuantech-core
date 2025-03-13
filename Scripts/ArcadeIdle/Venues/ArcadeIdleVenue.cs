@@ -37,7 +37,7 @@ namespace Kuantech.ArcadeIdle
         public void SetDefaultStateValues()
         {
             CurrentState = new VenueState();
-            CurrentState.VenueActorStates = new Dictionary<string, ActorState>();
+            CurrentState.VenueActorStates = new Dictionary<string, ActorSerializableData>();
             CurrentState.WorkerStates = new List<CharacterState>();
             CurrentState.ZoneStates = new Dictionary<string, bool>();
         }
@@ -67,7 +67,7 @@ namespace Kuantech.ArcadeIdle
                 Vector3 position = new Vector3(workerState.PosX, 0, workerState.PosZ);
                 Quaternion rotation = Quaternion.Euler(new Vector3(0, 0, 0));
                 HireWorker(ArcadeIdleManager.GetRandomNpcByTag(workerState.WorkerTag),
-                workerState.ActorState, position, rotation);
+                workerState.actorSerializableData, position, rotation);
             }
 
             _spawnEvent = new TimedEventInvoker();
@@ -550,7 +550,7 @@ namespace Kuantech.ArcadeIdle
         /// <param name="workerPrefab"></param>
         /// <param name="position"></param>
         /// <param name="rotation"></param>
-        public void HireWorker(ArcadeIdleNpc workerPrefab, ActorState actorState, Vector3 position, Quaternion rotation)
+        public void HireWorker(ArcadeIdleNpc workerPrefab, ActorSerializableData actorSerializableData, Vector3 position, Quaternion rotation)
         {
             ArcadeIdleNpc worker = Instantiate(workerPrefab);
             worker.transform.SetParent(transform);
@@ -561,7 +561,7 @@ namespace Kuantech.ArcadeIdle
                 Position = position,
                 Rotation = rotation,
             };
-            worker.Spawn(this, point, actorState);
+            worker.Spawn(this, point, actorSerializableData);
             _activeWorkers.Add(worker);
         }
         #endregion

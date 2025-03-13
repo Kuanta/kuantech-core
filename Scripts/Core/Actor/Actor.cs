@@ -1,27 +1,54 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Kuantech.Core.Combat;
+using Kuantech.Rpg;
 using Kuantech.Utils;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace Kuantech.Core
 {
-    public class Actor : MonoBehaviour
+    public enum ActorState
     {
+        Alive,
+        Dead,
+        Despawned,
+    }
+    
+    public class Actor : MonoBehaviour, IHittable
+    {
+        [Header("Identifier")]
         public string Id;
+        
+        [Header("Components")]
+        public ActorVisualHandler VisualHandler;
+        
+        [Header("Modules")]
         protected List<ActorModule> ActorModulesList;
         protected Dictionary<Type, List<ActorModule>> Modules = new Dictionary<Type, List<ActorModule>>();
         public Dictionary<string, ActorModule> ModulesById = new Dictionary<string, ActorModule>();
+
         protected bool Initialized;
         [Tooltip("If set to true, actor will initialize itself on start")]
         public bool InitializeOnStart;
 
-        //Flag to notify about the dirty state
+        //Runtime
+        public ActorState CurrentActorState = ActorState.Alive;
         [NonSerialized] public bool Dirtied = false;
 
         //Events
         public EventHandler OnModulesInitialized;
+        
+        //Lifecycle events
+        public UnityAction<Actor> OnSpawnedEvent;
+        public UnityAction<Actor> OnDeathEvent;
+        public UnityAction<Actor> OnDespawnedEvent;
+
+        public UnityAction<HitInfo> OnHitEvent;
+
+        #region Lifecycle
         private void Start()
         {
             if(InitializeOnStart)
@@ -29,7 +56,8 @@ namespace Kuantech.Core
                 Initialize(null);
             }
         }
-        public virtual void Initialize(ActorState actorState = null)
+
+        public virtual void Initialize(ActorSerializableData actorSerializableData = null)
         {
             if (Initialized) return;
             ActorModulesList = GetComponentsInChildren<ActorModule>().ToList();
@@ -50,10 +78,10 @@ namespace Kuantech.Core
             {
                 module.Initialize();
             }
-            if(actorState != null)
+            if(actorSerializableData != null)
             {
                 //Load the data to the state
-                LoadActorState(actorState);
+                LoadActorState(actorSerializableData);
             }else {
                 SetDefaultStateValues();
             }
@@ -72,6 +100,37 @@ namespace Kuantech.Core
                 module.OnModulesInitialized();
             }
         }
+
+        protected virtual void Update()
+        {
+
+        }
+
+        public virtual void Reset()
+        {
+            foreach (var module in ActorModulesList)
+            {
+                module.Reset();
+            }
+        }
+
+        public virtual void Cleanup()
+        {
+            foreach (var module in ActorModulesList)
+            {
+                module.Cleanup();
+            }
+        }
+        #endregion
+
+        #region Actor States
+        public bool IsAlive()
+        {
+            return CurrentActorState == ActorState.Alive;
+        }
+
+        #endregion
+        #region Modules
 
         /// <summary>
         /// Return module by type
@@ -122,45 +181,27 @@ namespace Kuantech.Core
             return result;
         }
 
-        protected virtual void Update()
-        {
+        #endregion
 
-        }
-
-        public virtual void Reset()
-        {
-            foreach (var module in ActorModulesList)
-            {
-                module.Reset();
-            }
-        }
-
-        public virtual void Cleanup()
-        {
-            foreach (var module in ActorModulesList)
-            {
-                module.Cleanup();
-            }
-        }
         #region State
     
         /// <summary>
         /// The method that should be overriden for actors that needs their o
         /// </summary>
         /// <returns></returns>
-        protected virtual ActorState InstantiateActorState()
+        protected virtual ActorSerializableData InstantiateActorState()
         {
-            return new ActorState()
+            return new ActorSerializableData()
             {
                 ActorId = Id,
             };
         }
 
-        private ActorState CreateActorState()
+        private ActorSerializableData CreateActorState()
         {
-            ActorState actorState = InstantiateActorState();
-            actorState.ActorId = Id;
-            return actorState;
+            ActorSerializableData actorSerializableData = InstantiateActorState();
+            actorSerializableData.ActorId = Id;
+            return actorSerializableData;
         }
 
         public virtual void DirtyState()
@@ -182,17 +223,17 @@ namespace Kuantech.Core
         /// <summary>
         /// Loads the actor state
         /// </summary>
-        /// <param name="actorState"></param>
-        public virtual void LoadActorState(ActorState actorState)
+        /// <param name="actorSerializableData"></param>
+        public virtual void LoadActorState(ActorSerializableData actorSerializableData)
         {
-            if(actorState == null)
+            if(actorSerializableData == null)
             {
                 SetDefaultStateValues();
                 return;
             }
-            LoadModuleState(actorState.ModuleStates);
+            LoadModuleState(actorSerializableData.ModuleStates);
         }
-        public virtual void LoadModuleState(Dictionary<string, ActorModuleState> moduleStates)
+        public virtual void LoadModuleState(Dictionary<string, ActorModuleSerializableData> moduleStates)
         {
             foreach(var pair in moduleStates)
             {
@@ -213,16 +254,46 @@ namespace Kuantech.Core
         /// Gets the actor stat
         /// </summary>
         /// <returns></returns>
-        public virtual ActorState GetActorState()
+        public virtual ActorSerializableData GetActorState()
         {
-            ActorState actorState = CreateActorState();
-            actorState.ModuleStates = new Dictionary<string, ActorModuleState>();
+            ActorSerializableData actorSerializableData = CreateActorState();
+            actorSerializableData.ModuleStates = new Dictionary<string, ActorModuleSerializableData>();
             foreach(var pair in ModulesById)
             {
                 if(pair.Value.ModuleId.IsNullOrEmpty()) continue;
-                actorState.ModuleStates[pair.Value.ModuleId] = pair.Value.CreateModuleState();
+                actorSerializableData.ModuleStates[pair.Value.ModuleId] = pair.Value.CreateModuleState();
             }
-            return actorState;
+            return actorSerializableData;
+        }
+        #endregion
+        
+        #region IHittable
+        public virtual bool CanBeHit()
+        {
+            return true;
+        }
+
+        public void OnHit(HitInfo hitInfo)
+        {
+            OnHitEvent?.Invoke(hitInfo);
+        }
+        public void OnHit(GameObject attacker, DamageInfo damageInfo)
+        {
+            OnHitEvent?.Invoke(new HitInfo()
+            {
+                Hitter = attacker,
+                DamageInfo = damageInfo,
+            });
+        }
+        #endregion
+        
+        #region Utitilities
+
+        public Vector3 GetActorDirection()
+        {
+            MovementModule mm = GetModule<MovementModule>();
+            if (mm == null) return transform.forward;
+            return mm.GetForwardVector();
         }
         #endregion
     }

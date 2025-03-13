@@ -1,4 +1,5 @@
 using System;
+using Kuantech.Rpg;
 using UnityEngine;
 
 namespace Kuantech.Core
@@ -15,7 +16,10 @@ namespace Kuantech.Core
             CreateModuleState();
         }
 
-        public virtual void OnModulesInitialized(){}
+        public virtual void OnModulesInitialized()
+        {
+            
+        }
         public virtual void Reset(){}
 
         public virtual void Cleanup(){}
@@ -31,21 +35,21 @@ namespace Kuantech.Core
             Actor.DirtyState();
         }
 
-        protected virtual ActorModuleState InstantiateState()
+        protected virtual ActorModuleSerializableData InstantiateState()
         {
-            return new ActorModuleState();
+            return new ActorModuleSerializableData();
         }
-        public virtual ActorModuleState CreateModuleState()
+        public virtual ActorModuleSerializableData CreateModuleState()
         {
-            ActorModuleState actorState = InstantiateState();
-            actorState.ModuleId = ModuleId;
-            return actorState;
+            ActorModuleSerializableData actorSerializableData = InstantiateState();
+            actorSerializableData.ModuleId = ModuleId;
+            return actorSerializableData;
         }
         /// <summary>
         /// Loads the state for this module
         /// </summary>
-        /// <param name="state"></param>
-        public virtual void LoadState(ActorModuleState state)
+        /// <param name="serializableData"></param>
+        public virtual void LoadState(ActorModuleSerializableData serializableData)
         {
 
         }
@@ -55,5 +59,7 @@ namespace Kuantech.Core
 
         }
         #endregion
+
+
     }
 }
