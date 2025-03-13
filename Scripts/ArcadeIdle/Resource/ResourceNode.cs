@@ -116,10 +116,10 @@ namespace Kuantech.ArcadeIdle
         /// </summary>
         public void HandoverResource(IResourceCollector collector)
         {
-            if (CurrentState.CurrentResourceAmount <= 0 || !collector.CanCollectResource(ResourceData.ResourceId)) return;
+            if (CurrentState.CurrentResourceAmount <= 0 || !collector.CanCollectResource(ResourceData.Id)) return;
             int currentAmount = CurrentState.CurrentResourceAmount;
             int removedAmount = Mathf.Min( HandoverAmount, currentAmount);
-            collector.CollectResource(ResourceData.ResourceId, removedAmount);
+            collector.CollectResource(ResourceData.Id, removedAmount);
             CurrentState.CurrentResourceAmount -= removedAmount;
         }
 

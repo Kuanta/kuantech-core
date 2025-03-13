@@ -1,4 +1,5 @@
 using Kuantech.ArcadeIdle.UI;
+using Kuantech.Rpg;
 using Kuantech.Utils;
 using TMPro;
 using UnityEngine;
@@ -33,9 +34,10 @@ namespace Kuantech.ArcadeIdle
             _resourceShop = shop;
             _parentPanel = parentPanel;
             ResourceShopEntry = entry;
-            if(ResourceIcon != null && ResourceShopEntry.ResourceData.ResourceIcon != null)
+            Sprite icon = entry.ResourceData.GetResourceIcon();
+            if(ResourceIcon != null && icon  != null)
             {
-                ResourceIcon.sprite = ResourceShopEntry.ResourceData.ResourceIcon;
+                ResourceIcon.sprite = icon;
             }
             PriceText.text = entry.Price.Stringfy();
             ResourceTitle.text = entry.ResourceData.Name;

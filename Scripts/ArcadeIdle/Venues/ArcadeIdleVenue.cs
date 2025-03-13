@@ -485,7 +485,7 @@ namespace Kuantech.ArcadeIdle
             {
                 ResourceSinker sinker = actor.GetModule<ResourceSinker>();
                 if (sinker == null) continue;
-                foreach (var resource in sinker.AcceptedResources)
+                foreach (var resource in sinker.GetAcceptedResources())
                 {
                     if(resource == null)
                     {

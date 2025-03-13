@@ -4,7 +4,6 @@ using Kuantech.Core;
 using Kuantech.Core.Combat;
 using Kuantech.Utils;
 using UnityEngine;
-using UnityEngine.Serialization;
 using Object = UnityEngine.Object;
 
 namespace Kuantech.Rpg.Inventory
@@ -62,51 +61,8 @@ namespace Kuantech.Rpg.Inventory
     }
 
 
-    
-    [Serializable]
-    public class ItemData
-    {
-        // Common mandotary
-        public string Id;
-        public string Name;
-        public float weight;
-        public float value;
-        public bool stackable = false;
-        public List<EquipmentSlotType> SuitableSlots; //Which slot can this be equipped to
-        public List<EquipmentSlotType> OccupiedSlots; //Which slots does this occupy?
-        public ItemType ItemType;
-        public int minPowerLevel;
-        public int maxPowerLevel;
-        
-        //Visuals
-        public string ItemTemplateId;
-        public ItemVisual ItemVisualPrefab;
-        
-        // Icon
-        public int iconId;
-        public string description = "";
-    }
-    
-    [Serializable]
-    public class WeaponData : ItemData
-    {
-        public StatAttributeAsset BaseStat;
-        public bool Ranged = false;
-        public Projectile ProjectilePrefab;
-        public int SlotSize = 1; //1 for 1 handed, >1 for two handed
-        public List<WeaponAttackPattern> AttackPatterns;
-        public WeaponAttackPattern AlternativeAttackPatterns;
-        public List<int> Skills;
-        public float blockAmount = 0; //Additional armor value
-        public float ScalingFactor = 1;
-    }
 
-    [Serializable]
-    public class ArmorData : ItemData
-    {
-        public float armorValue = 0f;
-        public float scalingFactor = 1;
-    }
+
     
     [Serializable]
     public class Item

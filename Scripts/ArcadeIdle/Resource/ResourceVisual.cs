@@ -2,6 +2,7 @@
 using DG.Tweening;
 using Kuantech.Core;
 using Kuantech.Core.FX;
+using Kuantech.Rpg.Inventory;
 using Kuantech.Utils;
 using UnityEngine;
 using UnityEngine.Events;
@@ -9,7 +10,7 @@ using UnityEngine.Events;
 namespace Kuantech.ArcadeIdle
 {
     //todo: Implement Throwable Mover here
-    public class ResourceVisual : MonoBehaviour, IResourcePositioner
+    public class ResourceVisual : ItemVisual, IResourcePositioner
     {
         [NonSerialized] public string ResourceId;
         public AnimationCurve SpeedCurve;
@@ -106,7 +107,7 @@ namespace Kuantech.ArcadeIdle
         public void Despawn()
         {
             ReachedTargetHandler = null; //Clear subscribers
-            GameManager.Instance.Pool.PoolObject(gameObject);
+            PoolManager.PoolObject(gameObject);
         }
 
         public void GoToTarget(WorldPoint targetPoint)

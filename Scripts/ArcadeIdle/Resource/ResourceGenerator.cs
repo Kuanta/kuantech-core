@@ -141,7 +141,7 @@ namespace Kuantech.ArcadeIdle
             }
             foreach(var ingredient in _currentRecipe.Ingredients)
             {
-                int heldAmount = InputInventory.GetAvailableAmount(ingredient.ResourceData.ResourceId);
+                int heldAmount = InputInventory.GetAvailableAmount(ingredient.ResourceData.Id);
                 if(heldAmount < ingredient.RequiredAmount) return false;
             }
             return true;
@@ -166,10 +166,10 @@ namespace Kuantech.ArcadeIdle
                 //todo: For now, we can only return a single visual
                 for(int i=0;i<ingredient.RequiredAmount;++i)
                 {
-                    ResourceVisual resourceVisual = InputInventory.RemoveResource(ingredient.ResourceData.ResourceId, 1);
+                    ResourceVisual resourceVisual = InputInventory.RemoveResource(ingredient.ResourceData.Id, 1);
                     if (resourceVisual != null)
                     {
-                        GameManager.Instance.Pool.PoolObject(resourceVisual.gameObject);
+                        PoolManager.PoolObject(resourceVisual.gameObject);
                     }
                 }
                

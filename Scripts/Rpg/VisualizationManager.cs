@@ -125,7 +125,7 @@ namespace Kuantech.Rpg
         public GameObject GetPremade(int index)
         {
             if (Premades == null || Premades.Count <= index || index < 0) return null;
-            return GameManager.Instance.Pool.GetObject(Premades[index]);
+            return PoolManager.GetObjectFromPool(Premades[index]);
         }
     }
   

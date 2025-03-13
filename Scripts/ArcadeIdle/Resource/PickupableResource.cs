@@ -3,11 +3,11 @@ using UnityEngine;
 namespace Kuantech.ArcadeIdle
 {
     public class PickupableResource : ResourceVisual {
-        [SerializeField] private ResourceData ResourceData;
+        [SerializeField] private ResourceDataReference ResourceDataReference;
         [SerializeField] private Collider Collider;
         public bool Available = true;
         public bool DestroyOnPickup = true;
-
+        
         public override void Spawn()
         {
             base.Spawn();
@@ -39,13 +39,13 @@ namespace Kuantech.ArcadeIdle
             if(character.CharacterInventory == null) return;
 
             //Clear the parent of the visual just in case since the pickup can be destroyed
-            ResourceId = ResourceData.ResourceId;
+            ResourceId = ResourceDataReference.ResourceId;
 
             //Check inventory space
-            if (!character.CharacterInventory.CanAcceptResource(ResourceData)) return;
+            if (!character.CharacterInventory.CanAcceptResource(ResourceDataReference.GetResourceData())) return;
 
             //Send the resource flying
-            character.CharacterInventory.AddResource(ResourceData, this, true);
+            character.CharacterInventory.AddResource(ResourceDataReference.GetResourceData(), this, true);
 
             Toggle(false);
             if(DestroyOnPickup)

@@ -37,7 +37,7 @@ namespace Kuantech.UI
                 ScoreReachedEffect?.PlayEffectAtPosition(transform.position, Quaternion.identity);
                 if (UsePool)
                 {
-                    GameManager.Instance.Pool.PoolObject(gameObject);
+                    PoolManager.PoolObject(gameObject);
                 }else{
                     Destroy(gameObject);
                 }

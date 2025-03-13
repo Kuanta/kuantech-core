@@ -118,7 +118,7 @@ namespace Kuantech.Core.HyperCasual.Runner
         /// </summary>
         protected virtual CrowdElement CreateCrowdElement()
         {
-            CrowdElement crowdElement = GameManager.Instance.Pool.GetObject(CrowdElementPrefab.gameObject).GetComponent<CrowdElement>();
+            CrowdElement crowdElement = PoolManager.GetObjectFromPool(CrowdElementPrefab.gameObject).GetComponent<CrowdElement>();
 
             crowdElement.transform.SetParent(CrowdParent);
             crowdElement.transform.localPosition = Vector3.zero;
@@ -228,7 +228,7 @@ namespace Kuantech.Core.HyperCasual.Runner
             // Remove x elements
             for (int i = 0; i < x && i < crowdList.Count; i++)
             {
-                GameManager.Instance.Pool.PoolObject(crowdList[i].gameObject);
+                PoolManager.PoolObject(crowdList[i].gameObject);
             }
             _crowdNeedsUpdate.RequireAll();
         }
@@ -247,7 +247,7 @@ namespace Kuantech.Core.HyperCasual.Runner
             foreach (CrowdElement agent in crowdAgents)
             {
                 if (agent == CrowdParent.transform) continue;
-                GameManager.Instance.Pool.PoolObject(agent.gameObject);
+                PoolManager.PoolObject(agent.gameObject);
             }
         }
         #endregion

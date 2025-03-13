@@ -61,7 +61,7 @@ namespace Kuantech.ArcadeIdle
                 if (gathered) continue;
 
                 ordersSatisfied = false;
-                string resourceId = entry.ResourceData.ResourceId; 
+                string resourceId = entry.ResourceData.Id; 
                 int requiredAmount = entry.RequiredAmount - entry.GatheredAmount; //How many resources left?
                 int availableAmount = InputInventory.GetHeldAmount(resourceId); //How many resources does the shelf have?
                 int amountToGive = Mathf.Min(requiredAmount, availableAmount);
@@ -74,7 +74,7 @@ namespace Kuantech.ArcadeIdle
                 }
                 if (resourceGiven)
                 {
-                    int gatheredAmount = entry.RequiredAmount - characterInventory.GetHeldAmount(entry.ResourceData.ResourceId);
+                    int gatheredAmount = entry.RequiredAmount - characterInventory.GetHeldAmount(entry.ResourceData.Id);
                     shoppingList.Indicator.UpdateResourceAmount(entry.ResourceData, gatheredAmount);
                 }
 

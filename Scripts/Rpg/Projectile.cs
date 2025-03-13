@@ -11,7 +11,8 @@ namespace Kuantech.Rpg
 {
     public class Projectile : MonoBehaviour
     {
-        [Header("Properties")]
+        [Header("Properties")] 
+        public string ProjectileId;
         public float Speed;
         public float Range;
         [SerializeField] protected float RiseHeight;
@@ -277,7 +278,7 @@ namespace Kuantech.Rpg
         {
             foreach (var attachment in Attachments)
             {
-                GameManager.Instance.Pool.PoolObject(attachment);
+                PoolManager.PoolObject(attachment);
             }
             Attachments.Clear();
         }
@@ -294,12 +295,12 @@ namespace Kuantech.Rpg
             ClearAttachments();
             if (DespawnDelay <= 0)
             {
-                GameManager.Instance.Pool.PoolObject(gameObject);
+                PoolManager.PoolObject(gameObject);
                 return;
             }
             if (Collider != null) Collider.enabled = false;
             if(Visual != null) Visual.SetActive(false);
-            GameManager.Instance.PoolObjectAfterTime(gameObject, DespawnDelay);
+            PoolManager.PoolObject(gameObject, DespawnDelay);
         }
     }
 }

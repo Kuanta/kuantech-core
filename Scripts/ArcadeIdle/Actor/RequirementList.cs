@@ -101,7 +101,7 @@ namespace Kuantech.ArcadeIdle
                 Debug.LogError($"Resource Inventory for shopping list of {Actor.name} is null");
                 return false;
             }
-            int heldAmount = SourceInventory.GetHeldAmount(data.ResourceId);
+            int heldAmount = SourceInventory.GetHeldAmount(data.Id);
             return heldAmount >= RequiredResources[data].RequiredAmount && RequiredResources[data].RequiredAmount > 0; //If required amount is <0, can never be fully gathered
         }
 

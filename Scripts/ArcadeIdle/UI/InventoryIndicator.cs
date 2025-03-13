@@ -6,20 +6,20 @@ using UnityEngine.UI;
 namespace Kuantech.ArcadeIdle
 {
     public class InventoryIndicator : MonoBehaviour {
-        [SerializeField] private ResourceData ResourceToShow;
+        [SerializeField] private ResourceDataReference ResourceToShow;
         [SerializeField] private ResourceInventory SourceInventory;
         [SerializeField] private Image ResourceIcon;
         [SerializeField] private TMP_Text Text;
         [SerializeField] private bool ShowMaxValue;
 
-        private void Start()
+        private void Initialize()
         {
             SourceInventory.OnResourceAdded += OnResourceInventoryUpdated;
             SourceInventory.OnResourceRemoved += OnResourceInventoryUpdated;
             SourceInventory.InventoryLoaded +=  UpdateIndicator;
             UpdateIndicator();
-            if (ResourceIcon == null || ResourceToShow.ResourceIcon == null) return;
-            ResourceIcon.sprite = ResourceToShow.ResourceIcon;
+            if (ResourceIcon == null ) return;
+            ResourceIcon.sprite = ResourceToShow.GetResourceIcon();
         }
         private void OnResourceInventoryUpdated((ResourceData, int) args)
         {

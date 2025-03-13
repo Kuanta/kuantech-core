@@ -55,7 +55,7 @@ namespace Kuantech.UI
             if (_timer > LifeTime)
             {
                 _active = false;
-                if(UsePool) GameManager.Instance.Pool.PoolObject(gameObject);
+                if(UsePool) PoolManager.PoolObject(gameObject);
                 else Destroy(gameObject);
                 return;
             }

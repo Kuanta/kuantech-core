@@ -20,8 +20,8 @@ namespace Kuantech.ArcadeIdle
     public class ResourceInventory : ActorModule
     {
         [Header("Inventory")]
-        public List<ResourceData> AcceptedResources;
-        public List<ResourceData> RejectedResources;
+        public List<ResourceDataReference> AcceptedResources;
+        public List<ResourceDataReference> RejectedResources;
         public ResourceDisplayer ResourceDisplayer;
         public int InventoryCapacity = 2;
         public Dictionary<string, int> HeldResources = new Dictionary<string, int>();
@@ -105,7 +105,7 @@ namespace Kuantech.ArcadeIdle
                 return GetCarriedResourcesCount() < InventoryCapacity && InventoryCapacity > 0 || InventoryCapacity <= 0;
             }
             if (AcceptedResources != null && AcceptedResources.Count > 0 &&
-                !ResourceAccepted(resource.ResourceId)) return false;
+                !ResourceAccepted(resource.Id)) return false;
 
             //If resource isn't a currency and the inventory is full, can' add
             if (IsFull() && !resource.IsCurrency()) return false;
@@ -124,7 +124,7 @@ namespace Kuantech.ArcadeIdle
                 Debug.Log("There is a big issue");
                 return false;
             }
-            return HeldResources.ContainsKey(resource.ResourceId) && GetAvailableAmount(resource.ResourceId) > 0;
+            return HeldResources.ContainsKey(resource.Id) && GetAvailableAmount(resource.Id) > 0;
         }
 
         public List<ResourceData> GetAvailableResources()
@@ -191,15 +191,15 @@ namespace Kuantech.ArcadeIdle
         public virtual void AddResource(ResourceData resourceData, ResourceVisual visual, bool flying)
         {
             if (HeldResources == null) HeldResources = new Dictionary<string, int>();
-            if (!HeldResources.ContainsKey(resourceData.ResourceId))
+            if (!HeldResources.ContainsKey(resourceData.Id))
             {
-                HeldResources[resourceData.ResourceId] = 0;
+                HeldResources[resourceData.Id] = 0;
             }
 
             if(HeldPendingResources == null) HeldPendingResources = new Dictionary<string, int>();
-            if(!HeldPendingResources.ContainsKey(resourceData.ResourceId))
+            if(!HeldPendingResources.ContainsKey(resourceData.Id))
             {
-                HeldPendingResources[resourceData.ResourceId] = 0;
+                HeldPendingResources[resourceData.Id] = 0;
             }
             DirtyState();
             if(ResourceDisplayer != null) ResourceDisplayer.OnResourceCountChanged();
@@ -221,11 +221,11 @@ namespace Kuantech.ArcadeIdle
             if(result != null && flying)
             {
                 result.ReachedTargetHandler = () =>{
-                    if(!HeldPendingResources.ContainsKey(resourceData.ResourceId) || HeldPendingResources[resourceData.ResourceId] <= 0)
+                    if(!HeldPendingResources.ContainsKey(resourceData.Id) || HeldPendingResources[resourceData.Id] <= 0)
                     {
                         return;
                     }
-                    HeldPendingResources[resourceData.ResourceId] -= 1;
+                    HeldPendingResources[resourceData.Id] -= 1;
                 };
             }else if(result == null && flying)
             {
@@ -235,11 +235,11 @@ namespace Kuantech.ArcadeIdle
 
         private void IncreaseResourceCount(ResourceData resourceData, int amount, bool flying)
         {
-            HeldResources[resourceData.ResourceId] += amount;
+            HeldResources[resourceData.Id] += amount;
             OnResourceAdded?.Invoke((resourceData, amount));
             if(flying)
             {
-                HeldPendingResources[resourceData.ResourceId] += amount;
+                HeldPendingResources[resourceData.Id] += amount;
             }
         }
         /// <summary>

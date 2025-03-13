@@ -91,7 +91,7 @@ namespace Kuantech.Utils
             ReachedTargetHandler = null; //Clear subscribers
             if (UsePool)
             {
-                GameManager.Instance.Pool.PoolObject(gameObject);
+                PoolManager.PoolObject(gameObject);
             }
             else
             {

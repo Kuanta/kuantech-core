@@ -14,7 +14,7 @@ namespace Kuantech.ArcadeIdle
         /// <param name="resourceId">Id of the resource</param>
         /// <param name="flyingResource"></param>
         /// <returns></returns>
-        public static bool TransferResource(ResourceInventory from, ResourceInventory to, ResourceData resource, bool flyingResource)
+        public static bool TransferResource(ResourceInventory from, ResourceInventory to, ResourceData resourceData, bool flyingResource)
         {
             //todo: Implement multiple resource transfering
             if (to == null)
@@ -28,16 +28,16 @@ namespace Kuantech.ArcadeIdle
                 Debug.LogError("From is null");
                 return false;
             }
-            if (!to.CanAcceptResource(resource) || !from.CanGiveResource(resource)) return false;
+            if (!to.CanAcceptResource(resourceData) || !from.CanGiveResource(resourceData)) return false;
             
-            ResourceVisual visual = from.RemoveResource(resource.ResourceId, 1);
+            ResourceVisual visual = from.RemoveResource(resourceData.Id, 1);
             if(flyingResource && visual == null)
             {
-                visual = resource.GetResourceVisual();
+                visual = resourceData.GetResourceVisual();
                 visual.transform.position = from.transform.position;
                 visual.transform.rotation = from.transform.rotation;
             }
-            to.AddResource(resource, visual, flyingResource);
+            to.AddResource(resourceData, visual, flyingResource);
             return true;
         }
         #endregion

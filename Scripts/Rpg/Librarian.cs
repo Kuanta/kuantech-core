@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using Kuantech.Core;
 using Kuantech.Core.Utils;
-using Kuantech.Data;
 using Kuantech.Rpg.Inventory;
 using UnityEngine;
 using YamlDotNet.Serialization;
@@ -21,18 +20,22 @@ namespace Kuantech.Rpg
     }
 
 
-    public class Librarian : Singleton<Librarian>
+    public class Librarian : SubManager
     {
-        [Header("Item Prefabs")]
-        //public List<ItemTemplatePrefab> templatePrefabs = new List<ItemTemplatePrefab>();
-        public GameObject DefaultDropModel;
+        [Header("Prefabs")] 
+        public GameObject MissingPrefab;
         
-        [Header("Projectile Prefabs")]
-        public List<GameObject> projectilePrefabs = new List<GameObject>();
+        public List<ItemTemplate> ItemTemplateas;
+        private Dictionary<string, ItemTemplate> _itemTemplatesDict;
+
+        [Header("Projectile Prefabs")] 
+        public List<Projectile> Projectiles;
+        private Dictionary<string, Projectile> _projectilesDict;
 
         [Header("Skills")] 
         public DamageDealer DamageDealerPrefab;
-
+        
+        [Header("Databases")]
         //public const string itemTemplatesPath = "/itemTemplates.yaml";
         public const string weaponsDataPath = "/weapons.yaml";
         public const string armorsDataPath = "/armors.yaml";
@@ -79,24 +82,42 @@ namespace Kuantech.Rpg
             }
         }
 
-        #region Items
+        #region Queries
+        
         /// <summary>
-        /// Returns item template
+        /// Returns item data from item id
         /// </summary>
         /// <param name="itemId"></param>
         /// <returns></returns>
-        public ItemTemplate GetItemTemplate(string itemId)
+        public static ItemData GetItemData(string itemId)
         {
+            Librarian librarian = GetContext<Librarian>();
             try
             {
-                ItemData itemData = ItemDatas[itemId];
-                string templateId = itemData.ItemTemplateId;
-                return GetItemTemplate(templateId);
+                ItemData itemData = librarian.ItemDatas[itemId];
+                return itemData;
+
             }
             catch (Exception e)
             {
                 return null;
             }
+        }
+        /// <summary>
+        /// Returns item template from item id
+        /// </summary>
+        /// <param name="itemId"></param>
+        /// <returns></returns>
+        public static ItemTemplate GetItemTemplate(string itemId)
+        {
+            ItemData data = GetItemData(itemId);
+            if (data == null) return null;
+            Librarian librarian = GetContext<Librarian>();
+            if(librarian.ItemTemplates.ContainsKey(data.ItemTemplateId))
+            {
+                return librarian.ItemTemplates[data.ItemTemplateId];
+            }
+            return null;
         }
         
         public Item GetItemFromStateData(ItemStateData stateData)
@@ -112,18 +133,40 @@ namespace Kuantech.Rpg
         /// </summary>
         /// <param name="itemId"></param>
         /// <returns></returns>
-        public GameObject GetItemDropPrefab(string itemId)
+        public static GameObject GetItemDropPrefab(string itemId)
         {
+            Librarian librarian = GetContext<Librarian>();
+            if (librarian == null)
+            {
+                return librarian.MissingPrefab;
+            }
             try
             {
-                ItemData itemData = ItemDatas[itemId];
+                ItemData itemData = librarian.ItemDatas[itemId];
+                if (itemData == null)
+                {
+                    return librarian.MissingPrefab;
+                }
                 string templateId = itemData.ItemTemplateId;
                 ItemTemplate template = GetItemTemplate(templateId);
-                return template.ItemVisualPrefab.gameObject;
+                if (template == null)
+                {
+                    return librarian.MissingPrefab;
+                }
+                if (template.ItemDropPrefab != null)
+                {
+                    return template.ItemDropPrefab.gameObject;
+
+                }if (template.ItemVisualPrefab != null)
+                {
+                    return template.ItemVisualPrefab.gameObject;
+                }
+
+                return librarian.MissingPrefab;
             }
             catch (Exception e)
             {
-                return null;
+                return librarian.MissingPrefab;
             }
         }
         
@@ -132,40 +175,28 @@ namespace Kuantech.Rpg
         /// </summary>
         /// <param name="itemId"></param>
         /// <returns></returns>
-        public GameObject GetItemVisualPrefab(string itemId)
+        public static GameObject GetItemVisualPrefab(string itemId)
         {
+            Librarian librarian = GetContext<Librarian>();
             ItemTemplate itemTemplate = GetItemTemplate(itemId);
-            if (itemTemplate == null) return null;
+            if (itemTemplate == null) return librarian.MissingPrefab;
             return itemTemplate.ItemVisualPrefab;
         }
-
         
         /// <summary>
-        /// Returns drop model for given template. If the drop model for the item is null, returns the default drop model
+        /// Returns prefab for projectile
         /// </summary>
-        /// <param name="index"></param>
+        /// <param name="projectileId"></param>
         /// <returns></returns>
-        public GameObject GetItemDropObject(string itemId)
+        public static Projectile GetProjectilePrefab(string projectileId)
         {
-            GameObject prefab = GetItemDropPrefab(itemId);
-            if (prefab == null && DefaultDropModel == null)
-            {
-                return null;
-            }
-            if (prefab == null && DefaultDropModel != null)
-            {
-                return GameManager.Instance.Pool.GetObject(DefaultDropModel);
-            }
-            return GameManager.Instance.Pool.GetObject(prefab);
-        }
-        
-        public GameObject GetProjectilePrefab(int index)
-        {
-            return index == -1 ? null : projectilePrefabs[index];
+            Librarian ctx = GetContext<Librarian>();
+            if (ctx == null || !ctx._projectilesDict.ContainsKey(projectileId)) return null;
+            return ctx._projectilesDict[projectileId];
         }
 
 
-        public Sprite GetItemIcon(string itemId)
+        public static Sprite GetItemIcon(string itemId)
         {
             ItemTemplate itemTemplate = GetItemTemplate(itemId);
             if (itemTemplate == null) return null;

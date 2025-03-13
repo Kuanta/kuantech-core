@@ -32,7 +32,7 @@ namespace Kuantech.Core.HyperCasual.Runner
             {
                 ParentCrowd.SetCrowdNeedsUpdate(RequireFormationUpdateOnDespawn);
             }
-            GameManager.Instance.Pool.PoolObject(gameObject);
+            PoolManager.PoolObject(gameObject);
         }
 
         public void Cleanup()

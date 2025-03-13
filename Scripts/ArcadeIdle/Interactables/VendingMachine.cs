@@ -5,10 +5,11 @@ namespace Kuantech.ArcadeIdle
     public class VendingMachine : VenueInteractable
     {
         [Header("Vending Resource")]
-        [SerializeField] private ResourceData VendingResource;
+        [SerializeField] private ResourceDataReference VendingResource;
         [SerializeField] private ResourceInventory SourceInventory;
+        
         [Header("Currency")]
-        [SerializeField] private ResourceData OutputResource;
+        [SerializeField] private ResourceDataReference OutputResource;
         [SerializeField] private ResourceInventory OutputInventory;
 
         public override bool CanBeInteractedWith(ArcadeIdleCharacter character)
@@ -27,10 +28,10 @@ namespace Kuantech.ArcadeIdle
             }
 
             //Send to player
-            ArcadeIdleActor.TransferResource(SourceInventory, characterInventory, VendingResource, true);
+            ArcadeIdleActor.TransferResource(SourceInventory, characterInventory, VendingResource.GetResourceData(), true);
             
             //Add money
-            OutputInventory.AddResource(OutputResource, null, false);
+            OutputInventory.AddResource(OutputResource.GetResourceData(), null, false);
 
             character.EndInteraction();
         }

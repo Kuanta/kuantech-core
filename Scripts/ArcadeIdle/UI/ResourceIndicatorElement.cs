@@ -13,7 +13,7 @@ namespace Kuantech.ArcadeIdle.UI
         public void SetResource(ResourceData resourceData)
         {
             _resourceData = resourceData;
-            ResourceIcon.sprite = resourceData.ResourceIcon;
+            ResourceIcon.sprite = resourceData.GetResourceIcon();
         }
 
         public void SetAmount(int amount)

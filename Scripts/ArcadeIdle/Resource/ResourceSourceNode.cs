@@ -8,7 +8,7 @@ namespace Kuantech.ArcadeIdle
     public class ResourceSourceNode : ActorModule
     {
         [SerializeField] private ResourceInventory SourceInventory;
-        [SerializeField] private ResourceData SuppliedResource;
+        [SerializeField] private ResourceDataReference SuppliedResource;
 
         [Header("Resource Visual")]
         [SerializeField] private float ThrowRadius = 2.0f;

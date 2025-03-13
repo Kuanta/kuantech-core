@@ -211,7 +211,7 @@ namespace Kuantech.ArcadeIdle
 
             //todo: Search for generator with highest amount of elements
             generators = generators.OrderByDescending(generator => 
-                generator.OutputInventory.GetAvailableAmount(_resourceData.ResourceId)
+                generator.OutputInventory.GetAvailableAmount(_resourceData.Id)
             ).ToList();
 
             _targetGenerator = generators[0];
@@ -240,7 +240,7 @@ namespace Kuantech.ArcadeIdle
             if (generators == null || generators.Count == 0) return;
 
             generators = generators.OrderBy(generator =>
-                    generator.InputInventory.GetAvailableAmount(_resourceData.ResourceId)
+                    generator.InputInventory.GetAvailableAmount(_resourceData.Id)
                 ).ToList();
 
             //todo: Search for generator with highest amount of elements
@@ -373,7 +373,7 @@ namespace Kuantech.ArcadeIdle
 
             reqList.EmptyList();
    
-            foreach (var resource in sinkerToFill.AcceptedResources)
+            foreach (var resource in sinkerToFill.GetAcceptedResources())
             {
                 reqList.AddToShoppingList(resource, -1);
             }
@@ -388,13 +388,14 @@ namespace Kuantech.ArcadeIdle
         {
             if (!sinker.CanBeInteractedWith(OwnerNpc)) return false;
             //Filter out generators that doesn't require any input ingredient
-            bool requiresInput = sinker.TargetInventory.CanAcceptResource(null) && sinker.AcceptedResources != null && sinker.AcceptedResources.Count > 0;
+            List<ResourceData> acceptedResources = sinker.GetAcceptedResources();
+            bool requiresInput = sinker.TargetInventory.CanAcceptResource(null) && acceptedResources != null && acceptedResources.Count > 0;
             if (!requiresInput) return false;
 
             //Check for available dispensers
             ArcadeIdleVenue venue = sinker.GetParentActor().ParentZone.ParentVenue;
             bool hasAvailableDispenser = false;
-            foreach (var resource in sinker.AcceptedResources)
+            foreach (var resource in acceptedResources)
             {
                 HashSet<ResourceDispenser> dispensers = venue.GetDispensersByResource(resource);
                 if (dispensers.IsNullOrEmpty()) continue;
@@ -493,7 +494,7 @@ namespace Kuantech.ArcadeIdle
             {
                 ResourceData data = ArcadeIdleManager.GetResourceData(pair.Key);
                 if(pair.Value <= 0) continue; //Don't accept resources with 0 values
-                if(!sinker.AcceptedResources.IsNullOrEmpty() && sinker.AcceptedResources.Contains(data)) return true; 
+                if (sinker.ResourceFilter.ResourceAllowed(data)) return true;
             }
             return false;
         }

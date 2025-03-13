@@ -1,17 +1,27 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Kuantech.ArcadeIdle
 {
     public class ResourceSinker : VenueInteractable
     {
+        [Header("Filter")]
+        public ResourceFilter ResourceFilter;
+
         [Header("Properties")] 
         public ResourceInventory TargetInventory;
-        public List<ResourceData> AcceptedResources;
+
         [SerializeField] private ArcadeIdleTriggerZone TriggerZone;
         public float SinkRate = 0.1f;
         private float _lastSinkTime = 0.0f;
 
+        public override void Initialize()
+        {
+            base.Initialize();
+            ResourceFilter.Initialize();
+        }
+        
         protected override void Update()
         {
             if (!Initialized) return;
@@ -38,7 +48,7 @@ namespace Kuantech.ArcadeIdle
             ResourceInventory actorInventory = character.GetModule<ResourceInventory>();
             if (Time.time - _lastSinkTime < SinkRate || actorInventory == null) return;
             ResourceData resourceToSend = null;
-            foreach (var accepted in AcceptedResources)
+            foreach (var accepted in ResourceFilter.AllowedResources)
             {
                 if (actorInventory.CanGiveResource(accepted))
                 {
@@ -60,6 +70,10 @@ namespace Kuantech.ArcadeIdle
             if (result) _lastSinkTime = Time.time;
         }
 
+        public List<ResourceData> GetAcceptedResources()
+        {
+            return ResourceFilter.AllowedResources.ToList();
+        }
         public bool CanSinkResource(ResourceData resourceData)
         {
             return TargetInventory.CanAcceptResource(resourceData);

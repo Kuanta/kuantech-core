@@ -1,29 +1,35 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.ArcadeIdle
 {
-    public struct DispensedResourceInventoryPair
-    {
-        public ResourceData Resource;
-        public ResourceInventory SourceInventory;
-    }
+
 
     public class ResourceDispenser : VenueInteractable
     {
         [Header("Properties")] 
-        public List<DispensedResourceInventoryPair> ResourceToInventoryList;
-        private Dictionary<ResourceData, ResourceInventory> _resourceToInventoryMap = new Dictionary<ResourceData, ResourceInventory>();
         public ResourceInventory SourceInventory;
         
         [Tooltip("Resource to dispence. If null, dispenser will try to get an available resource")]
-        public List<ResourceData> DispensedResources;
+        public ResourceFilter ResourceFilter;
 
+        [NonSerialized] public List<ResourceData> DispensedResources;
+        
         [SerializeField] private ArcadeIdleTriggerZone TriggerZone;
 
         public float DispenseRate = 0.1f;
         private float _lastDispensedTime = 0.0f;
 
+        public override void Initialize()
+        {
+            base.Initialize();
+            ResourceFilter.Initialize();
+            DispensedResources = ResourceFilter.AllowedResources.ToList();
+        }
+        
         protected override void Update()
         {
             if(!Initialized) return;
@@ -60,11 +66,12 @@ namespace Kuantech.ArcadeIdle
 
         private List<ResourceData> GetAvailableResourcesToDispense(ArcadeIdleCharacter character)
         {
-            List<ResourceData> availableResources;
-            if(DispensedResources == null || DispensedResources.Count == 0)
+            List<ResourceData> availableResources = new List<ResourceData>();
+            if(DispensedResources.IsNullOrEmpty())
             {
                 availableResources = SourceInventory.GetAvailableResources();
-            }else{
+            }else
+            {
                 availableResources = DispensedResources;
             }
 
@@ -87,9 +94,10 @@ namespace Kuantech.ArcadeIdle
             return availableResources;
         }
 
+  
         public bool CanDispenseResource(ResourceData resourceData)
         {
-            return DispensedResources.Contains(resourceData) && SourceInventory.CanGiveResource(resourceData);
+            return ResourceFilter.ResourceAllowed(resourceData) && SourceInventory.CanGiveResource(resourceData);
         }
     }
 }

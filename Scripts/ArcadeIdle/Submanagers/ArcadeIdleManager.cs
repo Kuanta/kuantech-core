@@ -15,7 +15,6 @@ namespace Kuantech.ArcadeIdle
         public CurrencyData NpcHireCurrency;
 
         [Header("Resources")]
-        [SerializeField] private List<ResourceData> ResourcesList;
         [SerializeField] private ResourceShop ResourceShop;
         private Dictionary<string, ResourceData> _idToResourceData;
 
@@ -40,10 +39,13 @@ namespace Kuantech.ArcadeIdle
             }
             //Resources
             _idToResourceData = new Dictionary<string, ResourceData>();
-            foreach(var resource in ResourcesList)
-            {
-                _idToResourceData[resource.ResourceId] = resource;
-            }
+            
+            //todo: Read resource datas from db
+            
+            // foreach(var resource in ResourcesList)
+            // {
+            //     _idToResourceData[resource.ResourceId] = resource;
+            // }
 
             if (ResourceShop != null)
             {

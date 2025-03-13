@@ -9,7 +9,6 @@ namespace Kuantech.Core
 {
     public class GameManager : Singleton<GameManager>
     {
-        public PrefabPool Pool;
         public bool GameIsPaused = false;
         protected bool SubManagersInitialized = false;
 
@@ -22,7 +21,6 @@ namespace Kuantech.Core
 
         protected virtual void Awake()
         {
-            Pool = new PrefabPool(transform, 1000);
             DontDestroyOnLoad(gameObject);
             if (LoadingScreen != null)
             {
@@ -66,7 +64,6 @@ namespace Kuantech.Core
         }
 
         #endregion
-
         
         #region SubManagers
 
@@ -124,32 +121,6 @@ namespace Kuantech.Core
         }
         #endregion
         
-        #region pool
-
-        public static GameObject GetObjectFromPool(GameObject prefab)
-        {
-            return GameManager.Instance.Pool.GetObject(prefab);
-        }
-        public static void PoolObject(GameObject objectToPool, float delay=0)
-        {
-            GameManager.Instance.PoolObjectAfterTime(objectToPool, delay);
-        }
-        public IEnumerator PoolObjectAfterTime(GameObject objToPool, float delay, UnityAction handler = null)
-        {
-            IEnumerator coroutine = PoolRoutine(objToPool, delay, handler);
-            StartCoroutine(coroutine);
-            return coroutine;
-        }
-
-        private IEnumerator PoolRoutine(GameObject objToPool, float delay, UnityAction handler)
-        {
-            yield return new WaitForSeconds(delay);
-            Pool.PoolObject(objToPool);
-            handler?.Invoke();
-        }
-
-        #endregion
-
         #region SceneManagement
         public void ChangeScene(string sceneName)
         {
