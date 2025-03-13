@@ -18,8 +18,9 @@ namespace Kuantech.Puzzle
                 
         [Header("Tutorial")]
         public int TutorialIndex = -1;
-        
-        [Header("UI")]
+
+        [Header("UI")] 
+        public bool HideHUD = false;
         public PuzzleLevelUI LevelUI;
         
         [Header("Screen Size Adjuster")]
@@ -52,6 +53,10 @@ namespace Kuantech.Puzzle
             CreateWinConditionTracker();
             LevelUI = PuzzleUIManager.GetLevelUI(); 
             if(LevelUI != null) LevelUI.OnLevelSetup(this);
+            
+            //Toggle HUD (Useful for CPI levels
+            LevelUI.ToggleHUD(!HideHUD);
+            
             ResetUI();
             GetStateModel()?.SetCurrentLevel(this);
             base.SetupLevel();
@@ -131,7 +136,7 @@ namespace Kuantech.Puzzle
         
         public virtual void EarnScore(string scoreKey, int score)
         {
-            if(WinConditionTracker != null) WinConditionTracker.AddCollectedAmount(scoreKey, score);
+            if(WinConditionTracker != null) WinConditionTracker.AddScore(scoreKey, score);
             //CheckWinCondition();
             //Update UI
             LevelUI.SetScore(scoreKey, WinConditionTracker);
@@ -189,6 +194,11 @@ namespace Kuantech.Puzzle
         public void OnStagesCompleted()
         {
             CompleteLevel();
+        }
+
+        public void AddScore(string key, int score)
+        {
+            WinConditionTracker.AddScore(key, score);
         }
         #endregion
         

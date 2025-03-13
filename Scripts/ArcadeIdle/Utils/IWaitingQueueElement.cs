@@ -8,7 +8,7 @@ namespace Kuantech.ArcadeIdle
         public void GoToPosition(WorldPoint worldPoint);
         public void WarpToPosition(WorldPoint worldPoint);
         public float GetSize();
-        
+        public void DespawnQueueElement();
         #region Spline Waiting Queue
         public void SetSpline(BSpline spline){}
 
@@ -18,7 +18,9 @@ namespace Kuantech.ArcadeIdle
         }
 
         public void GoToSplineDistance(float distance)
-        {}
+        {
+            
+        }
         #endregion
     }
 }

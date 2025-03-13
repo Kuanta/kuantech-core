@@ -35,7 +35,7 @@ namespace Kuantech.Puzzle.UI
 
         public void OnStageCompleted()
         {
-            StagesPanel.OnStageCompleted(); //Will play necessary anims
+            if(StagesPanel != null) StagesPanel.OnStageCompleted(); //Will play necessary anims
 
         }
         public void OnNewStage(int newStageIndex)
@@ -86,7 +86,7 @@ namespace Kuantech.Puzzle.UI
             {
                 if (pair.Value.TargetAmount <= 0) continue;
                 string targetKey = pair.Key;
-                SetWinIndicatorElement(targetKey, pair.Value.ShowRemaining);
+                WinConditionIndicatorElement element = SetWinIndicatorElement(pair.Value);
             }
 
             _currentlyShownStage = _tracker.GetCurrentStageIndex();
@@ -94,17 +94,20 @@ namespace Kuantech.Puzzle.UI
             if(PanelSizer != null) PanelSizer.SetHorizontalElementCount(currentStage.Targets.Count);
         }
 
-        public virtual WinConditionIndicatorElement SetWinIndicatorElement(string key, bool showRemaining)
+        public virtual WinConditionIndicatorElement SetWinIndicatorElement(PuzzleLevelStage.WinConditionEntry entry)
         {
             WinConditionIndicatorElement element = Instantiate(EntryElementPrefab);
-            IndicatorElements[key] = element;
-            element.ShowRemaining = showRemaining;
-            element.SetIcon(GetIconFromKey(key));
-            element.SetScore(_tracker.GetCollectedAmount(key), _tracker.GetRemainingAmount(key));
+            IndicatorElements[entry.Key] = element;
+            element.ShowRemaining = entry.ShowRemaining;
+            element.Key = entry.Key;
+            element.SetIcon(GetIconFromKey(entry.Key));
+            element.SetScore(_tracker.GetCollectedAmount(entry.Key), _tracker.GetRemainingAmount(entry.Key));
             element.transform.SetParent(EntriesParent.transform);
             element.transform.localPosition = Vector3.zero;
             element.transform.localRotation = Quaternion.identity;
             element.transform.localScale = Vector3.one;
+            element.UserData = entry.UserData;
+            element.Initialize();
             return element;
         }
         
@@ -114,7 +117,7 @@ namespace Kuantech.Puzzle.UI
         /// <param name="stageIndex"></param>
         public virtual void SetCurrentStageIndex(int stageIndex)
         {
-            StagesPanel.SetStage(stageIndex);
+            if(StagesPanel != null) StagesPanel.SetStage(stageIndex);
         }
         
         /// <summary>
@@ -123,7 +126,7 @@ namespace Kuantech.Puzzle.UI
         /// <param name="stageCount"></param>
         public virtual void SetStageCount(int stageCount)
         {
-            StagesPanel.SetStageCount(stageCount);
+            if(StagesPanel != null)StagesPanel.SetStageCount(stageCount);
         }
         
         public void SetScore(string key, int currentAmount, int remainingAmount)
@@ -134,6 +137,7 @@ namespace Kuantech.Puzzle.UI
         
         private ColoredSpriteAsset GetIconFromKey(string key)
         {
+            if (Sprites == null) return null;
             foreach (var spriteEntry in Sprites)
             {
                 if (spriteEntry.Key == key) return spriteEntry.Sprite;

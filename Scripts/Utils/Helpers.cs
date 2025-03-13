@@ -82,6 +82,11 @@ namespace Kuantech.Utils
             return list[index];
         }
         
+        public static bool CheckProbability(float probability)
+        {
+            return Random.Range(0f, 1f) <= probability;
+        }
+        
         /// <summary>
         /// Removes an item from a queue.
         /// </summary>
@@ -213,6 +218,12 @@ namespace Kuantech.Utils
 
         public static bool IsNullOrEmpty<T>(this IEnumerable<T> enumerable) => enumerable == null || !enumerable.Any();
 
+        public static bool IsValidIndex<T>(this List<T> list, int index)
+        {
+            if (list == null) return false;
+            if (list.Count > index) return true;
+            return false;
+        }
         #endregion
         
         public static Vector2 Get2D(this Vector3 vector3)

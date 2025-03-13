@@ -12,6 +12,7 @@ namespace Kuantech.Puzzle
             public string Key;
             public int TargetAmount;
             public bool ShowRemaining; //If set to true, shows the remainin amount in UI
+            public object UserData;
         }
     
         public PuzzleLevelStage(List<PuzzleLevelStage.WinConditionEntry> conditions)
@@ -84,7 +85,7 @@ namespace Kuantech.Puzzle
             CollectedAmounts[key] = amount;
         }
         
-        public void AddCollectedAmount(string key, int amount)
+        public void AddScore(string key, int amount)
         {
             int existingAmount = GetCollectedAmount(key);
             SetCollectedAmount(key, existingAmount+amount);

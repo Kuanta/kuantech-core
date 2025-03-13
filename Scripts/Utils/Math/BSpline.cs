@@ -6,15 +6,23 @@ namespace Kuantech.Utils.Math
     public class BSpline
     {
         public List<Vector3> SplinePoints;
+        public bool Looping = false;
         
         private float[] _arcLengths = null;
         private float[] _normalizedArcLengths = null;
         public int RotationLookAhead = 5;
         public bool InvertDirection = false;
+        private int _basePointCount;
         public void SetSplinePoints(List<Vector3> controlPoints, int SplineDegree, int SegmentPerSpline)
         {
-            SplinePoints = new List<Vector3>();
-            SplinePoints = BSpline.GenerateNURBSPath(controlPoints, SplineDegree, null, controlPoints.Count*SegmentPerSpline);
+            List<Vector3> extendedControlPoints = new List<Vector3>(controlPoints);
+            _basePointCount = controlPoints.Count * SegmentPerSpline; 
+            if (Looping)
+            {
+                extendedControlPoints.Add(controlPoints[0]);
+            }
+    
+            SplinePoints = BSpline.GenerateNURBSPath(extendedControlPoints, SplineDegree, null, extendedControlPoints.Count * SegmentPerSpline);
             ComputeArcLengths();
         }
 
@@ -42,10 +50,37 @@ namespace Kuantech.Utils.Math
         }
 
         #region Queries
+        
+        /// <summary>
+        /// Clamps the given distance 
+        /// </summary>
+        /// <param name="distance"></param>
+        /// <returns></returns>
+        public float ClampDistance(float distance)
+        {
+            float totalDistance = GetTotalDistance();
 
+            if (Looping)
+            {
+               
+                distance = distance % totalDistance;
+                if (distance < 0)
+                    distance += totalDistance;
+                return distance;
+            }
+            else
+            {
+                return Mathf.Clamp(distance, 0, totalDistance);
+            }
+        }
+        
         public float GetDistanceAtT(float t)
         {
-            return GetTotalDistance() * t;
+            float totalDistance = GetTotalDistance();
+            // Eğer looping ise, t'yi mod 1 yaparak 0-1 aralığına çekiyoruz.
+            if (Looping)
+                t = t % 1f;
+            return totalDistance * t;
         }
 
         public WorldPoint GetPointAtT(float t)
@@ -84,51 +119,56 @@ namespace Kuantech.Utils.Math
             };
         }
 
-        public float GetTAtWorldPoint(Vector3 worldPosition)
+       public float GetTAtWorldPoint(Vector3 worldPosition)
         {
             if (SplinePoints == null || SplinePoints.Count < 2)
             {
                 Debug.LogWarning("Spline oluşturulmadı veya geçersiz!");
                 return 0f;
             }
-
-            // Binary Search ile en yakın segmenti bul
-            int left = 0, right = SplinePoints.Count - 1;
-            int bestIndex = 0;
+            
+            // Tüm segmentlerde (looping durumunda wrap-around dahil) arama yapıyoruz.
+            int segmentCount = SplinePoints.Count;
+            int candidateMinIndex = 0;
+            int candidateMaxIndex = 1;
+            float candidateSegmentT = 0f;
             float minDistance = float.MaxValue;
 
-            while (left < right - 1)
+            // Döngü, her segmenti kontrol eder. Eğer looping ise son segment (son ve ilk) de kontrol edilir.
+            for (int i = 0; i < segmentCount; i++)
             {
-                int mid = (left + right) / 2;
-                float distanceMid = Vector3.Distance(worldPosition, SplinePoints[mid]);
+                int nextIndex = (i + 1) % segmentCount; // wrap-around için
+                Vector3 p1 = SplinePoints[i];
+                Vector3 p2 = SplinePoints[nextIndex];
+                Vector3 closestPoint = GetClosestPointOnSegment(p1, p2, worldPosition);
+                float distance = Vector3.Distance(worldPosition, closestPoint);
 
-                if (distanceMid < minDistance)
+                if (distance < minDistance)
                 {
-                    minDistance = distanceMid;
-                    bestIndex = mid;
+                    minDistance = distance;
+                    candidateMinIndex = i;
+                    candidateMaxIndex = nextIndex;
+                    float segmentLength = Vector3.Distance(p1, p2);
+                    candidateSegmentT = (segmentLength > 0f) ? Vector3.Distance(p1, closestPoint) / segmentLength : 0f;
                 }
-
-                float distanceLeft = Vector3.Distance(worldPosition, SplinePoints[left]);
-                float distanceRight = Vector3.Distance(worldPosition, SplinePoints[right]);
-
-                if (distanceLeft < distanceRight)
-                    right = mid;
-                else
-                    left = mid;
             }
 
-            // En yakın segmentin iki noktasını belirle
-            int minIndex = bestIndex;
-            int maxIndex = Mathf.Min(bestIndex + 1, SplinePoints.Count - 1);
-
-            // En yakın segment içindeki doğru interpolasyon
-            Vector3 p1 = SplinePoints[minIndex];
-            Vector3 p2 = SplinePoints[maxIndex];
-            Vector3 closestPoint = GetClosestPointOnSegment(p1, p2, worldPosition);
-
-            // "t" değerini interpolasyon ile hesapla
-            float segmentT = (Vector3.Distance(p1, closestPoint) / Vector3.Distance(p1, p2));
-            float globalT = Mathf.Lerp(_normalizedArcLengths[minIndex], _normalizedArcLengths[maxIndex], segmentT);
+            // Global t değeri, _normalizedArcLengths dizisine göre hesaplanıyor.
+            float globalT = 0f;
+            if (!Looping || candidateMinIndex < candidateMaxIndex)
+            {
+                // Normal lineer segment (non-loop veya looping ama segment aralığı içinde)
+                globalT = Mathf.Lerp(_normalizedArcLengths[candidateMinIndex], _normalizedArcLengths[candidateMaxIndex], candidateSegmentT);
+            }
+            else
+            {
+                // Looping durumunda, candidateMinIndex son index (yani son nokta) ve candidateMaxIndex 0 (ilk nokta)
+                // _normalizedArcLengths dizisinde son değer 1'e yakın olmalıdır (veya toplam mesafe olarak)
+                // Bu durumda, arc length aralığını _normalizedArcLengths[last] ile 1 arasında düşünüyoruz.
+                float tSegment = Mathf.Lerp(_normalizedArcLengths[segmentCount - 1], 1f, candidateSegmentT);
+                // 1f değeri, döngüsel spline'da t=0 ile aynı anlamı taşır.
+                globalT = (tSegment >= 1f) ? 0f : tSegment;
+            }
 
             return globalT;
         }

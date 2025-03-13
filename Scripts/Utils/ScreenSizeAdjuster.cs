@@ -1,5 +1,6 @@
 using DG.Tweening;
 using Kuantech.Core.Camera;
+using Kuantech.Utils;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -66,6 +67,14 @@ namespace Kuantech.Core.Utils
         private void CalculateTargetParameters()
         {
             if (CameraRig == null) return;
+            WorldPoint targetPoint = GetTargetPoint();
+            _targetPosition = targetPoint.GetTargetPosition();
+            _targetNormal = targetPoint.GetRotation() * Vector3.forward;
+        }
+
+        public WorldPoint GetTargetPoint()
+        {
+            WorldPoint targetPoint = new WorldPoint();
             // Get the positions of the anchor points
             Vector3 topPosition = TopAnchor.transform.position;
             Vector3 leftPosition = LeftAnchor.transform.position;
@@ -95,11 +104,30 @@ namespace Kuantech.Core.Utils
             GetTargetParameters(leftPosition, rightPosition, GetHorizontalFOV(), GetNearPlaneWidth(), yawAngle, out float horizontalLookPosition, out float horizontalCameraDistane);
 
             float distanceFromLookPoint = Mathf.Max(verticalCameraDistane, horizontalCameraDistane);
+
+            float backOffset = 0f;
+            if (horizontalCameraDistane > verticalCameraDistane)
+            {
+                float nearPlaneAngle = 90 + GetVerticalFOV() * 0.5f;
+                float nearPlaneHalfDistance = GetNearPlaneHeight() * 0.5f;
+                float bottomHalf = GetBottomOffset(horizontalCameraDistane, nearPlaneHalfDistance, nearPlaneAngle, pitchAngle);
+                float bottomDist = (bottomPosition - topPosition).magnitude * 0.5f;
+                if (bottomHalf > bottomDist)
+                {
+                    backOffset = (bottomHalf - bottomDist);
+                }
+            }
+            
             Vector3 bottomLeft = bottomPosition - right * (rightPosition - leftPosition).magnitude * 0.5f;
             Vector3 lookPoint = bottomLeft + right * horizontalLookPosition + forward * verticalLookPosition;
 
-            _targetNormal = -normal;
-            _targetPosition = lookPoint + normal * distanceFromLookPoint;
+            Vector3 planeForward =  bottomPosition - topPosition;
+            planeForward.Normalize();
+            Vector3 targetPosition = lookPoint + normal * distanceFromLookPoint - planeForward * backOffset;
+            
+            targetPoint.Position = targetPosition;
+            targetPoint.Rotation = Quaternion.LookRotation(-normal, Vector3.up);
+            return targetPoint;
         }
         
         private void GetTargetParameters(Vector3 startPlanePoint, Vector3 endPlanePoint, float fov, float nearPlaneSize, float angle, out float cameraLookPosition, out float cameraDistance)
@@ -160,6 +188,28 @@ namespace Kuantech.Core.Utils
         private float GetNearPlaneWidth()
         {
             return GetNearPlaneHeight() * GetAspectRatio();
+        }
+        
+        /// <summary>
+        /// Only when horizontal distance is larger
+        /// </summary>
+        /// <returns></returns>
+        private float GetBottomOffset(float cameraDistance, float nearPlaneHalfDistance, float nearPlaneAngle, float pitch)
+        {
+            float farPlaneInnerAngle = 270.0f - pitch - nearPlaneAngle;
+            float t = Mathf.Sqrt(cameraDistance * cameraDistance + nearPlaneHalfDistance * nearPlaneHalfDistance);
+            float p1 = Mathf.Asin(nearPlaneHalfDistance / t) * Mathf.Rad2Deg;
+            float p2 = pitch - p1;
+            float omega = 180.0f - p2 - farPlaneInnerAngle;
+            float result = Mathf.Sin(omega * Mathf.Deg2Rad) * t / Mathf.Sin(farPlaneInnerAngle * Mathf.Deg2Rad);
+            return result;
+
+
+            // float sinNearPlaneAngle = Mathf.Sin((180.0f - nearPlaneAngle) * Mathf.Deg2Rad);
+            // float sinPitch = Mathf.Sin((nearPlaneAngle - Mathf.Abs(pitch)) * Mathf.Deg2Rad);
+            // float nearPlaneHeight = GetNearPlaneHeight();
+            // float t = cameraDistance * sinPitch / sinNearPlaneAngle;
+            // return t + nearPlaneHeight * 0.5f;
         }
     }
 }

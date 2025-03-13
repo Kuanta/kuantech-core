@@ -18,8 +18,9 @@ namespace Kuantech.Puzzle.UI
         [SerializeField] private ConfirmPanelButton RestartButton;
 
         [SerializeField] private ConfirmPanel RestartConfirmPanel;
-        
+
         [Header("Panels")] 
+        public GameObject HUD;
         public WinConditionIndicatorPanel WinConditionIndicatorPanel;
         public PuzzleCompletePanel CompletePanel;
         public PuzzleFailPanel FailedPanel;
@@ -210,6 +211,25 @@ namespace Kuantech.Puzzle.UI
             TutorialHand.gameObject.SetActive(toggle);
         }
         #endregion
+
+        public virtual void ToggleHUD(bool toggle)
+        {
+            if (HUD != null)
+            {
+                HUD.SetActive(toggle);
+            }
+        }
+
+        public override void Show()
+        {
+            ToggleHUD(true);
+        }
+
+        public override void Close()
+        {
+            ToggleHUD(false);
+        }
+        
         public virtual void Reset()
         {
             if(CompletePanel != null) CompletePanel.Close();

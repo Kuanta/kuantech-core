@@ -10,9 +10,10 @@ Shader "Kuantech/HoleShader"
         Lighting Off
         Pass
         {
-            Blend Zero One
-            ZWrite Off
-           Stencil
+            ZTest LEqual
+            ZWrite On
+            ColorMask 0 
+            Stencil
             {
                 Ref [_StencilID]
                 Comp Always
