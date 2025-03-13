@@ -89,7 +89,8 @@ namespace Kuantech.Core
         
         private void HandleMovement()
         {
-            if (GameManager.Instance.GameIsPaused || !Actor.IsAlive())
+            if (Actor == null) return;
+            if (GameManager.IsGamePaused() || !Actor.IsAlive())
             {
                 Rigidbody.velocity = Vector3.zero;
                 return;

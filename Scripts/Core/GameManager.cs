@@ -46,7 +46,14 @@ namespace Kuantech.Core
         protected virtual async UniTask Initialize()
         {
             await InitializeSubManagers(_subManagers);
+        }
 
+        #region Game Lifecycle
+
+        public static bool IsGamePaused()
+        {
+            if (GameManager.Instance == null) return false;
+            return GameManager.Instance.GameIsPaused;
         }
         public void PauseGame()
         {
@@ -57,6 +64,9 @@ namespace Kuantech.Core
         {
             Time.timeScale = 1f;
         }
+
+        #endregion
+
         
         #region SubManagers
 
