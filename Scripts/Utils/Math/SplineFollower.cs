@@ -53,6 +53,7 @@ namespace Kuantech.Utils.Math
         public void GoToDistance(float distance)
         {
             CurrentFollowMethod = FollowMethod.FollowWithDistance;
+            StopAtReachindTarget = true;
             _targetDistance = distance;
             Moving = true;
             Paused = false;

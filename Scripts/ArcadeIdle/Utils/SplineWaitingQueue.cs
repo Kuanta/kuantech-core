@@ -96,6 +96,7 @@ namespace Kuantech.Utils
                     else
                     {
                         splineFollower.SetPositionWithDistance(totalDistance);
+                        splineFollower.Moving = false;
                         // splineFollower.SetPositionWithDistance(initialDistance);
                         // splineFollower.FollowSpeed = initialSpeed;
                         // initialSpeed *= InitialSpeedDecay;
