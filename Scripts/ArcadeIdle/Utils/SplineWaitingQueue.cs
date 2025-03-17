@@ -22,6 +22,7 @@ namespace Kuantech.Utils
         public bool MoveToInitialPoints;
         public override void Initialize()
         {
+            base.Initialize();
             _spline = new BSpline
             {
                 InvertDirection = true
