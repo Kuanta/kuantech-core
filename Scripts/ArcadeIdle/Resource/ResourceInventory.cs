@@ -11,7 +11,7 @@ namespace Kuantech.ArcadeIdle
     public class DefaultInventoryMap : SerializableDictionary<ResourceData, int>{}
 
     [Serializable]
-    public class ResourceInventoryState : ActorModuleState
+    public class ResourceInventorySerializableData : ActorModuleSerializableData
     {
         public Dictionary<string, int> HeldResources = new Dictionary<string, int>();
     }
@@ -50,16 +50,16 @@ namespace Kuantech.ArcadeIdle
             }
 
         } 
-        public override void LoadState(ActorModuleState state)
+        public override void LoadState(ActorModuleSerializableData serializableData)
         {
-            base.LoadState(state);
-            ResourceInventoryState inventoryState = state as ResourceInventoryState;
+            base.LoadState(serializableData);
+            ResourceInventorySerializableData ınventorySerializableData = serializableData as ResourceInventorySerializableData;
             HeldResources = new Dictionary<string, int>();
-            if (inventoryState == null || inventoryState.HeldResources == null)
+            if (ınventorySerializableData == null || ınventorySerializableData.HeldResources == null)
             {
                 return;
             }
-            foreach(var pair in inventoryState.HeldResources)
+            foreach(var pair in ınventorySerializableData.HeldResources)
             {
                 string resourceId = pair.Key;
                 ResourceData data = ArcadeIdleManager.GetResourceData(resourceId);
@@ -80,11 +80,11 @@ namespace Kuantech.ArcadeIdle
             InventoryLoaded?.Invoke();
         }
 
-        protected override ActorModuleState InstantiateState()
+        protected override ActorModuleSerializableData InstantiateState()
         {
-            ResourceInventoryState state = new ResourceInventoryState();
-            state.HeldResources = HeldResources;
-            return state;
+            ResourceInventorySerializableData serializableData = new ResourceInventorySerializableData();
+            serializableData.HeldResources = HeldResources;
+            return serializableData;
         }
 
         /// <summary>

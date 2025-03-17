@@ -29,13 +29,13 @@ namespace Kuantech.ArcadeIdle
                     continue;
                 }
                 
-                ActorState actorState = null;
+                ActorSerializableData actorSerializableData = null;
                 if(venue.CurrentState != null && venue.CurrentState.VenueActorStates.ContainsKey(actor.Id))
                 {   
-                    actorState = venue.CurrentState.VenueActorStates[actor.Id];
+                    actorSerializableData = venue.CurrentState.VenueActorStates[actor.Id];
                 }
 
-                actor.Initialize(actorState);
+                actor.Initialize(actorSerializableData);
             }
 
             foreach (var interactable in VenueActors)

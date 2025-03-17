@@ -72,8 +72,8 @@ namespace Kuantech.ArcadeIdle
         {
             if(StatsModule == null) return;
             base.UpdateStats();
-            if(MovementSpeedAttribute == null) return;
-            MaxSpeed = StatsModule.GetAttributeValue(MovementSpeedAttribute);
+            if(movementSpeedAttributeAsset == null) return;
+            MaxSpeed = StatsModule.GetAttributeValue(movementSpeedAttributeAsset);
         }
 
         public void CalculateRemainingDistanceAndRotation()
@@ -98,10 +98,10 @@ namespace Kuantech.ArcadeIdle
         {
             return _currentWorldPoint.Target != null ? _currentWorldPoint.Target.rotation : _currentWorldPoint.Rotation;
         }
-        public void Spawn(ArcadeIdleVenue venue, WorldPoint point, ActorState actorState = null)
+        public void Spawn(ArcadeIdleVenue venue, WorldPoint point, ActorSerializableData actorSerializableData = null)
         {
             CurrentVenue = venue;
-            Initialize(actorState); //Initialize the actor
+            Initialize(actorSerializableData); //Initialize the actor
             BtAgent = GetModule<BTAgent>();
             if(BtAgent == null) return;
             BtAgent.RegisterVariable("Owner", this); //Register the actor

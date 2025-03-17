@@ -1,4 +1,5 @@
 ﻿using System;
+using Kuantech.Core.Combat;
 using Kuantech.Rpg;
 using UnityEngine;
 
@@ -7,16 +8,16 @@ namespace Kuantech.Core.Utils
     public class DamageDealer : MonoBehaviour
     {
         public SphereCollider SphereCollider;
-        public EventHandler<RpgActor> DamageEvent;
-        private float _damage;
+        public EventHandler<Actor> DamageEvent;
+        private DamageInfo _damage;
         private float _range;
         private float _knockback;
         private float _angle;
-        private RpgCombatModule _combatModule;
+        private CombatModule _combatModule;
         public float Frequency;
         private float _lastAttackTime;
         
-        public void Initialize(RpgCombatModule combatModule, float damage, float range, float knockback, float angle)
+        public void Initialize(CombatModule combatModule, DamageInfo damage, float range, float knockback, float angle)
         {
             if (combatModule == null) return;
             _combatModule = combatModule;
@@ -33,16 +34,22 @@ namespace Kuantech.Core.Utils
             if (_combatModule == null) return;
             if (Time.time - _lastAttackTime >= Frequency)
             {
-                RpgCombatModule.DealCircularAreaDamage(_combatModule, _damage, _range, _knockback, 0f, false,false, _angle);
+                Debug.LogError("IMPLEMENT CIRCULAR DAMAGE HERE");
+                //RpgCombatModule.DealCircularAreaDamage(_combatModule, _damage, _range, _knockback, 0f, false,false, _angle);
                 _lastAttackTime = Time.time;
             }
         }
         private void OnTriggerEnter(Collider collider)
         {
             if (_combatModule == null) return;
-            if (collider.TryGetComponent(out RpgActor actor) && actor != _combatModule.Actor)
+            if (collider.TryGetComponent(out Actor actor) && actor != _combatModule.Actor)
             {
-                actor.ReceiveDamage(_combatModule.Actor, _damage);
+                HitInfo hitInfo = new HitInfo()
+                {
+                    Hitter = gameObject,
+                    DamageInfo = _damage,
+                };
+                actor.OnHit(hitInfo);
             }
         }
         

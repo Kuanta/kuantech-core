@@ -25,46 +25,46 @@ namespace Kuantech.Data
             HairBone, EyeBrowBone, BeardBone, //Visuals
             HeadBone, ChestBone, ShoulderBone, ArmsBone, MainHandBone, OffHandBone, BeltBone, LegsBone, FeetBone, BackBone, RootBone, //Equipments
         }
-        public enum EquipmentSlotType
-        {
-            None = -1,
-            Head = 0,
-            MainHand,
-            OffHand,
-            Chest,
-            Legs,
-            Feet,
-            Arms,
-            Shoulders,
-            Back,
-            Ring,
-        }
+        // public enum EquipmentSlotType
+        // {
+        //     None = -1,
+        //     Head = 0,
+        //     MainHand,
+        //     OffHand,
+        //     Chest,
+        //     Legs,
+        //     Feet,
+        //     Arms,
+        //     Shoulders,
+        //     Back,
+        //     Ring,
+        // }
 
-        [Serializable]
-        public enum ItemType
-        {
-            Default = -1,
-            Weapon,
-            Armor,
-            Trinket,
-            Consumable,
-        }
-
-        [Serializable]
-        public enum WeaponType
-        {
-            OneHanded = 0,
-            TwoHanded,
-            Bow,
-            Staff,
-            Shield,
-        }
-        public enum ArmorType
-        {
-            Light = 0,
-            Medium,
-            Heavy
-        }
+        // [Serializable]
+        // public enum ItemType
+        // {
+        //     Default = -1,
+        //     Weapon,
+        //     Armor,
+        //     Trinket,
+        //     Consumable,
+        // }
+        //
+        // [Serializable]
+        // public enum WeaponType
+        // {
+        //     OneHanded = 0,
+        //     TwoHanded,
+        //     Bow,
+        //     Staff,
+        //     Shield,
+        // }
+        // public enum ArmorType
+        // {
+        //     Light = 0,
+        //     Medium,
+        //     Heavy
+        // }
         public enum MovementState
         {
             Walking,

@@ -1,5 +1,6 @@
 ﻿using Kuantech.Core;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Kuantech.ArcadeIdle
 {
@@ -13,8 +14,9 @@ namespace Kuantech.ArcadeIdle
         private Vector3 _movementVector;
         private Vector3 _currentMovementVector = Vector3.zero;
 
+        [FormerlySerializedAs("MovementSpeedAttribute")]
         [Header("Attributes")]
-        [SerializeField] private StatAttribute MovementSpeedAttribute;
+        [SerializeField] private StatAttributeAsset movementSpeedAttributeAsset;
 
 
         private StatsModule _statModule;
@@ -33,7 +35,7 @@ namespace Kuantech.ArcadeIdle
         private void FixedUpdate()
         {
             if (!Initialized || _statModule == null) return;
-            _rigidbody.velocity = _currentMovementVector * _statModule.GetAttributeValue(MovementSpeedAttribute.Id);
+            _rigidbody.velocity = _currentMovementVector * _statModule.GetAttributeValue(movementSpeedAttributeAsset.Id);
             if(_currentMovementVector != Vector3.zero)
             {
                 //Use target movement vector so that the player moves exactly where they aim for
@@ -46,7 +48,7 @@ namespace Kuantech.ArcadeIdle
             if(!Initialized || _statModule == null) return;
             _currentMovementVector =
                 Vector3.Lerp(_currentMovementVector, _movementVector, Time.deltaTime * MoveVectorLerpFactor);
-            if (_arcadeIdleAnimator != null) _arcadeIdleAnimator.SetSpeed(_currentMovementVector.magnitude * _statModule.GetAttributeValue(MovementSpeedAttribute.Id));
+            if (_arcadeIdleAnimator != null) _arcadeIdleAnimator.SetSpeed(_currentMovementVector.magnitude * _statModule.GetAttributeValue(movementSpeedAttributeAsset.Id));
         }
 
         public void SetMovement(Vector2 movement)

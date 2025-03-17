@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using Kuantech.Core;
 using Kuantech.Data;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Kuantech.Rpg.Inventory
 {
-    public class InventoryModule : RpgActorModule
+    public class InventoryModule : ActorModule
     {
         public float MaxEncumbrance = 10f; //Can be a stat value in future
         public Equipment equipment;
@@ -27,19 +28,8 @@ namespace Kuantech.Rpg.Inventory
                 items.Add(null);
             }
             equipment = GetComponent<Equipment>();
-            equipment.Initialize();
+            equipment.Initialize(this);
             _initialized = true;
-        }
-
-        public int GetItemCountByType(Enums.ItemType itemType)
-        {
-            int count = 0;
-            foreach (var item in items)
-            {
-                if (item == null) continue;
-                if (item.Type == itemType) count++;
-            }
-            return count;
         }
         
         /// <summary>
@@ -47,11 +37,11 @@ namespace Kuantech.Rpg.Inventory
         /// </summary>
         /// <param name="itemId"></param>
         /// <returns></returns>
-        public Item GetItemById(int itemId)
+        public Item GetItemById(string itemId)
         {
             for (int i = 0; i < items.Count; i++)
             {
-                if (items[i].data.id == itemId) return items[i];
+                if (items[i].GetId() == itemId) return items[i];
             }
 
             return null;
@@ -61,15 +51,15 @@ namespace Kuantech.Rpg.Inventory
         /// Adds an item to the inventory of the player
         /// </summary>
         /// <param name="item"></param>
-        public void AddItem(Item item, int amount=1, bool equip=false, bool updateActorData = true)
+        public void AddItem(Item item, int amount=1)
         {
             amount = Mathf.Max(1, amount);
-            if (item.stackable)
+            if (item.Data.stackable)
             {
-                Item stackable = GetItemById(item.data.id);
+                Item stackable = GetItemById(item.GetId());
                 if (stackable != null)
                 {
-                    stackable.amount += amount;
+                    stackable.Amount += amount;
                     return;
                 }
             }
@@ -82,12 +72,8 @@ namespace Kuantech.Rpg.Inventory
             items[availableId] = item;
             item.StateData.InventoryId = availableId;
             item.StateData.IsNew = true;
-            if (equip)
-            {
-                EquipItem(item, item.slotType);
-            }
             //Add the item data
-            item.Owner = Actor;
+            item.ParentInvetory = this;
         }
         
           /// <summary>
@@ -98,34 +84,28 @@ namespace Kuantech.Rpg.Inventory
           /// <param name="stateData"></param>
           /// <param name="amount"></param>
           /// <param name="equip"></param>
-        public void AddItem(Item item, ItemStateData stateData, int amount = 1, bool equip = false)
+        public void AddItem(Item item, ItemStateData stateData, int amount = 1)
         {
             //Expand size if necessary
             if (stateData.InventoryId > items.Capacity)
             {
                 while(items.Count < stateData.InventoryId + 1) items.Add(null);
             }
-
             items[stateData.InventoryId] = item;
-            if (stateData.Equipped)
-            {
-                EquipItem(item, item.slotType);
-            }
-
-            item.Owner = Actor;
+            item.ParentInvetory = this;
         }
           
         /// <summary>
         /// Equips an item
         /// </summary>
         /// <param name="item"></param>
-        public void EquipItem(Item item, Enums.EquipmentSlotType slotType, bool updateActorData = true)
+        public void EquipItem(Item item, EquipmentSlotType slotType, bool updateActorData = true)
         {
             if (equipment != null)
             {
                 if (!ContainsItem(item))
                 {
-                    AddItem(item, 1, false, updateActorData);
+                    AddItem(item, 1);
                 }
                 equipment.EquipItem(item, slotType);
                 ItemEquipEvent?.Invoke(this, item);
@@ -163,24 +143,25 @@ namespace Kuantech.Rpg.Inventory
         public void RemoveItem(Item item)
         {
             if (item == null) return;
-            if (item.Owner != Actor) return;
+            if (item.ParentInvetory.Actor != Actor) return;
             RemoveItem(item.StateData.InventoryId);
         }
+        
         public void RemoveItem(int InventoryId, int amount=1, bool updateActorData = true)
         {
             Item itemToRemove = items[InventoryId];
             if (itemToRemove == null) return;
-            if (itemToRemove.stackable)
+            if (itemToRemove.Data.stackable)
             {
-                int newAmount = itemToRemove.amount - amount;
+                int newAmount = itemToRemove.Amount - amount;
                 if (newAmount > 0)
                 {
                     return;
                 }
             }
-            if (equipment.slotTable.ContainsKey(itemToRemove.slotType) && equipment.slotTable[itemToRemove.slotType].item == itemToRemove)
+            if (equipment.slotTable.ContainsKey(itemToRemove.CurrentSlot) && equipment.slotTable[itemToRemove.CurrentSlot].item == itemToRemove)
             {
-                equipment.UnequipItem(equipment.slotTable[itemToRemove.slotType].item);
+                equipment.UnequipItem(itemToRemove);
             }
             items[InventoryId] = null;
         }

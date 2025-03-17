@@ -6,6 +6,7 @@ using Kuantech.HyperCasual;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using System.Collections;
+using UnityEngine.Serialization;
 
 namespace Kuantech.ArcadeIdle
 {
@@ -13,7 +14,7 @@ namespace Kuantech.ArcadeIdle
     public struct UpgradeStatPair
     {
         public UpgradeData UpgradeData;
-        public StatAttribute Attribute;
+        [FormerlySerializedAs("Attribute")] public StatAttributeAsset attributeAsset;
     }
 
     public class ArcadeIdleCharacter : ArcadeIdleActor
@@ -32,15 +33,16 @@ namespace Kuantech.ArcadeIdle
         [NonSerialized] public float LastInteractTime;
         [NonSerialized] public bool StartedInteracting = false;
 
+        [FormerlySerializedAs("MovementSpeedAttribute")]
         [Header("Attributes")]
-        [SerializeField] protected StatAttribute MovementSpeedAttribute;
-        [SerializeField] protected StatAttribute CarryCapacityAttribute;
+        [SerializeField] protected StatAttributeAsset movementSpeedAttributeAsset;
+        [FormerlySerializedAs("CarryCapacityAttribute")] [SerializeField] protected StatAttributeAsset carryCapacityAttributeAsset;
 
         [Header("Upgrades")]
         public List<UpgradeStatPair> UpgradeStatPairs;
-        private Dictionary<UpgradeData, StatAttribute> _upgradesToAttributes;
+        private Dictionary<UpgradeData, StatAttributeAsset> _upgradesToAttributes;
 
-        private ActorAnimationModule _animModule;
+        private ArcadeIdleAnimator _animModule;
         private static readonly int InteractHash = Animator.StringToHash("Interacting");
         private static readonly int InteractIndexHash = Animator.StringToHash("InteractionIndex");
         private static readonly int CarryingHash = Animator.StringToHash("Carrying");
@@ -48,21 +50,21 @@ namespace Kuantech.ArcadeIdle
 
         protected StatsModule StatsModule;
 
-        public override void Initialize(ActorState actorState = null)
+        public override void Initialize(ActorSerializableData actorSerializableData = null)
         {
-            base.Initialize(actorState);
+            base.Initialize(actorSerializableData);
             CharacterInventory = GetModule<ResourceInventory>();
-            _animModule = GetModule<ActorAnimationModule>();
+            _animModule = GetModule<ArcadeIdleAnimator>();
             StatsModule = GetModule<StatsModule>();
 
             UpgradeManager um = UpgradeManager.GetContext<UpgradeManager>();
             if(um == null) return;
-            _upgradesToAttributes = new Dictionary<UpgradeData, StatAttribute>();
+            _upgradesToAttributes = new Dictionary<UpgradeData, StatAttributeAsset>();
             foreach(var pair in UpgradeStatPairs)
             {
                 int upgradeRank = UpgradeManager.GetCurrentUpgradeLevel(pair.UpgradeData.UpgradeId);
-                StatsModule.SetAttributeRank(pair.Attribute.Id,upgradeRank);
-                _upgradesToAttributes[pair.UpgradeData] = pair.Attribute;
+                StatsModule.SetAttributeRank(pair.attributeAsset.Id,upgradeRank);
+                _upgradesToAttributes[pair.UpgradeData] = pair.attributeAsset;
             }
             if(StatsModule != null)
             {
@@ -105,7 +107,7 @@ namespace Kuantech.ArcadeIdle
                 StatsModule.SetAttributeRank(pair.Value.Id,
              UpgradeManager.GetCurrentUpgradeLevel(pair.Key.UpgradeId));
             }
-            if (CharacterInventory != null && CarryCapacityAttribute != null) CharacterInventory.InventoryCapacity = (int)StatsModule.GetAttributeValue(CarryCapacityAttribute);
+            if (CharacterInventory != null && carryCapacityAttributeAsset != null) CharacterInventory.InventoryCapacity = (int)StatsModule.GetAttributeValue(carryCapacityAttributeAsset);
         }
         #endregion
 
@@ -244,7 +246,7 @@ namespace Kuantech.ArcadeIdle
             return new CharacterState()
             {
                 WorkerTag = CharacterTag,
-                ActorState = GetActorState(),
+                actorSerializableData = GetActorState(),
                 PosX = transform.position.x,
                 PosZ = transform.position.z,
                 RotY = transform.rotation.eulerAngles.y,

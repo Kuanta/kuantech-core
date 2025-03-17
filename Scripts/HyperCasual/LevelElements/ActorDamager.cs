@@ -1,4 +1,4 @@
-﻿using Kuantech.Rpg;
+﻿using Kuantech.Core.Combat;
 using UnityEngine;
 
 namespace Kuantech.Core.HyperCasual
@@ -11,24 +11,34 @@ namespace Kuantech.Core.HyperCasual
         [SerializeField] private bool RawDamage = true;
         private void OnTriggerEnter(Collider other)
         {
-            if (!other.TryGetComponent(out RpgActor actor)) return;
-            if (actor.FactionId == FactionId) return;
+            if (!other.TryGetComponent(out IHittable actor)) return;
+            if (!actor.CanBeHit()) return;
             DealDamage(actor);
         }
 
-        protected virtual void DealDamage(RpgActor actor)
+        protected virtual void DealDamage(IHittable hittable)
         {
             float damage = 0;
-            if (PercentageDamage)
+            if (hittable is Actor actor && PercentageDamage)
             {
-                damage = actor.Stats.GetStat(StatTypes.MaxHealth) * Mathf.Clamp01(Damage);
+                HealthcareModule hm = actor.GetModule<HealthcareModule>();
+                if (hm != null)
+                {
+                    float maxHealth = hm.GetMaxHealth();
+                        damage = maxHealth * Mathf.Clamp01(Damage);
+                }
             }
-            else
-            {
-                damage = Damage;
-            }
+            damage = Damage;
 
-            actor.ReceiveDamage(null, damage, RawDamage);
+            hittable.OnHit(new HitInfo()
+            {
+                DamageInfo = new DamageInfo()
+                {
+                    DamageAmount = damage,
+                },
+                Hitter = gameObject,
+                
+            });
         }
     }
 }

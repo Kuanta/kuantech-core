@@ -6,19 +6,14 @@ namespace Kuantech.Rpg.Inventory
 
     public class Armor : Item
     {
-        public float ArmorRating = 1;
-        public float ScalingFactor = 1;
-        public Enums.ArmorType ArmorType;
+        public ArmorData ArmorData;
         public Armor(ArmorData data) : base(data)
         {
-            ArmorRating = data.armorValue;
-            Type = Enums.ItemType.Armor;
-            ScalingFactor = data.scalingFactor;
-            ArmorType = data.armorType;
+            ArmorData = data;
         }
         public float GetArmorRating()
         {
-            return ArmorRating * (1 + StateData.ItemLevel*ScalingFactor);
+            return ArmorData.armorValue * (1 + StateData.ItemLevel*ArmorData.scalingFactor);
         }
     }
 }

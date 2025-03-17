@@ -1,14 +1,19 @@
 ﻿using System;
 using Kuantech.Core;
+using Kuantech.Core.Combat;
 using UnityEngine;
 using UnityEngine.Events;
 
-namespace Kuantech.Rpg
+namespace Kuantech.Core
 {
-    public class AnimatorModule : RpgActorModule
+    /// <summary>
+    /// A common animation module for common actor events
+    /// </summary>
+    public class AnimationModule : ActorModule
     {
-        public Animator Animator;
         public AnimatorOverrideController DefaultAnimationSet;
+        public Animator Animator;
+
         private static readonly int X = Animator.StringToHash("Forward");
         private static readonly int Y = Animator.StringToHash("Right");
 
@@ -17,11 +22,11 @@ namespace Kuantech.Rpg
         private Vector2 _movementParametersScale = Vector2.one;
 
         public float LerpFactor = 10f;
-
     
-        
         //Events
         public UnityEvent OnDamageFrameEvent;
+        
+        //Animation Hashes
         private static readonly int Attack = Animator.StringToHash("Attack");
         private static readonly int Hold = Animator.StringToHash("Hold");
         private static readonly int AttackIndex = Animator.StringToHash("AttackIndex");
@@ -37,21 +42,30 @@ namespace Kuantech.Rpg
         private static readonly int Land = Animator.StringToHash("Land");
         private static readonly int Cast = Animator.StringToHash("Cast");
         private static readonly int CastIndex = Animator.StringToHash("CastIndex");
+        
 
         public override void Initialize()
         {
             base.Initialize();
             ApplyDefaultAnimationSet();
-            (Actor as RpgActor).OnDamageReceived += OnDamageReceive;
+            Actor.OnHitEvent += OnDamageReceive;
         }
         
-        public override void OnModulesInitialized(object sender, EventArgs args)
+        public override void OnModulesInitialized()
         {
-            base.OnModulesInitialized(sender, args);
-            if ((Actor as RpgActor).MovementModule != null)
+            base.OnModulesInitialized();
+            MovementModule mm = Actor.GetModule<MovementModule>();
+            if (mm != null)
             {
-                (Actor as RpgActor).MovementModule.OnJumpEvent += OnJump;
-                (Actor as RpgActor).MovementModule.OnJumpLandEvent += OnLand;
+                mm.OnJumpEvent += OnJump;
+                mm.OnJumpLandEvent += OnLand;
+            }
+            
+            ActorVisualHandler visualHandler = Actor.GetModule<ActorVisualHandler>();
+            if (visualHandler != null)
+            {
+                visualHandler.OnActorVisualSet += OnActorVisualChanged;
+                OnActorVisualChanged(visualHandler.CurrentActorVisual);
             }
         }
         private void Update()
@@ -67,18 +81,14 @@ namespace Kuantech.Rpg
 
         public void ApplyDefaultAnimationSet()
         {
-            if (DefaultAnimationSet == null) return; 
+            if (DefaultAnimationSet == null || Animator == null) return; 
             Animator.runtimeAnimatorController = DefaultAnimationSet;
-            // if (DefaultAnimationSet != null && AnimatorOverrideController != null)
-            // {
-            //     DefaultAnimationSet.ApplyAnimationSet(AnimatorOverrideController);
-            // } 
         }
 
         public void SetMovementParameters(Vector2 movement, bool forced = false)
         {
             movement.Normalize();
-            if ((Actor as RpgActor).MovementModule != null && (Actor as RpgActor).MovementModule.IsDodging())
+            if (Actor.GetModule<MovementModule>() != null && Actor.GetModule<MovementModule>().IsDodging())
             {
                 if (movement.magnitude < 0.01f)
                 {
@@ -189,24 +199,33 @@ namespace Kuantech.Rpg
             Animator.SetTrigger(Cast);
         }
         #endregion
-        
-        public void OnDamageReceive(object sender, float damage)
+
+        #region Events
+        public void OnDamageReceive(HitInfo hitInfo)
         {
             if (Animator == null) return;
             Animator.SetInteger(DamageReceivedIndex, 0);
             Animator.SetTrigger(DamageReceived);
         }
-        public override void OnDeath(object sender, EventArgs empty)
+        public void OnDeath(object sender, EventArgs empty)
         {
             if (Animator == null) return;
             Animator.SetTrigger(Death);
         }
 
-        public override void OnRespawn(object sender, EventArgs empty)
+        public void OnActorVisualChanged(ActorVisual newVisual)
         {
-            Reset();
-            if (Animator == null) return;
-            Animator.Rebind();
+            if (newVisual == null)
+            {
+                //Set Animator to null
+                Animator = null;
+                return;
+            }
+            Animator = newVisual.Animator;
         }
+
+        #endregion
+
+
     }
 }

@@ -1,18 +1,18 @@
 ﻿using System;
+using Kuantech.Core;
 using Kuantech.Core.Combat;
-using Kuantech.Rpg;
 using UnityEngine;
 
-namespace Kuantech.ActionSequencer
+namespace Kuantech.AI.ActionSequencer
 {
     public class AttackAction : SequenceAction
     {
-        [NonSerialized] public RpgCombatModule CombatModule;
+        [NonSerialized] public CombatModule CombatModule;
         public AttackTypes AttackType;
         public string TargetVariableName = "Target";
         public bool AttackWithoutTarget;
 
-        private RpgActor _target;
+        private Actor _target;
 
         public AttackAction(AttackTypes attackType, bool attackWithoutTarget)
         {
@@ -22,7 +22,7 @@ namespace Kuantech.ActionSequencer
         public override void Initialize(GameObject parent)
         {
             base.Initialize(parent);
-            CombatModule = parent.GetComponent<RpgCombatModule>();
+            CombatModule = parent.GetComponent<CombatModule>();
         }
         public override void Execute()
         {
@@ -32,7 +32,6 @@ namespace Kuantech.ActionSequencer
                 IsComplete = true;
                 return;
             }
-            CombatModule.SetAttackType(AttackType);
 
             if (Sequencer == null)
             {
@@ -41,18 +40,18 @@ namespace Kuantech.ActionSequencer
 
             if (Sequencer != null)
             {
-                _target = Sequencer.VariableTable.GetVariable<RpgActor>(TargetVariableName);
+                _target = Sequencer.VariableTable.GetVariable<Actor>(TargetVariableName);
             }
         }
 
         public override void Update(float deltaTime)
         {
-            if (CombatModule.IsAttacking) return;
+            if (CombatModule.IsAttacking()) return;
             
             //Don't check target
             if (AttackWithoutTarget)
             {
-                CombatModule.Attack(true, OnAttackComplete);
+                CombatModule.Attack(CombatModule.Actor.GetActorDirection());
                 return;
             }  
             
@@ -65,7 +64,7 @@ namespace Kuantech.ActionSequencer
             
             if (CombatModule.IsInAttackRange(_target.transform))
             {
-                CombatModule.Attack(true, OnAttackComplete);
+                CombatModule.Attack(CombatModule.Actor.GetActorDirection());
             }
        
         }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Kuantech.Core;
+using Kuantech.Core.Combat;
 using Kuantech.Core.FX;
 using Kuantech.Rpg.Inventory;
 using UnityEngine;
@@ -22,7 +23,7 @@ namespace Kuantech.Rpg
         public float MaxLifetime = 5f;
 
         public bool RawDamage = false;
-        public RpgCombatModule CastBy;
+        public CombatModule CastBy;
         public Weapon ShotFrom = null;
         public bool DestroyOnImpact = true;
         public LayerMask Targets;
@@ -34,11 +35,11 @@ namespace Kuantech.Rpg
         
         public Collider Collider;
         protected bool Despawned = false;
-        public delegate void ImpactOverrideDelegate(Projectile proj, RpgActor target, GameObject gameObjects);
+        public delegate void ImpactOverrideDelegate(Projectile proj, Actor target, GameObject gameObjects);
 
         public ImpactOverrideDelegate ImpactOverride;
         // Behaviour flags
-        public float Damage = 1;
+        public DamageInfo Damage;
         public float splashRadius = 0f; // 0 means no splash
         
         protected float _age = 0f; // Age of the projectile in terms of seconds
@@ -71,7 +72,7 @@ namespace Kuantech.Rpg
         /// <param name="shotFrom">Weapon that this projectile is shot from. If null, damage will be calculated from default attack pattern or projectile properties</param>
         /// <param name="target">Target transform. If set to non-null, proectile will follow the target</param>
         /// <param name="riseHeight">To act as pseudo throwable. Projectile will rise to this height and falls down in a sinudoidal fasion.</param>
-        public virtual void Initialize(RpgCombatModule castBy, Weapon shotFrom, Vector3 shootPosition, Quaternion shootRotation, Transform target = null, float relativeSpeed = 0.0f)
+        public virtual void Initialize(CombatModule castBy, Weapon shotFrom, Vector3 shootPosition, Quaternion shootRotation, Transform target = null, float relativeSpeed = 0.0f)
         {
             //Set pos and rot
                             
@@ -218,10 +219,15 @@ namespace Kuantech.Rpg
             //todo: Apply knockback
             if (CastBy != null && triggeredObject == CastBy.gameObject) return; //Don't trigger for the caster
 
-            RpgActor targetActor = triggeredObject.GetComponent<RpgActor>();
+            Actor targetActor = triggeredObject.GetComponent<Actor>();
             if (targetActor != null && 
-                (targetActor.Health <= 0f || 
-                 (CastBy != null && targetActor.FactionId == CastBy.Actor.FactionId))) return; //Don't attack actor with same faction
+                (!targetActor.IsAlive())) return; //Don't attack actor with same faction
+            
+            //Check factions Ids
+            if (CastBy.Actor is Character casterCharacter && targetActor is Character targetCharacter)
+            {
+                if (casterCharacter.FactionId == targetCharacter.FactionId) return; //Don't damage actor of same faction
+            }
             
             if (ImpactEffect != null)
             {
@@ -255,17 +261,16 @@ namespace Kuantech.Rpg
         }
         protected virtual void Impact(GameObject impacted)
         {
-            RpgActor target = impacted.GetComponent<RpgActor>();
-            
-            RpgCombatModule.KnockbackActor(CastBy, target, transform.forward, Knockback, KnockbackTime);
-
-            if (CastBy == null)
+            Actor target = impacted.GetComponent<Actor>();
+            GameObject hitter = CastBy != null ? CastBy.gameObject : null;
+            if (target != null)
             {
-                if(target != null) target.ReceiveDamage(null, Damage, RawDamage); //Cast from something that is not an Actor
-                return;
+                target.OnHit(new HitInfo()
+                {
+                    DamageInfo = Damage,
+                    Hitter = hitter,
+                });
             }
-            if (target == null || target == CastBy.Actor) return;
-            CastBy.OnProjectileImpact(this, target);
         }
 
         private void ClearAttachments()

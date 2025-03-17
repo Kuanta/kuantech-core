@@ -33,9 +33,9 @@ namespace Kuantech.ArcadeIdle
         [SerializeField] private CurrencyRequirementIndicator ProgressBar;
         [SerializeField] private TMP_Text RemainingCurrencyText;
 
-        public override void Initialize(ActorState actorState)
+        public override void Initialize(ActorSerializableData actorSerializableData)
         {
-            base.Initialize(actorState);
+            base.Initialize(actorSerializableData);
             ProgressBar.SetFill(0f);
             _wallet = GetModule<ActorWallet>();
             _wallet.OnCurrencyAdded += OnCurrencyAdded;
