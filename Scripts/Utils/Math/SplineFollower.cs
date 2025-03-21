@@ -95,13 +95,18 @@ namespace Kuantech.Utils.Math
         }
         #region Follow
 
+        public void StartMove()
+        {
+            StopAtReachindTarget = false;
+            Moving = true;
+        }
+        
         public void SetSpeed(float speed)
         {
             CurrentFollowMethod = FollowMethod.FollowWithDistance;
             FollowSpeed = speed;
-            StopAtReachindTarget = false;
-            Moving = true;
         }
+        
         /// <summary>
         /// Sets a spline and follows it to the end
         /// </summary>

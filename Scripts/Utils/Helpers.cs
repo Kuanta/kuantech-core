@@ -15,6 +15,17 @@ namespace Kuantech.Utils
     public static class Helpers
     {
         private static System.Random _rng = new System.Random();
+        
+        #region Math
+        
+        //Snaps a value to increments
+        public static float SnapToIncrements(float value, float increment)
+        {
+            int divisions = Mathf.FloorToInt(value / increment);
+            float val = divisions * increment;
+            return val + increment * 0.5f;
+        }
+        #endregion
         public static Vector3 ProjectVector(Vector3 vec, Vector3 to)
         {
             Vector3 normalized = to.normalized;
