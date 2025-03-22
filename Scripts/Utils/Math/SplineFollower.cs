@@ -124,6 +124,11 @@ namespace Kuantech.Utils.Math
             _currentDistance = distance;
             SetPositionWithDistance(_currentDistance);
         }
+
+        public float GetCurrentDistance()
+        {
+            return _currentDistance;
+        }
         
         /// <summary>
         /// Sets the current distance with t
