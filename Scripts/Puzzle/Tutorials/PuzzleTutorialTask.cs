@@ -9,8 +9,10 @@ namespace Kuantech.Puzzle.Tutorials
     /// </summary>
     public class PuzzleTutorialTask : GameTask
     {
-        [Header("Tutorial Text")] public string TutorialText;
+        [Header("Tutorial Text")] 
+        public string TutorialText;
 
+        public bool HideTutorialTextOnComplete = true;
         protected PuzzleLevel ParentPuzzleLevel;
 
         public override void SetupTask()
@@ -30,7 +32,7 @@ namespace Kuantech.Puzzle.Tutorials
         public override void EndTask()
         {
             if (ParentPuzzleLevel == null) return;
-            ParentPuzzleLevel.LevelUI.ToggleTutorialText(false);
+            if(HideTutorialTextOnComplete) ParentPuzzleLevel.LevelUI.ToggleTutorialText(false);
             ParentPuzzleLevel.LevelUI.ToggleTutorialHand(false);
             base.EndTask();
         }

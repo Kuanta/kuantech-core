@@ -1,18 +1,20 @@
 using DG.Tweening;
 using Kuantech.Core.Camera;
+using Kuantech.Puzzle;
 using Kuantech.Utils;
 using UnityEngine;
 using UnityEngine.Events;
 
 namespace Kuantech.Core.Utils
 {
-    public class ScreenSizeAdjuster : MonoBehaviour {
+    public class ScreenSizeAdjuster : PuzzleLevelElement {
         [Header("Anchors")]
         public GameObject TopAnchor;
         public GameObject BottomAnchor;
         public GameObject LeftAnchor;
         public GameObject RightAnchor;
         public Vector3 CameraOffset;
+        public float BottomAnchorFactor = 1.0f;
 
         [Header("Angles")] 
         public float PitchAngle;
@@ -27,11 +29,19 @@ namespace Kuantech.Core.Utils
         public KtCamera CameraRig;
 
         //public Camera CameraToFit;
-
+        
         private Vector3 _targetPosition;
         private Vector3 _targetNormal;
+        
+        public override void OnSetupLevel()
+        {
+            base.OnSetupLevel();
+            CameraRig = CameraManager.GetKtCamera();
+        }
+        
         protected virtual void Update()
         {
+            if (CameraRig == null) return;
             if(!FitOnUpdate) return;
             CalculateTargetParameters();
             Fit();
@@ -106,6 +116,7 @@ namespace Kuantech.Core.Utils
             float distanceFromLookPoint = Mathf.Max(verticalCameraDistane, horizontalCameraDistane);
 
             float backOffset = 0f;
+            //If screen is thinner...
             if (horizontalCameraDistane > verticalCameraDistane)
             {
                 float nearPlaneAngle = 90 + GetVerticalFOV() * 0.5f;
@@ -123,7 +134,7 @@ namespace Kuantech.Core.Utils
 
             Vector3 planeForward =  bottomPosition - topPosition;
             planeForward.Normalize();
-            Vector3 targetPosition = lookPoint + normal * distanceFromLookPoint - planeForward * backOffset;
+            Vector3 targetPosition = lookPoint + normal * distanceFromLookPoint - planeForward * backOffset * BottomAnchorFactor;
             
             targetPoint.Position = targetPosition;
             targetPoint.Rotation = Quaternion.LookRotation(-normal, Vector3.up);

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Puzzle
@@ -38,6 +39,8 @@ namespace Kuantech.Puzzle
 
         public virtual PuzzleSubLevel GetTutorialSubLevel(int tutorialIndex)
         {
+            if (tutorialIndex < 0) return null;
+            if (!TutorialSubLevels.IsValidIndex(tutorialIndex)) return null;
             return TutorialSubLevels[tutorialIndex];
         }
     }

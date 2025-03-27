@@ -8,6 +8,7 @@ namespace Kuantech.Puzzle
     [Serializable]
     public class LevelDesignData
     {
+        
         public virtual bool CreateFromDesignAsset(LevelDesignAsset levelDesignAsset)
         {
             throw new NotImplementedException();

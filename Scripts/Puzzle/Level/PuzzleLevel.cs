@@ -23,9 +23,6 @@ namespace Kuantech.Puzzle
         public bool HideHUD = false;
         public PuzzleLevelUI LevelUI;
         
-        [Header("Screen Size Adjuster")]
-        public ScreenSizeAdjuster ScreenSizeAdjuster;
-        
         [NonSerialized] public PuzzleLevelState CurrentPuzzleLevelState;
 
         [Header("Win Condition Tracker")] 
