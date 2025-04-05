@@ -65,8 +65,7 @@ namespace Kuantech.Puzzle
             {
                 return DroppedTileHandler(draggableTile, row, col);
             }
-            draggableTile.GridTileGroup.PlaceOnBoard(GridBoard, row, col);
-            Destroy(draggableTile.gameObject);
+            draggableTile.HandleDropToBoard(GridBoard, row, col);
             return true;
         }
 

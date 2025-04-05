@@ -1,27 +1,20 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Numerics;
 using Kuantech.Utils;
 using UnityEngine;
-using UnityEngine.Events;
+using Vector3 = UnityEngine.Vector3;
 
 namespace Kuantech.Puzzle
 {
-    public class GridTileDraggable : Draggable
+    public class GridTileDraggableV2 : Draggable
     {
-        [Header("Spanned Tiles")] public GridTile GridTile;
+        public List<GridTileCoordinate> SpannedTiles;
         [Tooltip("transform.position + Offset gives the anchor position")]
         public Vector3 AnchorOffset = Vector3.zero;
         [Tooltip("If set to true, draggable will try to highlight ")]
-        
-        [Header("Grid Tile Group")]
-        public GridTileGroup GridTileGroup;
-        [Tooltip("If set to true, draggable will try to highlight ")]
         public bool HighlightBoard = false;
 
-        public bool DestroyOnDrop;
-        
         private GridTileCoordinate _lastCoordinate;
-
-        public UnityAction<GridTileDraggable> OnPlacedToBoard;
         
         /// <summary>
         /// Checks if this grid tile draggable can be dropped to the grid board
@@ -31,32 +24,12 @@ namespace Kuantech.Puzzle
         /// <returns></returns>
         public virtual bool CanBeDroppedToSlot(GridBoard board, int row, int col)
         {
-            if (GridTileGroup != null)
-            {
-                return GridTileGroup.CanBePlacedToBoard(board, row, col);
-            }
-            
-            foreach (var coord in GridTile.Coordinates)
+            foreach (var coord in SpannedTiles)
             {
                 if (!board.IsTileValidAndEmpty(coord.Row + row, coord.Column + col)) return false;
             }
 
             return true;
-        }
-        
-        /// <summary>
-        /// Returns the position of the tile at local (0,0). It will be used to place the group on the board
-        /// </summary>
-        /// <param name="board"></param>
-        /// <returns></returns>
-        public virtual Vector3 GetAnchorTilePosition(GridBoard board)
-        {
-            if (GridTileGroup == null)
-            {
-                //No grid tile group
-                return transform.position - AnchorOffset;
-            }
-            return GridTileGroup.GetAnchorTilePosition(board);
         }
         
         public override void Drag(Vector3 cursorPosition)
@@ -66,7 +39,7 @@ namespace Kuantech.Puzzle
             if (!HighlightBoard) return;
             if (DropZone != null && DropZone is GridBoardDropZone gridBoardDropZone)
             {
-                GridTileCoordinate coord = gridBoardDropZone.GetRowColFromDraggablePosition(this);
+                GridTileCoordinate coord = gridBoardDropZone.GridBoard.GetRowColFromPosition(GetAnchorPosition());
                 
                 //If there is a change in the coordinates, clear the highlights
                 if (coord.Row != _lastCoordinate.Row || coord.Column != _lastCoordinate.Column)
@@ -103,37 +76,24 @@ namespace Kuantech.Puzzle
         public void HighlightBoardBacgkroundTiles(GridBoard board, GridTileCoordinate coordinate)
         {
             List<GridTileCoordinate> coordinates = new List<GridTileCoordinate>();
-            foreach (var pair in GridTileGroup.ChildTiles)
+            foreach (var coord in SpannedTiles)
             {
                 coordinates.Add(new GridTileCoordinate()
                 {
-                    Row = pair.Key.Row + coordinate.Row,
-                    Column = pair.Key.Column + coordinate.Column,
+                    Row = coord.Row + coordinate.Row,
+                    Column = coord.Column + coordinate.Column,
                 });
             }
             board.HighlightTiles(coordinates);
         }
-
-        public virtual void HandleDropToBoard(GridBoard board, int rowToDrop, int colToDrop)
+        
+        /// <summary>
+        /// Position that represents local (0,0)
+        /// </summary>
+        /// <returns></returns>
+        public virtual Vector3 GetAnchorPosition()
         {
-            if (GridTileGroup != null)
-            {
-                GridTileGroup.PlaceOnBoard(board,rowToDrop,colToDrop);
-            }
-
-            if (GridTile != null)
-            {
-                board.SetTile(GridTile, rowToDrop, colToDrop);
-            }
-            
-            //Fire the event
-            OnPlacedToBoard?.Invoke(this);
-            
-            if (DestroyOnDrop)
-            {
-                Destroy(gameObject);
-            }
+            return transform.position - AnchorOffset;
         }
-
     }
 }

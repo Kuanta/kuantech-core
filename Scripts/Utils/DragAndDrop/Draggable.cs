@@ -14,6 +14,11 @@ namespace Kuantech.Utils
         protected IDropZone DropZone;
         [Tooltip("IF set to true, position will be set using the ground ray")]
         [SerializeField] private bool PositionWithGroundRay = false;
+
+        [SerializeField] private bool PositionWithPlane;
+        [SerializeField] private Vector3 planeNormal = Vector3.up;
+        [SerializeField] private Vector3 planePoint = Vector3.zero;
+        
         //public Vector3 OffsetPercentages = Vector3.zero; 
         //[NonSerialized] public Vector2 DragPositionOffset;
 
@@ -35,7 +40,6 @@ namespace Kuantech.Utils
             _parentBeforeDrag = transform.parent;
             transform.SetParent(null);
             transform.localScale = Vector3.one;
-            OnDragStart?.Invoke();
             return true;
         }
         [Tooltip("If set to false, Draggable can't be dragged")]
@@ -52,7 +56,12 @@ namespace Kuantech.Utils
             //cursorPosition += GetDragPositionOffset();
             if(!CanBeDragged()) return;
             IDropZone newZone = CheckForDragBench();
-            if(_receivedHitThisFrame && PositionWithGroundRay)
+            if (PositionWithPlane)
+            {
+                Vector3 point = HitAtPlane(planePoint, planeNormal);
+                SetPosition(point + planeNormal* OffsetDistance);
+            }
+            else if(_receivedHitThisFrame && PositionWithGroundRay)
             {
                 Transform cameraTransform = DragManager.GetContext<DragManager>().MainCamera.transform;
                 Vector3 diff = cameraTransform.position - _lastHit.point;
@@ -168,6 +177,36 @@ namespace Kuantech.Utils
             return null;
         }
         
+        /// <summary>
+        /// Cast a ray from cursor position to plane
+        /// </summary>
+        /// <param name="planePoint"></param>
+        /// <param name="planeNormal"></param>
+        /// <returns></returns>
+        private Vector3 HitAtPlane(Vector3 planePoint, Vector3 planeNormal)
+        {
+            Vector3 cursorPosition = DragManager.GetCursorPosition(true);
+            DragManager dm = GameManager.Instance.GetSubManagerByType<DragManager>() as DragManager;
+            Ray ray = dm.MainCamera.ScreenPointToRay(DragManager.GetCursorPosition(true));
+            Vector3 o = ray.origin;
+            Vector3 d = ray.direction;
+            float denom = Vector3.Dot(planeNormal, d);
+            
+            if (Mathf.Abs(denom) < 1e-6f)
+            {
+                return planePoint;
+            }
+            
+            float t = Vector3.Dot(planePoint - o, planeNormal) / denom;
+            
+            if (t < 0f)
+            {
+                return planePoint;
+            }
+
+            Vector3 intersection = o + t * d;
+            return intersection;
+        }
         /// <summary>
         /// Called when draggable enters a drop zone
         /// </summary>
