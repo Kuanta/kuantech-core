@@ -48,6 +48,8 @@ namespace Kuantech.Utils
         }
         private async UniTask ReadConfigsFromSheet()
         {
+            if (SheetReader == null) return;
+            SheetReader.OnSheetRead += OnConfigSheetRead;
             await SheetReader.GetSheetData(ConfigSheetRange);
         }
         private void OnConfigSheetRead(JObject sheetData)

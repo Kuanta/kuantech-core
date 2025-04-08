@@ -7,13 +7,20 @@ namespace Kuantech.Puzzle.BlockingDrag
         [Header("Physics")] 
         [SerializeField] private Rigidbody Rigidbody;
         [SerializeField] private Collider Collider;
+        [SerializeField] private float SpeedGain = 10f;
         [SerializeField] private float MaxSpeed = 10f;
 
+        public bool DisableRigidbodyMovements = false;
         protected override void SetPosition(Vector3 position)
         {
+            if (DisableRigidbodyMovements)
+            {
+                base.SetPosition(position);
+                return;
+            }
+            
             Vector3 direction = position - Rigidbody.position;
-            Debug.LogError($"Target pos:{position} - Direction:{direction}");
-            float mag = direction.magnitude;
+            float mag = direction.magnitude * SpeedGain;
             if (mag > MaxSpeed)
             {
                 mag = MaxSpeed;

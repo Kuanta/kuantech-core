@@ -150,7 +150,7 @@ namespace Kuantech.Puzzle
             GridTile[] existingTiles = parent.transform.GetComponentsInChildren<GridTile>();
             foreach (var tile in existingTiles)
             {
-                GridTileCoordinate coord = GetRowColFromPosition(tile.transform.position);
+                GridTileCoordinate coord = GetRowColFromPosition(tile.GetTileAnchorPosition());
                 if (!IsCoordinateValid(coord))
                 {
                     continue;
@@ -169,6 +169,10 @@ namespace Kuantech.Puzzle
             {
                 tile = Instantiate(data.ExistingTile);
             }
+            
+            //Initialize Existing
+            tile.InitializeExisting();
+
             if (!CanTileBePlaced(tile, coord.Row, coord.Column, coord.Layer))
             {
                 tile.Despawn(false);
@@ -294,6 +298,11 @@ namespace Kuantech.Puzzle
                 Debug.LogError("Couldn't set tile!");
                 return;
             }
+
+            if (gridTile.ParentBoard != null)
+            {
+                gridTile.ParentBoard.UnsetTile(gridTile);
+            }
             gridTile.ParentBoard = this;
             gridTile.SetRowCol(row, col, layer);
             SetTileArrayForTile(gridTile, row, col, layer);
@@ -328,7 +337,8 @@ namespace Kuantech.Puzzle
         public void PositionTileAtCoordinate(GridTile tile, int row, int col, int layer)
         {
             tile.transform.SetParent(transform);
-            tile.SetLocalPosition(GetLocalPosition(row, col));
+            Vector3 tileLocalPositionOffset = tile.GetTileLocalOffset();
+            tile.SetLocalPosition(GetLocalPosition(row, col)-tileLocalPositionOffset); 
             tile.transform.localRotation = Quaternion.identity;
             tile.transform.localScale = Vector3.one;
         }
@@ -341,7 +351,6 @@ namespace Kuantech.Puzzle
         /// <param name="anchorLayer"></param>
         private void SetTileArrayForTile(GridTile tile, int anchorRow, int anchorColumn, int anchorLayer)
         {
-            Tiles[anchorLayer][anchorRow , anchorColumn] = tile;
             foreach (var localCoordinte in tile.Coordinates)
             {
                 Tiles[anchorLayer][anchorRow + localCoordinte.Row, anchorColumn + localCoordinte.Column] = tile;
@@ -351,7 +360,6 @@ namespace Kuantech.Puzzle
 
         private void ClearTileArrayForTile(GridTile tile,int anchorRow, int anchorCol, int anchorLayer=0)
         {
-            Tiles[anchorLayer][anchorRow, anchorCol] = null;
             foreach (var localCoord in tile.Coordinates)
             {
                 int row = anchorRow + localCoord.Row;
@@ -375,6 +383,7 @@ namespace Kuantech.Puzzle
                 int row = anchorRow + localCoord.Row;
                 int col = anchorCol + localCoord.Column;
                 int layer = anchorLayer + localCoord.Layer;
+                if (!IsCoordinateValid(row, col)) return false;
                 GridTile tileAtCoord = GetTile(row, col, layer);
                 if (tileAtCoord == tile)
                 {
@@ -422,12 +431,12 @@ namespace Kuantech.Puzzle
         /// <param name="col"></param>
         /// <param name="layer"></param>
         /// <returns></returns>
-        public void UnsetTile(int anchorRow, int anchorCol, int anchorLayer=0)
+        public void 
+            UnsetTile(int anchorRow, int anchorCol, int anchorLayer=0)
         {
             GridTile tile = GetTile(anchorRow, anchorCol, anchorLayer);
             if (tile == null) return;
-            ClearTileArrayForTile(tile, anchorRow, anchorCol, anchorLayer);
-            tile.ParentBoard = null;
+            UnsetTile(tile);
         }
         
         public void UnsetTiles(List<GridTile> tiles)
@@ -440,7 +449,18 @@ namespace Kuantech.Puzzle
         
         public void UnsetTile(GridTile tile)
         {
-            UnsetTile(tile.AnchorRow, tile.AnchorColumn, tile.AnchorLayer);
+            // if (tile.Coordinates.IsNullOrEmpty())
+            // {
+            //     UnsetTile(tile.AnchorRow, tile.AnchorColumn, tile.AnchorLayer);
+            // }
+            // else
+            // {
+            //     int row = tile.AnchorRow + tile.Coordinates[0].Row;
+            //     int col = tile.AnchorColumn + tile.Coordinates[0].Column;
+            //     UnsetTile(row, col, tile.AnchorLayer);
+            // }
+            ClearTileArrayForTile(tile, tile.AnchorRow, tile.AnchorColumn,tile.AnchorLayer);
+            tile.ParentBoard = null;
         }
         
         /// <summary>

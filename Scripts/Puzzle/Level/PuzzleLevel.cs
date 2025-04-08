@@ -48,11 +48,15 @@ namespace Kuantech.Puzzle
             FindLevelDesign();
             SetSubLevel();
             CreateWinConditionTracker();
-            LevelUI = PuzzleUIManager.GetLevelUI(); 
-            if(LevelUI != null) LevelUI.OnLevelSetup(this);
-            
-            //Toggle HUD (Useful for CPI levels
-            LevelUI.ToggleHUD(!HideHUD);
+            LevelUI = PuzzleUIManager.GetLevelUI();
+            if (LevelUI != null)
+            {
+                LevelUI.OnLevelSetup(this);
+                            
+                //Toggle HUD (Useful for CPI levels
+                LevelUI.ToggleHUD(!HideHUD);
+            }
+
             
             ResetUI();
             GetStateModel()?.SetCurrentLevel(this);

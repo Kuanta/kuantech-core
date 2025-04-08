@@ -40,6 +40,7 @@ namespace Kuantech.Utils
             _parentBeforeDrag = transform.parent;
             transform.SetParent(null);
             transform.localScale = Vector3.one;
+            OnDragStart?.Invoke();
             return true;
         }
         [Tooltip("If set to false, Draggable can't be dragged")]
@@ -49,8 +50,8 @@ namespace Kuantech.Utils
         public bool TapToggle;
         
         [Header("Offset")]
-        [SerializeField] private float OffsetDistance = 5f;
-        [SerializeField] private float SmoothDampTime = 0.1f;
+        public float OffsetDistance = 5f;
+        public float SmoothDampTime = 0.1f;
         public virtual void Drag(Vector3 cursorPosition)
         {
             //cursorPosition += GetDragPositionOffset();

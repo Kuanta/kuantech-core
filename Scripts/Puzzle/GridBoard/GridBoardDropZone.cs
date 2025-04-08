@@ -52,8 +52,7 @@ namespace Kuantech.Puzzle
 
         public GridTileCoordinate GetRowColFromDraggablePosition(GridTileDraggable draggable)
         {
-            Vector3 positionToCheck;
-            positionToCheck = draggable.GetAnchorTilePosition(GridBoard);
+            Vector3 positionToCheck = draggable.GetAnchorTilePosition(GridBoard);
             return GridBoard.GetRowColFromPosition(positionToCheck);
 
         }

@@ -8,8 +8,8 @@ namespace Kuantech.Puzzle
     public class GridTileDraggable : Draggable
     {
         [Header("Spanned Tiles")] public GridTile GridTile;
-        [Tooltip("transform.position + Offset gives the anchor position")]
-        public Vector3 AnchorOffset = Vector3.zero;
+        //[Tooltip("transform.position + Offset gives the anchor position")]
+        //public Vector3 AnchorOffset = Vector3.zero;
         [Tooltip("If set to true, draggable will try to highlight ")]
         
         [Header("Grid Tile Group")]
@@ -35,10 +35,10 @@ namespace Kuantech.Puzzle
             {
                 return GridTileGroup.CanBePlacedToBoard(board, row, col);
             }
-            
-            foreach (var coord in GridTile.Coordinates)
+
+            if (GridTile != null)
             {
-                if (!board.IsTileValidAndEmpty(coord.Row + row, coord.Column + col)) return false;
+                return board.CanTileBePlaced(GridTile, row, col);
             }
 
             return true;
@@ -51,10 +51,11 @@ namespace Kuantech.Puzzle
         /// <returns></returns>
         public virtual Vector3 GetAnchorTilePosition(GridBoard board)
         {
+            if (GridTile == null && GridTileGroup == null) return Vector3.zero;
             if (GridTileGroup == null)
             {
                 //No grid tile group
-                return transform.position - AnchorOffset;
+                return transform.position + GridTile.AnchorOffset;
             }
             return GridTileGroup.GetAnchorTilePosition(board);
         }

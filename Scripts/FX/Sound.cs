@@ -13,6 +13,7 @@ namespace Kuantech.Core.FX
     public class Sound : MonoBehaviour
     {
         public string AudioId;
+        
         [KTTag("AudioTag")]
         public int AudioTag;
 
