@@ -40,8 +40,8 @@ namespace Kuantech.Puzzle.BlockingDrag
         public override void DragEnd()
         {
             base.DragEnd();
-            Rigidbody.isKinematic = true;
             Rigidbody.velocity = Vector3.zero;
+            Rigidbody.isKinematic = true;
         }
     }
 }
