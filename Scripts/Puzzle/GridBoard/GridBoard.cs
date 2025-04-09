@@ -351,6 +351,11 @@ namespace Kuantech.Puzzle
         /// <param name="anchorLayer"></param>
         private void SetTileArrayForTile(GridTile tile, int anchorRow, int anchorColumn, int anchorLayer)
         {
+            if (tile.Coordinates.IsNullOrEmpty())
+            {
+                Tiles[anchorLayer][anchorRow, anchorColumn] = tile;
+                return;
+            }
             foreach (var localCoordinte in tile.Coordinates)
             {
                 Tiles[anchorLayer][anchorRow + localCoordinte.Row, anchorColumn + localCoordinte.Column] = tile;
@@ -360,6 +365,14 @@ namespace Kuantech.Puzzle
 
         private void ClearTileArrayForTile(GridTile tile,int anchorRow, int anchorCol, int anchorLayer=0)
         {
+            if (tile.Coordinates.IsNullOrEmpty())
+            {
+                if (Tiles[anchorLayer][anchorRow, anchorCol] == tile)
+                {
+                    Tiles[anchorLayer][anchorRow, anchorCol] = null;
+                }
+                return;
+            }
             foreach (var localCoord in tile.Coordinates)
             {
                 int row = anchorRow + localCoord.Row;
