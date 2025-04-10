@@ -5,9 +5,11 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization.Formatters.Binary;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
+using Object = UnityEngine.Object;
 using Random = UnityEngine.Random;
 
 namespace Kuantech.Utils
@@ -158,16 +160,7 @@ namespace Kuantech.Utils
             return 0;
         }
         
-        public static void IterateChildren(this Transform parent, UnityAction<GameObject> handler)
-        {
-            Transform[] childs = parent.GetComponentsInChildren<Transform>();
-            foreach (var child in childs)
-            {
-                if(parent == child) continue;
-                handler(child.gameObject);
-            }
-        }
-        
+
         public static float Fmod(float x, float y)
         {
             return x - y * Mathf.Floor(x / y);
@@ -263,27 +256,7 @@ namespace Kuantech.Utils
 
             return probabilities.Length - 1;
         }
-        
-        public static void ChangeTagRecursively(this Transform transform, string newTag)
-        {
-            transform.tag = newTag;
- 
-            for (int i = 0; i < transform.childCount; i++)
-            {
-                Transform child = transform.GetChild(i);
-                ChangeTagRecursively(child, newTag);
-            }
-        }
-        public static void ChangeLayerRecursively(this Transform transform, int newLayer)
-        {
-            transform.gameObject.layer = newLayer;
- 
-            for (int i = 0; i < transform.childCount; i++)
-            {
-                Transform child = transform.GetChild(i);
-                ChangeLayerRecursively(child, newLayer);
-            }
-        }
+
 
         #region Time
 
@@ -331,7 +304,36 @@ namespace Kuantech.Utils
         #endregion
 
         #region GameObjects
+        public static void IterateChildren(this Transform parent, UnityAction<GameObject> handler)
+        {
+            Transform[] childs = parent.GetComponentsInChildren<Transform>();
+            foreach (var child in childs)
+            {
+                if(parent == child) continue;
+                handler(child.gameObject);
+            }
+        }
 
+        public static void ChangeTagRecursively(this Transform transform, string newTag)
+        {
+            transform.tag = newTag;
+ 
+            for (int i = 0; i < transform.childCount; i++)
+            {
+                Transform child = transform.GetChild(i);
+                ChangeTagRecursively(child, newTag);
+            }
+        }
+        public static void ChangeLayerRecursively(this Transform transform, int newLayer)
+        {
+            transform.gameObject.layer = newLayer;
+ 
+            for (int i = 0; i < transform.childCount; i++)
+            {
+                Transform child = transform.GetChild(i);
+                ChangeLayerRecursively(child, newLayer);
+            }
+        }
         public static bool IsCursorOnUI()
         {
 #if (UNITY_IOS || UNITY_ANDROID) && !UNITY_EDITOR
@@ -399,6 +401,27 @@ namespace Kuantech.Utils
             float z = Mathf.Abs(extentsX.z) + Mathf.Abs(extentsY.z) + Mathf.Abs(extentsZ.z);
 
             return new Bounds(center, new Vector3(x, y, z));
+        }
+        
+        /// <summary>
+        /// Instantiates a prefab, considering the editor context
+        /// </summary>
+        /// <param name="prefab"></param>
+        /// <returns></returns>
+        public static GameObject InstantiatePrefab(GameObject prefab)
+        {
+            #if UNITY_EDITOR
+            if (Application.isEditor)
+            {
+                return PrefabUtility.InstantiatePrefab(prefab) as GameObject;
+            }
+            else
+            {
+                return Object.Instantiate(prefab);
+            }
+#else
+return GameObject.Instantiate(prefab);
+#endif
         }
         
         public static void DestroyAllChildren(this Transform transform)

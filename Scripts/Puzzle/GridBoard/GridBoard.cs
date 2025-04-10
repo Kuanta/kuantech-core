@@ -873,7 +873,7 @@ namespace Kuantech.Puzzle
             Vector3 depthPosition = ForwardVector * (row * CellHeight + CellHeight * RowCount * originOffset.y + CellHeight * 0.5f);
             return horizontalPosition + depthPosition;
         }
-        
+
         public Vector3 GetLocalPosition(float row, float col)
         {
             return GetLocalPosition(row, col, OriginOffset);

@@ -5,12 +5,20 @@ using UnityEngine;
 
 namespace Kuantech.Puzzle
 {
+    
     public class ModularTileVisual : MonoBehaviour
     {
         public GridTile AttachedTile;
 
         public List<ModularTileVisualPiece> ModularTileVisualPiece;
-        
+
+        public void SetVisual(bool[] eightConnectivity)
+        {
+            foreach (var piece in ModularTileVisualPiece)
+            {
+                piece.Toggle(eightConnectivity);
+            }
+        }
         public void SetVisual(GridTile parentTile)
         {
             AttachedTile = parentTile;
@@ -71,6 +79,15 @@ namespace Kuantech.Puzzle
             foreach (var piece in ModularTileVisualPiece)
             {
                 piece.Toggle(eightConnectivity);
+            }
+        }
+
+        [Button("Create Pieces")]
+        private void CreatePieces(ModularTilePieceCollection collection)
+        {
+            foreach (var piece in ModularTileVisualPiece)
+            {
+                piece.CreatePiece(collection);
             }
         }
     }
