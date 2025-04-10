@@ -205,12 +205,12 @@ namespace Kuantech.Puzzle.MatchThree
             return false;
         }
 
-        public bool DragStart()
+        public bool DragStart(Vector3 hitPoint)
         {
             return false;
         }
 
-        public void Drag(Vector3 cursorPosition)
+        public void Drag(Vector3 cursorPosition, Vector3 cursorWorldPositionChange)
         {
             return;
         }

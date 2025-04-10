@@ -60,9 +60,9 @@ namespace Kuantech.Puzzle
             return GridTileGroup.GetAnchorTilePosition(board);
         }
         
-        public override void Drag(Vector3 cursorPosition)
+        public override void Drag(Vector3 cursorPosition, Vector3 cursorWorldPositionChange)
         {
-            base.Drag(cursorPosition);
+            base.Drag(cursorPosition, cursorWorldPositionChange);
 
             if (!HighlightBoard) return;
             if (DropZone != null && DropZone is GridBoardDropZone gridBoardDropZone)

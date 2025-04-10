@@ -24,6 +24,7 @@ namespace Kuantech.Utils
 
         private Vector3 _positionBeforeDrag;
         private Transform _parentBeforeDrag;
+        protected Vector3 _dragPositionOffset;
 
         protected IDropZone CurrentDropZone;
         
@@ -33,14 +34,21 @@ namespace Kuantech.Utils
         public Action<Vector3> OnTapped;
         public Action OnDrop;
       
-        public virtual bool DragStart()
+        public virtual bool DragStart(Vector3 dragHitPoint)
         {
             if (!CanBeDragged()) return false;
             _positionBeforeDrag = transform.position;
             _parentBeforeDrag = transform.parent;
+            _dragPositionOffset = dragHitPoint - transform.position;
             transform.SetParent(null);
             transform.localScale = Vector3.one;
             OnDragStart?.Invoke();
+
+            if (PositionWithPlane)
+            {
+                _dragPositionOffset = Helpers.ProjectVectorOnPlane(_dragPositionOffset, planeNormal, planePoint);
+                Debug.LogError("sdasd");
+            }
             return true;
         }
         [Tooltip("If set to false, Draggable can't be dragged")]
@@ -52,7 +60,9 @@ namespace Kuantech.Utils
         [Header("Offset")]
         public float OffsetDistance = 5f;
         public float SmoothDampTime = 0.1f;
-        public virtual void Drag(Vector3 cursorPosition)
+
+
+        public virtual void Drag(Vector3 cursorPosition, Vector3 cursorPositionChange)
         {
             //cursorPosition += GetDragPositionOffset();
             if(!CanBeDragged()) return;
@@ -60,14 +70,15 @@ namespace Kuantech.Utils
             if (PositionWithPlane)
             {
                 Vector3 point = HitAtPlane(planePoint, planeNormal);
-                SetPosition(point + planeNormal* OffsetDistance);
+                
+                SetPosition(point + planeNormal* OffsetDistance - _dragPositionOffset);
             }
             else if(_receivedHitThisFrame && PositionWithGroundRay)
             {
                 Transform cameraTransform = DragManager.GetContext<DragManager>().MainCamera.transform;
                 Vector3 diff = cameraTransform.position - _lastHit.point;
                 diff.Normalize();
-                SetPosition(_lastHit.point + diff * OffsetDistance);
+                SetPosition(_lastHit.point + diff * OffsetDistance - _dragPositionOffset);
             }
             else{
                 SetPosition(cursorPosition);
@@ -188,7 +199,7 @@ namespace Kuantech.Utils
         {
             Vector3 cursorPosition = DragManager.GetCursorPosition(true);
             DragManager dm = GameManager.Instance.GetSubManagerByType<DragManager>() as DragManager;
-            Ray ray = dm.MainCamera.ScreenPointToRay(DragManager.GetCursorPosition(true));
+            Ray ray = dm.MainCamera.ScreenPointToRay(cursorPosition);
             Vector3 o = ray.origin;
             Vector3 d = ray.direction;
             float denom = Vector3.Dot(planeNormal, d);

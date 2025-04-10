@@ -32,9 +32,9 @@ namespace Kuantech.Puzzle
             return true;
         }
         
-        public override void Drag(Vector3 cursorPosition)
+        public override void Drag(Vector3 cursorPosition, Vector3 cursorWorldPositionChange)
         {
-            base.Drag(cursorPosition);
+            base.Drag(cursorPosition, cursorWorldPositionChange);
 
             if (!HighlightBoard) return;
             if (DropZone != null && DropZone is GridBoardDropZone gridBoardDropZone)

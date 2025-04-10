@@ -29,9 +29,14 @@ namespace Kuantech.Puzzle.BlockingDrag
             Rigidbody.velocity = direction * mag;
         }
 
-        public override bool DragStart()
+        public override void Drag(Vector3 cursorPosition, Vector3 cursorPositionChange)
         {
-            if (!base.DragStart()) return false;
+            base.Drag(cursorPosition, cursorPositionChange);
+        }
+        
+        public override bool DragStart(Vector3 hitPoint)
+        {
+            if (!base.DragStart(hitPoint)) return false;
             Rigidbody.isKinematic = false;
             Rigidbody.velocity = Vector3.zero;
             return true;

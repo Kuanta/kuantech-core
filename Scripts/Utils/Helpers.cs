@@ -28,19 +28,7 @@ namespace Kuantech.Utils
             return val + increment * 0.5f;
         }
         #endregion
-        public static Vector3 ProjectVector(Vector3 vec, Vector3 to)
-        {
-            Vector3 normalized = to.normalized;
-            return Vector3.Dot(vec, normalized) * normalized;
-        }
 
-        public static float DotProjection(Vector3 vec, Vector3 to)
-        {
-            Vector3 normalized = to.normalized;
-            float dotProduct = Vector3.Dot(vec, normalized);
-            float roundedDotProduct = Mathf.Round(dotProduct * 100f) / 100f;
-            return roundedDotProduct;
-        }
         /// <summary>
         /// Calculate nth value of the fibonacci sequence using Dynamic Programming
         /// </summary>
@@ -270,7 +258,46 @@ namespace Kuantech.Utils
         #endregion
         
         #region Geometry
+        public static Vector3 ProjectVector(Vector3 vec, Vector3 to)
+        {
+            Vector3 normalized = to.normalized;
+            return Vector3.Dot(vec, normalized) * normalized;
+        }
 
+        public static float DotProjection(Vector3 vec, Vector3 to)
+        {
+            Vector3 normalized = to.normalized;
+            float dotProduct = Vector3.Dot(vec, normalized);
+            float roundedDotProduct = Mathf.Round(dotProduct * 100f) / 100f;
+            return roundedDotProduct;
+        }
+        
+        /// <summary>
+        /// Projects a vector to a plane
+        /// </summary>
+        /// <param name="p"></param>
+        /// <param name="planeNormal"></param>
+        /// <param name="planePoint"></param>
+        /// <returns></returns>
+        public static Vector3 ProjectVectorOnPlane(Vector3 p, Vector3 planeNormal, Vector3 planePoint)
+        {
+            // (p - planePoint) dot planeNormal
+            float dist = Vector3.Dot(p - planePoint, planeNormal);
+        
+            // planeNormal'un uzunluğunun karesi
+            float magSq = Vector3.Dot(planeNormal, planeNormal);
+        
+            if (Mathf.Approximately(magSq, 0f))
+            {
+                // Normal vektörü yoksa (0,0,0) -> tanımsız
+                return p;
+            }
+
+            // p' = p - (dist / magSq) * planeNormal
+            Vector3 projection = p - (dist / magSq) * planeNormal;
+            return projection; 
+        }
+        
         public static Vector3 GetRelativeRightVector(this Transform parent, Transform target)
         {
             Vector3 diff = target.position - parent.position;
