@@ -47,7 +47,6 @@ namespace Kuantech.Utils
             if (PositionWithPlane)
             {
                 _dragPositionOffset = Helpers.ProjectVectorOnPlane(_dragPositionOffset, planeNormal, planePoint);
-                Debug.LogError("sdasd");
             }
             return true;
         }
