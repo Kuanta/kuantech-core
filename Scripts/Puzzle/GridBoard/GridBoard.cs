@@ -53,6 +53,9 @@ namespace Kuantech.Puzzle
 
         [Header("Pathfinding")] 
         public GridBoardPathTree GridBoardPathTree;
+
+        [Header("Sub Zones")] 
+        public List<BoardSubZone> SubZones;
         
         public List<GridTile[,]> Tiles; //A list of list to represent layered tiles
         //public GridTile[,] Tiles;
