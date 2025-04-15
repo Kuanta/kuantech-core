@@ -6,7 +6,7 @@ namespace Kuantech.Utils
     public class MeshCombiner : MonoBehaviour
     {
         public MeshFilter CombinedMeshRenderer;
-        
+        public MeshRenderer MeshRenderer;
         public void CombineMeshes(MeshFilter[] meshFilters, bool deactivateChildren)
         {
             // 2) CombineInstance listesi
@@ -31,7 +31,7 @@ namespace Kuantech.Utils
                 // parent’a göre local matrix gerekir.
                 // Fakat CombineMeshes local space'te birleştireceği için
                 // "child.worldMatrix * parent.worldToLocalMatrix" mantığı kullanacağız.
-                ci.transform = mf.transform.localToWorldMatrix;
+                ci.transform = CombinedMeshRenderer.transform.worldToLocalMatrix * mf.transform.localToWorldMatrix;
                 // => Bu, combine işleminde child’ın global konumunu hesaba katması için.
 
                 // Child eğer farklı materyaller kullanıyorsa submesh seçmen gerekebilir

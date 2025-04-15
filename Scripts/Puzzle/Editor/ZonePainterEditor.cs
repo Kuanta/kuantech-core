@@ -42,6 +42,14 @@ namespace Kuantech.Puzzle
                         zp.Zones.RemoveAt(i);
                         if (_activeZoneIndex == i) _activeZoneIndex = -1;
                         i--;
+                        UpdateSubZones();
+                    }
+
+                    if (GUILayout.Button("C", GUILayout.Width(50)))
+                    {
+                        zp.Zones[i].SubZone.BoardSubZoneColorId = 
+                            (zp.Zones[i].SubZone.BoardSubZoneColorId == 0) ? 1 : 0;
+                        UpdateSubZones();
                     }
                     EditorGUILayout.EndHorizontal();
                 }
@@ -63,6 +71,14 @@ namespace Kuantech.Puzzle
                 _currentMode = PaintMode.None;
             }
             
+            GUILayout.BeginHorizontal();
+            if(GUILayout.Button("Delete All Zones"))
+            {
+                zp.Zones?.Clear();
+                UpdateSubZones();
+            }
+    
+            GUILayout.EndHorizontal();
             if (_activeZoneIndex >= 0 && _activeZoneIndex < zp.Zones.Count)
             {
                 EditorGUILayout.Space();
@@ -123,26 +139,18 @@ namespace Kuantech.Puzzle
                             GridTileCoordinate gridTileCoordinate = zp.Board.GetRowColFromPosition(hitPoint);
                             if (zp.Board.IsCoordinateValid(gridTileCoordinate))
                             {
-                                Vector2Int rc = new Vector2Int(gridTileCoordinate.Column, gridTileCoordinate.Row);
                                 if (_currentMode == PaintMode.Paint)
                                 {
-                                    if (!list.Contains(rc))
-                                    {
-                                        list.Add(rc);
-                                        // Debug.Log("Painted tile " + rc);
-                                    }
+                                    zp.PaintTileToZone(zone, gridTileCoordinate.Row, gridTileCoordinate.Column);
+            
                                 }
                                 else // Erase
                                 {
-                                    if (list.Contains(rc))
-                                    {
-                                        list.Remove(rc);
-                                        // Debug.Log("Erased tile " + rc);
-                                    }
+                                    zp.EraseTileFromZone(zone,gridTileCoordinate.Row, gridTileCoordinate.Column);
                                 }
 
-                                zone.SubZone.Coordinates = list;
-                                zp.Zones[_activeZoneIndex] = zone;
+                                // zone.SubZone.Coordinates = list;
+                                // zp.Zones[_activeZoneIndex] = zone;
                                 // Değişiklik bildir
                                 UpdateSubZones();
                                 EditorUtility.SetDirty(zp);
