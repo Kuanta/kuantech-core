@@ -45,10 +45,15 @@ namespace Kuantech.Puzzle.BlockingDrag
             _lastPosition = transform.position;
             float shakeFactor = positionChange.sqrMagnitude / (MaxDistance*MaxDistance);
             positionChange.Normalize();
-            
             shakeFactor = Mathf.Clamp(shakeFactor,-1,1);
+            _lastPositionChange = shakeFactor;
             positionChange *= shakeFactor;
             BlockVisual.SetTargetSwayFactor(new Vector2(positionChange.x, positionChange.z));
+        }
+        private float _lastPositionChange;
+        public float GetLastPositionChange()
+        {
+            return _lastPositionChange;
         }
         
         public override bool DragStart(Vector3 hitPoint)
@@ -69,6 +74,11 @@ namespace Kuantech.Puzzle.BlockingDrag
             BlockVisual.ToggleLerpSway(false);
             BlockVisual.SetSwayFactorX(0);
             BlockVisual.SetSwayFactorZ(0);
+        }
+        
+        public Vector3 GetCurrentVelocity()
+        {
+            return Rigidbody.velocity;
         }
     }
 }

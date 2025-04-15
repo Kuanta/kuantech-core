@@ -21,7 +21,7 @@ namespace Kuantech.Utils
         
         //public Vector3 OffsetPercentages = Vector3.zero; 
         //[NonSerialized] public Vector2 DragPositionOffset;
-
+        private bool _isDragged = false;
         private Vector3 _positionBeforeDrag;
         private Transform _parentBeforeDrag;
         protected Vector3 _dragPositionOffset;
@@ -32,7 +32,7 @@ namespace Kuantech.Utils
         public Action OnDragStart; //Called when dragging starts
         public Action OnDragEnd; //Called when dragging ends somehow
         public Action<Vector3> OnTapped;
-        public Action OnDrop;
+        public Action<bool> OnDrop;
       
         public virtual bool DragStart(Vector3 dragHitPoint)
         {
@@ -48,6 +48,8 @@ namespace Kuantech.Utils
             {
                 _dragPositionOffset = Helpers.ProjectVectorOnPlane(_dragPositionOffset, planeNormal, planePoint);
             }
+
+            _isDragged = true;
             return true;
         }
         [Tooltip("If set to false, Draggable can't be dragged")]
@@ -98,6 +100,11 @@ namespace Kuantech.Utils
                 return;
             }
         }
+
+        public bool IsDragged()
+        {
+            return _isDragged;
+        }
         private Vector3 _dampSpeed;
         protected virtual void SetPosition(Vector3 position)
         {
@@ -111,13 +118,15 @@ namespace Kuantech.Utils
         public virtual void DragEnd()
         {
             OnDragEnd?.Invoke();
+            _isDragged = false;
             if(DropZone == null || DropZone == CurrentDropZone || !DropZone.OnDrop(this)) 
             {
                 OnFailedDrop();
+                OnDrop?.Invoke(false);
                 ReturnToPreviousPosition();
                 return;
             }
-            OnDrop?.Invoke();
+            OnDrop?.Invoke(true);
             OnSuccesfullDrop();
         }
 
