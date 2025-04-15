@@ -18,6 +18,10 @@ namespace Kuantech.Puzzle
             OddBackground.SetActive(!isEven);
         }
 
+        public virtual void SetColor(Color color)
+        {
+            HighlightRenderer.material.SetColor("_BaseColor", color);
+        }
         public virtual void Highlight()
         {
             if (HighlightRenderer == null) return;

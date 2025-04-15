@@ -271,6 +271,28 @@ namespace Kuantech.Utils
             float roundedDotProduct = Mathf.Round(dotProduct * 100f) / 100f;
             return roundedDotProduct;
         }
+
+        public static Vector3 CheckRayAgainstPlane(Ray ray, Vector3 planeNormal, Vector3 planePoint)
+        {
+            Vector3 o = ray.origin;
+            Vector3 d = ray.direction;
+            float denom = Vector3.Dot(planeNormal, d);
+            
+            if (Mathf.Abs(denom) < 1e-6f)
+            {
+                return planePoint;
+            }
+            
+            float t = Vector3.Dot(planePoint - o, planeNormal) / denom;
+            
+            if (t < 0f)
+            {
+                return planePoint;
+            }
+
+            Vector3 intersection = o + t * d;
+            return intersection;
+        }
         
         /// <summary>
         /// Projects a vector to a plane

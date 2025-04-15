@@ -55,7 +55,7 @@ namespace Kuantech.Puzzle
             {
                 BoardZoneData zoneData = new BoardZoneData();
                 zoneData.SubZone = new BoardSubZone();
-                zoneData.SubZone.Coordinates = new List<(int, int)>();
+                zoneData.SubZone.Coordinates = new List<Vector2Int>();
                 zoneData.ZoneName = "Zone " + (zp.Zones.Count + 1);
                 zoneData.ZoneColor = Color.HSVToRGB(Random.value, 1f, 1f);
                 zp.Zones.Add(zoneData);
@@ -118,12 +118,12 @@ namespace Kuantech.Puzzle
                             var list = zone.SubZone.Coordinates;
                             if (list.IsNullOrEmpty())
                             {
-                                list = new List<(int, int)>();
+                                list = new List<Vector2Int>();
                             }
                             GridTileCoordinate gridTileCoordinate = zp.Board.GetRowColFromPosition(hitPoint);
                             if (zp.Board.IsCoordinateValid(gridTileCoordinate))
                             {
-                                (int, int) rc = (gridTileCoordinate.Row, gridTileCoordinate.Column);
+                                Vector2Int rc = new Vector2Int(gridTileCoordinate.Column, gridTileCoordinate.Row);
                                 if (_currentMode == PaintMode.Paint)
                                 {
                                     if (!list.Contains(rc))
@@ -160,17 +160,8 @@ namespace Kuantech.Puzzle
              hitPoint = Vector3.zero;
              Event e = Event.current;
              Ray ray = HandleUtility.GUIPointToWorldRay(e.mousePosition);
-             int layerMask = 1 << zp.Board.gameObject.layer;
-             if (UnityEngine.Physics.Raycast(ray, out RaycastHit hit, 500f))
-             {
-                 if (e.type == EventType.MouseDown && e.button == 0 && !e.alt)
-                 {
-                     hitPoint = hit.point;
-                     return true;
-                 }
-             }
-
-             return false;
+             hitPoint = Helpers.CheckRayAgainstPlane(ray, zp.Board.GetBoardNormal(), zp.Board.transform.position);
+             return true;
          }
 
          private void UpdateSubZones()
@@ -179,9 +170,11 @@ namespace Kuantech.Puzzle
              zp.Board.SubZones = new List<BoardSubZone>();
              foreach (var zone in zp.Zones)
              {
+                 if (zone.SubZone.Coordinates.IsNullOrEmpty()) continue;
                  zp.Board.SubZones.Add(new BoardSubZone()
                  {
-                     Coordinates = new List<(int, int)>(zone.SubZone.Coordinates),
+                     Coordinates = new List<Vector2Int>(zone.SubZone.Coordinates),
+                     BoardSubZoneColorId = zone.SubZone.BoardSubZoneColorId,
                  });
              }
          }

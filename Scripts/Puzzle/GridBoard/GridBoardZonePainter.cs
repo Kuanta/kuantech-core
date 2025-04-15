@@ -31,9 +31,8 @@ namespace Kuantech.Puzzle
                 if(zone.SubZone == null || zone.SubZone.Coordinates.IsNullOrEmpty()) continue;
                 foreach (var tile in zone.SubZone.Coordinates)
                 {
-                    Vector3 tilePos = Board.GetGlobalPosition(tile.Item1, tile.Item2);
-                    
-                    Gizmos.DrawWireCube(tilePos, new Vector3(0.9f * Board.CellWidth, 0.01f, 0.9f * Board.CellHeight));
+                    Vector3 tilePos = Board.GetGlobalPosition(tile.y, tile.x);
+                    Gizmos.DrawCube(tilePos, new Vector3(0.9f * Board.CellWidth, 0.01f, 0.9f * Board.CellHeight));
                 }
             }
         }

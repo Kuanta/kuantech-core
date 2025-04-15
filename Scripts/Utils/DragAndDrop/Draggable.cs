@@ -199,24 +199,26 @@ namespace Kuantech.Utils
             Vector3 cursorPosition = DragManager.GetCursorPosition(true);
             DragManager dm = GameManager.Instance.GetSubManagerByType<DragManager>() as DragManager;
             Ray ray = dm.MainCamera.ScreenPointToRay(cursorPosition);
-            Vector3 o = ray.origin;
-            Vector3 d = ray.direction;
-            float denom = Vector3.Dot(planeNormal, d);
-            
-            if (Mathf.Abs(denom) < 1e-6f)
-            {
-                return planePoint;
-            }
-            
-            float t = Vector3.Dot(planePoint - o, planeNormal) / denom;
-            
-            if (t < 0f)
-            {
-                return planePoint;
-            }
 
-            Vector3 intersection = o + t * d;
-            return intersection;
+            // Vector3 o = ray.origin;
+            // Vector3 d = ray.direction;
+            // float denom = Vector3.Dot(planeNormal, d);
+            //
+            // if (Mathf.Abs(denom) < 1e-6f)
+            // {
+            //     return planePoint;
+            // }
+            //
+            // float t = Vector3.Dot(planePoint - o, planeNormal) / denom;
+            //
+            // if (t < 0f)
+            // {
+            //     return planePoint;
+            // }
+            //
+            // Vector3 intersection = o + t * d;
+            // return intersection;
+            return Helpers.CheckRayAgainstPlane(ray, planeNormal, this.planePoint);
         }
         /// <summary>
         /// Called when draggable enters a drop zone
