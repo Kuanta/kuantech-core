@@ -15,7 +15,7 @@ namespace Kuantech.Puzzle.Utils
         public GridBoard GridBoard;
         protected override void Update()
         {
-            if(!FitOnUpdate) return;
+            if(!FitOnUpdate || GridBoard == null) return;
             AdjustAnchorPositions();
             base.Update();
         }

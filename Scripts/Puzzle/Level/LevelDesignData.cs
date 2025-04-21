@@ -60,6 +60,27 @@ namespace Kuantech.Puzzle
                     continue;
                 }
 
+                var boolAttribute =
+                    (SheetBoolDataColumnAttribute) Attribute.GetCustomAttribute(field,
+                        typeof(SheetBoolDataColumnAttribute));
+                if (boolAttribute != null)
+                {
+                    bool value = SheetReader.ReadBoolData(row, boolAttribute.ColumnIndex, boolAttribute.DefaultValue);
+                    field.SetValue(this, value);
+                    continue;
+                }
+                
+                //Float Array Data Attribute
+                var floatArrayAttribute =
+                    (SheetFloatArrayDataColumnAttribute) Attribute.GetCustomAttribute(field,
+                        typeof(SheetFloatArrayDataColumnAttribute));
+                if (floatArrayAttribute != null)
+                {
+                    float[] values = SheetReader.ReadFloatArrayData(row, floatArrayAttribute.ColumnIndex);
+                    field.SetValue(this, values);
+                    continue;
+                }
+                
                 var stringAttribute =
                     (SheetStringDataColumnAttribute) Attribute.GetCustomAttribute(field,
                         typeof(SheetStringDataColumnAttribute));

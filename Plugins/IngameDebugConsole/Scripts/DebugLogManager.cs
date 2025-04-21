@@ -604,6 +604,7 @@ namespace IngameDebugConsole
 				return;
 #endif
 
+			
 			int queuedLogCount = queuedLogEntries.Count;
 			if( queuedLogCount > 0 )
 			{

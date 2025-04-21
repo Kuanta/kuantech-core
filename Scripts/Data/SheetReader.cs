@@ -230,8 +230,41 @@ namespace Kuantech.Data
             }
             return result;
         }
-        
 
+        public static float[] ReadFloatArrayData(JToken row, int columnIndex)
+        {
+            try
+            {
+                string arrayString = row[columnIndex].ToString();
+                //parse float array with invariant culture
+                float[] floats = arrayString.Split(',')
+                    .Select(x =>
+                        float.TryParse(x.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out float result)
+                            ? result
+                            : 0f)
+                    .ToArray();
+                return floats;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e.ToString());
+                return null;
+            }
+        }
+
+        public static bool ReadBoolData(JToken row, int columnIndex, bool defaultValue = true)
+        {
+            if (row.Count() <= columnIndex)
+            {
+                Debug.LogError($"Column index is {columnIndex}");
+                return defaultValue;
+            }
+            if(!Int32.TryParse(row[columnIndex].ToString(), out int result))
+            {
+                return defaultValue;
+            }
+            return result > 0;
+        }
         #endregion
     }
     
