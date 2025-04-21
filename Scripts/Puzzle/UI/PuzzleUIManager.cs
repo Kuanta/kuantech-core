@@ -1,3 +1,4 @@
+using IngameDebugConsole;
 using Kuantech.Core;
 
 namespace Kuantech.Puzzle.UI
@@ -32,5 +33,13 @@ namespace Kuantech.Puzzle.UI
                 context.LevelUI.Close();
             }
         }
+        [ConsoleMethod("toggleHUD", "Toggles the hud")]
+        public static void SetLevelCC(bool toggle)
+        {
+            var context = PuzzleUIManager.GetContext<PuzzleUIManager>();
+            if(context == null) return;
+            context.LevelUI.ToggleHUD(toggle);
+        }
+        
     }
 }

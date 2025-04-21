@@ -1,5 +1,4 @@
-﻿using Kuantech.BlockShuffle;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Kuantech.Puzzle.BlockingDrag
 {
@@ -10,9 +9,6 @@ namespace Kuantech.Puzzle.BlockingDrag
         [SerializeField] private Collider Collider;
         [SerializeField] private float SpeedGain = 10f;
         [SerializeField] private float MaxSpeed = 10f;
-
-        [Header("Visual")] 
-        [SerializeField] private BlockVisual BlockVisual;
         
         private Vector3 _lastPosition;
         [SerializeField] private float MaxDistance = 1;
@@ -48,7 +44,6 @@ namespace Kuantech.Puzzle.BlockingDrag
             shakeFactor = Mathf.Clamp(shakeFactor,-1,1);
             _lastPositionChange = shakeFactor;
             positionChange *= shakeFactor;
-            BlockVisual.SetTargetSwayFactor(new Vector2(positionChange.x, positionChange.z));
         }
         private float _lastPositionChange;
         public float GetLastPositionChange()
@@ -62,7 +57,6 @@ namespace Kuantech.Puzzle.BlockingDrag
             Rigidbody.isKinematic = false;
             Rigidbody.velocity = Vector3.zero;
             _lastPosition = transform.position;
-            BlockVisual.ToggleLerpSway(true);
             return true;
         }
         
@@ -71,9 +65,7 @@ namespace Kuantech.Puzzle.BlockingDrag
             base.DragEnd();
             Rigidbody.velocity = Vector3.zero;
             Rigidbody.isKinematic = true;
-            BlockVisual.ToggleLerpSway(false);
-            BlockVisual.SetSwayFactorX(0);
-            BlockVisual.SetSwayFactorZ(0);
+
         }
         
         public Vector3 GetCurrentVelocity()
