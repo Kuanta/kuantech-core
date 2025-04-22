@@ -47,8 +47,10 @@ namespace Kuantech.Puzzle
 
                     if (GUILayout.Button("C", GUILayout.Width(50)))
                     {
-                        zp.Zones[i].SubZone.BoardSubZoneColorId = 
-                            (zp.Zones[i].SubZone.BoardSubZoneColorId == 0) ? 1 : 0;
+                        int currentColor = zp.Zones[i].SubZone.BoardSubZoneColorId;
+                        currentColor++;
+                        if (currentColor >= 3) currentColor = 0;
+                        zp.Zones[i].SubZone.BoardSubZoneColorId = currentColor;
                         UpdateSubZones();
                     }
                     EditorGUILayout.EndHorizontal();

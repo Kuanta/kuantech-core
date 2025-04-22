@@ -23,7 +23,7 @@ namespace Kuantech.Puzzle
 
         public Color DarkZoneColor;
         public Color LighterZoneColor;
-
+        public Color MidZoneColor;
         private void OnDrawGizmos()
         {
             if (!Application.isEditor) return;
@@ -40,6 +40,17 @@ namespace Kuantech.Puzzle
                 }
                 
                 Gizmos.color = zone.SubZone.BoardSubZoneColorId == 0 ? DarkZoneColor : LighterZoneColor;
+                if (zone.SubZone.BoardSubZoneColorId == 0)
+                {
+                    Gizmos.color = DarkZoneColor;
+                }else if (zone.SubZone.BoardSubZoneColorId == 1)
+                {
+                    Gizmos.color = LighterZoneColor;
+                }
+                else
+                {
+                    Gizmos.color = MidZoneColor;
+                }
                 foreach (var tile in zone.SubZone.Coordinates)
                 {
                     Vector3 tilePos = Board.GetGlobalPosition(tile.y, tile.x);
