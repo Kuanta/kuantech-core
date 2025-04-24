@@ -18,6 +18,15 @@ namespace Kuantech.Puzzle
     public class GridTileCoordinate : BoardTileCoordinate
     {
         public int DummyVar;
+
+        public static GridTileCoordinate FromVector2(Vector2Int rowCol)
+        {
+            return new GridTileCoordinate()
+            {
+                Row = rowCol.y,
+                Column = rowCol.x,
+            };
+        }
     }
     
     public class GridTile : BoardTile

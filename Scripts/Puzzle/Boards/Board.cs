@@ -8,9 +8,9 @@ namespace Kuantech.Puzzle
         public BoardTileCoordinate()
         {
             Layer = 0;
-            Row = -1;
-            Column = -1;
-            Height = -1;
+            Row = 0;
+            Column = 0;
+            Height = 0;
         }
         //Common params
         public int Layer;

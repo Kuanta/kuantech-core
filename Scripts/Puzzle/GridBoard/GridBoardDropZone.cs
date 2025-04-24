@@ -4,7 +4,6 @@ using UnityEngine.Events;
 
 namespace Kuantech.Puzzle
 {
-    [RequireComponent(typeof(GridBoard))]
     public class GridBoardDropZone : MonoBehaviour, IDropZone
     {
         public GridBoard GridBoard;

@@ -77,7 +77,7 @@ namespace Kuantech.Puzzle
             return true;
         }
         
-        public bool Equals(ConnectivityMask other)
+        public readonly bool Equals(ConnectivityMask other)
         {
             for (int i = 0; i < 8; i++)
             {

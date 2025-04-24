@@ -460,19 +460,34 @@ namespace Kuantech.Utils
         public static GameObject InstantiatePrefab(GameObject prefab)
         {
             #if UNITY_EDITOR
-            if (Application.isEditor)
+            if (Application.isPlaying)
             {
-                return PrefabUtility.InstantiatePrefab(prefab) as GameObject;
+                return Object.Instantiate(prefab);
             }
             else
             {
-                return Object.Instantiate(prefab);
+                return PrefabUtility.InstantiatePrefab(prefab) as GameObject;
             }
 #else
 return GameObject.Instantiate(prefab);
 #endif
         }
-        
+
+        public static void DestroyGameObject(GameObject gameObj)
+        {
+#if UNITY_EDITOR
+            if (Application.isPlaying)
+            {
+                GameObject.Destroy(gameObj);
+            }
+            else
+            {
+                GameObject.DestroyImmediate(gameObj);
+            }
+#else
+            GameObject.Destroy(gameObj);
+#endif
+        }
         public static void DestroyAllChildren(this Transform transform)
         {
             for (int i = transform.childCount - 1; i >= 0; i--)
