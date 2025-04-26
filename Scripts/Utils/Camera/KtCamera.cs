@@ -35,6 +35,7 @@ namespace Kuantech.Core.Camera
         {
             if (Camera != null)
             {
+                Camera.transform.DOKill();
                 Camera.transform.DOShakePosition(shakeDuration, shakesStrength, vibrato, Randomness)
                     .OnComplete(() => Camera.transform.localPosition = Vector3.zero);
             }
