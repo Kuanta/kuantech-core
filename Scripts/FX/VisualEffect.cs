@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Core.FX
@@ -9,6 +10,7 @@ namespace Kuantech.Core.FX
         [SerializeField] private int EmitCount = 1;
         [SerializeField] private List<ParticleSystem> ChildEmitters;
         [SerializeField] private bool PlayWithEffectsManager;
+        [SerializeField] private List<ParticleSystem> ParticleSystemsToColor;
 
         public void Play(EffectPlaySettings settings)
         {
@@ -43,7 +45,15 @@ namespace Kuantech.Core.FX
 
         public virtual void SetColor(Color color)
         {
-            ParticleSystem[] particleSystems = GetComponentsInChildren<ParticleSystem>();
+            ParticleSystem[] particleSystems;
+            if (ParticleSystemsToColor.IsNullOrEmpty())
+            {
+                particleSystems = GetComponentsInChildren<ParticleSystem>();
+            }
+            else
+            {
+                particleSystems = ParticleSystemsToColor.ToArray();
+            }
             foreach(var particle in particleSystems)
             {
                 var mainModule = particle.main;
