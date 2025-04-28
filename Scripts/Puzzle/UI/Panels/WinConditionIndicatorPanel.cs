@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Kuantech.Core.UI;
 using Kuantech.Utils.UI;
 using UnityEngine;
 
@@ -25,6 +26,9 @@ namespace Kuantech.Puzzle.UI
         [Header("Sizer")] 
         [SerializeField] private PanelSizer PanelSizer;
 
+        [Header("Flat Score Panel")] [SerializeField]
+        private Fillbar FlatScorePanel;
+        
         private WinConditionTracker _tracker;
         private int _currentlyShownStage = 0;
         public void SetTracker(WinConditionTracker tracker)
@@ -92,6 +96,12 @@ namespace Kuantech.Puzzle.UI
             _currentlyShownStage = _tracker.GetCurrentStageIndex();
             //Set the size
             if(PanelSizer != null) PanelSizer.SetHorizontalElementCount(currentStage.Targets.Count);
+            
+            //Set flat score panel
+            if (FlatScorePanel != null)
+            {
+                SetScore(null, currentStage.GetCollectedAmount(null), currentStage.GetTarget(null));
+            }
         }
 
         public virtual WinConditionIndicatorElement SetWinIndicatorElement(PuzzleLevelStage.WinConditionEntry entry)
@@ -131,6 +141,12 @@ namespace Kuantech.Puzzle.UI
         
         public void SetScore(string key, int currentAmount, int remainingAmount)
         {
+            if (key == null)
+            {
+                //Set flat score
+                FlatScorePanel.SetValue(currentAmount, remainingAmount+currentAmount);
+                return;
+            }
             if (IndicatorElements == null || !IndicatorElements.ContainsKey(key)) return;
             IndicatorElements[key].SetScore(currentAmount, remainingAmount);
         }

@@ -417,6 +417,25 @@ namespace Kuantech.Puzzle
         }
         
         /// <summary>
+        /// Checks if there is any suitable slot for grid tile on the board
+        /// </summary>
+        /// <param name="tile"></param>
+        /// <returns></returns>
+        public bool CanTileBePlacedAnywhere(GridTile tile)
+        {
+            for (int r = 0; r < RowCount; ++r)
+            {
+                for (int c = 0; c < ColumnCount; ++c)
+                {
+                    bool canBePlaced = CanTileBePlaced(tile, r, c);
+                    if (canBePlaced) return true;
+                }
+            }
+
+            return false;
+        }
+        
+        /// <summary>
         /// Checks whether 
         /// </summary>
         /// <param name="group"></param>
@@ -932,6 +951,26 @@ namespace Kuantech.Puzzle
         #region Tile Highlighting
 
         private HashSet<GridTileBackground> _highlightedTiles;
+
+        public void IndicateBackgroundTiles(List<GridTileCoordinate> coordinatesToIndicate)
+        {
+            foreach (var coord in coordinatesToIndicate)
+            {
+                GridTileBackground bg = GetBackground(coord);
+                if(bg == null) continue;
+                bg.Indicate();
+            }
+        }
+        
+        public void ClearBackgroundTilesIndicate(List<GridTileCoordinate> coordinatesToIndicate)
+        {
+            foreach (var coord in coordinatesToIndicate)
+            {
+                GridTileBackground bg = GetBackground(coord);
+                if(bg == null) continue;
+                bg.ClearIndicate();
+            }
+        }
         
         /// <summary>
         /// Clears the highlighted tile backgrounds

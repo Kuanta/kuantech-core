@@ -27,7 +27,8 @@ namespace Kuantech.Puzzle.UI
         public BoostersHUD BoostersHUD;
         public float CompletePanelShowDelay = 0f;
         public float FailedPanelShowDelay = 0f;
-       
+        public ComboIndicator ComboIndicator;
+        
         [Header("Intro Panels")]
         public LevelIntroPanel HardLevelIntroPanel;
         public LevelIntroPanel BonusLevelIntroPanel;
@@ -118,7 +119,10 @@ namespace Kuantech.Puzzle.UI
 
         public virtual void OnPlayLevel()
         {
-            if(LevelIndicator != null) LevelIndicator.SetCurrentStage(CurrentLevel.GetCurrentStage());
+            if (LevelIndicator != null)
+            {
+                LevelIndicator.SetCurrentStage(CurrentLevel.GetCurrentStage());
+            }
         }
         private void OnLevelStateChange(LevelStateChangeData levelStateChangeData)
         {
@@ -146,6 +150,12 @@ namespace Kuantech.Puzzle.UI
             int targetAmount = scoreTracker.GetTargetAmount(key);
             int remaining = Mathf.Max(targetAmount - currentAmount, 0);
             if(WinConditionIndicatorPanel != null) WinConditionIndicatorPanel.SetScore(key, currentAmount, remaining);
+        }
+
+        public void TriggerCombo(int comboIndex)
+        {
+            if (ComboIndicator == null) return;
+            ComboIndicator.TriggerCombo(comboIndex);
         }
         #endregion
         
@@ -240,6 +250,10 @@ namespace Kuantech.Puzzle.UI
             }
             ToggleTutorialHand(false);
             ToggleTutorialText(false);
+            if (ComboIndicator != null)
+            {
+                ComboIndicator.Reset();
+            }
             if(BoostersHUD != null) BoostersHUD.Reset();
         }
         

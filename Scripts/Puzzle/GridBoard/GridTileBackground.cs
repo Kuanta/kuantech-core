@@ -33,5 +33,21 @@ namespace Kuantech.Puzzle
             if (HighlightRenderer == null) return;
             HighlightRenderer.material.SetFloat(HighlightToggleFieldKey, 0);
         }
+        
+        /// <summary>
+        /// Indicate is used in tutorials. Used to grab focus of players towards the tile. Not same as highlight
+        /// </summary>
+        public virtual void Indicate()
+        {
+            
+        }
+        
+        /// <summary>
+        /// Clears the indicate
+        /// </summary>
+        public virtual void ClearIndicate()
+        {
+            
+        }
     }
 }

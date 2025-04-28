@@ -11,6 +11,7 @@ namespace Kuantech.Puzzle
     {
         public List<string> TargetKeys;
         public List<int> CollectedAmounts;
+        public int CurrentFlatScore;
     }
     
     /// <summary>

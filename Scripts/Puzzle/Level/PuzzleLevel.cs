@@ -142,6 +142,15 @@ namespace Kuantech.Puzzle
             //Update UI
             LevelUI.SetScore(scoreKey, WinConditionTracker);
         }
+
+        public virtual void EarnFlatScore(int score)
+        {
+            if (WinConditionTracker != null)
+            {
+                WinConditionTracker.AddFlatScore(score);
+            }
+            LevelUI.SetScore(null, WinConditionTracker);
+        }
         
         /// <summary>
         /// All the resetting about UI should be done here

@@ -82,16 +82,35 @@ namespace Kuantech.Core.FX
         }
         
         /// <summary>
+        /// A static method to play sounds by tag
+        /// </summary>
+        /// <param name="tag"></param>
+        public static void PlayComboSoundByTag(int tag, int comboIndex)
+        {
+            var audioLib = EffectsLibrary.GetAudioLibrary();
+            if (audioLib == null) return;
+            Sound sound = audioLib.GetSountByTag(tag);
+            audioLib.PlayComboSound(sound, tag);
+        }
+        
+        /// <summary>
         /// Plays a sound that is on the 
         /// </summary>
         /// <param name="audioType"></param>
         public void PlaySound(int audioType)
         {
-            if (_audios == null || !_audios.ContainsKey(audioType)) return;
-            if (_audios[audioType] == null) return;
+            Sound sound = GetSountByTag(audioType);
+            if (sound == null) return;
             PlaySound(_audios[audioType]);
         }
 
+        public Sound GetSountByTag(int audioType)
+        {
+            if (_audios == null || !_audios.ContainsKey(audioType)) return null;
+            if (_audios[audioType] == null) return null;
+            return _audios[audioType];
+        }
+        
         public void StopSound(int audioType, float fadeOutDuration=0)
         {
             if (_audios == null || !_audios.ContainsKey(audioType)) return;
@@ -124,6 +143,11 @@ namespace Kuantech.Core.FX
             }
         }
 
+        public void PlayComboSound(Sound sound, int comboIndex)
+        {
+            sound.PlayComboSfx(comboIndex);
+        }
+        
         public float GetElapsedTime(string soundId)
         {
             if(_lastPlayedTimes == null || !_lastPlayedTimes.ContainsKey(soundId))

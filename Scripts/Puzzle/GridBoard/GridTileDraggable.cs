@@ -70,14 +70,19 @@ namespace Kuantech.Puzzle
                 GridTileCoordinate coord = gridBoardDropZone.GetRowColFromDraggablePosition(this);
                 
                 //If there is a change in the coordinates, clear the highlights
-                if (coord.Row != _lastCoordinate.Row || coord.Column != _lastCoordinate.Column)
+                if (_lastCoordinate == null || coord.Row != _lastCoordinate.Row || coord.Column != _lastCoordinate.Column)
                 {
-                    gridBoardDropZone.GridBoard.ClearHighlightedTiles();
+                    if(gridBoardDropZone != null) gridBoardDropZone.GridBoard.ClearHighlightedTiles();
                 }
                 if (CanBeDroppedToSlot(gridBoardDropZone.GridBoard, coord.Row, coord.Column))
                 {
 
                     HighlightBoardBacgkroundTiles(gridBoardDropZone.GridBoard, _lastCoordinate);
+                }
+
+                if (_lastCoordinate == null)
+                {
+                    _lastCoordinate = new GridTileCoordinate();
                 }
                 _lastCoordinate.Row = coord.Row;
                 _lastCoordinate.Column = coord.Column;
@@ -104,14 +109,29 @@ namespace Kuantech.Puzzle
         public void HighlightBoardBacgkroundTiles(GridBoard board, GridTileCoordinate coordinate)
         {
             List<GridTileCoordinate> coordinates = new List<GridTileCoordinate>();
-            foreach (var pair in GridTileGroup.ChildTiles)
+            if (GridTileGroup != null)
             {
-                coordinates.Add(new GridTileCoordinate()
+                foreach (var pair in GridTileGroup.ChildTiles)
                 {
-                    Row = pair.Key.Row + coordinate.Row,
-                    Column = pair.Key.Column + coordinate.Column,
-                });
+                    coordinates.Add(new GridTileCoordinate()
+                    {
+                        Row = pair.Key.Row + coordinate.Row,
+                        Column = pair.Key.Column + coordinate.Column,
+                    });
+                }
             }
+            else
+            {
+                foreach (var coord in GridTile.Coordinates)
+                {
+                    coordinates.Add(new GridTileCoordinate()
+                    {
+                        Row = coord.Row + coordinate.Row,
+                        Column = coord.Column + coordinate.Column,
+                    });
+                }
+            }
+    
             board.HighlightTiles(coordinates);
         }
 

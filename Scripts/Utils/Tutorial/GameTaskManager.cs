@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Core
@@ -25,6 +26,13 @@ namespace Kuantech.Core
             StartCoroutine(_StartTasks(taskToStart));
         }
 
+        private void Update()
+        {
+            if (CurrentTaskIndex < 0) return;
+            if (!Tasks.IsValidIndex(CurrentTaskIndex)) return;
+            if (Tasks[CurrentTaskIndex].Completed) return;
+            Tasks[CurrentTaskIndex].UpdateTask(Time.deltaTime);
+        }
         private IEnumerator _StartTasks(int taskToStart=0)
         {
             yield return new WaitForSeconds(TasksStartDelay);
