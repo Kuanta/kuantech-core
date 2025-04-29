@@ -1,4 +1,5 @@
-﻿using TMPro;
+﻿using Sirenix.OdinInspector;
+using TMPro;
 using UnityEngine;
 
 namespace Kuantech.Core.HyperCasual.UI
@@ -15,7 +16,8 @@ namespace Kuantech.Core.HyperCasual.UI
         private float _lastComboTime;
         private bool _fadingOut = false;
         private bool _comboTriggered = false;
-
+        
+        [Button("Trigger Combo")]
         public void TriggerCombo(int comboCount)
         {
             if (comboCount == 0) return;
