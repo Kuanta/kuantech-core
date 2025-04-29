@@ -36,9 +36,9 @@ namespace Kuantech.Utils.Mobile
         public override void OnSubmanagersInitialized()
         {
             base.OnSubmanagersInitialized();
-            DefaultHapticMagnitude = ConfigManager.GetFloatConfig("Haptic Magnitude");
-            DefaultHapticDuration = ConfigManager.GetFloatConfig("Haptic Duration");
-            DefaultHapticFrequency = ConfigManager.GetFloatConfig("Haptic Frequency");
+            DefaultHapticMagnitude = ConfigManager.GetFloatConfig("HapticMagnitude");
+            DefaultHapticDuration = ConfigManager.GetFloatConfig("HapticDuration");
+            DefaultHapticFrequency = ConfigManager.GetFloatConfig("HapticFrequency");
         }
         
         [Button("Enable Haptics")]
