@@ -136,18 +136,24 @@ namespace Kuantech.Utils
             return context.Configs[key];
         }
 
-        public static float GetFloatConfig(string key)
+        public static float GetFloatConfig(string key, float defaultValue = 0.0f)
         {
+            ConfigEntry entry = GetConfig(key);
+            if (entry == null) return defaultValue;
             return GetConfig(key).FloatValue;
         }
 
-        public static int GetIntConfig(string key)
+        public static int GetIntConfig(string key, int defaultValue = 0)
         {
+            ConfigEntry entry = GetConfig(key);
+            if (entry == null) return defaultValue;
             return GetConfig(key).IntegerValue;
         }
 
-        public static string GetStringConfig(string key)
+        public static string GetStringConfig(string key, string defaultValue)
         {
+            ConfigEntry entry = GetConfig(key);
+            if (entry == null) return defaultValue;
             return GetConfig(key).StringValue;
         }
 
