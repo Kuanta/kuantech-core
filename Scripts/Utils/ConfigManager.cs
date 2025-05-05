@@ -98,7 +98,7 @@ namespace Kuantech.Utils
         private void OnConfigSheetRead(JObject sheetData)
         {
             JArray array = (JArray) sheetData["values"];
-            for (int i = 0; i < array.Count - 1; ++i)
+            for (int i = 0; i < array.Count; ++i)
             {
                 JToken row = array[i];
                 string configKey = row[0].ToString();

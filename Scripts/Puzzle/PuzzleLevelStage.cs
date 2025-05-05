@@ -109,7 +109,11 @@ namespace Kuantech.Puzzle
             int existingAmount = GetCollectedAmount(key);
             SetCollectedAmount(key, existingAmount+amount);
         }
-
+        
+        public int GetFlatScore()
+        {
+            return CurrentFlatScore;
+        }
         public int GetCollectedAmount(string key)
         {
             if (key == null) return CurrentFlatScore;

@@ -95,7 +95,7 @@ namespace Kuantech.Core.FX
         public void PlayComboSfx(int comboIndex)
         {
             AudioSource.Stop();
-            comboIndex = Mathf.Clamp(comboIndex, 0, ComboSfxCollection.Count);
+            comboIndex = Mathf.Clamp(comboIndex, 0, ComboSfxCollection.Count-1);
             AudioSource.clip = ComboSfxCollection[comboIndex];
             Play();
         }
