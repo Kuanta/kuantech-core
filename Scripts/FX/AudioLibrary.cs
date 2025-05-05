@@ -90,7 +90,7 @@ namespace Kuantech.Core.FX
             var audioLib = EffectsLibrary.GetAudioLibrary();
             if (audioLib == null) return;
             Sound sound = audioLib.GetSountByTag(tag);
-            audioLib.PlayComboSound(sound, tag);
+            audioLib.PlayComboSound(sound, comboIndex);
         }
         
         /// <summary>
