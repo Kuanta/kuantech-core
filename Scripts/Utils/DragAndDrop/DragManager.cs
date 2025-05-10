@@ -81,6 +81,7 @@ namespace Kuantech.Utils
         public UnityAction OnClickedEmpty;
         
         protected Vector3 _startPosition;
+        private Vector3 _lastCursorWorldPosition;
         protected float _startTime;
         protected bool _startedClick;
         protected bool _dragging = false;
@@ -122,7 +123,8 @@ namespace Kuantech.Utils
                 {
                     _dragging = true;
                     Vector3 worldPosition = GetMouseWorldPosition();
-                    _draggedInterface.Drag(worldPosition);
+                    _draggedInterface.Drag(worldPosition, worldPosition - _lastCursorWorldPosition);
+                    _lastCursorWorldPosition = worldPosition;
                 }
             }
             else if (Input.GetMouseButtonUp(0) && _draggedInterface != null)
@@ -232,7 +234,8 @@ namespace Kuantech.Utils
             {
                 _draggedInterface.OnClickDown();
             }
-            if (_draggedInterface != null && _draggedInterface.DragStart())
+            Vector3 dragHitPoint = hit.point;
+            if (_draggedInterface != null && _draggedInterface.DragStart(dragHitPoint))
             {
                 draggedObject = hit.collider.transform;
                 _dragCameraDistance = Vector3.Distance(MainCamera.transform.position, draggedObject.position) + DragCameraDistanceOffset;
@@ -244,17 +247,19 @@ namespace Kuantech.Utils
                     _draggedInterface = null;
                     return;
                 }
+
+                _lastCursorWorldPosition = GetMouseWorldPosition();
                 OnDragStart?.Invoke(this, _draggedInterface); //Invoke event for subscribers
             }
         }
 
-        public void SetDraggable(IDraggable draggable)
-        {
-            _draggedInterface = draggable;
-            OnDragStart?.Invoke(this, _draggedInterface); //Invoke event for subscribers
-            _draggedInterface.DragStart(); //Call drag start on the dragged object
-            draggedObject = (_draggedInterface as MonoBehaviour).gameObject.transform;
-        }
+        // public void SetDraggable(IDraggable draggable)
+        // {
+        //     _draggedInterface = draggable;
+        //     OnDragStart?.Invoke(this, _draggedInterface); //Invoke event for subscribers
+        //     _draggedInterface.DragStart(); //Call drag start on the dragged object
+        //     draggedObject = (_draggedInterface as MonoBehaviour).gameObject.transform;
+        // }
         private bool CheckGround(out Vector3 targetPosition)
         {
             RaycastHit hit;

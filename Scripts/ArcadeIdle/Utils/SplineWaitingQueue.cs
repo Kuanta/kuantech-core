@@ -22,6 +22,7 @@ namespace Kuantech.Utils
         public bool MoveToInitialPoints;
         public override void Initialize()
         {
+            base.Initialize();
             _spline = new BSpline
             {
                 InvertDirection = true
@@ -96,6 +97,7 @@ namespace Kuantech.Utils
                     else
                     {
                         splineFollower.SetPositionWithDistance(totalDistance);
+                        splineFollower.Moving = false;
                         // splineFollower.SetPositionWithDistance(initialDistance);
                         // splineFollower.FollowSpeed = initialSpeed;
                         // initialSpeed *= InitialSpeedDecay;

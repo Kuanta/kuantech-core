@@ -4,7 +4,6 @@ using UnityEngine.Events;
 
 namespace Kuantech.Puzzle
 {
-    [RequireComponent(typeof(GridBoard))]
     public class GridBoardDropZone : MonoBehaviour, IDropZone
     {
         public GridBoard GridBoard;
@@ -52,8 +51,7 @@ namespace Kuantech.Puzzle
 
         public GridTileCoordinate GetRowColFromDraggablePosition(GridTileDraggable draggable)
         {
-            Vector3 positionToCheck;
-            positionToCheck = draggable.GetAnchorTilePosition(GridBoard);
+            Vector3 positionToCheck = draggable.GetAnchorTilePosition(GridBoard);
             return GridBoard.GetRowColFromPosition(positionToCheck);
 
         }
@@ -65,8 +63,7 @@ namespace Kuantech.Puzzle
             {
                 return DroppedTileHandler(draggableTile, row, col);
             }
-            draggableTile.GridTileGroup.PlaceOnBoard(GridBoard, row, col);
-            Destroy(draggableTile.gameObject);
+            draggableTile.HandleDropToBoard(GridBoard, row, col);
             return true;
         }
 

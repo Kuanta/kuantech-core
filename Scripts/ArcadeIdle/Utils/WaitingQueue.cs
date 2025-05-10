@@ -23,7 +23,7 @@ namespace Kuantech.ArcadeIdle
 
         public virtual void Initialize()
         {
-            
+            WaitingElements = new Queue<IWaitingQueueElement>();
         }
         public bool IsQueueFull()
         {

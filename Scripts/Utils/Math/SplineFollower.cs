@@ -53,6 +53,7 @@ namespace Kuantech.Utils.Math
         public void GoToDistance(float distance)
         {
             CurrentFollowMethod = FollowMethod.FollowWithDistance;
+            StopAtReachindTarget = true;
             _targetDistance = distance;
             Moving = true;
             Paused = false;
@@ -94,13 +95,18 @@ namespace Kuantech.Utils.Math
         }
         #region Follow
 
+        public void StartMove()
+        {
+            StopAtReachindTarget = false;
+            Moving = true;
+        }
+        
         public void SetSpeed(float speed)
         {
             CurrentFollowMethod = FollowMethod.FollowWithDistance;
             FollowSpeed = speed;
-            StopAtReachindTarget = false;
-            Moving = true;
         }
+        
         /// <summary>
         /// Sets a spline and follows it to the end
         /// </summary>
@@ -117,6 +123,11 @@ namespace Kuantech.Utils.Math
         {
             _currentDistance = distance;
             SetPositionWithDistance(_currentDistance);
+        }
+
+        public float GetCurrentDistance()
+        {
+            return _currentDistance;
         }
         
         /// <summary>

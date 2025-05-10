@@ -53,6 +53,9 @@ namespace Kuantech.Puzzle
 
         [Header("Pathfinding")] 
         public GridBoardPathTree GridBoardPathTree;
+
+        [Header("Sub Zones")] 
+        public List<BoardSubZone> SubZones;
         
         public List<GridTile[,]> Tiles; //A list of list to represent layered tiles
         //public GridTile[,] Tiles;
@@ -150,7 +153,7 @@ namespace Kuantech.Puzzle
             GridTile[] existingTiles = parent.transform.GetComponentsInChildren<GridTile>();
             foreach (var tile in existingTiles)
             {
-                GridTileCoordinate coord = GetRowColFromPosition(tile.transform.position);
+                GridTileCoordinate coord = GetRowColFromPosition(tile.GetTileAnchorPosition());
                 if (!IsCoordinateValid(coord))
                 {
                     continue;
@@ -169,6 +172,10 @@ namespace Kuantech.Puzzle
             {
                 tile = Instantiate(data.ExistingTile);
             }
+            
+            //Initialize Existing
+            tile.InitializeExisting();
+
             if (!CanTileBePlaced(tile, coord.Row, coord.Column, coord.Layer))
             {
                 tile.Despawn(false);
@@ -294,6 +301,11 @@ namespace Kuantech.Puzzle
                 Debug.LogError("Couldn't set tile!");
                 return;
             }
+
+            if (gridTile.ParentBoard != null)
+            {
+                gridTile.ParentBoard.UnsetTile(gridTile);
+            }
             gridTile.ParentBoard = this;
             gridTile.SetRowCol(row, col, layer);
             SetTileArrayForTile(gridTile, row, col, layer);
@@ -328,7 +340,8 @@ namespace Kuantech.Puzzle
         public void PositionTileAtCoordinate(GridTile tile, int row, int col, int layer)
         {
             tile.transform.SetParent(transform);
-            tile.SetLocalPosition(GetLocalPosition(row, col));
+            Vector3 tileLocalPositionOffset = tile.GetTileLocalOffset();
+            tile.SetLocalPosition(GetLocalPosition(row, col)-tileLocalPositionOffset); 
             tile.transform.localRotation = Quaternion.identity;
             tile.transform.localScale = Vector3.one;
         }
@@ -341,7 +354,11 @@ namespace Kuantech.Puzzle
         /// <param name="anchorLayer"></param>
         private void SetTileArrayForTile(GridTile tile, int anchorRow, int anchorColumn, int anchorLayer)
         {
-            Tiles[anchorLayer][anchorRow , anchorColumn] = tile;
+            if (tile.Coordinates.IsNullOrEmpty())
+            {
+                Tiles[anchorLayer][anchorRow, anchorColumn] = tile;
+                return;
+            }
             foreach (var localCoordinte in tile.Coordinates)
             {
                 Tiles[anchorLayer][anchorRow + localCoordinte.Row, anchorColumn + localCoordinte.Column] = tile;
@@ -351,7 +368,14 @@ namespace Kuantech.Puzzle
 
         private void ClearTileArrayForTile(GridTile tile,int anchorRow, int anchorCol, int anchorLayer=0)
         {
-            Tiles[anchorLayer][anchorRow, anchorCol] = null;
+            if (tile.Coordinates.IsNullOrEmpty())
+            {
+                if (Tiles[anchorLayer][anchorRow, anchorCol] == tile)
+                {
+                    Tiles[anchorLayer][anchorRow, anchorCol] = null;
+                }
+                return;
+            }
             foreach (var localCoord in tile.Coordinates)
             {
                 int row = anchorRow + localCoord.Row;
@@ -375,6 +399,7 @@ namespace Kuantech.Puzzle
                 int row = anchorRow + localCoord.Row;
                 int col = anchorCol + localCoord.Column;
                 int layer = anchorLayer + localCoord.Layer;
+                if (!IsCoordinateValid(row, col)) return false;
                 GridTile tileAtCoord = GetTile(row, col, layer);
                 if (tileAtCoord == tile)
                 {
@@ -389,6 +414,25 @@ namespace Kuantech.Puzzle
             }
 
             return true;
+        }
+        
+        /// <summary>
+        /// Checks if there is any suitable slot for grid tile on the board
+        /// </summary>
+        /// <param name="tile"></param>
+        /// <returns></returns>
+        public bool CanTileBePlacedAnywhere(GridTile tile)
+        {
+            for (int r = 0; r < RowCount; ++r)
+            {
+                for (int c = 0; c < ColumnCount; ++c)
+                {
+                    bool canBePlaced = CanTileBePlaced(tile, r, c);
+                    if (canBePlaced) return true;
+                }
+            }
+
+            return false;
         }
         
         /// <summary>
@@ -422,12 +466,12 @@ namespace Kuantech.Puzzle
         /// <param name="col"></param>
         /// <param name="layer"></param>
         /// <returns></returns>
-        public void UnsetTile(int anchorRow, int anchorCol, int anchorLayer=0)
+        public void 
+            UnsetTile(int anchorRow, int anchorCol, int anchorLayer=0)
         {
             GridTile tile = GetTile(anchorRow, anchorCol, anchorLayer);
             if (tile == null) return;
-            ClearTileArrayForTile(tile, anchorRow, anchorCol, anchorLayer);
-            tile.ParentBoard = null;
+            UnsetTile(tile);
         }
         
         public void UnsetTiles(List<GridTile> tiles)
@@ -440,7 +484,18 @@ namespace Kuantech.Puzzle
         
         public void UnsetTile(GridTile tile)
         {
-            UnsetTile(tile.AnchorRow, tile.AnchorColumn, tile.AnchorLayer);
+            // if (tile.Coordinates.IsNullOrEmpty())
+            // {
+            //     UnsetTile(tile.AnchorRow, tile.AnchorColumn, tile.AnchorLayer);
+            // }
+            // else
+            // {
+            //     int row = tile.AnchorRow + tile.Coordinates[0].Row;
+            //     int col = tile.AnchorColumn + tile.Coordinates[0].Column;
+            //     UnsetTile(row, col, tile.AnchorLayer);
+            // }
+            ClearTileArrayForTile(tile, tile.AnchorRow, tile.AnchorColumn,tile.AnchorLayer);
+            tile.ParentBoard = null;
         }
         
         /// <summary>
@@ -840,7 +895,7 @@ namespace Kuantech.Puzzle
             Vector3 depthPosition = ForwardVector * (row * CellHeight + CellHeight * RowCount * originOffset.y + CellHeight * 0.5f);
             return horizontalPosition + depthPosition;
         }
-        
+
         public Vector3 GetLocalPosition(float row, float col)
         {
             return GetLocalPosition(row, col, OriginOffset);
@@ -896,6 +951,26 @@ namespace Kuantech.Puzzle
         #region Tile Highlighting
 
         private HashSet<GridTileBackground> _highlightedTiles;
+
+        public void IndicateBackgroundTiles(List<GridTileCoordinate> coordinatesToIndicate)
+        {
+            foreach (var coord in coordinatesToIndicate)
+            {
+                GridTileBackground bg = GetBackground(coord);
+                if(bg == null) continue;
+                bg.Indicate();
+            }
+        }
+        
+        public void ClearBackgroundTilesIndicate(List<GridTileCoordinate> coordinatesToIndicate)
+        {
+            foreach (var coord in coordinatesToIndicate)
+            {
+                GridTileBackground bg = GetBackground(coord);
+                if(bg == null) continue;
+                bg.ClearIndicate();
+            }
+        }
         
         /// <summary>
         /// Clears the highlighted tile backgrounds

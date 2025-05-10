@@ -8,16 +8,18 @@ namespace Kuantech.Utils.Math
         public List<Vector3> SplinePoints;
         public bool Looping = false;
         
+        
         private float[] _arcLengths = null;
         private float[] _normalizedArcLengths = null;
         public int RotationLookAhead = 5;
         public bool InvertDirection = false;
         private int _basePointCount;
-        public void SetSplinePoints(List<Vector3> controlPoints, int SplineDegree, int SegmentPerSpline)
+        public void SetSplinePoints(List<Vector3> controlPoints, int SplineDegree, int SegmentPerSpline, bool looping=false, bool closed=false)
         {
             List<Vector3> extendedControlPoints = new List<Vector3>(controlPoints);
-            _basePointCount = controlPoints.Count * SegmentPerSpline; 
-            if (Looping)
+            _basePointCount = controlPoints.Count * SegmentPerSpline;
+            Looping = looping;
+            if (Looping && closed)
             {
                 extendedControlPoints.Add(controlPoints[0]);
             }

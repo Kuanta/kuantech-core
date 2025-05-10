@@ -1,6 +1,7 @@
 using System.Collections;
 using Kuantech.Utils;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Kuantech.Core.Utils
 {
@@ -18,7 +19,12 @@ namespace Kuantech.Core.Utils
         public float TapTime = 0.1f;
         private float _tapStartTime;
         private Vector3 _tapStartPosition;
-        
+
+        [Header("Sprites")] 
+        public Image SpriteRenderer;
+        public Sprite DefaultSprite;
+        public Sprite GrabSprite;
+
         [Header("Animations")]
         public Animator Animator;
 
@@ -38,22 +44,17 @@ namespace Kuantech.Core.Utils
             {
                 if (!Helpers.IsCursorOnUI())
                 {
-                    transform.position = _targetPosition;
-                    _tapStartPosition = transform.position;
-                    _tapStartTime = Time.time;
-                    if (Animator != null)
-                    {
-                        Animator.SetBool(Tap, false);
-                        Animator.Rebind();
-                    }
-                    Visual.SetActive(true);
+                    OnGrab();
                 }
                
             }
             else if(Input.GetMouseButtonUp(0))
             {
                 //Is this a tap?
-
+                if (SpriteRenderer != null)
+                {
+                    SpriteRenderer.sprite = DefaultSprite;
+                }
                 if (Vector3.Distance(transform.position, _tapStartPosition) <= TapDistanceThresh &&
                     (Time.time - _tapStartTime) <= TapTime)
                 {
@@ -62,11 +63,32 @@ namespace Kuantech.Core.Utils
                 }
                 else
                 {
-                   if(!AlwaysShow) Visual.SetActive(false);
+                   OnRelease();
                 }
             }
         }
 
+        private void OnGrab()
+        {
+            transform.position = _targetPosition;
+            _tapStartPosition = transform.position;
+            _tapStartTime = Time.time;
+            if (Animator != null)
+            {
+                Animator.SetBool(Tap, false);
+                Animator.Rebind();
+            }
+            Visual.SetActive(true);
+            if (SpriteRenderer == null) return;
+            SpriteRenderer.sprite = GrabSprite;
+        }
+
+        private void OnRelease()
+        {
+            if(!AlwaysShow) Visual.SetActive(false);
+
+        }
+        
         private IEnumerator TapAnimateEndRoutine()
         {
             yield return new WaitForSeconds(TapAnimationTime);

@@ -127,7 +127,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ParentCanvas: {fileID: 0}
   ParentRectTransform: {fileID: 6909469463801029820}
-  SwipeMotionSpeed: 10
+  SwipeMotionSpeed: 3
   ReachedThresh: 1
   Animator: {fileID: 4404428935766073043}
 --- !u!95 &4404428935766073043

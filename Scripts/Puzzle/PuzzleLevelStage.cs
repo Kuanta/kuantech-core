@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Puzzle
@@ -15,18 +16,28 @@ namespace Kuantech.Puzzle
             public object UserData;
         }
     
-        public PuzzleLevelStage(List<PuzzleLevelStage.WinConditionEntry> conditions)
+        public PuzzleLevelStage(WinConditionTracker.LevelStageEntry stageEntry)
         {
             Targets = new Dictionary<string, WinConditionEntry>();
             CollectedAmounts = new Dictionary<string, int>();
-            SetTargets(conditions);
+            SetTargets(stageEntry.Conditions);
+            SetFlatTarget(stageEntry.FlatScoreTarget);
         }
         
+        public int FlatScoreTarget;
+        public int CurrentFlatScore;
         public Dictionary<string, WinConditionEntry> Targets;
         public Dictionary<string, int> CollectedAmounts;
+
+        #region Targets
+        public void SetFlatTarget(int flatTarget)
+        {
+            FlatScoreTarget = flatTarget;
+        }
         
         public void SetTargets(List<WinConditionEntry> conditions)
         {
+            if (conditions.IsNullOrEmpty()) return;
             foreach (var condition in conditions)
             {
                 SetTarget(condition);
@@ -71,10 +82,13 @@ namespace Kuantech.Puzzle
         /// <returns></returns>
         public int GetTarget(string key)
         {
+            if (key == null) return FlatScoreTarget;
             if (Targets == null || !Targets.ContainsKey(key)) return 0;
             return Targets[key].TargetAmount;
         }
+        #endregion
 
+        #region Earnings
         public void SetCollectedAmount(string key, int amount)
         {
             if (CollectedAmounts == null)
@@ -87,22 +101,44 @@ namespace Kuantech.Puzzle
         
         public void AddScore(string key, int amount)
         {
+            if (key == null)
+            {
+                AddFlatScore(amount);
+                return;
+            }
             int existingAmount = GetCollectedAmount(key);
             SetCollectedAmount(key, existingAmount+amount);
         }
-
+        
+        public int GetFlatScore()
+        {
+            return CurrentFlatScore;
+        }
         public int GetCollectedAmount(string key)
         {
+            if (key == null) return CurrentFlatScore;
             if (CollectedAmounts == null || !CollectedAmounts.ContainsKey(key)) return 0;
             return CollectedAmounts[key];
         }
 
         public int GetRemainingAmount(string key)
         {
+            if (key == null)
+            {
+                return FlatScoreTarget - CurrentFlatScore;
+            }
             int target = GetTarget(key);
             int collected = GetCollectedAmount(key);
             return Mathf.Max(0, target - collected);
         }
+
+        public void AddFlatScore(int score)
+        {
+            CurrentFlatScore += score;
+        }
+        #endregion
+
+       
         
         /// <summary>
         /// Checks if given condition is satisfied
@@ -126,12 +162,14 @@ namespace Kuantech.Puzzle
             {
                 if (!IsConditionSatisfied(pair.Key)) return false;
             }
-
-            return true;
+            
+            //All conditions are satisfied
+            return CurrentFlatScore >= FlatScoreTarget;
         }
         public void Reset()
         {
             if (CollectedAmounts == null) return;
+            CurrentFlatScore = 0;
             CollectedAmounts.Clear();
         }
 
@@ -147,13 +185,14 @@ namespace Kuantech.Puzzle
                 state.TargetKeys.Add(targetPair.Key);
                 state.CollectedAmounts.Add(GetCollectedAmount(targetPair.Key));
             }
-
+            state.CurrentFlatScore = CurrentFlatScore;
             return state;
         }
 
         public void LoadState(StageState state)
         {
             CollectedAmounts = new Dictionary<string, int>();
+            CurrentFlatScore = state.CurrentFlatScore;
             for (int i = 0; i < state.TargetKeys.Count; ++i)
             {
                 string key = state.TargetKeys[i];

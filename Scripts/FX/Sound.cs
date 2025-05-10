@@ -13,6 +13,7 @@ namespace Kuantech.Core.FX
     public class Sound : MonoBehaviour
     {
         public string AudioId;
+        
         [KTTag("AudioTag")]
         public int AudioTag;
 
@@ -28,6 +29,9 @@ namespace Kuantech.Core.FX
 
         [Tooltip("If set to true, AudioLibrary will be checked")]
         public bool PlayWithAudioLibrary;
+
+        [Header("Combo")] 
+        public List<AudioClip> ComboSfxCollection;
         
         [Header("Pitch Adjustments")]
         public float BasePitch = 1f;
@@ -88,6 +92,14 @@ namespace Kuantech.Core.FX
             AudioSource.Play();
         }
 
+        public void PlayComboSfx(int comboIndex)
+        {
+            AudioSource.Stop();
+            comboIndex = Mathf.Clamp(comboIndex, 0, ComboSfxCollection.Count-1);
+            AudioSource.clip = ComboSfxCollection[comboIndex];
+            Play();
+        }
+        
         public void PlayThroughAudioLibrary()
         {
             EffectsLibrary.PlaySound(this);

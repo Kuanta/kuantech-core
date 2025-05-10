@@ -14,9 +14,10 @@ namespace Kuantech.Utils
             return Draggable != null && Draggable.CanBeDragged();
         }
 
-        public virtual void Drag(Vector3 cursorPosition)
+        public virtual void Drag(Vector3 cursorPosition, Vector3 cursorPositionChange)
         {
-            Draggable.Drag(cursorPosition);
+            if(Draggable == null) return;
+            Draggable.Drag(cursorPosition, cursorPositionChange);
         }
 
         public virtual void DragEnd()
@@ -43,10 +44,10 @@ namespace Kuantech.Utils
             Draggable.OnTap(position);
         }
 
-        public virtual bool DragStart()
+        public virtual bool DragStart(Vector3 hitPoint)
         {
             if(!CanBeDragged()) return false;
-            return Draggable.DragStart();
+            return Draggable.DragStart(hitPoint);
         }
     }
 }

@@ -14,11 +14,17 @@ namespace Kuantech.Utils
         protected IDropZone DropZone;
         [Tooltip("IF set to true, position will be set using the ground ray")]
         [SerializeField] private bool PositionWithGroundRay = false;
+
+        [SerializeField] private bool PositionWithPlane;
+        [SerializeField] private Vector3 planeNormal = Vector3.up;
+        [SerializeField] private Vector3 planePoint = Vector3.zero;
+        
         //public Vector3 OffsetPercentages = Vector3.zero; 
         //[NonSerialized] public Vector2 DragPositionOffset;
-
+        private bool _isDragged = false;
         private Vector3 _positionBeforeDrag;
         private Transform _parentBeforeDrag;
+        protected Vector3 _dragPositionOffset;
 
         protected IDropZone CurrentDropZone;
         
@@ -26,16 +32,24 @@ namespace Kuantech.Utils
         public Action OnDragStart; //Called when dragging starts
         public Action OnDragEnd; //Called when dragging ends somehow
         public Action<Vector3> OnTapped;
-        public Action OnDrop;
+        public Action<bool> OnDrop;
       
-        public virtual bool DragStart()
+        public virtual bool DragStart(Vector3 dragHitPoint)
         {
             if (!CanBeDragged()) return false;
             _positionBeforeDrag = transform.position;
             _parentBeforeDrag = transform.parent;
+            _dragPositionOffset = dragHitPoint - transform.position;
             transform.SetParent(null);
             transform.localScale = Vector3.one;
             OnDragStart?.Invoke();
+
+            if (PositionWithPlane)
+            {
+                _dragPositionOffset = Helpers.ProjectVectorOnPlane(_dragPositionOffset, planeNormal, planePoint);
+            }
+
+            _isDragged = true;
             return true;
         }
         [Tooltip("If set to false, Draggable can't be dragged")]
@@ -45,19 +59,27 @@ namespace Kuantech.Utils
         public bool TapToggle;
         
         [Header("Offset")]
-        [SerializeField] private float OffsetDistance = 5f;
-        [SerializeField] private float SmoothDampTime = 0.1f;
-        public virtual void Drag(Vector3 cursorPosition)
+        public float OffsetDistance = 5f;
+        public float SmoothDampTime = 0.1f;
+
+
+        public virtual void Drag(Vector3 cursorPosition, Vector3 cursorPositionChange)
         {
             //cursorPosition += GetDragPositionOffset();
             if(!CanBeDragged()) return;
             IDropZone newZone = CheckForDragBench();
-            if(_receivedHitThisFrame && PositionWithGroundRay)
+            if (PositionWithPlane)
+            {
+                Vector3 point = HitAtPlane(planePoint, planeNormal);
+                
+                SetPosition(point + planeNormal* OffsetDistance - _dragPositionOffset);
+            }
+            else if(_receivedHitThisFrame && PositionWithGroundRay)
             {
                 Transform cameraTransform = DragManager.GetContext<DragManager>().MainCamera.transform;
                 Vector3 diff = cameraTransform.position - _lastHit.point;
                 diff.Normalize();
-                SetPosition(_lastHit.point + diff * OffsetDistance);
+                SetPosition(_lastHit.point + diff * OffsetDistance - _dragPositionOffset);
             }
             else{
                 SetPosition(cursorPosition);
@@ -78,6 +100,11 @@ namespace Kuantech.Utils
                 return;
             }
         }
+
+        public bool IsDragged()
+        {
+            return _isDragged;
+        }
         private Vector3 _dampSpeed;
         protected virtual void SetPosition(Vector3 position)
         {
@@ -91,13 +118,15 @@ namespace Kuantech.Utils
         public virtual void DragEnd()
         {
             OnDragEnd?.Invoke();
+            _isDragged = false;
             if(DropZone == null || DropZone == CurrentDropZone || !DropZone.OnDrop(this)) 
             {
                 OnFailedDrop();
+                OnDrop?.Invoke(false);
                 ReturnToPreviousPosition();
                 return;
             }
-            OnDrop?.Invoke();
+            OnDrop?.Invoke(true);
             OnSuccesfullDrop();
         }
 
@@ -168,6 +197,38 @@ namespace Kuantech.Utils
             return null;
         }
         
+        /// <summary>
+        /// Cast a ray from cursor position to plane
+        /// </summary>
+        /// <param name="planePoint"></param>
+        /// <param name="planeNormal"></param>
+        /// <returns></returns>
+        private Vector3 HitAtPlane(Vector3 planePoint, Vector3 planeNormal)
+        {
+            Vector3 cursorPosition = DragManager.GetCursorPosition(true);
+            DragManager dm = GameManager.Instance.GetSubManagerByType<DragManager>() as DragManager;
+            Ray ray = dm.MainCamera.ScreenPointToRay(cursorPosition);
+
+            // Vector3 o = ray.origin;
+            // Vector3 d = ray.direction;
+            // float denom = Vector3.Dot(planeNormal, d);
+            //
+            // if (Mathf.Abs(denom) < 1e-6f)
+            // {
+            //     return planePoint;
+            // }
+            //
+            // float t = Vector3.Dot(planePoint - o, planeNormal) / denom;
+            //
+            // if (t < 0f)
+            // {
+            //     return planePoint;
+            // }
+            //
+            // Vector3 intersection = o + t * d;
+            // return intersection;
+            return Helpers.CheckRayAgainstPlane(ray, planeNormal, this.planePoint);
+        }
         /// <summary>
         /// Called when draggable enters a drop zone
         /// </summary>

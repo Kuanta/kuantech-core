@@ -18,6 +18,15 @@ namespace Kuantech.Puzzle
     public class GridTileCoordinate : BoardTileCoordinate
     {
         public int DummyVar;
+
+        public static GridTileCoordinate FromVector2(Vector2Int rowCol)
+        {
+            return new GridTileCoordinate()
+            {
+                Row = rowCol.y,
+                Column = rowCol.x,
+            };
+        }
     }
     
     public class GridTile : BoardTile
@@ -25,6 +34,7 @@ namespace Kuantech.Puzzle
         [Tooltip("Unique id for the tile type")]
         public int GridTypeId;
         public List<GridTileCoordinate> Coordinates;
+        public Vector3 AnchorOffset;
         [NonSerialized] public GridBoard ParentBoard;
         [NonSerialized] public int AnchorRow;
         [NonSerialized] public int AnchorColumn;
@@ -134,9 +144,43 @@ namespace Kuantech.Puzzle
             ParentBoard.UnsetTile(this);
         }
 
+        public virtual Vector3 GetTileLocalOffset()
+        {
+            return AnchorOffset;
+        }
+
+        public Vector3 GetTileAnchorPosition()
+        {
+            return transform.position + GetTileLocalOffset();
+        }
         public virtual void Reset()
         {
             
+        }
+
+        public Vector3 GetBoundingBoxCenter(GridBoard board)
+        {
+            Vector2Int rowLimits = new Vector2Int(Int32.MaxValue, Int32.MinValue);
+            Vector2Int colLimits = new Vector2Int(Int32.MaxValue, Int32.MinValue);
+            foreach (var coord in Coordinates)
+            {
+                //Min and max row
+                rowLimits.x = Mathf.Min(rowLimits.x, coord.Row);
+                rowLimits.y = Mathf.Max(rowLimits.y, coord.Row);
+                
+                //Min and max col
+                colLimits.x = Mathf.Min(colLimits.x, coord.Column);
+                colLimits.y = Mathf.Max(colLimits.y, coord.Column);
+            }
+
+            float midRow = (rowLimits.y + rowLimits.x) * 0.5f;
+            float midCol = (colLimits.y + colLimits.x) * 0.5f;
+            return GetLocalPosition(board, midRow, midCol);
+        }
+        
+        private Vector3 GetLocalPosition(GridBoard board, float row, float col)
+        {
+            return board.RightVector * (col * board.CellWidth) + board.ForwardVector * (row * board.CellHeight);
         }
     }
 }

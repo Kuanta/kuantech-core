@@ -14,6 +14,7 @@ namespace Kuantech.Puzzle
         public struct LevelStageEntry
         {
             public List<PuzzleLevelStage.WinConditionEntry> Conditions;
+            public int FlatScoreTarget;
         }
 
         public bool AutoCompleteStage = true; //If set true, stages will be completed automatically.
@@ -38,7 +39,7 @@ namespace Kuantech.Puzzle
         public void AddStage(LevelStageEntry stageEntry)
         {
             Stages ??= new List<PuzzleLevelStage>();
-            Stages.Add(new PuzzleLevelStage(stageEntry.Conditions));
+            Stages.Add(new PuzzleLevelStage(stageEntry));
         }
         
         public int GetStageCount()
@@ -121,6 +122,11 @@ namespace Kuantech.Puzzle
             {
                 AdvanceStage();
             }
+        }
+
+        public void AddFlatScore(int flatScore)
+        {
+            AddScore(null, flatScore);
         }
         
         /// <summary>

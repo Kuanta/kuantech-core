@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Kuantech.Utils
 {
-    public class SplineVisualizer : MonoBehaviour
+    public class SplineEditorTools : MonoBehaviour
     {
         [Header("Spline Parameters")] public Transform WaypointsParent;
         [NonSerialized] public List<Transform> Waypoints;
@@ -53,6 +53,18 @@ namespace Kuantech.Utils
 
                 // World space'e dönüştürmek için transform pozisyonunu ekle
                 Gizmos.DrawLine(transform.position + startPoint, transform.position + endPoint);
+            }
+        }
+
+        [Button("Mirror Points")]
+        public void MirrorHorizontally()
+        {
+            for (int i = 0; i < WaypointsParent.childCount; ++i)
+            {
+                Transform child = WaypointsParent.GetChild(i);
+                Vector3 oldLocal = child.transform.localPosition;
+                oldLocal.x *= -1;
+                child.transform.localPosition = oldLocal;
             }
         }
 #endif

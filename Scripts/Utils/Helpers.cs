@@ -5,9 +5,11 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization.Formatters.Binary;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
+using Object = UnityEngine.Object;
 using Random = UnityEngine.Random;
 
 namespace Kuantech.Utils
@@ -15,19 +17,18 @@ namespace Kuantech.Utils
     public static class Helpers
     {
         private static System.Random _rng = new System.Random();
-        public static Vector3 ProjectVector(Vector3 vec, Vector3 to)
+        
+        #region Math
+        
+        //Snaps a value to increments
+        public static float SnapToIncrements(float value, float increment)
         {
-            Vector3 normalized = to.normalized;
-            return Vector3.Dot(vec, normalized) * normalized;
+            int divisions = Mathf.FloorToInt(value / increment);
+            float val = divisions * increment;
+            return val + increment * 0.5f;
         }
+        #endregion
 
-        public static float DotProjection(Vector3 vec, Vector3 to)
-        {
-            Vector3 normalized = to.normalized;
-            float dotProduct = Vector3.Dot(vec, normalized);
-            float roundedDotProduct = Mathf.Round(dotProduct * 100f) / 100f;
-            return roundedDotProduct;
-        }
         /// <summary>
         /// Calculate nth value of the fibonacci sequence using Dynamic Programming
         /// </summary>
@@ -147,16 +148,7 @@ namespace Kuantech.Utils
             return 0;
         }
         
-        public static void IterateChildren(this Transform parent, UnityAction<GameObject> handler)
-        {
-            Transform[] childs = parent.GetComponentsInChildren<Transform>();
-            foreach (var child in childs)
-            {
-                if(parent == child) continue;
-                handler(child.gameObject);
-            }
-        }
-        
+
         public static float Fmod(float x, float y)
         {
             return x - y * Mathf.Floor(x / y);
@@ -252,27 +244,7 @@ namespace Kuantech.Utils
 
             return probabilities.Length - 1;
         }
-        
-        public static void ChangeTagRecursively(this Transform transform, string newTag)
-        {
-            transform.tag = newTag;
- 
-            for (int i = 0; i < transform.childCount; i++)
-            {
-                Transform child = transform.GetChild(i);
-                ChangeTagRecursively(child, newTag);
-            }
-        }
-        public static void ChangeLayerRecursively(this Transform transform, int newLayer)
-        {
-            transform.gameObject.layer = newLayer;
- 
-            for (int i = 0; i < transform.childCount; i++)
-            {
-                Transform child = transform.GetChild(i);
-                ChangeLayerRecursively(child, newLayer);
-            }
-        }
+
 
         #region Time
 
@@ -286,7 +258,68 @@ namespace Kuantech.Utils
         #endregion
         
         #region Geometry
+        public static Vector3 ProjectVector(Vector3 vec, Vector3 to)
+        {
+            Vector3 normalized = to.normalized;
+            return Vector3.Dot(vec, normalized) * normalized;
+        }
 
+        public static float DotProjection(Vector3 vec, Vector3 to)
+        {
+            Vector3 normalized = to.normalized;
+            float dotProduct = Vector3.Dot(vec, normalized);
+            float roundedDotProduct = Mathf.Round(dotProduct * 100f) / 100f;
+            return roundedDotProduct;
+        }
+
+        public static Vector3 CheckRayAgainstPlane(Ray ray, Vector3 planeNormal, Vector3 planePoint)
+        {
+            Vector3 o = ray.origin;
+            Vector3 d = ray.direction;
+            float denom = Vector3.Dot(planeNormal, d);
+            
+            if (Mathf.Abs(denom) < 1e-6f)
+            {
+                return planePoint;
+            }
+            
+            float t = Vector3.Dot(planePoint - o, planeNormal) / denom;
+            
+            if (t < 0f)
+            {
+                return planePoint;
+            }
+
+            Vector3 intersection = o + t * d;
+            return intersection;
+        }
+        
+        /// <summary>
+        /// Projects a vector to a plane
+        /// </summary>
+        /// <param name="p"></param>
+        /// <param name="planeNormal"></param>
+        /// <param name="planePoint"></param>
+        /// <returns></returns>
+        public static Vector3 ProjectVectorOnPlane(Vector3 p, Vector3 planeNormal, Vector3 planePoint)
+        {
+            // (p - planePoint) dot planeNormal
+            float dist = Vector3.Dot(p - planePoint, planeNormal);
+        
+            // planeNormal'un uzunluğunun karesi
+            float magSq = Vector3.Dot(planeNormal, planeNormal);
+        
+            if (Mathf.Approximately(magSq, 0f))
+            {
+                // Normal vektörü yoksa (0,0,0) -> tanımsız
+                return p;
+            }
+
+            // p' = p - (dist / magSq) * planeNormal
+            Vector3 projection = p - (dist / magSq) * planeNormal;
+            return projection; 
+        }
+        
         public static Vector3 GetRelativeRightVector(this Transform parent, Transform target)
         {
             Vector3 diff = target.position - parent.position;
@@ -320,7 +353,36 @@ namespace Kuantech.Utils
         #endregion
 
         #region GameObjects
+        public static void IterateChildren(this Transform parent, UnityAction<GameObject> handler)
+        {
+            Transform[] childs = parent.GetComponentsInChildren<Transform>();
+            foreach (var child in childs)
+            {
+                if(parent == child) continue;
+                handler(child.gameObject);
+            }
+        }
 
+        public static void ChangeTagRecursively(this Transform transform, string newTag)
+        {
+            transform.tag = newTag;
+ 
+            for (int i = 0; i < transform.childCount; i++)
+            {
+                Transform child = transform.GetChild(i);
+                ChangeTagRecursively(child, newTag);
+            }
+        }
+        public static void ChangeLayerRecursively(this Transform transform, int newLayer)
+        {
+            transform.gameObject.layer = newLayer;
+ 
+            for (int i = 0; i < transform.childCount; i++)
+            {
+                Transform child = transform.GetChild(i);
+                ChangeLayerRecursively(child, newLayer);
+            }
+        }
         public static bool IsCursorOnUI()
         {
 #if (UNITY_IOS || UNITY_ANDROID) && !UNITY_EDITOR
@@ -390,6 +452,42 @@ namespace Kuantech.Utils
             return new Bounds(center, new Vector3(x, y, z));
         }
         
+        /// <summary>
+        /// Instantiates a prefab, considering the editor context
+        /// </summary>
+        /// <param name="prefab"></param>
+        /// <returns></returns>
+        public static GameObject InstantiatePrefab(GameObject prefab)
+        {
+            #if UNITY_EDITOR
+            if (Application.isPlaying)
+            {
+                return Object.Instantiate(prefab);
+            }
+            else
+            {
+                return PrefabUtility.InstantiatePrefab(prefab) as GameObject;
+            }
+#else
+return GameObject.Instantiate(prefab);
+#endif
+        }
+
+        public static void DestroyGameObject(GameObject gameObj)
+        {
+#if UNITY_EDITOR
+            if (Application.isPlaying)
+            {
+                GameObject.Destroy(gameObj);
+            }
+            else
+            {
+                GameObject.DestroyImmediate(gameObj);
+            }
+#else
+            GameObject.Destroy(gameObj);
+#endif
+        }
         public static void DestroyAllChildren(this Transform transform)
         {
             for (int i = transform.childCount - 1; i >= 0; i--)

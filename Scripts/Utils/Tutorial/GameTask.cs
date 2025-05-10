@@ -22,6 +22,10 @@ namespace Kuantech.Core
             Completed = false;
         }
 
+        public virtual void UpdateTask(float deltaTime)
+        {
+            
+        }
         public virtual void CompleteTask()
         {
             if(Completed) return;

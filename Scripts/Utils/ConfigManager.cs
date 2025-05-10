@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Reflection;
 using Cysharp.Threading.Tasks;
 using Kuantech.Core;
 using Kuantech.Data;
 using Newtonsoft.Json.Linq;
+using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Kuantech.Utils
@@ -35,6 +37,8 @@ namespace Kuantech.Utils
         [Header("Config From Sheet")] 
         public SheetReader SheetReader;
         public string ConfigSheetRange;
+
+        public string ConfigClassName;
         
         public override async UniTask Initialize(GameManager gameManager)
         {
@@ -45,15 +49,56 @@ namespace Kuantech.Utils
                 Configs[entry.Key] = entry;
             }
             await ReadConfigsFromSheet();
+            UpdateConfigClassFields();
         }
+
+        private void UpdateConfigClassFields()
+        {
+            Type staticConfigClassType = Type.GetType(ConfigClassName);
+            if (staticConfigClassType == null) return;
+            FieldInfo[] fields = staticConfigClassType.GetFields(BindingFlags.Static | BindingFlags.Public);
+
+            foreach (var field in fields)
+            {
+                if (Configs.TryGetValue(field.Name, out var configEntry))
+                {
+                    try
+                    {
+                        if (field.FieldType == typeof(int))
+                        {
+                            field.SetValue(null, configEntry.IntegerValue);
+                        }
+                        else if (field.FieldType == typeof(float))
+                        {
+                            field.SetValue(null, configEntry.FloatValue);
+                        }
+                        else if (field.FieldType == typeof(string))
+                        {
+                            field.SetValue(null, configEntry.StringValue);
+                        }
+                        else
+                        {
+                            Debug.LogWarning($"Unsupported field type for config: {field.Name} ({field.FieldType})");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogError($"Failed to set config field {field.Name}: {ex}");
+                    }
+                }
+            }
+        }
+        [Button("Update Design Assets")]
         private async UniTask ReadConfigsFromSheet()
         {
+            if (SheetReader == null) return;
+            SheetReader.OnSheetRead += OnConfigSheetRead;
             await SheetReader.GetSheetData(ConfigSheetRange);
         }
         private void OnConfigSheetRead(JObject sheetData)
         {
             JArray array = (JArray) sheetData["values"];
-            for (int i = 0; i < array.Count - 1; ++i)
+            for (int i = 0; i < array.Count; ++i)
             {
                 JToken row = array[i];
                 string configKey = row[0].ToString();
@@ -91,19 +136,75 @@ namespace Kuantech.Utils
             return context.Configs[key];
         }
 
-        public static float GetFloatConfig(string key)
+        public static float GetFloatConfig(string key, float defaultValue = 0.0f)
         {
+            ConfigEntry entry = GetConfig(key);
+            if (entry == null) return defaultValue;
             return GetConfig(key).FloatValue;
         }
 
-        public static int GetIntConfig(string key)
+        public static int GetIntConfig(string key, int defaultValue = 0)
         {
+            ConfigEntry entry = GetConfig(key);
+            if (entry == null) return defaultValue;
             return GetConfig(key).IntegerValue;
         }
 
-        public static string GetStringConfig(string key)
+        public static string GetStringConfig(string key, string defaultValue)
         {
+            ConfigEntry entry = GetConfig(key);
+            if (entry == null) return defaultValue;
             return GetConfig(key).StringValue;
+        }
+
+        [Button("DetectConfigs")]
+        public void DetectConfigEntries()
+        {
+            DetectConfigEntries(Type.GetType(ConfigClassName));
+        }
+        
+        public void DetectConfigEntries(Type staticConfigClassType)
+        {
+            if(staticConfigClassType == null) return;
+            ConfigEntries = new List<ConfigEntry>();
+            Configs = new Dictionary<string, ConfigEntry>();
+
+            // Static, public field'ları alıyoruz
+            FieldInfo[] fields = staticConfigClassType.GetFields(BindingFlags.Static | BindingFlags.Public);
+
+            foreach (var field in fields)
+            {
+                var entry = new ConfigEntry
+                {
+                    Key = field.Name
+                };
+
+                object value = field.GetValue(null); // Static olduğu için instance yok, o yüzden null veriyoruz.
+
+                if (value is int intValue)
+                {
+                    entry.ConfigType = ConfigType.Integer;
+                    entry.IntegerValue = intValue;
+                }
+                else if (value is float floatValue)
+                {
+                    entry.ConfigType = ConfigType.Float;
+                    entry.FloatValue = floatValue;
+                }
+                else if (value is string stringValue)
+                {
+                    entry.ConfigType = ConfigType.String;
+                    entry.StringValue = stringValue;
+                }
+                else
+                {
+                    Debug.LogWarning($"Unsupported config field type: {field.Name} ({field.FieldType})");
+                    continue; // Desteklemediğimiz bir türse, eklemiyoruz
+                }
+
+                ConfigEntries.Add(entry);
+                Configs[entry.Key] = entry;
+            }
         }
     }
 }
