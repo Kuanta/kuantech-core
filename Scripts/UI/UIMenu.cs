@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using Kuantech.Core.UI;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -10,6 +11,7 @@ namespace Kuantech.UI
         [SerializeField] protected Button CloseButton;
 
         [SerializeField] private float CloseDelay = 0f;
+        
         //Animations
         private Animator _animator;
         private bool _initialized = false;
@@ -24,7 +26,10 @@ namespace Kuantech.UI
             
             if (CloseButton != null)
             {
-                CloseButton.onClick.AddListener(Close);
+                CloseButton.onClick.AddListener(() =>
+                {
+                    UIManager.GetContext<UIManager>().PopFromStack(this);
+                });
             }
             
             //Get animator
@@ -33,15 +38,21 @@ namespace Kuantech.UI
         {
            Initialize();
         }
-        public virtual void Show()
+        public virtual void Open()
         {
             Initialize();
             if(_animator != null) _animator.SetTrigger(ShowTrigger);
-            gameObject.SetActive(true);
+            Show();
+            UIManager.GetContext<UIManager>().PushToStack(this, false); //Don't call open again
         }
 
         public virtual void Close()
         {
+            if (UIManager.GetTopMenu() != this)
+            {
+                Debug.LogWarning($"Menu {MenuId} tried to close itself while not being on top of stack.");
+                return;
+            }
             if (!isActiveAndEnabled) return; //Already closed
             if(_animator != null) _animator.SetTrigger(ShowTrigger);
             if (_closeRoutine != null)
@@ -51,13 +62,24 @@ namespace Kuantech.UI
 
             _closeRoutine = _CloseRoutine();
             StartCoroutine(_closeRoutine);
+            UIManager.GetContext<UIManager>().PopFromStack(this, false); //Don't call close again
         }
 
         private IEnumerator _CloseRoutine()
         {
             yield return new WaitForSeconds(CloseDelay);
-            gameObject.SetActive(false);
+            Hide();
             _closeRoutine = null;
+        }
+
+        public void Show()
+        {
+            gameObject.SetActive(true);
+        }
+        
+        public void Hide()
+        {
+            gameObject.SetActive(false);
         }
     }
 }

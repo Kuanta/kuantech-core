@@ -38,7 +38,7 @@ namespace Kuantech.ArcadeIdle.UI
         {
             ArcadeIdleUIManager context = GetContext<ArcadeIdleUIManager>();
             if(context == null) return;
-            context.GetPanel(panelId).Show();
+            context.GetPanel(panelId).Open();
         }
     }
 }

@@ -30,9 +30,9 @@ namespace Kuantech.Core.UI
             }));
         }
 
-        public override void Show()
+        public override void Open()
         {
-            base.Show();
+            base.Open();
             GameManager.Instance.PauseGame();
         }
 

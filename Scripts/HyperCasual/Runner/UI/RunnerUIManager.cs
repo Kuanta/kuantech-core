@@ -29,11 +29,11 @@ namespace Kuantech.HyperCasual.Runner.UI
             if (change.NewState == LevelState.Waiting)
             {
                 IngameMenu.Close();
-                MainMenu.Show();
+                MainMenu.Open();
             }
             else if(change.NewState == LevelState.Playing)
             {
-                IngameMenu.Show();
+                IngameMenu.Open();
                 MainMenu.Close();
             }
         }

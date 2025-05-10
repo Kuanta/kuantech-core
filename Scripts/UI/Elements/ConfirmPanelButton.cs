@@ -12,7 +12,7 @@ namespace Kuantech.HyperCasual.UI
         private void Start()
         {
             Button button = GetComponent<Button>();
-            button.onClick.AddListener(ConfirmPanel.Show);
+            button.onClick.AddListener(ConfirmPanel.Open);
         }
 
         public void SetConfirmAction(UnityAction confirmAction)

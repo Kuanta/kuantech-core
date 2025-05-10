@@ -10,7 +10,7 @@ namespace Kuantech.Core.UI
         [SerializeField] private UIMenu MenuToOpen;
         private void Start()
         {
-            Button.onClick.AddListener(MenuToOpen.Show);
+            Button.onClick.AddListener(MenuToOpen.Open);
         }
     }
 }

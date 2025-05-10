@@ -22,9 +22,9 @@ namespace Kuantech.HyperCasual.Runner.UI
             if(LevelFailedPanel != null) LevelFailedPanel.Initialize();
         }
         
-        public override void Show()
+        public override void Open()
         {
-            base.Show();
+            base.Open();
             if(LevelCompletePanel != null) LevelCompletePanel.Close();
             if(LevelFailedPanel != null) LevelFailedPanel.Close();
         }
@@ -54,7 +54,7 @@ namespace Kuantech.HyperCasual.Runner.UI
         private IEnumerator ShowPanelRoutine(UIMenu panel, float delay)
         {
             yield return new WaitForSeconds(delay);
-            panel.Show();
+            panel.Open();
         }
     }
 }

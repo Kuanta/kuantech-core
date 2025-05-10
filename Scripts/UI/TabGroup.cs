@@ -40,7 +40,7 @@ namespace Kuantech.Core.UI
                 TabGroupButtons[i].Toggle(i == index);
                 if(i == index)
                 {
-                    Tabs[i].Show();
+                    Tabs[i].Open();
                 }else{
                     Tabs[i].Close();
                 }

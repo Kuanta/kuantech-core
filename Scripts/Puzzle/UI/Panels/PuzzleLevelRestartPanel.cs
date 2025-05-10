@@ -22,9 +22,9 @@ namespace Kuantech.Puzzle.UI
             });
         }
 
-        public override void Show()
+        public override void Open()
         {
-            base.Show();
+            base.Open();
             transform.localScale = Vector3.one * InitialScale;
             transform.DOScale(Vector3.one, DOTweenTime);
         }

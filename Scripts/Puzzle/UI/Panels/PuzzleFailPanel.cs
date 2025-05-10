@@ -19,9 +19,9 @@ namespace Kuantech.Puzzle.UI
             });
         }
 
-        public override void Show()
+        public override void Open()
         {
-            base.Show();
+            base.Open();
             if (LoseEffect != null)
             {
                 LoseEffect.Play();

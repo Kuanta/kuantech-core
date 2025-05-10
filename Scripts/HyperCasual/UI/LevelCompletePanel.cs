@@ -13,9 +13,9 @@ namespace Kuantech.HyperCasual.UI
         [SerializeField] protected Effect ShowEffect;
         [SerializeField] private List<CurrencyIndicator> CurrencyIndicators;
 
-        public override void Show()
+        public override void Open()
         {
-            base.Show();
+            base.Open();
             if(ShowEffect != null) ShowEffect.Play();
             SetEarnings();
         }

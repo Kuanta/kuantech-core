@@ -40,10 +40,10 @@ namespace Kuantech.ArcadeIdle.UI
             OrderArriveTimeIndicator.ResourceShop = _resourceShop;
         }
 
-        public override void Show()
+        public override void Open()
         {
             Initialize();
-            base.Show();
+            base.Open();
             foreach (var element in _elements)
             {
                 element.UpdateUI();

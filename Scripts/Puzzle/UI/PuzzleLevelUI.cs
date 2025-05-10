@@ -167,7 +167,7 @@ namespace Kuantech.Puzzle.UI
         private IEnumerator _OpenCompletePanel()
         {
             yield return new WaitForSeconds(CompletePanelShowDelay);
-            if(CompletePanel != null) CompletePanel.Show();
+            if(CompletePanel != null) CompletePanel.Open();
         }
         public void OpenFailedPanel()
         {
@@ -176,7 +176,7 @@ namespace Kuantech.Puzzle.UI
         private IEnumerator _OpenFailedPanel()
         {
             yield return new WaitForSeconds(FailedPanelShowDelay);
-            FailedPanel.Show();
+            FailedPanel.Open();
         }
         #endregion
         
