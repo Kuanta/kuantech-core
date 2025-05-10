@@ -265,13 +265,15 @@ namespace Kuantech.Rpg.Inventory
         }
         #endregion
 
-        #region Item Visual
+        #region Visuals
 
-        public ItemVisual CreateItemVisual()
+        public ItemVisual SpawnItemVisual()
         {
-            if (Data.ItemVisualPrefab == null) return null;
-            return Object.Instantiate(Data.ItemVisualPrefab).GetComponent<ItemVisual>();
+            ItemVisual itemVisualPrefab = AssetCollection.GetPrefabByType<ItemVisual>(Data.ItemTemplateId);
+            if (itemVisualPrefab == null) return null;
+            return PoolManager.GetObjectFromPool(itemVisualPrefab.gameObject).GetComponent<ItemVisual>();
         }
+
         #endregion
     }
 }

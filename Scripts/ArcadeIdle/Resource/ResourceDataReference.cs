@@ -1,5 +1,8 @@
-﻿using Kuantech.Rpg;
+﻿using System;
+using Kuantech.Core;
+using Kuantech.Rpg;
 using Kuantech.Rpg.Inventory;
+using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.ArcadeIdle
@@ -7,18 +10,16 @@ namespace Kuantech.ArcadeIdle
     /// <summary>
     /// A reference to a resource data object
     /// </summary>
-    [CreateAssetMenu(fileName = "Resource Data Referernce", menuName = "Kuantech/ArcadeIdle/Resource Data Reference")]
-    public class ResourceDataReference : ScriptableObject
+    [Serializable]
+    public class ResourceDataReference : IdReference
     {
-        public string ResourceId;
-
         private ResourceData _resourceData;
         public ResourceData GetResourceData()
         {
             //todo: We can get resource data from arcade idle manager too
             if (_resourceData == null)
             {
-                _resourceData = Librarian.GetItemData(ResourceId) as ResourceData;
+                _resourceData = ArcadeIdleManager.GetResourceData(GetId());
             }
             return _resourceData;
         }
@@ -29,20 +30,16 @@ namespace Kuantech.ArcadeIdle
         /// <returns></returns>
         public Sprite GetResourceIcon()
         {
-            ItemTemplate template = Librarian.GetItemTemplate(ResourceId);
-            if (template == null) return null;
-            return template.ItemIcon;
+            ResourceData rd = GetResourceData();
+            return AssetCollection.GetSprite(rd.IconId);
         }
 
         public ResourceVisual GetResourceVisual()
         {
-            ItemData data = Librarian.GetItemData(ResourceId);
-            if (data == null) return null;
-            if (data is ResourceData rd)
-            {
-                return rd.GetResourceVisual();
-            }
-            return null;
+            ResourceData rd = GetResourceData();
+            if (rd == null) return null;
+            return rd.GetResourceVisual();
+
         }
     }
 }

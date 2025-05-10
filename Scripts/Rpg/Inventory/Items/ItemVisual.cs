@@ -6,8 +6,13 @@ namespace Kuantech.Rpg.Inventory
     public class ItemVisual : MonoBehaviour
     {
         //Runtime
+        [NonSerialized] public ItemData ItemData;
         [NonSerialized] public bool IsInPlace;
-        
+
+        public virtual void Spawn(ItemData parentItemData)
+        {
+            ItemData = parentItemData;
+        }
         public void Despawn()
         {
             if (IsInPlace)

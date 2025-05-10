@@ -126,7 +126,7 @@ namespace Kuantech.Core
             }
             else
             {
-                ItemVisual visual = itemToSlot.CreateItemVisual();
+                ItemVisual visual = itemToSlot.SpawnItemVisual();
                 visual.gameObject.AttachToParent(socket.Socket);
                 socket.CurrentObject = visual;
             }

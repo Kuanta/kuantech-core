@@ -26,26 +26,35 @@ namespace Kuantech.ArcadeIdle
 
         public void Interact(ResourceNodePicker picker)
         {
-            if(SourceInventory.GetAvailableAmount(SuppliedResource.ResourceId) > 0)
+            if(SourceInventory.GetAvailableAmount(SuppliedResource.GetId()) > 0)
             {
-                ResourceVisual visual = SourceInventory.RemoveResource(SuppliedResource.ResourceId, 1);
+                ResourceVisual visual = SourceInventory.RemoveResource(SuppliedResource.GetId(), 1);
                 if(visual == null)
                 {
                     visual = SuppliedResource.GetResourceVisual();
                 }
-                visual.transform.position = ResourceThrowPoint.position;
-                visual.transform.rotation = ResourceThrowPoint.rotation;
-                visual.transform.localScale = Vector3.one;
-                float randomAngle = Random.Range(0f, Mathf.PI*2);
-                Vector3 throwDir = new Vector3(Mathf.Cos(randomAngle), 0, Mathf.Sin(randomAngle));
-                WorldPoint targetPoint = new WorldPoint()
-                {   
-                    Position = throwDir * (ThrowRadius * Random.Range(1 - RadiusNoiseFactor, 1 + RadiusNoiseFactor)) + transform.position,
-                    Rotation = Quaternion.identity,
-                };
-                visual.FlyToTargetWithDoJump(targetPoint, JumpForce, ThrowDuration);
 
-                if(SourceInventory.GetAvailableAmount(SuppliedResource.ResourceId) <= 0 && _refreshCoroutine == null)
+                if (visual == null)
+                {
+                    Debug.LogError("Visual is null");
+                }
+                else
+                {
+                    visual.transform.position = ResourceThrowPoint.position;
+                    visual.transform.rotation = ResourceThrowPoint.rotation;
+                    visual.transform.localScale = Vector3.one;
+                    float randomAngle = Random.Range(0f, Mathf.PI*2);
+                    Vector3 throwDir = new Vector3(Mathf.Cos(randomAngle), 0, Mathf.Sin(randomAngle));
+                    WorldPoint targetPoint = new WorldPoint()
+                    {   
+                        Position = throwDir * (ThrowRadius * Random.Range(1 - RadiusNoiseFactor, 1 + RadiusNoiseFactor)) + transform.position,
+                        Rotation = Quaternion.identity,
+                    };
+                    visual.FlyToTargetWithDoJump(targetPoint, JumpForce, ThrowDuration);
+                }
+      
+
+                if(SourceInventory.GetAvailableAmount(SuppliedResource.GetId()) <= 0 && _refreshCoroutine == null)
                 {
                     Debug.LogError("Started refresh");
                     _depleted = true;

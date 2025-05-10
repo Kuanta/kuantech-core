@@ -1,16 +1,18 @@
+using Kuantech.Rpg.Inventory;
 using UnityEngine;
 
 namespace Kuantech.ArcadeIdle
 {
     public class PickupableResource : ResourceVisual {
-        [SerializeField] private ResourceDataReference ResourceDataReference;
+        public ResourceDataReference ResourceDataReference;
         [SerializeField] private Collider Collider;
         public bool Available = true;
         public bool DestroyOnPickup = true;
         
-        public override void Spawn()
+        public override void Spawn(ItemData parentData)
         {
-            base.Spawn();
+            base.Spawn(parentData);
+            ResourceDataReference.SetId(parentData.Id);
             Available = true;
             Collider.enabled = true;
         }
@@ -38,11 +40,9 @@ namespace Kuantech.ArcadeIdle
             if(IsMoving) return;
             if(character.CharacterInventory == null) return;
 
-            //Clear the parent of the visual just in case since the pickup can be destroyed
-            ResourceId = ResourceDataReference.ResourceId;
-
             //Check inventory space
-            if (!character.CharacterInventory.CanAcceptResource(ResourceDataReference.GetResourceData())) return;
+            ResourceData data = ItemData as ResourceData;
+            if (!character.CharacterInventory.CanAcceptResource(data)) return;
 
             //Send the resource flying
             character.CharacterInventory.AddResource(ResourceDataReference.GetResourceData(), this, true);

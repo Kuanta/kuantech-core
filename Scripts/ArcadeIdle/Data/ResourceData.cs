@@ -1,4 +1,5 @@
-﻿using Kuantech.Core;
+﻿using System;
+using Kuantech.Core;
 using Kuantech.Rpg;
 using Kuantech.Rpg.Inventory;
 using Kuantech.Utils;
@@ -6,12 +7,11 @@ using UnityEngine;
 
 namespace Kuantech.ArcadeIdle
 {
+    [Serializable]
     public class ResourceData : ItemData
     {
-        public string Name;
         [KTTag("ResourceTags")]
         public int ResourceTag;
-        public int Value = 1;
         public string CurrencyId = null;
         public int CurrencyAmount = 1; //A currency resource may give multiple amount of that currency
         [Tooltip("If set to true, when a resource inventory is loaded, this resource won't be added even if it was in the save state")]
@@ -20,10 +20,16 @@ namespace Kuantech.ArcadeIdle
         
         public ResourceVisual GetResourceVisual()
         {
-            GameObject gameObject = Librarian.GetItemVisualPrefab(Id);
-            if (gameObject.TryGetComponent(out ResourceVisual rv))
+            ResourceVisual rv = AssetCollection.GetPrefabByType<ResourceVisual>(ItemTemplateId);
+            if (rv != null)
             {
-                PoolManager.GetObjectFromPool(rv.gameObject).GetComponent<ResourceVisual>();
+                ResourceVisual spawned = PoolManager.GetObjectFromPool(rv.gameObject).GetComponent<ResourceVisual>();
+                spawned.Spawn(this);
+                return spawned;
+            }
+            else
+            {
+                Debug.LogError($"No template exists with id {ItemTemplateId}");
             }
             return null;
         }

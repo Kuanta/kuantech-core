@@ -90,7 +90,7 @@ namespace Kuantech.ArcadeIdle
             for (int i = _displayedResources.Count - 1; i >= 0; --i)
             {
                 //Check if the visual is the correct one and not flying
-                if (_displayedResources[i].ResourceId != resourceId || _displayedResources[i].IsMoving) continue;
+                if (_displayedResources[i].ItemData.Id != resourceId || _displayedResources[i].IsMoving) continue;
                 indexToRemove = i;
                 break;
             }

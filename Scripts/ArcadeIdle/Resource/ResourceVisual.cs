@@ -12,7 +12,6 @@ namespace Kuantech.ArcadeIdle
     //todo: Implement Throwable Mover here
     public class ResourceVisual : ItemVisual, IResourcePositioner
     {
-        [NonSerialized] public string ResourceId;
         public AnimationCurve SpeedCurve;
         [NonSerialized] public WorldPoint TargetPoint;
         public float Speed = 5f;  // Speed at which the resource should fly
@@ -33,8 +32,9 @@ namespace Kuantech.ArcadeIdle
         private float _currentRiseSpeed;
         private float _currentRiseHeight;
         private int _currentRiseDir;
-        public virtual void Spawn()
+        public override void Spawn(ItemData parentData)
         {
+            base.Spawn(parentData);
             IsMoving = false;
             ReachedTargetHandler = null; //Reset
             DespawnOnReach = false;

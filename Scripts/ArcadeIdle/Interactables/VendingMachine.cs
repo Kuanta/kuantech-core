@@ -14,7 +14,7 @@ namespace Kuantech.ArcadeIdle
 
         public override bool CanBeInteractedWith(ArcadeIdleCharacter character)
         {
-            if(SourceInventory.GetAvailableAmount(VendingResource.ResourceId) <= 0) return false; //Not enogh
+            if(SourceInventory.GetAvailableAmount(VendingResource.GetId()) <= 0) return false; //Not enogh
             return base.CanBeInteractedWith(character);
         }
 

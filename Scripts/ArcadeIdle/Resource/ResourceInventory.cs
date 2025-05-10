@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using Kuantech.Core;
 using Kuantech.Utils;
+using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Kuantech.ArcadeIdle
 {
     [Serializable]
-    public class DefaultInventoryMap : SerializableDictionary<ResourceData, int>{}
+    public class DefaultInventoryMap : SerializableDictionary<ResourceDataReference, int>{}
 
     [Serializable]
     public class ResourceInventorySerializableData : ActorModuleSerializableData
@@ -31,11 +32,17 @@ namespace Kuantech.ArcadeIdle
         public DefaultInventoryMap DefaultInventory;
 
         //Events 
-        public Action OnInventoryInitialized;
+        public Action<ResourceInventory> OnInventoryInitialized;
         public Action<(ResourceData, int)> OnResourceAdded;
         public Action<(ResourceData, int)> OnResourceRemoved;
         public Action InventoryLoaded;
-
+        
+        public override void Initialize()
+        {
+            base.Initialize();
+            OnInventoryInitialized?.Invoke(this);
+        }
+        
         public override void SetDefaultValues()
         {
             base.SetDefaultValues();
@@ -45,7 +52,12 @@ namespace Kuantech.ArcadeIdle
             {
                 for(int i=0;i<inv.Value;++i)
                 {
-                    AddResource(inv.Key, null, false);
+                    ResourceData rd = ArcadeIdleManager.GetResourceData(inv.Key.GetId());
+                    if (rd == null)
+                    {
+                        Debug.Log("Couldn't find resource of id "+inv.Key.GetId());
+                    }
+                    AddResource(rd, null, false);
                 }
             }
 
@@ -142,7 +154,7 @@ namespace Kuantech.ArcadeIdle
         {
             foreach (var accepted in AcceptedResources)
             {
-                if (accepted.ResourceId == resourceId) return true;
+                if (accepted.GetId() == resourceId) return true;
             }
             return false;
         }
@@ -182,6 +194,11 @@ namespace Kuantech.ArcadeIdle
             {
                 string resourceId = pair.Key;
                 ResourceData data = ArcadeIdleManager.GetResourceData(resourceId);
+                if (data == null)
+                {
+                    Debug.Log("No data called"+resourceId);
+                    continue;
+                }
                 if(data.IsCurrency()) continue; //Currencies doesn't count as "hold" resources
                 sum += pair.Value;
             }
@@ -190,6 +207,11 @@ namespace Kuantech.ArcadeIdle
 
         public virtual void AddResource(ResourceData resourceData, ResourceVisual visual, bool flying)
         {
+            if (resourceData == null)
+            {
+                Debug.Log("Couldn' find resource "+gameObject.name);
+                return;
+            }
             if (HeldResources == null) HeldResources = new Dictionary<string, int>();
             if (!HeldResources.ContainsKey(resourceData.Id))
             {
@@ -230,6 +252,7 @@ namespace Kuantech.ArcadeIdle
             }else if(result == null && flying)
             {
                 //Since we can't add the ReachedTargethandler
+                Debug.LogError("Are we here?");
             }
         }
 
@@ -239,6 +262,7 @@ namespace Kuantech.ArcadeIdle
             OnResourceAdded?.Invoke((resourceData, amount));
             if(flying)
             {
+                Debug.LogError($"Adding {resourceData.Id} amount:{amount}");
                 HeldPendingResources[resourceData.Id] += amount;
             }
         }
@@ -348,6 +372,15 @@ namespace Kuantech.ArcadeIdle
         }
         public override void Reset()
         {
+        }
+        
+        [Button("Debug Inventory")]
+        public void DebugInventory()
+        {
+            foreach (var pending in HeldPendingResources)
+            {
+                Debug.LogError($"KEy{pending.Key} amount:{pending.Value}");
+            }
         }
     }
 }

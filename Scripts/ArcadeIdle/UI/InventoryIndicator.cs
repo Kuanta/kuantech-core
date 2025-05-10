@@ -12,7 +12,20 @@ namespace Kuantech.ArcadeIdle
         [SerializeField] private TMP_Text Text;
         [SerializeField] private bool ShowMaxValue;
 
-        private void Initialize()
+        private void Start()
+        {
+            if (SourceInventory.Initialized)
+            {
+                Initialize(SourceInventory);
+            }
+            else
+            {
+                SourceInventory.OnInventoryInitialized += Initialize;
+            }
+            
+        }
+
+        private void Initialize(ResourceInventory sourceInventory)
         {
             SourceInventory.OnResourceAdded += OnResourceInventoryUpdated;
             SourceInventory.OnResourceRemoved += OnResourceInventoryUpdated;
@@ -27,7 +40,7 @@ namespace Kuantech.ArcadeIdle
         }
         public void UpdateIndicator()
         {
-            int heldAmount = SourceInventory.GetHeldAmount(ResourceToShow.ResourceId);
+            int heldAmount = SourceInventory.GetHeldAmount(ResourceToShow.GetId());
             int maxAmount = SourceInventory.InventoryCapacity; //todo: This is only makes sense for inventories with single resource
             if(maxAmount <= 0 || SourceInventory.AcceptedResources.Count != 1)
             {
