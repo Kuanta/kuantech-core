@@ -18,6 +18,27 @@ namespace Kuantech.Core.UI
             {
                 MenuGroup.OnMenuOpened += OnMenuOpened;
             }
+
+            UIMenu menu = MenuToOpen;
+            if (menu == null && MenuIDToOpen != null)
+            {
+                menu = UIManager.GetMenuById(MenuIDToOpen);
+            }
+
+            if (menu != null)
+            {
+                menu.OnMenuOpened += SetOpenedVisual;
+                menu.OnMenuClosed += SetClosedVisual;
+            }
+
+            if (menu.IsVisible())
+            {
+                SetOpenedVisual();
+            }
+            else
+            {
+                SetClosedVisual();
+            }
         }
         
         public void OnClick()
@@ -52,8 +73,26 @@ namespace Kuantech.Core.UI
         private void OnMenuOpened(UIMenu menu)
         {
             bool isOpened = MenuToOpen == menu || menu.MenuId.Equals(MenuIDToOpen);
-            if(OpenedStateVisual != null) OpenedStateVisual.SetActive(isOpened);
-            if(ClosedStateVisual != null) ClosedStateVisual.SetActive(!isOpened);
+            if (isOpened)
+            {
+                SetOpenedVisual();
+            }
+            else
+            {
+                SetClosedVisual();
+            }
+        }
+
+        private void SetOpenedVisual()
+        {
+            if(OpenedStateVisual != null) OpenedStateVisual.SetActive(true);
+            if(ClosedStateVisual != null) ClosedStateVisual.SetActive(false);
+        }
+
+        private void SetClosedVisual()
+        {
+            if(OpenedStateVisual != null) OpenedStateVisual.SetActive(false);
+            if(ClosedStateVisual != null) ClosedStateVisual.SetActive(true);
         }
     }
 }

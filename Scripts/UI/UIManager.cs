@@ -41,12 +41,17 @@ namespace Kuantech.Core.UI
             }
         }
 
+        public static UIMenu GetMenuById(string menuId)
+        {
+            var ctx = GetContext<UIManager>();
+            return ctx._GetMenuById(menuId);
+        }
         #region Menu Manupilation
 
         public static void OpenMenu(string menuId)
         {
             var context = GetContext<UIManager>();
-            OpenMenu(context.GetMenuById(menuId));
+            OpenMenu(context._GetMenuById(menuId));
         }
         public static void OpenMenu(UIMenu menu)
         {
@@ -57,7 +62,7 @@ namespace Kuantech.Core.UI
         public static void CloseMenu(string menuId)
         {
             var context = GetContext<UIManager>();
-            CloseMenu(context.GetMenuById(menuId));
+            CloseMenu(context._GetMenuById(menuId));
         }
         public static void CloseMenu(UIMenu menu)
         {
@@ -66,7 +71,7 @@ namespace Kuantech.Core.UI
             ctx.PopFromStack(menu);
         }
 
-        public UIMenu GetMenuById(string menuId)
+        private UIMenu _GetMenuById(string menuId)
         {
             if (_menusById.IsNullOrEmpty() || !_menusById.ContainsKey(menuId)) return null;
             return _menusById[menuId];
@@ -115,8 +120,24 @@ namespace Kuantech.Core.UI
         {
             if (_menuStack.Peek() != menu) return;
             UIMenu menuToClose = _menuStack.Pop();
-            
+            if (_menuStack.Count == 1 && menu == _defaultMenu)
+            {
+                return;
+            }
             if(callClose) menuToClose.Close();
+            
+            //If somehow stack is empty, push the default menu to stack
+            if (_menuStack.IsNullOrEmpty())
+            {
+                PushToStack(_defaultMenu);
+                return;
+            }
+            //Show the next on stack
+            UIMenu menuOnTop = _menuStack.Peek();
+            if (menuOnTop != null && !menuOnTop.IsVisible())
+            {
+                menuOnTop.Show();
+            }
         }
 
         public void ClearStack()

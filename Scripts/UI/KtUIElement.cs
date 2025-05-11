@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace Kuantech.Core.UI
 {
@@ -15,6 +16,12 @@ namespace Kuantech.Core.UI
         private static readonly int CloseTrigger = Animator.StringToHash("Close");
         private IEnumerator _closeRoutine = null;
 
+        private bool _shown;
+        
+        //Events
+        public UnityAction OnMenuOpened;
+        public UnityAction OnMenuClosed;
+        
         private void Awake()
         {
             _animator = GetComponent<Animator>();
@@ -32,6 +39,8 @@ namespace Kuantech.Core.UI
         public virtual void Show()
         {
             gameObject.SetActive(true);
+            _shown = true;
+            OnMenuOpened?.Invoke();
         }
 
         public virtual void Close()
@@ -50,6 +59,8 @@ namespace Kuantech.Core.UI
         public virtual void Hide()
         {
             gameObject.SetActive(false);
+            _shown = false;
+            OnMenuClosed?.Invoke();
         }
         
         private IEnumerator _CloseRoutine()
@@ -57,6 +68,11 @@ namespace Kuantech.Core.UI
             yield return new WaitForSeconds(CloseDelay);
             Hide();
             _closeRoutine = null;
+        }
+
+        public bool IsVisible()
+        {
+            return _shown && gameObject.activeSelf;
         }
     }
 }
