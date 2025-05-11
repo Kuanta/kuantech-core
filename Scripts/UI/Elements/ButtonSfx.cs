@@ -5,19 +5,14 @@ using UnityEngine.UI;
 
 namespace Kuantech.Core.UI
 {
-    public class ButtonSfx : MonoBehaviour
+    public class ButtonSfx : MonoBehaviour, IUIButtonAction
     {
         [SerializeField] private Sound Audio;
         [KTTag("AudioTag")]
         [SerializeField] private int AudioTag;
         [SerializeField] private Button Button;
         
-        private void Awake()
-        {
-            Button ??= GetComponent<Button>();
-            if (Button == null) return;
-            Button.onClick.AddListener(ButtonPressHandler);
-        }
+ 
 
         private void ButtonPressHandler()
         {
@@ -28,6 +23,11 @@ namespace Kuantech.Core.UI
             }
             AudioLibrary audioLibrary = EffectsLibrary.GetAudioLibrary();
             if(audioLibrary != null) audioLibrary.PlaySound(AudioTag);
+        }
+
+        public void OnClick()
+        {
+            ButtonPressHandler();
         }
     }
 }

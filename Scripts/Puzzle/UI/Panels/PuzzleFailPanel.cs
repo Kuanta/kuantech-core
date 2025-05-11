@@ -1,5 +1,6 @@
 using Kuantech.Core;
 using Kuantech.Core.FX;
+using Kuantech.Core.UI;
 using Kuantech.UI;
 using TMPro;
 using UnityEngine.UI;

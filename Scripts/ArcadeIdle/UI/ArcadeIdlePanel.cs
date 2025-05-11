@@ -1,3 +1,4 @@
+using Kuantech.Core.UI;
 using Kuantech.UI;
 
 namespace Kuantech.ArcadeIdle.UI

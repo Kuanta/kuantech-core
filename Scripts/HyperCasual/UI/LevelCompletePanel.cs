@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Kuantech.Core;
 using Kuantech.Core.FX;
+using Kuantech.Core.UI;
 using Kuantech.UI;
 using UnityEngine;
 using UnityEngine.UI;

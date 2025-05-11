@@ -1,5 +1,6 @@
 using DG.Tweening;
 using Kuantech.Core;
+using Kuantech.Core.UI;
 using Kuantech.UI;
 using UnityEngine;
 using UnityEngine.UI;

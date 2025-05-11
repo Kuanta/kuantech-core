@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Cysharp.Threading.Tasks;
-using Kuantech.UI;
 using Kuantech.Utils;
 using UnityEngine;
 
@@ -95,10 +94,19 @@ namespace Kuantech.Core.UI
                 Debug.LogWarning("Trying to push a menu that's not in static set.");
             }
 
+            if (menu.ClearStackOnOpen)
+            {
+                ClearStack();
+            }
+            
             if (_menuStack.Count > 0)
             {
-                _menuStack.Peek().Hide();
+                var current = _menuStack.Peek();
 
+                if (!menu.IsPopup)
+                {
+                    current.Hide(); // Öncekini sakla
+                }
             }
 
             _menuStack.Push(menu);
@@ -115,10 +123,10 @@ namespace Kuantech.Core.UI
 
         public void ClearStack()
         {
-            while (_menuStack.Count > 0)
+            while (_menuStack.Count > 1)
             {
                 var menu = _menuStack.Pop();
-                menu.Close();
+                menu.Hide();
             }
         }
         #endregion

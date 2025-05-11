@@ -1,4 +1,5 @@
-﻿using Kuantech.UI;
+﻿using Kuantech.Core.UI;
+using Kuantech.UI;
 using UnityEngine;
 using UnityEngine.UI;
 

@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using Kuantech.Core;
 using Kuantech.Core.HyperCasual.UI;
+using Kuantech.Core.UI;
 using Kuantech.HyperCasual.UI;
 using Kuantech.UI;
 using UnityEngine;

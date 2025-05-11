@@ -1,5 +1,6 @@
 ﻿using System;
 using Kuantech.Core.FX;
+using Kuantech.Core.UI;
 using Kuantech.UI;
 using Kuantech.Utils.Mobile;
 using UnityEngine;
