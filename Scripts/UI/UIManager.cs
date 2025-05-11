@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using Cysharp.Threading.Tasks;
 using Kuantech.Utils;
 using UnityEngine;
@@ -13,14 +12,13 @@ namespace Kuantech.Core.UI
         [Header("Default Menu")]
         [SerializeField] private UIMenu _defaultMenu;
 
-        private HashSet<UIMenu> _staticMenus = new HashSet<UIMenu>();
+        [SerializeField] private List<UIMenu> StaticMenusList;
         private Dictionary<string, UIMenu> _menusById = new Dictionary<string, UIMenu>();
 
         public override async UniTask Initialize(GameManager gameManager)
         {
             await base.Initialize(gameManager);
-            _staticMenus = GetComponentsInChildren<UIMenu>().ToList().ToHashSet();
-            foreach (var menu in _staticMenus)
+            foreach (var menu in StaticMenusList)
             {
                 if(menu.MenuId.IsNullOrEmpty()) continue;
                 _menusById[menu.MenuId] = menu;
@@ -31,7 +29,7 @@ namespace Kuantech.Core.UI
         public override void OnSubmanagersInitialized()
         {
             base.OnSubmanagersInitialized();
-            foreach(var menu in _staticMenus)
+            foreach(var menu in StaticMenusList)
             {
                 menu.gameObject.SetActive(false);
             }
@@ -89,7 +87,7 @@ namespace Kuantech.Core.UI
             if (_menuStack.Count > 0 && _menuStack.Peek() == menu)
                 return;
 
-            if (!_staticMenus.Contains(menu))
+            if (!StaticMenusList.Contains(menu))
             {
                 Debug.LogWarning("Trying to push a menu that's not in static set.");
             }
