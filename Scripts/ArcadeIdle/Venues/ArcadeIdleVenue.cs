@@ -44,7 +44,7 @@ namespace Kuantech.ArcadeIdle
 
         public virtual void Initialize()
         {
-            LoadState();
+            //LoadState();
 
             //Initialize Zones
             foreach(var zone in Zones)
@@ -225,63 +225,74 @@ namespace Kuantech.ArcadeIdle
         #endregion
 
         #region State
-        public void LoadState()
-        {
-            ArcadeIdleState arcadeIdleState = GameStateManager.GetModuleStatic<ArcadeIdleState>();
-            if (arcadeIdleState == null) {
-                SetDefaultStateValues();
-                return;
-            }
-            CurrentState = arcadeIdleState.GetVenueState(VenueId);
-            if(CurrentState == null)
-            {
-                SetDefaultStateValues();
-                return;
-            }
-
-        }
-
-        public void DirtyActorState(VenueActor actor)
-        {
-            if(actor.Id.IsNullOrEmpty()) return;
-            ArcadeIdleState arcadeIdleState = GameStateManager.GetModuleStatic<ArcadeIdleState>();
-            if(arcadeIdleState == null) return;
-            CurrentState.Dirtied = true;
-            CurrentState.VenueActorStates[actor.Id] = actor.GetActorState();
-            arcadeIdleState.UpdateVenueState(this);
-        }
-
-        public void DirtyZonestate(VenueZone zone)
-        {
-            CurrentState.ZoneStates = GetZoneStates();
-            CurrentState.Dirtied = true;
-            ArcadeIdleState arcadeIdleState = GameStateManager.GetModuleStatic<ArcadeIdleState>();
-            arcadeIdleState.UpdateVenueState(this);
-        }
-
-        /// <summary>
-        /// Gets all states  of workerStates
-        /// </summary>
-        /// <returns></returns>
-        public List<CharacterState> GetWorkerStates()
-        {
-            List<CharacterState> workerStates = new List<CharacterState>();
-            foreach(var worker in _activeWorkers)
-            {
-                workerStates.Add(worker.GetCharacterState());
-            }
-            return workerStates;
-        }
-
-        public Dictionary<string, bool> GetZoneStates()
-        {
-            Dictionary<string, bool> zoneStates = new Dictionary<string, bool>();
-            foreach(var zone in Zones)
-            {
-                zoneStates[zone.ZoneId] = zone.Unlocked;
-            }
-            return zoneStates;
-        }
+        //
+        // public byte[] Serialize()
+        // {
+        //     return 
+        // }
+        //
+        // public void Deserialize(byte[] data)
+        // {
+        //     throw new NotImplementedException();
+        // }
+        //
+        // public void LoadState()
+        // {
+        //     ArcadeIdleState arcadeIdleState = GameStateManager.GetModuleStatic<ArcadeIdleState>();
+        //     if (arcadeIdleState == null) {
+        //         SetDefaultStateValues();
+        //         return;
+        //     }
+        //     CurrentState = arcadeIdleState.GetVenueState(VenueId);
+        //     if(CurrentState == null)
+        //     {
+        //         SetDefaultStateValues();
+        //         return;
+        //     }
+        //
+        // }
+        //
+        // public void DirtyActorState(VenueActor actor)
+        // {
+        //     if(actor.Id.IsNullOrEmpty()) return;
+        //     ArcadeIdleState arcadeIdleState = GameStateManager.GetModuleStatic<ArcadeIdleState>();
+        //     if(arcadeIdleState == null) return;
+        //     CurrentState.Dirtied = true;
+        //     CurrentState.VenueActorStates[actor.Id] = actor.GetActorState();
+        //     arcadeIdleState.UpdateVenueState(this);
+        // }
+        //
+        // public void DirtyZonestate(VenueZone zone)
+        // {
+        //     CurrentState.ZoneStates = GetZoneStates();
+        //     CurrentState.Dirtied = true;
+        //     ArcadeIdleState arcadeIdleState = GameStateManager.GetModuleStatic<ArcadeIdleState>();
+        //     arcadeIdleState.UpdateVenueState(this);
+        // }
+        //
+        // /// <summary>
+        // /// Gets all states  of workerStates
+        // /// </summary>
+        // /// <returns></returns>
+        // public List<CharacterState> GetWorkerStates()
+        // {
+        //     List<CharacterState> workerStates = new List<CharacterState>();
+        //     foreach(var worker in _activeWorkers)
+        //     {
+        //         workerStates.Add(worker.GetCharacterState());
+        //     }
+        //     return workerStates;
+        // }
+        //
+        // public Dictionary<string, bool> GetZoneStates()
+        // {
+        //     Dictionary<string, bool> zoneStates = new Dictionary<string, bool>();
+        //     foreach(var zone in Zones)
+        //     {
+        //         zoneStates[zone.ZoneId] = zone.Unlocked;
+        //     }
+        //     return zoneStates;
+        // }
         #endregion
     
         #region Actor Getter
@@ -580,5 +591,6 @@ namespace Kuantech.ArcadeIdle
             }
         }
         #endregion
+
     }
 }

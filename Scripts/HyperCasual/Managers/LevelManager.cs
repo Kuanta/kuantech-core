@@ -20,7 +20,9 @@ namespace Kuantech.Core
         public int RepeatLastLevels = 0;
         public int MaxPowerLevel = -1;
 
-
+        [Header("Level State")]
+        [SaveableField] public int SavedLevelIndex;
+        
         //Events
         public EventHandler<LevelStateChangeData> StateChangeEvent;
         public EventHandler<int> LevelSetEvent;
@@ -29,12 +31,10 @@ namespace Kuantech.Core
         public override void OnSubmanagersInitialized()
         {
             int levelIndex = 0;
-            GameStateManager gsm = (GameManager.Instance.GetSubManagerByType<GameStateManager>() as GameStateManager);
-            if (gsm != null)
-            {
-                var module = gsm.GetModule<HyperCasualGameModel>();
-                if(module != null) levelIndex = module.GetLevelIndex();
-            }
+            
+            //Load data for this
+            GameStateManager.LoadData(this);
+            
             SetLevel(levelIndex);
             //ChangeCurrentState(LevelState.Waiting);
         }
@@ -178,12 +178,7 @@ namespace Kuantech.Core
         private void UpdateLevelIndex()
         {
             //Save the level index
-            GameStateManager gsm = GameStateManager.GetContext<GameStateManager>();
-            if (gsm != null)
-            {
-                var module = gsm.GetModule<HyperCasualGameModel>();
-                if(module != null) module.SetLevelIndex(CurrentLevelIndex);
-            }
+            GameStateManager.UpdateSaveData(this);
         }
         public virtual void FailLevel()
         {

@@ -7,22 +7,22 @@ namespace Kuantech.ArcadeIdle
         public override void Initialize()
         {
             base.Initialize();
-            //Load wallet
-            GameStateManager gsm = GameStateManager.GetContext<GameStateManager>();
-            if (gsm == null) return;
-            CurrencyModel currModel = gsm.GetGameState().GetModule<CurrencyModel>();
-            foreach(var pair in currModel.Data.Currencies)
-            {
-                DepositCurrency(pair.Key, pair.Value.Amount);
-            }
+            // //Load wallet
+            // GameStateManager gsm = GameStateManager.GetContext<GameStateManager>();
+            // if (gsm == null) return;
+            // //CurrencyModel currModel = gsm.GetGameState().GetModule<CurrencyModel>();
+            // foreach(var pair in currModel.Data.Currencies)
+            // {
+            //     DepositCurrency(pair.Key, pair.Value.Amount);
+            // }
         }
         public override int GetCurrencyAmount(string currencyId)
         {
-            GameStateManager gsm = GameStateManager.GetContext<GameStateManager>();
-            if (gsm == null) return base.GetCurrencyAmount(currencyId);
-            int held = gsm.GetCurrency(currencyId).Amount;
-            HeldCurrencies[currencyId] = held;
-            return held;
+            // GameStateManager gsm = GameStateManager.GetContext<GameStateManager>();
+            // if (gsm == null) return base.GetCurrencyAmount(currencyId);
+            // int held = gsm.GetCurrency(currencyId).Amount;
+            // HeldCurrencies[currencyId] = held;
+            return 0;
         }
 
         /// <summary>

@@ -50,9 +50,7 @@ namespace Kuantech.ArcadeIdle
         {
             string currencyId = args.Item1;
             int currAmount = args.Item2;
-            GameStateManager gsm = GameStateManager.GetContext<GameStateManager>();
-            if (gsm == null) return;
-            gsm.AddCurrency(currencyId, currAmount);
+            //todo(currency): fix here
         }
 
         /// <summary>
@@ -63,9 +61,8 @@ namespace Kuantech.ArcadeIdle
         {
             string currencyId = args.Item1;
             int currAmount = args.Item2;
-            GameStateManager gsm = GameStateManager.GetContext<GameStateManager>();
-            if (gsm == null) return;
-            gsm.RemoveCurrency(currencyId, currAmount);
+            //todo(currency): fix here
+        
         }
         #endregion
     }

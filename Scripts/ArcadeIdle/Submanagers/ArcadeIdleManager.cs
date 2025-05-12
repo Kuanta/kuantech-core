@@ -91,12 +91,12 @@ namespace Kuantech.ArcadeIdle
         {
             ArcadeIdleManager context = GetContext<ArcadeIdleManager>();
             if (context == null || context.CurrentVenue == null) return false;
-            CurrencyModel cm = GameStateManager.GetModuleStatic<CurrencyModel>();
-            int heldAmount = cm.GetCurrencyAmount(context.NpcHireCurrency.CurrencyId);
+            //CurrencyModel cm = GameStateManager.GetModuleStatic<CurrencyModel>();
+            int heldAmount = 0; //todo(currency): Fix here
             int requiredAmount = context.NpcHirePrice;
 
             if(requiredAmount > heldAmount) return false;
-            cm.RemoveCurrency(context.NpcHireCurrency.CurrencyId, requiredAmount);
+            //m.RemoveCurrency(context.NpcHireCurrency.CurrencyId, requiredAmount);
             context.CurrentVenue.HireWorker(GetRandomNpcByTag(tag));
             return true;
         } 

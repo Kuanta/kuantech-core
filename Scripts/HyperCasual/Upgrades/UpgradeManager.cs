@@ -10,7 +10,7 @@ namespace Kuantech.HyperCasual
     /// <summary>
     /// Handles the pre-level boosters that give permenant upgrades to the player
     /// </summary>
-    public class UpgradeManager : SubManager
+    public class UpgradeManager : SubManager, ISaveable
     {
         public List<UpgradeData> UpgradesList;
         private Dictionary<string, UpgradeData> _upgradesMap;
@@ -37,12 +37,7 @@ namespace Kuantech.HyperCasual
         public override void OnSubmanagersInitialized()
         {
             base.OnSubmanagersInitialized();
-            UpgradeStateModule bsm = GameStateManager.GetModuleStatic<UpgradeStateModule>();
-            if(bsm == null) return;
-            foreach(var pair in _upgradesMap)
-            {
-                pair.Value.SetLevel(bsm.GetUpgradeLevel(pair.Key));
-            }
+            GameStateManager.LoadData(this);
         }
         
         public bool IsMaxedOut(string upgradeId)
@@ -123,9 +118,9 @@ namespace Kuantech.HyperCasual
             if(_upgradesMap[boosterId].CurrencyData != null)
             {
                 string currencyId = _upgradesMap[boosterId].CurrencyData.CurrencyId;
-                int currentHeldAmount = GameStateManager.GetCurrencyStatic(currencyId).Amount;
+                int currentHeldAmount = 0; //todo(currency): Fix here
                 canBuy = price <= currentHeldAmount;
-                if(canBuy) GameStateManager.GetContext<GameStateManager>().RemoveCurrency(currencyId, price);
+                //if(canBuy) GameStateManager.GetContext<GameStateManager>().RemoveCurrency(currencyId, price);
             }
             
             if(canBuy)
@@ -148,25 +143,23 @@ namespace Kuantech.HyperCasual
             OnUpgrade?.Invoke(this, data);
 
             //Save to state module
-            UpgradeStateModule bsm = GameStateManager.GetModuleStatic<UpgradeStateModule>();
-            if(bsm == null) return;
-            bsm.SetUpgradeLevel(boostId, data.CurrentLevel);
+            GameStateManager.UpdateSaveData(this);
         }
 
         [ConsoleMethod("resetUpgrades", "Resets All Upgrades")]
         public static void ResetUpgrades()
         {
+            GameStateManager.ClearSaveData(UpgradeManager.GetContext<UpgradeManager>());
             UpgradeManager context = UpgradeManager.GetContext<UpgradeManager>();
-            UpgradeStateModule bsm = GameStateManager.GetModuleStatic<UpgradeStateModule>();
-            if (bsm == null) return;
-            foreach(var boost in context.UpgradesList)
-            {
-                bsm.SetUpgradeLevel(boost.UpgradeId, 0);
-                UpgradeData data = context._upgradesMap[boost.UpgradeId];
-                data.CurrentLevel = 0;
-                context._upgradesMap[boost.UpgradeId] = data; 
-            }
-            context.OnUpgradesReset?.Invoke(context, EventArgs.Empty);
+        }
+
+        public byte[] Serialize()
+        {
+            return null;
+        }
+
+        public void Deserialize(byte[] data)
+        {
         }
     }
 }

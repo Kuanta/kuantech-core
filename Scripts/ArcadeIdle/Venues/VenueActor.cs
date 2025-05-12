@@ -92,7 +92,7 @@ namespace Kuantech.ArcadeIdle
                 Debug.LogError($"{gameObject.name} has null parent venue");
                 return;
             }
-            ParentZone.ParentVenue.DirtyActorState(this);
+            //ParentZone.ParentVenue.DirtyActorState(this);
         }
 
         public void Unlock()

@@ -59,7 +59,6 @@ namespace Kuantech.Puzzle
 
             
             ResetUI();
-            GetStateModel()?.SetCurrentLevel(this);
             base.SetupLevel();
         }
 
@@ -258,31 +257,11 @@ namespace Kuantech.Puzzle
 
         protected virtual void ClearLevelState()
         {
-            PuzzleStateModel stateModel = GetStateModel();
-            if (stateModel == null) return;
-            stateModel.LevelState = null;
-            CurrentLevelState = null;
-            stateModel.Dirtied = true;
+
         }
         public virtual void DirtyLevelState()
         {
-            PuzzleStateModel stateModel = GetStateModel();
-            if (stateModel == null) return;
-            stateModel.Dirtied = true;
-            // if (CurrentState != LevelState.Playing)
-            // {
-            //     CurrentLevelState = null;
-            // }
-            // else
-            // {
-            //     UpdateLevelState();
-            // }
-        }
-
-        public virtual PuzzleStateModel GetStateModel()
-        {
-            PuzzleStateModel stateModel = GameStateManager.GetModuleStatic<PuzzleStateModel>();
-            return stateModel;
+ 
         }
         #endregion
         

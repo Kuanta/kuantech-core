@@ -147,9 +147,9 @@ namespace Kuantech.ArcadeIdle
             //Get currency
             int heldCurrency = GetHeldCurrency();
             if(heldCurrency < totalPrice) return false;
-
-            CurrencyModel cm = GameStateManager.GetModuleStatic<CurrencyModel>();
-            cm.RemoveCurrency(UsedCurrency.CurrencyId, totalPrice);
+            //todo:(currency) : Fix here
+            //CurrencyModel cm = GameStateManager.GetModuleStatic<CurrencyModel>();
+            //cm.RemoveCurrency(UsedCurrency.CurrencyId, totalPrice);
             _orderedResources = new Dictionary<ResourceData, int>();
             
             foreach(var pair in ShoppingCart)
@@ -170,8 +170,9 @@ namespace Kuantech.ArcadeIdle
         /// <returns></returns>
         public int GetHeldCurrency()
         {
-            CurrencyModel cm = GameStateManager.GetModuleStatic<CurrencyModel>();
-            return cm.GetCurrencyAmount(UsedCurrency.CurrencyId);
+            //todo:(currency) : Fix here
+            //return cm.GetCurrencyAmount(UsedCurrency.CurrencyId);
+            return 0;
         }
 
         public bool IsOrderIncoming()

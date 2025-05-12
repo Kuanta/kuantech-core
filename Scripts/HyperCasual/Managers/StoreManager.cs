@@ -54,7 +54,8 @@ namespace Kuantech.Core.HyperCasual
             for(int i=0;i< info.CurrencyIds.Count;++i)
             {
                 string currencyId = info.CurrencyIds[i];
-                float availableCurrency = gsm.GetCurrency(currencyId).Amount;
+                float availableCurrency = 0;
+                Debug.LogError("FI HERE!");
                 if (availableCurrency < info.Prices[i])
                 {
                     hasCurrency = false;
@@ -66,7 +67,7 @@ namespace Kuantech.Core.HyperCasual
             for (int i = 0; i < info.CurrencyIds.Count; ++i)
             {
                 string currencyId = info.CurrencyIds[i];
-                gsm.RemoveCurrency(currencyId, info.Prices[i]);
+               // gsm.RemoveCurrency(currencyId, info.Prices[i]);
             }
             return true;
         }
@@ -92,7 +93,8 @@ namespace Kuantech.Core.HyperCasual
         {
             GameStateManager gsm = GameManager.Instance.GetSubManagerByType<GameStateManager>() as GameStateManager;
             if (gsm == null) return false;
-            int heldAmount = gsm.GetCurrency(currencyData.CurrencyId).Amount;
+            int heldAmount = 0;
+            Debug.LogError("FIX HERE");
             if (amount <= heldAmount) return true;
             return false;
         }
@@ -106,7 +108,7 @@ namespace Kuantech.Core.HyperCasual
         {
             GameStateManager gsm = GameManager.Instance.GetSubManagerByType<GameStateManager>() as GameStateManager;
             if (gsm == null) return;
-            gsm.AddCurrency(currencyData.CurrencyId, amount);
+            //gsm.AddCurrency(currencyData.CurrencyId, amount);
         }
         
         /// <summary>
@@ -119,10 +121,10 @@ namespace Kuantech.Core.HyperCasual
         {
             GameStateManager gsm = GameManager.Instance.GetSubManagerByType<GameStateManager>() as GameStateManager;
             if (gsm == null) return false;
-            int heldAmount = gsm.GetCurrency(currencyData.CurrencyId).Amount;
+            int heldAmount = 0; //todo: Fix here
             if (heldAmount >= amount)
             {
-                gsm.RemoveCurrency(currencyData.CurrencyId, amount);
+                //gsm.RemoveCurrency(currencyData.CurrencyId, amount);
                 return true;
             }
             return false;

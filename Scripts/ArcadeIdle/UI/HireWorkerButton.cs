@@ -41,8 +41,8 @@ namespace Kuantech.ArcadeIdle.UI
             CurrencyIndicator.SetCurrency(aim.NpcHireCurrency);
             CurrencyIndicator.SetAmount(price);
 
-            CurrencyModel cm = GameStateManager.GetModuleStatic<CurrencyModel>();
-            int heldAmount = cm.GetCurrencyAmount(aim.NpcHireCurrency.CurrencyId);
+            //CurrencyModel cm = GameStateManager.GetModuleStatic<CurrencyModel>();
+            int heldAmount = 0; //todo(currencyModel): fix here
             BuyButton.interactable = heldAmount >= price;
         }
     }

@@ -46,7 +46,7 @@ namespace Kuantech.HyperCasual.UI
             if (!AutoUpdate) return;
             GameStateManager gsm = (GameManager.Instance.GetSubManagerByType<GameStateManager>() as GameStateManager);
             if (gsm == null) return;
-            gsm.CurrencyUpdatedEvent += OnCurrencyChangeEvent;
+           // gsm.CurrencyUpdatedEvent += OnCurrencyChangeEvent;
             UpdateValue();
             Initialized = true;
         }
@@ -71,7 +71,7 @@ namespace Kuantech.HyperCasual.UI
             //Get the current currency value
             GameStateManager gsm = (GameManager.Instance.GetSubManagerByType<GameStateManager>() as GameStateManager);
             if (gsm == null) return;
-            int amount = gsm.GetCurrency(GetCurrencyId()).Amount;
+            int amount = 0; //todo(currency): Fix here
             SetAmount(amount);
         }
         private void OnCurrencyChangeEvent(object sender, (string, int) val)
@@ -85,17 +85,6 @@ namespace Kuantech.HyperCasual.UI
         public virtual void SetAmount(int amount)
         {
             CurrencyAmount.text = amount.Stringfy();
-        }
-
-        /// <summary>
-        /// Unsubscribe from event to prevent dangling event subscriptions
-        /// </summary>
-        private void OnDestroy()
-        {
-            if (!AutoUpdate) return;
-            GameStateManager gsm = (GameManager.Instance.GetSubManagerByType<GameStateManager>() as GameStateManager);
-            if (gsm == null) return;
-            gsm.CurrencyUpdatedEvent -= OnCurrencyChangeEvent;
         }
 
         /// <summary>

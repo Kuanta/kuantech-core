@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Kuantech.Core
 {
-    public class SubManager : MonoBehaviour
+    public class SubManager : MonoBehaviour, ISaveable
     {
         protected GameManager ParentManager;
         
@@ -46,5 +46,31 @@ namespace Kuantech.Core
         {
             return GameManager.Instance.GetSubManagerByType<T>() as T;
         }
+
+        #region State
+
+        public virtual byte[] Serialize()
+        {
+            return null;
+        }
+
+        public void Deserialize(byte[] data)
+        {
+            
+        }
+
+        public void LoadState()
+        {
+            if (this is GameStateManager) return;
+            GameStateManager.LoadData(this);
+        }
+
+        public void SaveState()
+        {
+            if (this is GameStateManager) return; //Gamestate manager shouldn't save itself
+            GameStateManager.UpdateSaveData(this);
+        }
+        #endregion
+
     }
 }

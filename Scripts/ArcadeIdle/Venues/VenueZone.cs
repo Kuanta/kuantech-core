@@ -88,7 +88,7 @@ namespace Kuantech.ArcadeIdle
         public void Unlock()
         {
             Unlocked = true;
-            ParentVenue.DirtyZonestate(this);
+           // ParentVenue.DirtyZonestate(this);
         }
         public void Toggle(bool toggle)
         {
