@@ -1,5 +1,5 @@
-﻿using Kuantech.Core;
-using Kuantech.Core.HyperCasual;
+﻿using Kuantech.Core.HyperCasual;
+using Kuantech.Core.Store;
 using UnityEngine;
 
 namespace Kuantech.Puzzle
@@ -16,7 +16,7 @@ namespace Kuantech.Puzzle
         
         [Header("Requirements")]
         [Header("Price")] 
-        public CurrencyData PriceCurrencyType;
+        public CurrencyAsset PriceCurrencyType;
         public int Price;
 
         [Header("Level")] 

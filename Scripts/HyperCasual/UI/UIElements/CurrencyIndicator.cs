@@ -1,7 +1,9 @@
 ﻿using Kuantech.Core;
+using Kuantech.Core.Store;
 using Kuantech.Utils;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace Kuantech.HyperCasual.UI
@@ -9,7 +11,7 @@ namespace Kuantech.HyperCasual.UI
     public class CurrencyIndicator : MonoBehaviour
     {
         public bool AutoUpdate = false;
-        public CurrencyData CurrencyData;
+        [FormerlySerializedAs("currencyAsset")] public CurrencyAsset CurrencyAsset;
 
         [SerializeField] private Image CurrencyIcon;
         [SerializeField] private TMP_Text CurrencyAmount;
@@ -24,15 +26,15 @@ namespace Kuantech.HyperCasual.UI
         protected virtual void Start()
         {
             //Set currency icon
-            SetCurrency(CurrencyData);
+            SetCurrency(CurrencyAsset);
             if (CanGetCurrency()) Initialize();
         }
 
-        public void SetCurrency(CurrencyData currencyData)
+        public void SetCurrency(CurrencyAsset currencyAsset)
         {
-            if(currencyData == null) return;
-            CurrencyData = currencyData;
-            Sprite currIcon = CurrencyData.CurrencyIcon;
+            if(currencyAsset == null) return;
+            this.CurrencyAsset = currencyAsset;
+            Sprite currIcon = this.CurrencyAsset.CurrencyIcon;
             if (currIcon != null && CurrencyIcon != null)
             {
                 CurrencyIcon.sprite = currIcon;
@@ -44,9 +46,10 @@ namespace Kuantech.HyperCasual.UI
             if (!CanGetCurrency()) return;
 
             if (!AutoUpdate) return;
-            GameStateManager gsm = (GameManager.Instance.GetSubManagerByType<GameStateManager>() as GameStateManager);
-            if (gsm == null) return;
-           // gsm.CurrencyUpdatedEvent += OnCurrencyChangeEvent;
+            var cm = CurrencyManager.GetContext<CurrencyManager>();
+            if (cm == null) return;
+            cm.CurrencyUpdated += OnCurrencyChangeEvent;
+            // gsm.CurrencyUpdatedEvent += OnCurrencyChangeEvent;
             UpdateValue();
             Initialized = true;
         }
@@ -68,17 +71,15 @@ namespace Kuantech.HyperCasual.UI
         }
         public virtual void UpdateValue()
         {
-            //Get the current currency value
-            GameStateManager gsm = (GameManager.Instance.GetSubManagerByType<GameStateManager>() as GameStateManager);
-            if (gsm == null) return;
-            int amount = 0; //todo(currency): Fix here
+            int amount = CurrencyManager.GetCurrencyAmount(CurrencyAsset);
             SetAmount(amount);
         }
-        private void OnCurrencyChangeEvent(object sender, (string, int) val)
+        
+        private void OnCurrencyChangeEvent(CurrencyData data)
         {
-            if(val.Item1 == GetCurrencyId())
+            if(data.CurrencyId== GetCurrencyId())
             {
-                SetAmount(val.Item2);
+                SetAmount(data.CurrencyAmount);
             }
         }
 
@@ -93,7 +94,7 @@ namespace Kuantech.HyperCasual.UI
         /// <returns></returns>
         public virtual string GetCurrencyId()
         {
-            return CurrencyData.CurrencyId;
+            return CurrencyAsset.CurrencyId;
         }
     }
 }

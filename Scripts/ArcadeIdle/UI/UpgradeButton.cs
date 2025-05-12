@@ -30,7 +30,7 @@ namespace Kuantech.ArcadeIdle.UI
                 UpgradeIcon.sprite = UpgradeData.UpgradeIcon;
             }
             UpdateLevel(UpgradeManager.GetCurrentUpgradeLevel(UpgradeData.UpgradeId));
-            CurrencyIndicator.SetCurrency(UpgradeData.CurrencyData);
+            CurrencyIndicator.SetCurrency(UpgradeData.currencyAsset);
             CurrencyIndicator.SetAmount(UpgradeData.GetUpgradePrice());
         }
 

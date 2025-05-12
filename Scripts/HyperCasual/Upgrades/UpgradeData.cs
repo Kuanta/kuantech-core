@@ -1,7 +1,8 @@
 using System;
-using Kuantech.Core;
+using Kuantech.Core.Store;
 using Kuantech.Utils;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 [CreateAssetMenu(fileName = "UpgradeData", menuName = "Kuantech/Upgrades", order = 0)]
 public class UpgradeData : ScriptableObject 
@@ -11,7 +12,7 @@ public class UpgradeData : ScriptableObject
     public Sprite UpgradeIcon;
     public int MaxLevel;
     public LeveledValueInt UpgradePrice;
-    public CurrencyData CurrencyData;
+    [FormerlySerializedAs("CurrencyData")] public CurrencyAsset currencyAsset;
     public LeveledValueFloat Value;
     [NonSerialized] public int CurrentLevel;
 

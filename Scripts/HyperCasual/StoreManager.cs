@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+using Kuantech.Core.Store;
 using UnityEngine;
 
 namespace Kuantech.Core.HyperCasual
@@ -86,10 +87,10 @@ namespace Kuantech.Core.HyperCasual
         /// <summary>
         /// Checks if there are enough currency.
         /// </summary>
-        /// <param name="currencyData"></param>
+        /// <param name="currencyAsset"></param>
         /// <param name="amount"></param>
         /// <returns></returns>
-        public static bool HasCurrency(CurrencyData currencyData, int amount)
+        public static bool HasCurrency(CurrencyAsset currencyAsset, int amount)
         {
             GameStateManager gsm = GameManager.Instance.GetSubManagerByType<GameStateManager>() as GameStateManager;
             if (gsm == null) return false;
@@ -102,9 +103,9 @@ namespace Kuantech.Core.HyperCasual
         /// <summary>
         /// Adds currency of given type and amount
         /// </summary>
-        /// <param name="currencyData"></param>
+        /// <param name="currencyAsset"></param>
         /// <param name="amount"></param>
-        public static void AddCurrency(CurrencyData currencyData, int amount)
+        public static void AddCurrency(CurrencyAsset currencyAsset, int amount)
         {
             GameStateManager gsm = GameManager.Instance.GetSubManagerByType<GameStateManager>() as GameStateManager;
             if (gsm == null) return;
@@ -114,10 +115,10 @@ namespace Kuantech.Core.HyperCasual
         /// <summary>
         /// Removes the given amount from given currency.
         /// </summary>
-        /// <param name="currencyData"></param>
+        /// <param name="currencyAsset"></param>
         /// <param name="amount"></param>
         /// <returns></returns>
-        public static bool RemoveCurrency(CurrencyData currencyData, int amount)
+        public static bool RemoveCurrency(CurrencyAsset currencyAsset, int amount)
         {
             GameStateManager gsm = GameManager.Instance.GetSubManagerByType<GameStateManager>() as GameStateManager;
             if (gsm == null) return false;

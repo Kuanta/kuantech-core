@@ -6,6 +6,9 @@ namespace Kuantech.Core
     public class SubManager : MonoBehaviour, ISaveable
     {
         protected GameManager ParentManager;
+
+        [Header("SubManager")]
+        public bool LoadAfterInitialize = false;
         
         public virtual async UniTask Initialize(GameManager gameManager)
         {
@@ -15,7 +18,7 @@ namespace Kuantech.Core
 
         public virtual void OnSubmanagersInitialized()
         {
-            
+            if(LoadAfterInitialize) GameStateManager.LoadData(this);
         }
 
         /// <summary>

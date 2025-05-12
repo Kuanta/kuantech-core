@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Kuantech.Core;
+using Kuantech.Core.Store;
 using Kuantech.HyperCasual.UI;
 
 namespace Kuantech.ArcadeIdle.UI
@@ -9,7 +10,7 @@ namespace Kuantech.ArcadeIdle.UI
     {
         public List<ArcadeIdlePanel> Panels;
         public List<CurrencyIndicator> CurrencyIndicatorsList;
-        public Dictionary<CurrencyData, CurrencyIndicator> CurrencyIndicators;
+        public Dictionary<CurrencyAsset, CurrencyIndicator> CurrencyIndicators;
         private Dictionary<string, ArcadeIdlePanel> _panelsById;
 
         public override async UniTask Initialize(GameManager gameManager)
@@ -21,10 +22,10 @@ namespace Kuantech.ArcadeIdle.UI
                 _panelsById[panel.MenuId] = panel;
             }
             if(CurrencyIndicatorsList == null) return;
-            CurrencyIndicators = new Dictionary<CurrencyData, CurrencyIndicator>();
+            CurrencyIndicators = new Dictionary<CurrencyAsset, CurrencyIndicator>();
             foreach(var indicator in CurrencyIndicatorsList)
             {
-                CurrencyIndicators[indicator.CurrencyData] = indicator;
+                CurrencyIndicators[indicator.CurrencyAsset] = indicator;
             }
         }
 

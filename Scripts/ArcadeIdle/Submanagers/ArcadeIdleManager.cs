@@ -2,6 +2,7 @@
 using ArcadeIdle.Data;
 using Cysharp.Threading.Tasks;
 using Kuantech.Core;
+using Kuantech.Core.Store;
 using Kuantech.Rpg.Inventory;
 using Kuantech.Utils;
 using UnityEngine;
@@ -14,7 +15,7 @@ namespace Kuantech.ArcadeIdle
         [SerializeField] private List<ArcadeIdleNpc> NpcList;
         private Dictionary<int, List<ArcadeIdleNpc>> _tagsToNpcList;
         public int NpcHirePrice = 200; //Very temporary
-        public CurrencyData NpcHireCurrency;
+        public CurrencyAsset NpcHireCurrency;
 
         [Header("Resources")]
         [SerializeField] private ResourceShop ResourceShop;

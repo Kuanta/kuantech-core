@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Kuantech.Core;
+using Kuantech.Core.Store;
 using Kuantech.HyperCasual;
 using Kuantech.Utils;
 using UnityEngine;
@@ -15,7 +16,7 @@ namespace Kuantech.ArcadeIdle
     }
 
     public class ResourceShop : MonoBehaviour {
-        public CurrencyData UsedCurrency;
+        public CurrencyAsset UsedCurrency;
         public List<ResourceShopEntry> ShopList;
         private Dictionary<ResourceData, ResourceShopEntry> _shopListMap = new Dictionary<ResourceData, ResourceShopEntry>(); //For quick lookups
         public Dictionary<ResourceData, int> ShoppingCart = new Dictionary<ResourceData, int>(); 
