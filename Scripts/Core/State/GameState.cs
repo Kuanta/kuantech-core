@@ -43,7 +43,6 @@ namespace Kuantech.Core
             }
 
             File.WriteAllBytes(SavePath, ms.ToArray());
-            Debug.Log($"[GameState] Saved {_loadedData.Count} module(s) to {SavePath}");
         }
         
         /// <summary>

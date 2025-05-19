@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 namespace Kuantech.Core.UI
 {
-    public class UIMenu : KtUIElement
+    public class UIMenu : UIElement
     {
         [Header("UI Menu")]
         public string MenuId;

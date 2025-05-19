@@ -5,7 +5,7 @@ using UnityEngine.Events;
 
 namespace Kuantech.Core.UI
 {
-    public class KtUIElement : MonoBehaviour
+    public class UIElement : MonoBehaviour
     {
         [Header("UI Element")] 
         [SerializeField] private float CloseDelay = 0f;
@@ -78,10 +78,8 @@ namespace Kuantech.Core.UI
         }
         
         #region Helpers
-
         public bool IsInRect(RectTransform rectTransform, float horizontalBuffer, float verticalBuffer)
         {
-            
             return true;
         }
         #endregion

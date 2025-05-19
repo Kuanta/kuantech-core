@@ -35,7 +35,9 @@ namespace Kuantech.Midcore
     {
         [Header("Player Level")] 
         [SaveableField] public LevelVariable PlayerLevel;
-        
+
+        [Header("Collectibles")] 
+        [SaveableField] public CollectiblesHandler CollectiblesHandler;
         
         [Header("Upgrades")]
         public List<UpgradeDataAsset> UpgradeDataAssets;
@@ -71,7 +73,7 @@ namespace Kuantech.Midcore
         [Button("Add Experience")]
         public void AddExperience(int experience)
         {
-            PlayerLevel.Add(experience);
+            PlayerLevel.AddValue(experience);
             OnPlayerEarnedExperience?.Invoke(PlayerLevel);
             SaveState();
         }
@@ -79,14 +81,24 @@ namespace Kuantech.Midcore
         [Button("Set Experience")]
         public void SetExperience(int experience)
         {
-            PlayerLevel.Set(experience);
+            PlayerLevel.SetValue(experience);
             OnPlayerEarnedExperience?.Invoke(PlayerLevel);
             SaveState();
         }
 
         #endregion
-        #region Progression Queries
 
+        #region Collectibles
+
+        public static CollectiblesHandler GetCollectiblesHandler()
+        {
+            var ctx = GetContext<ProgressionManager>();
+            if (ctx == null) return null;
+            return ctx.CollectiblesHandler;
+        }
+        #endregion
+        
+        #region Progression Queries
         public static UpgradeData GetUpgradeData(UpgradeDataAsset asset)
         {
             var ctx = GetContext<ProgressionManager>();

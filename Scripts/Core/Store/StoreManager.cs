@@ -20,7 +20,7 @@ namespace Kuantech.Core.HyperCasual
         /// <param name="rank"></param>
         /// <param name="startRank"></param>
         /// <returns></returns>
-        public int GetPrice(int rank, int startRank)
+        public int GetPrice(int rank=0, int startRank=-1)
         {
             if (rank < startRank) return 0;
             return GetPriceForRank(rank) - GetPriceForRank(startRank);
@@ -119,7 +119,7 @@ namespace Kuantech.Core.HyperCasual
 
         #endregion
      
-        public virtual bool BuyItem(string id, int rank, int startRank)
+        public virtual bool BuyItem(string id, int rank=0, int startRank=-1)
         {
             if (!_buyables.ContainsKey(id))
             {

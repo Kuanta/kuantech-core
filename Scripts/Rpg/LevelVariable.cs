@@ -16,16 +16,32 @@ namespace Kuantech.Rpg
         public float ValueToNextLevel => GetTotalRequiredForLevel(CurrentLevel + 1) - TotalValue;
         public float CurrentLevelRequirement => GetTotalRequiredForLevel(CurrentLevel + 1) - GetTotalRequiredForLevel(CurrentLevel);
         
-        public void Add(float amount)
+        public void AddValue(float amount)
         {
             TotalValue = Mathf.Max(0f, TotalValue + amount);
         }
         
-        public void Set(float newTotal)
+        public void SetValue(float newTotal)
         {
             TotalValue = Mathf.Max(0f, newTotal);
         }
-
+        
+        /// <summary>
+        /// Sets the level
+        /// </summary>
+        /// <param name="newLevel"></param>
+        public void SetLevel(int newLevel)
+        {
+            TotalValue = GetTotalRequiredForLevel(newLevel);
+        }
+        
+        /// <summary>
+        /// Levels up
+        /// </summary>
+        public void LevelUp()
+        {
+            TotalValue = GetTotalRequiredForLevel(CurrentLevel + 1);
+        }
         public void Reset()
         {
            TotalValue = 0f;

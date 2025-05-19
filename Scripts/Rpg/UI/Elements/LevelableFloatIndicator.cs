@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Kuantech.Rpg.UI
 {
-    public class LevelableFloatIndicator : KtUIElement
+    public class LevelableFloatIndicator : UIElement
     {
         
         [SerializeField] private Fillbar Fillbar;

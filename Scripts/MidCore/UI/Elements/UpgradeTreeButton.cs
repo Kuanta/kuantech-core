@@ -13,16 +13,10 @@ namespace Kuantech.Midcore.UI
     /// <summary>
     /// Represents a button in trait upgrade tree
     /// </summary>
-    public class UpgradeTreeButton : KtUIElement, IUIButtonAction
+    public class UpgradeTreeButton : UIElement, IUIButtonAction
     {
-        public enum ButtonState
-        {
-            Locked, //Can't be bought
-            Unlocked, //Bought
-            Purchasable, //Can be bought
-        }
 
-        [NonSerialized] public ButtonState CurrentState;
+        [NonSerialized] public UnlockableStates CurrentState;
         
         [Header("Progression Asset")] 
         public UpgradeDataAsset UpgradeDataAsset;
@@ -75,7 +69,7 @@ namespace Kuantech.Midcore.UI
     
         public void OnClick()
         {
-            if (CurrentState != ButtonState.Purchasable) return;
+            if (CurrentState != UnlockableStates.Purchasable) return;
             if(UpgradeDataAsset == null) return;
             
             //Try to buy the progression
@@ -134,7 +128,7 @@ namespace Kuantech.Midcore.UI
             bool rankPurchased = ProgressionManager.IsRankUnlocked(UpgradeDataAsset, Rank);
             bool conditionsMet = ProgressionManager.IsRankUpgradeConditionsMet(UpgradeDataAsset, Rank);
             
-            CurrentState = rankPurchased ? ButtonState.Unlocked : (conditionsMet ? ButtonState.Purchasable : ButtonState.Locked);
+            CurrentState = rankPurchased ? UnlockableStates.Unlocked : (conditionsMet ? UnlockableStates.Purchasable : UnlockableStates.Locked);
        
             if(LockedState != null) LockedState.SetActive(!rankPurchased && !conditionsMet);
             if(UnlockedState != null) UnlockedState.SetActive(rankPurchased);
