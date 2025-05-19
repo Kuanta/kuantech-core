@@ -50,7 +50,8 @@ namespace Kuantech.Puzzle
         public bool BuyBooster()
         {
             if (PriceCurrencyType == null) return true;
-            return StoreManager.RemoveCurrency(PriceCurrencyType, Price);
+            CurrencyManager.RemoveCurrency(PriceCurrencyType, Price);
+            return true;
         }
         
         /// <summary>

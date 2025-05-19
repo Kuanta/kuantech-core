@@ -10,9 +10,6 @@ namespace Kuantech.Core.UI
         [SerializeField] private Sound Audio;
         [KTTag("AudioTag")]
         [SerializeField] private int AudioTag;
-        [SerializeField] private Button Button;
-        
- 
 
         private void ButtonPressHandler()
         {

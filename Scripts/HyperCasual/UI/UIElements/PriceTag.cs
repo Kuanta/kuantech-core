@@ -12,7 +12,7 @@ namespace Kuantech.HyperCasual.UI
         [SerializeField] protected string CurrencyId;
         [SerializeField] private TMP_Text PriceText;
         [SerializeField] private Image CurrencyIcon;
-
+        
         /// <summary>
         /// Sets the price text by gettign it from the store manager
         /// </summary>

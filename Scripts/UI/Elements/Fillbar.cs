@@ -59,6 +59,10 @@ namespace Kuantech.Core.UI
         {
             if (float.IsNaN(fillAmount)) fillAmount = 0f;
             FillAmount = fillAmount;
+            if (ValueText != null)
+            {
+                ValueText.text = "";
+            }
             if (_slider != null)
             {
                 _slider.value = fillAmount;
@@ -66,6 +70,7 @@ namespace Kuantech.Core.UI
             }
             float newPos = (MaxAnchoredPos - MinAnchoredPos) * fillAmount + MinAnchoredPos;
             if(FillImage != null) FillImage.anchoredPosition = new Vector2(newPos, FillImage.anchoredPosition.y);
+            
         }
 
         public void SetValue(float value)

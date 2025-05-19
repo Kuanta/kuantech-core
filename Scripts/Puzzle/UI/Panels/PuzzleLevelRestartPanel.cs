@@ -12,9 +12,8 @@ namespace Kuantech.Puzzle.UI
         [SerializeField] private Button RestartButton;
         public float InitialScale = 0.5f;
         public float DOTweenTime = 0.5f;
-        protected override void Start()
+        private void Start()
         {
-            base.Start();
             RestartButton.onClick.AddListener(()=>{
                 Level level = LevelManager.GetContext<LevelManager>().CurrentLevel;
                 if(level == null) return;

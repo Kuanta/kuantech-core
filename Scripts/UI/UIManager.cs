@@ -11,8 +11,9 @@ namespace Kuantech.Core.UI
         
         [Header("Default Menu")]
         [SerializeField] private UIMenu _defaultMenu;
-
         [SerializeField] private List<UIMenu> StaticMenusList;
+
+        [SerializeField] private List<UIMenu> MenusToInitializeOnStart;
         private Dictionary<string, UIMenu> _menusById = new Dictionary<string, UIMenu>();
 
         public override async UniTask Initialize(GameManager gameManager)
@@ -38,6 +39,12 @@ namespace Kuantech.Core.UI
             if (_defaultMenu != null)
             {
                 PushToStack(_defaultMenu);
+            }
+            
+            foreach(var menu in MenusToInitializeOnStart)
+            {
+                if (menu == null) continue;
+                menu.Initialize();
             }
         }
 

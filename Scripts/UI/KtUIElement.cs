@@ -7,8 +7,8 @@ namespace Kuantech.Core.UI
 {
     public class KtUIElement : MonoBehaviour
     {
-        [Header("UI Element")] [SerializeField]
-        private float CloseDelay = 0f;
+        [Header("UI Element")] 
+        [SerializeField] private float CloseDelay = 0f;
         
         //ANimations
         private Animator _animator;
@@ -17,6 +17,7 @@ namespace Kuantech.Core.UI
         private IEnumerator _closeRoutine = null;
 
         private bool _shown;
+        private RectTransform _rectTransform;
         
         //Events
         public UnityAction OnMenuOpened;
@@ -25,6 +26,7 @@ namespace Kuantech.Core.UI
         private void Awake()
         {
             _animator = GetComponent<Animator>();
+            _rectTransform = GetComponent<RectTransform>();
         }
 
         /// <summary>
@@ -74,5 +76,14 @@ namespace Kuantech.Core.UI
         {
             return _shown && gameObject.activeSelf;
         }
+        
+        #region Helpers
+
+        public bool IsInRect(RectTransform rectTransform, float horizontalBuffer, float verticalBuffer)
+        {
+            
+            return true;
+        }
+        #endregion
     }
 }

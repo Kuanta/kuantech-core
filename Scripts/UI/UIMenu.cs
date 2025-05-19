@@ -12,12 +12,12 @@ namespace Kuantech.Core.UI
         [SerializeField] protected Button CloseButton;
         
         //Animations
-        private bool _initialized = false;
+        protected bool Initialized = false;
 
-        protected virtual void Initialize()
+        public virtual void Initialize()
         {
-            if (_initialized) return;
-            _initialized = true;
+            if (Initialized) return;
+            Initialized = true;
             
             if (CloseButton != null)
             {
@@ -27,12 +27,7 @@ namespace Kuantech.Core.UI
                 });
             }
         }
-        
-        protected virtual void Start()
-        {
-           Initialize();
-        }
-        
+   
         public override void Open()
         {
             Initialize();

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Sirenix.OdinInspector;
+using UnityEngine;
 using UnityEngine.Events;
 
 namespace Kuantech.Core.Store
@@ -20,9 +21,13 @@ namespace Kuantech.Core.Store
         public List<CurrencyAsset> CurrencyAssets;
         
         [SaveableField] private Dictionary<string, int> _amountsById = new Dictionary<string, int>();
+
+        private Dictionary<string, CurrencyAsset> _assetsById = new Dictionary<string, CurrencyAsset>();
         
         //Event
         public UnityAction<CurrencyData> CurrencyUpdated;
+        public UnityAction<string> CurrencyUpdatedById;
+        
         public override async UniTask Initialize(GameManager gameManager)
         {
             await base.Initialize(gameManager);
@@ -31,6 +36,7 @@ namespace Kuantech.Core.Store
             foreach (var asset in CurrencyAssets)
             {
                 _amountsById[asset.CurrencyId] = 0; //Default
+                _assetsById[asset.CurrencyId] = asset;
             }
         }
         public override void OnSubmanagersInitialized()
@@ -71,58 +77,75 @@ namespace Kuantech.Core.Store
 
         public static int GetCurrencyAmount(CurrencyAsset currencyAsset)
         {
+            return GetCurrencyAmount(currencyAsset.CurrencyId);
+        }
+
+        public static int GetCurrencyAmount(string currencyId)
+        {
             var ctx = CurrencyManager.GetContext<CurrencyManager>();
             if (ctx == null) return 0;
-            if (ctx._amountsById.ContainsKey(currencyAsset.CurrencyId))
+            if (ctx._amountsById.ContainsKey(currencyId))
             {
-                return ctx._amountsById[currencyAsset.CurrencyId];
+                return ctx._amountsById[currencyId];
             }
             else
             {
                 return 0;
             }
         }
-        
+        [Button("Add Currency")]
         public static void AddCurrency(CurrencyAsset currencyAsset, int amount)
         {
-            int currAmount = GetCurrencyAmount(currencyAsset);
-            SetCurrency(currencyAsset, currAmount + amount);
+            if (currencyAsset == null) return;
+            AddCurrency(currencyAsset.CurrencyId, amount);
         }
-        
-        [Button("Add Currency")]
-        private void _AddCurrency(CurrencyAsset currencyAsset, int amount)
+
+        public static void AddCurrency(string currencyId, int amount)
         {
-            int currAmount = GetCurrencyAmount(currencyAsset);
-            SetCurrency(currencyAsset, currAmount + amount);
+            int currAmount = GetCurrencyAmount(currencyId);
+            SetCurrency(currencyId, currAmount + amount);
         }
-        
-        
+
+        [Button("Remove Currency")]
         public static void RemoveCurrency(CurrencyAsset currencyAsset, int amount)
         {
             int currAmount = GetCurrencyAmount(currencyAsset);
-            SetCurrency(currencyAsset, currAmount - amount);
+            RemoveCurrency(currencyAsset.CurrencyId, amount);
         }
-        
-        [Button("Remove Currency")]
-        private void _RemoveCurrency(CurrencyAsset currencyAsset, int amount)
+
+        public static void RemoveCurrency(string currencyId, int amount)
         {
-            int currAmount = GetCurrencyAmount(currencyAsset);
-            SetCurrency(currencyAsset, currAmount - amount);
+            var ctx = GetContext<CurrencyManager>();
+            int currAmount = GetCurrencyAmount(currencyId);
+            SetCurrency(currencyId,currAmount - amount);
         }
         
         public static void SetCurrency(CurrencyAsset currencyAsset, int amount)
         {
-            var ctx = GetContext<CurrencyManager>();
-            if (ctx == null) return;
-            ctx._SetCurrency(currencyAsset, amount);
+            SetCurrency(currencyAsset.CurrencyId, amount);
         }
         
         [Button("Set Currency")]
-        private void _SetCurrency(CurrencyAsset currencyAsset, int amount)
+        public static void SetCurrency(string currencyId, int amount)
         {
-            _amountsById[currencyAsset.CurrencyId] = amount;
-            TriggerCurrencyUpdatedEvent(currencyAsset);
-            SaveState();
+            var ctx = GetContext<CurrencyManager>();
+            if (ctx == null) return;
+            ctx._amountsById[currencyId] = amount;
+            CurrencyAsset asset = GetCurrencyAssetById(currencyId);
+            if (asset == null)
+            {
+                Debug.LogWarning($"No currency asset with id {currencyId}");
+                return;
+            }
+            ctx.TriggerCurrencyUpdatedEvent(GetCurrencyAssetById(currencyId));
+            ctx.SaveState();
+        }
+
+        public static CurrencyAsset GetCurrencyAssetById(string id)
+        {
+            var ctx = GetContext<CurrencyManager>();
+            if (ctx._assetsById.ContainsKey(id)) return ctx._assetsById[id];
+            return null;
         }
         #endregion
     }

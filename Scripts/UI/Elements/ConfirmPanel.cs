@@ -10,9 +10,8 @@ namespace Kuantech.Core.UI
         [SerializeField] private Button ConfirmButton;
 
         public UnityAction OnConfirm = null;
-        protected override void Start()
+        public void Start()
         {
-            base.Start();
             ConfirmButton.onClick.AddListener(OnConfirmButton);
         }
 
