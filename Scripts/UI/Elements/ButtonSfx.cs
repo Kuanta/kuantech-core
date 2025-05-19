@@ -1,7 +1,6 @@
 ﻿using Kuantech.Core.FX;
 using Kuantech.Utils;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Kuantech.Core.UI
 {

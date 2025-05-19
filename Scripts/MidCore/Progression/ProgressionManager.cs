@@ -214,6 +214,14 @@ namespace Kuantech.Midcore
             };
             return ctx._progressionData[asset.Id];
         }
+        
+        [Button("Clear Upgrades")]
+        public static void ClearUpgrades()
+        {
+            var ctx = GetContext<ProgressionManager>();
+            ctx._progressionData.Clear();
+            ctx.SaveState();
+        }
         #endregion
 
         #region Buy & Upgrade

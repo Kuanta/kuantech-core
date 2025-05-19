@@ -1,4 +1,5 @@
 ﻿using Cysharp.Threading.Tasks;
+using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Kuantech.Core
@@ -61,7 +62,7 @@ namespace Kuantech.Core
         {
             
         }
-
+        
         public void LoadState()
         {
             if (this is GameStateManager) return;
@@ -72,6 +73,12 @@ namespace Kuantech.Core
         {
             if (this is GameStateManager) return; //Gamestate manager shouldn't save itself
             GameStateManager.UpdateSaveData(this);
+        }
+
+        public void ClearState()
+        {
+            if (this is GameStateManager) return; 
+            GameStateManager.ClearSaveData(this);
         }
         #endregion
 

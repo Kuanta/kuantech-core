@@ -44,7 +44,7 @@ public class GameStateManager : SubManager
         var data = SaveUtility.Serialize(saveable);
         ctx.GameState.UpdateData(id, data);
     }
-
+    
     public static void LoadData(ISaveable saveable)
     {
         var ctx = GameStateManager.GetContext<GameStateManager>();

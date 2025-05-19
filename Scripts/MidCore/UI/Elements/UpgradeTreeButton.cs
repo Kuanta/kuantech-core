@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Kuantech.Core.FX;
 using Kuantech.Core.HyperCasual;
 using Kuantech.Core.UI;
 using Kuantech.Utils;
@@ -42,6 +43,12 @@ namespace Kuantech.Midcore.UI
         [SerializeField] private GameObject PurchasableState;
         [SerializeField] private GameObject UnlockedState;
 
+        [Header("Effects & Anims")] [SerializeField]
+        private Animator Animator;
+        [KTTag("AudioTag")] [SerializeField] private int SkillPurchasedSfx;
+        [KTTag("AudioTag")] [SerializeField] private int NotAffordableSfx;
+        private static readonly int Purchased = Animator.StringToHash("Purchased");
+
         public void Initialize()
         {
             if (UpgradeDataAsset == null) return;
@@ -72,14 +79,23 @@ namespace Kuantech.Midcore.UI
             if(UpgradeDataAsset == null) return;
             
             //Try to buy the progression
-            if (!ProgressionManager.BuyRank(UpgradeDataAsset, Rank)) return;
-
+            if (!ProgressionManager.BuyRank(UpgradeDataAsset, Rank))
+            {
+                AudioLibrary.PlaySoundByTag(NotAffordableSfx);
+                return;
+            }
+            
             OnRankPurchased();
         }
 
         private void OnRankPurchased()
         {
             UpdateVisualState();
+            AudioLibrary.PlaySoundByTag(SkillPurchasedSfx);
+            if (Animator != null)
+            {
+                Animator.SetTrigger(Purchased);
+            }
         }
 
         private void UpdateConnectorLine()

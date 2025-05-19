@@ -17,7 +17,7 @@ namespace Kuantech.Core.FX
         [KTTag("AudioTag")]
         public int AudioTag;
 
-        [FormerlySerializedAs("SfxColleciton")] [Tooltip("If not null, this will be played")]
+        [Tooltip("If not null, this will be played")]
         public List<AudioSource> SfxCollection;
         public AudioSource AudioSource;
         public float Cooldown = 0.1f;
