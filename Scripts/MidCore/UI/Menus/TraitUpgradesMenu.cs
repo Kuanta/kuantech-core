@@ -22,17 +22,17 @@ namespace Kuantech.Midcore.UI
         [Header("Sections")] 
         [SerializeField] private RectTransform ButtonsParent;
         
-        [FormerlySerializedAs("ProgressionUnlockButtonPrefab")] [Header("Button Prefabs")] [SerializeField]
+        [Header("Button Prefabs")] [SerializeField]
         private UpgradeTreeButton upgradeTreeButtonPrefab;
         private List<UpgradeTreeButton> _upgradeButtons;
-        private Dictionary<(UpgradeDataAsset, int), UpgradeTreeButton> _upgradeButtonsMap;
+        private Dictionary<(ProgressableDataAsset, int), UpgradeTreeButton> _upgradeButtonsMap;
         public override void Initialize()
         {
             if (Initialized) return;
             base.Initialize();
             _upgradeButtons = GetComponentsInChildren<UpgradeTreeButton>(true).ToList();
             if (_upgradeButtons.IsNullOrEmpty()) return;
-            _upgradeButtonsMap = new Dictionary<(UpgradeDataAsset, int), UpgradeTreeButton>();
+            _upgradeButtonsMap = new Dictionary<(ProgressableDataAsset, int), UpgradeTreeButton>();
             //Fill the dictionary
             foreach(var button in _upgradeButtons)
             {
@@ -49,14 +49,19 @@ namespace Kuantech.Midcore.UI
             {
                 foreach (var childButton in _upgradeButtons)
                 {
-                    UpgradeUnlockCondition entry = ProgressionManager.GetUpgradeDependencyEntry(childButton.UpgradeDataAsset, childButton.Rank);
+                    
+                    ProgressableDependencyEntry entry = ProgressionManager.GetProgressableDependencyEntry(childButton.UpgradeDataAsset, childButton.Rank);
                     if(entry == null) continue;
-                    var key = (entry.dependingUpgradeType, entry.DependingProgressionRank);
-                    if (_upgradeButtonsMap.ContainsKey(key))
+                    foreach (var condition in entry.UnlockConditions)
                     {
-                        UpgradeTreeButton btnToConnect = _upgradeButtonsMap[key];
-                        childButton.ConnectToButton(btnToConnect);
+                        var key = (condition.DependingAsset, condition.DependingProgressionRank);
+                        if (_upgradeButtonsMap.ContainsKey(key))
+                        {
+                            UpgradeTreeButton btnToConnect = _upgradeButtonsMap[key];
+                            childButton.ConnectToButton(btnToConnect);
+                        }
                     }
+                    
                 }
             }
             List<RectTransform> buttonRectTransforms = new List<RectTransform>();
@@ -70,10 +75,11 @@ namespace Kuantech.Midcore.UI
             }
             
             //Subscribe to events
-            ProgressionManager.GetContext<ProgressionManager>().OnUpgradeRankUp += UpdateButtons;
+            ProgressionManager.GetContext<ProgressionManager>().OnUpgradeRankSet += UpdateButtons;
+            ProgressionManager.GetContext<ProgressionManager>().OnUpgradeUnlocked += UpdateButtons;
         }
         
-        private void UpdateButtons(UpgradeData data)
+        private void UpdateButtons(ProgressibleData data)
         {
             //todo: Optimize by updating only corresbonding buttons
             if (_upgradeButtons.IsNullOrEmpty()) return;

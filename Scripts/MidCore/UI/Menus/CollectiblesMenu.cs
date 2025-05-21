@@ -17,24 +17,88 @@ namespace Kuantech.Midcore.UI
         {
             base.Initialize();
 
-            List<CollectibleDataAsset> collectibleDataAssets;
+            ProgressionManager pm = ProgressionManager.GetContext<ProgressionManager>();
+            if (pm == null) return;
+            List<ProgressableDataAsset> collectibleDataAssets = pm.Collectibles;
 
-            CollectiblesHandler ch = ProgressionManager.GetCollectiblesHandler();
-            if (ch == null)
+            foreach (var dataAsset in collectibleDataAssets)
             {
-                Debug.LogWarning("CollectiblesHandler not found in the ProgressionManager.");
-                return;
+                AddCollectiblePreviewCard(dataAsset);
             }
-            collectibleDataAssets = ch.AllCollectibles;
+            
+            pm.OnUpgradeUnlocked += OnProgressibleUnlocked;
+            pm.OnUpgradeRankSet += OnProgressibleRankSet;
+            pm.OnSubUpgradeRankSet += OnSubUpgradeRankSet;
         }
-        
-        public void AddCollectibleCard(CollectibleDataAsset collectibleDataAsset)
+
+        public override void Show()
         {
-            if (CollectiblePreviewCards.ContainsKey(collectibleDataAsset.CollectibleId)) return;
-            CollectiblePreviewCard collectiblePreviewCard = Instantiate(CollectiblePreviewCardPrefab, LockedCards);
-            CollectiblePreviewCards.Add(collectibleDataAsset.CollectibleId, collectiblePreviewCard);
-            collectiblePreviewCard.Initialize(collectibleDataAsset);
+            base.Show();
+            UpdatePreviewCards();
         }
         
+        /// <summary>
+        /// Updates the preview cards based on the current state of the collectibles
+        /// </summary>
+        private void UpdatePreviewCards()
+        {
+            foreach (var pair in CollectiblePreviewCards)
+            {
+                bool isUnlocked = ProgressionManager.IsProgressibleUnlocked(pair.Value.CollectibleDataAsset);
+                if(isUnlocked)
+                {
+                    pair.Value.transform.SetParent(UnlockedCards);
+                }
+                else
+                {
+                    pair.Value.transform.SetParent(LockedCards);
+                }
+                pair.Value.UpdatePreviewCard();
+            }
+        }
+        
+        public void AddCollectiblePreviewCard(ProgressableDataAsset collectibleDataAsset)
+        {
+            if (CollectiblePreviewCards.ContainsKey(collectibleDataAsset.Id)) return;
+            CollectiblePreviewCard collectiblePreviewCard = Instantiate(CollectiblePreviewCardPrefab, LockedCards);
+            collectiblePreviewCard.Initialize(collectibleDataAsset);
+
+            if (ProgressionManager.IsProgressibleUnlocked(collectibleDataAsset))
+            {
+                collectiblePreviewCard.transform.SetParent(UnlockedCards);
+            }
+            else
+            {
+                collectiblePreviewCard.transform.SetParent(LockedCards);
+            }
+            CollectiblePreviewCards.Add(collectibleDataAsset.Id, collectiblePreviewCard);
+        }
+
+        public CollectiblePreviewCard GetCollectiblePreviewCard(ProgressibleData data)
+        {
+            if (CollectiblePreviewCards.ContainsKey(data.Id)) return CollectiblePreviewCards[data.Id];
+            return null;
+        }
+        private void OnProgressibleUnlocked(ProgressibleData data)
+        {
+            //Get preview card
+            CollectiblePreviewCard card = GetCollectiblePreviewCard(data);
+            if (card == null) return;
+            card.transform.SetParent(UnlockedCards);
+        }
+        
+        private void OnProgressibleRankSet(ProgressibleData data)
+        {
+            CollectiblePreviewCard card = GetCollectiblePreviewCard(data);
+            if (card == null) return;
+            card.UpdatePreviewCard();
+        }
+
+        private void OnSubUpgradeRankSet(ProgressibleData data)
+        {
+            CollectiblePreviewCard card = GetCollectiblePreviewCard(data);
+            if (card == null) return;
+            card.UpdatePreviewCard();
+        }
     }
 }

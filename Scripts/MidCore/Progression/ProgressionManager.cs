@@ -2,33 +2,26 @@
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Kuantech.Core;
-using Kuantech.Core.HyperCasual;
 using Kuantech.Rpg;
-using Kuantech.Utils;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Kuantech.Midcore
 {
-    /// <summary>
-    /// Defines the state for a given progression
-    /// </summary>
     [Serializable]
-    public class UpgradeData
+    public struct DefautlSubUpgradeData
     {
-        public string UpgradeId;
-        public int CurrentRank = -1; // < 0 means locked
+        public ProgressableDataAsset SubUpgradeAsset;
+        public int StartRank;
     }
     
-    /// <summary>
-    /// Defines the requirement for a progression rank to be unlocked. If 
-    /// </summary>
     [Serializable]
-    public class UpgradeDependencyEntry
+    public struct DefaultProgressableData
     {
-        public UpgradeDataAsset AssetToUpgrade;
-        public int RankToUpgrade;
-        public UpgradeUnlockCondition UnlockCondition;
+        public ProgressableDataAsset Asset;
+        public int StartRank;
+        public List<DefautlSubUpgradeData> SubUpgrades;
     }
     
     public class ProgressionManager : SubManager
@@ -36,32 +29,42 @@ namespace Kuantech.Midcore
         [Header("Player Level")] 
         [SaveableField] public LevelVariable PlayerLevel;
 
-        [Header("Collectibles")] 
-        [SaveableField] public CollectiblesHandler CollectiblesHandler;
+        [Header("Collectibles")] public List<ProgressableDataAsset> Collectibles;
         
-        [Header("Upgrades")]
-        public List<UpgradeDataAsset> UpgradeDataAssets;
-        public List<UpgradeDependencyEntry> UpgradeDependencies;
-        [SaveableField] 
-        public Dictionary<string, UpgradeData> _progressionData = new Dictionary<string, UpgradeData>();
-        private Dictionary<string, UpgradeDataAsset> _assetsById;
-        private Dictionary<(UpgradeDataAsset, int), UpgradeUnlockCondition> _unlockConditions;
-
+        [Header("Upgrades")] 
+        [SaveableField] [SerializeField] private ProgressablesHandler ProgressiblesHandler;
+        
+        [Header("Default Values")]
+        public List<DefaultProgressableData> DefaultProgressables;
+        
         //Events
-        public Action<UpgradeData> OnUpgradeRankUp;
+        public Action<ProgressibleData> OnUpgradeUnlocked;
+        public Action<ProgressibleData> OnUpgradeRankSet;
         public Action<LevelVariable> OnPlayerEarnedExperience;
+        public Action<ProgressibleData> OnSubUpgradeRankSet;
 
         public override async UniTask Initialize(GameManager gameManager)
         {
             await base.Initialize(gameManager);
-            _unlockConditions = new Dictionary<(UpgradeDataAsset, int), UpgradeUnlockCondition>();
-            foreach (var items in UpgradeDependencies)
+           ProgressiblesHandler.Initilaze();
+           
+        }
+
+        public override void SetDefaultState()
+        {
+            base.SetDefaultState();
+            foreach(var defaultProgressable in DefaultProgressables)
             {
-                int rank = items.RankToUpgrade;
-                UpgradeDataAsset asset = items.AssetToUpgrade;
-                _unlockConditions.Add((asset, rank), items.UnlockCondition);
+                SetRank(defaultProgressable.Asset, defaultProgressable.StartRank, false);
+                
+                //Set sub upgrades too
+                foreach (var upgrade in defaultProgressable.SubUpgrades)
+                {
+                    SetSubUpgradeRank(defaultProgressable.Asset, upgrade.SubUpgradeAsset, upgrade.StartRank, false);
+                }
             }
         }
+        
         #region Player Level
         public static LevelVariable GetPlayerLevel()
         {
@@ -87,70 +90,38 @@ namespace Kuantech.Midcore
         }
 
         #endregion
-
-        #region Collectibles
-
-        public static CollectiblesHandler GetCollectiblesHandler()
-        {
-            var ctx = GetContext<ProgressionManager>();
-            if (ctx == null) return null;
-            return ctx.CollectiblesHandler;
-        }
-        #endregion
         
         #region Progression Queries
-        public static UpgradeData GetUpgradeData(UpgradeDataAsset asset)
+        /// <summary>
+        /// Returns the current progressible data
+        /// </summary>
+        /// <param name="asset"></param>
+        /// <returns></returns>
+        public static ProgressibleData GetProgressibleData(ProgressableDataAsset asset)
         {
             var ctx = GetContext<ProgressionManager>();
             if (ctx == null) return null;
-            if (ctx._progressionData.IsNullOrEmpty()) return null;
-            if (!ctx._progressionData.ContainsKey(asset.Id)) return null;
-            return ctx._progressionData[asset.Id];
+            return ctx.ProgressiblesHandler.GetProgressibleData(asset);
         }
 
-        public static UpgradeUnlockCondition GetUpgradeDependencyEntry(UpgradeDataAsset asset, int rank)
+        public static ProgressableDependencyEntry GetProgressableDependencyEntry(ProgressableDataAsset asset, int rankToUnlock)
         {
             var ctx = GetContext<ProgressionManager>();
-            if (ctx == null || asset == null) return null;
-            ctx._unlockConditions.TryGetValue((asset, rank), out var condition);
-            return condition;
+            if (ctx == null) return null;
+            return ctx.ProgressiblesHandler.GetUpgradeDependencyEntry(asset, rankToUnlock);
         }
         
-        /// <summary>
-        /// Checks whether the rank is purchasable
-        /// </summary>
-        /// <param name="asset"></param>
-        /// <param name="rank"></param>
-        /// <returns></returns>
-        [Button("Check Rank Conditions")]
-        public static bool IsRankUpgradeConditionsMet(UpgradeDataAsset asset, int rank)
-        {
-            var ctx = GetContext<ProgressionManager>();
-            if(ctx == null) return false;
-            //Get upgrade condition
-            (UpgradeDataAsset, int) key = (asset, rank);
-            if (ctx._unlockConditions != null && ctx._unlockConditions.ContainsKey(key))
-            {
-                UpgradeUnlockCondition condition = ctx. _unlockConditions[key];
-                if (!condition.IsConditionMet()) return false;
-                //Is condition satisfied?
-            }
-            
-            //Check if previous rank is purchased
-            int currentRank = GetCurrentRank(asset);
-            return currentRank == rank - 1;
-        }
-
-  
         /// <summary>
         /// Checks if progression in unlocked
         /// </summary>
         /// <param name="asset"></param>
         /// <returns></returns>
         [Button("Check Upgrade Unlocked")]
-        public static bool IsUpgradeUnlocked(UpgradeDataAsset asset)
+        public static bool IsProgressibleUnlocked(ProgressableDataAsset asset)
         {
-            return GetCurrentRank(asset) >= 0;
+            var ctx = GetContext<ProgressionManager>();
+            if (ctx == null) return false;
+            return ctx.ProgressiblesHandler.IsProgressibleUnlocked(asset);
         }
         
         /// <summary>
@@ -160,24 +131,18 @@ namespace Kuantech.Midcore
         /// <param name="rankToUnlock"></param>
         /// <returns></returns>
         [Button("Check Rank Unlocked")]
-        public static bool IsRankUnlocked(UpgradeDataAsset asset, int rankToUnlock)
+        public static bool IsRankUnlocked(ProgressableDataAsset asset, int rankToUnlock)
         {
-            UpgradeData data = GetUpgradeData(asset);
-            if (data == null) return false;
-            return data.CurrentRank >= rankToUnlock;
+            var ctx = GetContext<ProgressionManager>();
+            if (ctx == null) return false;
+            return ctx.ProgressiblesHandler.IsRankUnlocked(asset, rankToUnlock);
         }
-        
-        /// <summary>
-        /// Checks if there is a store listing for the upgrade
-        /// </summary>
-        /// <param name="asset"></param>
-        /// <returns></returns>
-        public static bool IsUpgradeListedInStore(UpgradeDataAsset asset)
+
+        public static bool IsRankConditionSatisfied(ProgressableDataAsset asset, int rankToUnlock)
         {
-            if (asset.StoreEntryId.IsNullOrEmpty() ) return false;
-            StoreManager sm = GetContext<StoreManager>();
-            if (sm == null) return false;
-            return sm.IsListed(asset.StoreEntryId);
+            var ctx = GetContext<ProgressionManager>();
+            if (ctx == null) return false;
+            return ctx.ProgressiblesHandler.CanRankBeUnlocked(asset, rankToUnlock);
         }
         
         /// <summary>
@@ -185,11 +150,10 @@ namespace Kuantech.Midcore
         /// </summary>
         /// <param name="asset"></param>
         /// <returns></returns>
-        public static int GetCurrentRank(UpgradeDataAsset asset)
+        public static int GetCurrentRank(ProgressableDataAsset asset)
         {
-            UpgradeData data = GetUpgradeData(asset);
-            if (data == null) return -1;
-            return data.CurrentRank;
+            var ctx = GetContext<ProgressionManager>();
+            return ctx.ProgressiblesHandler.GetCurrentRank(asset);
         }
 
         /// <summary>
@@ -198,41 +162,16 @@ namespace Kuantech.Midcore
         /// <param name="asset"></param>
         /// <param name="rank"></param>
         /// <returns></returns>
-        public static bool CanBuyUpgradeRank(UpgradeDataAsset asset, int rank)
+        public static bool CanRankBeUnlocked(ProgressableDataAsset asset, int rank)
         {
-            if (asset == null) return false;
-            
-            //Check unlock conditions
-            if (IsRankUpgradeConditionsMet(asset, rank))
-            {
-                
-            }
-            if (asset.StoreEntryId.IsNullOrEmpty()) return true; //No price to pay
-            StoreManager sm = StoreManager.GetContext<StoreManager>();
-            if (!sm.IsListed(asset.StoreEntryId))
-            {
-                return true;
-            }
-            return sm.CanBeBought(asset.StoreEntryId, rank, GetCurrentRank(asset));
+            var ctx = GetContext<ProgressionManager>();
+            return ctx.ProgressiblesHandler.CanRankBeUnlocked(asset, rank);
         }
 
-        private static UpgradeData CreateUpgradeEntry(UpgradeDataAsset asset)
+        public override void ClearState()
         {
-            var ctx = GetContext<ProgressionManager>();
-            if (ctx._progressionData.ContainsKey(asset.Id)) return ctx._progressionData[asset.Id];
-            ctx._progressionData[asset.Id] = new UpgradeData()
-            {
-                CurrentRank = -1, //Start from unlocked
-            };
-            return ctx._progressionData[asset.Id];
-        }
-        
-        [Button("Clear Upgrades")]
-        public static void ClearUpgrades()
-        {
-            var ctx = GetContext<ProgressionManager>();
-            ctx._progressionData.Clear();
-            ctx.SaveState();
+            ProgressiblesHandler.Clear(); //Clear upgradables
+            base.ClearState();
         }
         #endregion
 
@@ -242,35 +181,12 @@ namespace Kuantech.Midcore
         /// Renks up the upgrade
         /// </summary>
         /// <param name="asset"></param>
-        public static bool RankUp(UpgradeDataAsset asset)
+        public static bool RankUpUpgrade(ProgressableDataAsset asset)
         {
-            UpgradeData data = GetUpgradeData(asset);
-            if (data == null) return false;
-            if (!IsUpgradeUnlocked(asset))
-            {
-                //Possible endless recursion, be careful
-                BuyRank(asset, 0);
-                return false;
-            }
-            
-            //Check price
-            StoreManager sm = GetContext<StoreManager>();
-            bool listedInStore = false;
-            if (IsUpgradeListedInStore(asset))
-            {
-                //Can it be afforded
-                if (!sm.CanBeBought(asset.StoreEntryId, data.CurrentRank+1, data.CurrentRank)) return false;
-                listedInStore = true;
-            }
-            
-            //Transaction
-            if(listedInStore) sm.BuyItem(asset.StoreEntryId, data.CurrentRank+1, data.CurrentRank);
-
-            //Increase the rank
-            data.CurrentRank++;
-
-            //Fire rank event
-            GetContext<ProgressionManager>()?.OnUpgradeRankUp?.Invoke(data);
+            var ctx = GetContext<ProgressionManager>();
+            if (!ctx.ProgressiblesHandler.RankUp(asset)) return false;
+            ctx.OnUpgradeRankSet?.Invoke(ctx.ProgressiblesHandler.GetProgressibleData(asset));
+            ctx.SaveState();
             return true;
         }
         
@@ -279,29 +195,64 @@ namespace Kuantech.Midcore
         /// </summary>
         /// <param name="asset"></param>
         /// <param name="rank"></param>
-        public static bool BuyRank(UpgradeDataAsset asset, int rank)
+        [Button("Buy Rank")]
+        public static bool BuyRank(ProgressableDataAsset asset, int rank)
         {
-            if (IsRankUnlocked(asset, rank)) return false;
-            //Can be afforded?
-            if (!CanBuyUpgradeRank(asset, rank))
-            {
-                return false;
-            }
-            
-            UpgradeData data = GetUpgradeData(asset);
-            if (data == null || !IsUpgradeUnlocked(asset))
-            {
-               
-                //Create entry
-                data = CreateUpgradeEntry(asset);
-            }
-            
-            //Pay the price
-            StoreManager.GetContext<StoreManager>().BuyItem(asset.StoreEntryId, rank, data.CurrentRank);
-
-            data.CurrentRank = rank;
-            GetContext<ProgressionManager>()?.OnUpgradeRankUp?.Invoke(data);
             var ctx = GetContext<ProgressionManager>();
+            if (!ctx.ProgressiblesHandler.BuyRank(asset, rank)) return false;
+            ctx.OnUpgradeRankSet?.Invoke(ctx.ProgressiblesHandler.GetProgressibleData(asset));
+            ctx.SaveState();
+            return true;
+        }
+        
+        /// <summary>
+        /// Sets the rank without any checks
+        /// </summary>
+        /// <param name="asset"></param>
+        /// <param name="rank"></param>
+        /// <returns></returns>
+        [Button("Set Rank")]
+        public static bool SetRank(ProgressableDataAsset asset, int rank, bool saveState = true)
+        {
+            var ctx = GetContext<ProgressionManager>();
+            if (ctx == null) return false;
+            bool result=ctx.ProgressiblesHandler.SetRank(asset, rank);
+            if (!result) return false;
+            ctx.OnUpgradeRankSet?.Invoke(ctx.ProgressiblesHandler.GetProgressibleData(asset));
+            if (saveState)
+            {
+                ctx.SaveState();
+            }
+
+            return true;
+        }
+        
+        [Button("Buy Sub Upgrade Rank")]
+        public static bool BuySubUpgradeRank(ProgressableDataAsset parentAsset, ProgressableDataAsset subUpgrade,
+            int rank)
+        {
+            var ctx = GetContext<ProgressionManager>();
+            if (!ctx.ProgressiblesHandler.BuySubUpgradeRank(parentAsset, subUpgrade, rank)) return false;
+            ctx.OnSubUpgradeRankSet?.Invoke(ctx.ProgressiblesHandler.GetSubUpgradeData(parentAsset,subUpgrade));
+            ctx.SaveState();
+            return true;
+        }
+
+        /// <summary>
+        /// Sets the sub upgrade rank without any checks
+        /// </summary>
+        /// <param name="parentAsset"></param>
+        /// <param name="subUpgrade"></param>
+        /// <param name="rank"></param>
+        /// <returns></returns>
+        [Button("Set Sub Upgrade Rank")]
+        public static bool SetSubUpgradeRank(ProgressableDataAsset parentAsset, ProgressableDataAsset subUpgrade,
+            int rank, bool saveState=true)
+        {
+            var ctx = GetContext<ProgressionManager>();
+            if (ctx == null) return false;
+            if (!ctx.ProgressiblesHandler.SetSubUpgradeRank(parentAsset, subUpgrade, rank)) return false;
+            ctx.OnSubUpgradeRankSet?.Invoke(ctx.ProgressiblesHandler.GetSubUpgradeData(parentAsset,subUpgrade));
             ctx.SaveState();
             return true;
         }

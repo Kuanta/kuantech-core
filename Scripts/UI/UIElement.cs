@@ -15,10 +15,11 @@ namespace Kuantech.Core.UI
         private static readonly int ShowTrigger = Animator.StringToHash("Open");
         private static readonly int CloseTrigger = Animator.StringToHash("Close");
         private IEnumerator _closeRoutine = null;
-
+        
+        protected bool Initialized = false;
         private bool _shown;
         private RectTransform _rectTransform;
-        
+
         //Events
         public UnityAction OnMenuOpened;
         public UnityAction OnMenuClosed;
@@ -29,6 +30,12 @@ namespace Kuantech.Core.UI
             _rectTransform = GetComponent<RectTransform>();
         }
 
+        public virtual void Initialize()
+        {
+            if (Initialized) return;
+            Initialized = true;
+        }
+        
         /// <summary>
         /// Opens the ui element and applies the animator
         /// </summary>

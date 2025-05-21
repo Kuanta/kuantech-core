@@ -98,10 +98,8 @@ namespace Kuantech.Core.HyperCasual
             return true;
         }
         
-        public bool CanBeBought(string id, int rank, int startRank)
+        public bool CanBeBought(BuyableInfo info, int rank, int startRank)
         {
-            if (!_buyables.ContainsKey(id)) return false; //If doesn't have entry
-            BuyableInfo info = _buyables[id];
             bool hasCurrency = true;
             for(int i=0;i< info.PricesInfo.Count;++i)
             {
@@ -126,8 +124,13 @@ namespace Kuantech.Core.HyperCasual
                 return true;//Doesn't have an entry
             }
             BuyableInfo info = _buyables[id];
+            return BuyItem(info, rank, startRank);
+        }
+
+        public virtual bool BuyItem(BuyableInfo info, int rank = 0, int startRank = -1)
+        {
             if (info == null) return false; //No entry
-            if (!CanBeBought(id, rank, startRank)) return false;
+            if (!CanBeBought(info, rank, startRank)) return false;
             for (int i = 0; i < info.PricesInfo.Count; ++i)
             {
                 string currencyId = info.PricesInfo[i].CurrencyAsset.CurrencyId;
@@ -136,7 +139,7 @@ namespace Kuantech.Core.HyperCasual
             }
             return true;
         }
-
+        
         public BuyableInfo GetBuyableInfo(string buyableId)
         {
             if(!_buyables.ContainsKey(buyableId))

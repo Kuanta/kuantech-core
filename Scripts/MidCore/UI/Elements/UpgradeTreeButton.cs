@@ -19,7 +19,7 @@ namespace Kuantech.Midcore.UI
         [NonSerialized] public UnlockableStates CurrentState;
         
         [Header("Progression Asset")] 
-        public UpgradeDataAsset UpgradeDataAsset;
+        public ProgressableDataAsset UpgradeDataAsset;
         public int Rank;
 
         [Header("Common Visuals")] 
@@ -50,7 +50,7 @@ namespace Kuantech.Midcore.UI
             if(Name != null) Name.text = UpgradeDataAsset.Name;
             if (PriceTag != null)
             {
-                BuyableInfo bi = StoreManager.GetContext<StoreManager>()?.GetBuyableInfo(UpgradeDataAsset.StoreEntryId);
+                BuyableInfo bi = UpgradeDataAsset.BuyableInfo;
                 if (bi == null)
                 {
                     if(PriceTag != null) PriceTag.gameObject.SetActive(false);
@@ -126,7 +126,7 @@ namespace Kuantech.Midcore.UI
         {
             UpdateConnectorLine();
             bool rankPurchased = ProgressionManager.IsRankUnlocked(UpgradeDataAsset, Rank);
-            bool conditionsMet = ProgressionManager.IsRankUpgradeConditionsMet(UpgradeDataAsset, Rank);
+            bool conditionsMet = ProgressionManager.IsRankConditionSatisfied(UpgradeDataAsset, Rank);
             
             CurrentState = rankPurchased ? UnlockableStates.Unlocked : (conditionsMet ? UnlockableStates.Purchasable : UnlockableStates.Locked);
        

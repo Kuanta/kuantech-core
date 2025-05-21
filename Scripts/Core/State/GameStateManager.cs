@@ -45,18 +45,24 @@ public class GameStateManager : SubManager
         ctx.GameState.UpdateData(id, data);
     }
     
-    public static void LoadData(ISaveable saveable)
+    /// <summary>
+    /// Tries to load state. Returns true if there exist any data to load
+    /// </summary>
+    /// <param name="saveable"></param>
+    /// <returns></returns>
+    public static bool LoadData(ISaveable saveable)
     {
         var ctx = GameStateManager.GetContext<GameStateManager>();
         if (ctx == null)
         {
             Debug.LogError("Game State Manager is null");
         }
-        if (ctx.GameState == null || saveable == null) return;
+        if (ctx.GameState == null || saveable == null) return false;
         string id = GetSaveableId(saveable);
         byte[] data = ctx.GameState.GetData(id);
-        if (data == null) return;
+        if (data == null) return false;
         SaveUtility.Deserialize(data,saveable);
+        return true;
     }
 
     public static void ClearSaveData(ISaveable saveable)

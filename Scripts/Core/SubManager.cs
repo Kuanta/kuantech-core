@@ -19,7 +19,7 @@ namespace Kuantech.Core
 
         public virtual void OnSubmanagersInitialized()
         {
-            if(LoadAfterInitialize) GameStateManager.LoadData(this);
+            if(LoadAfterInitialize) LoadState();
         }
 
         /// <summary>
@@ -66,19 +66,29 @@ namespace Kuantech.Core
         public void LoadState()
         {
             if (this is GameStateManager) return;
-            GameStateManager.LoadData(this);
+            if (!GameStateManager.LoadData(this))
+            {
+                SetDefaultState();
+            }
         }
-
+        
+        [Button("Save State")]
         public void SaveState()
         {
             if (this is GameStateManager) return; //Gamestate manager shouldn't save itself
             GameStateManager.UpdateSaveData(this);
         }
-
-        public void ClearState()
+        
+        public virtual void SetDefaultState()
+        {
+        }
+        
+        [Button("Clear State")]
+        public virtual void ClearState()
         {
             if (this is GameStateManager) return; 
             GameStateManager.ClearSaveData(this);
+            SetDefaultState();
         }
         #endregion
 
