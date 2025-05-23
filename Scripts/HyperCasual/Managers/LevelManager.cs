@@ -20,30 +20,29 @@ namespace Kuantech.Core
         public int RepeatLastLevels = 0;
         public int MaxPowerLevel = -1;
 
-        [Header("Level State")]
-        [SaveableField] public int SavedLevelIndex;
-        
         //Events
         public EventHandler<LevelStateChangeData> StateChangeEvent;
         public EventHandler<int> LevelSetEvent;
         public EventHandler<Level> LevelCompletedEvent;
 
-        public override void OnSubmanagersInitialized()
-        {
-            int levelIndex = 0;
-            
-            //Load data for this
-            GameStateManager.LoadData(this);
-            
-            SetLevel(levelIndex);
-            //ChangeCurrentState(LevelState.Waiting);
-        }
+        // public override void OnSubmanagersInitialized()
+        // {
+        //     int levelIndex = 0;
+        //     
+        //     //Load data for this
+        //     GameStateManager.LoadData(this);
+        //     
+        //     SetLevel(levelIndex);
+        //     //ChangeCurrentState(LevelState.Waiting);
+        // }
+        
         public static LevelState GetCurrentState()
         {
             LevelManager context = LevelManager.GetContext<LevelManager>();
             if(context == null || context.CurrentLevel == null) return LevelState.Waiting;
             return context.CurrentLevel.CurrentState;
         }
+        
         public static Level GetCurrentLevel()
         {
             return (GameManager.Instance.GetSubManagerByType<LevelManager>() as LevelManager).CurrentLevel;
@@ -137,6 +136,7 @@ namespace Kuantech.Core
             if (context == null || context.CurrentLevel == null) return;
             context.CurrentLevel.RestartLevel();
         }
+        
         #region Lifecycle
         public virtual void ChangeCurrentState(LevelState newState)
         {
