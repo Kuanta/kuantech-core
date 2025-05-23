@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
@@ -7,6 +8,14 @@ using UnityEngine.SceneManagement;
 
 namespace Kuantech.Core
 {
+    /// <summary>
+    /// A data to collect all the data needed to transition between levels.
+    /// </summary>
+    public abstract class LevelTransitionData
+    {
+        
+    }
+    
     public class GameManager : Singleton<GameManager>
     {
         public bool GameIsPaused = false;
@@ -15,6 +24,8 @@ namespace Kuantech.Core
         [Header("Loading Screen")]
         public GameObject LoadingScreen;
 
+        [NonSerialized] public LevelTransitionData LevelTransitionData;
+        
         //Submanagers
         private SubManager[] _subManagers;
         private SubManager[] _sceneSubManagers;
@@ -122,8 +133,9 @@ namespace Kuantech.Core
         #endregion
         
         #region SceneManagement
-        public void ChangeScene(string sceneName)
+        public void ChangeScene(string sceneName, LevelTransitionData levelTransitionData = null)
         {
+            LevelTransitionData = levelTransitionData;
             //Clear existing scene specific sub managers
             if(_sceneSubManagers != null)
             {
@@ -151,6 +163,15 @@ namespace Kuantech.Core
             _sceneSubManagers = container.GetSubManagers();
             await InitializeSubManagers(_sceneSubManagers);
             container.ActivateManagerDependentSceneObjects();
+        }
+        
+        /// <summary>
+        /// Gets the level transition data
+        /// </summary>
+        /// <returns></returns>
+        public static LevelTransitionData GetLevelTransitionData()
+        {
+            return GameManager.Instance.LevelTransitionData;
         }
         #endregion
     }
