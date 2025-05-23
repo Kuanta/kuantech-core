@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using Kuantech.AI.Pathfinding;
 using Kuantech.Core;
 using Kuantech.Core.Combat;
 using Kuantech.Core.Utils;
+using Kuantech.Utils.Math;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -17,8 +19,8 @@ namespace Kuantech.Core
         [SerializeField] private float _speed;
         public Vector3 ForceMoveVector = Vector3.zero;
         private AnimationModule _animationModule;
-
         private bool _movementLocked = false;
+        
         //Waypoint
         private Transform _waypoint;
         private bool _goingToWaypoint;
@@ -29,6 +31,7 @@ namespace Kuantech.Core
         public LockVariable MovementLock = new LockVariable();
         
         //Dodge
+        [Header("Dodge")]
         public float DodgeEnergyCost;
         public LockVariable DodgeLock = new LockVariable();
         [SerializeField] private float DodgeCooldown = 0.5f;
@@ -41,6 +44,7 @@ namespace Kuantech.Core
         public EventHandler OnDodgeEvent;
         
         //Jumping
+        [Header("Jumping")]
         public float JumpEnergyCost = 0f;
         public LockVariable JumpLock = new LockVariable();
         public bool GroundCheckEnabled = false;
@@ -51,6 +55,9 @@ namespace Kuantech.Core
         [SerializeField] private bool _isGrounded;
         private float _jumpTime;
 
+        [Header("Path Follower")] [SerializeField]
+        private PathFollower PathFollower;
+        
         private Vector3 _momentumVector;
         private float _dodgeMomentumPreserveTime = 0.5f;
         
@@ -81,12 +88,6 @@ namespace Kuantech.Core
             
             HandleJumpLogic();
         }
-
-        public bool IsDodging()
-        {
-            return _dodging;
-        }
-        
         private void HandleMovement()
         {
             if (Actor == null) return;
@@ -128,7 +129,18 @@ namespace Kuantech.Core
             }
             
         }
+
+        #region Queries
         
+        /// <summary>
+        /// Returns the movement speed
+        /// </summary>
+        /// <returns></returns>
+        public float GetMovementSpeed()
+        {
+            return _speed;
+        }
+                
         /// <summary>
         /// Returns the vector of the forward direction of the actor
         /// </summary>
@@ -138,7 +150,16 @@ namespace Kuantech.Core
             //todo: Implement aim mechanics
             return transform.forward;
         }
-        
+                
+        public float GetForwardMovement()
+        {
+            return _movement.y;
+        }
+
+        public float GetSideMovement()
+        {
+            return _movement.x;
+        }
         public Vector3 GetMomentumVector()
         {
             Vector3 dodgeMomentum = Vector3.zero;
@@ -151,30 +172,30 @@ namespace Kuantech.Core
 
             return movementMomentum.sqrMagnitude > dodgeMomentum.sqrMagnitude ? movementMomentum : dodgeMomentum;
         }
+        
+        public bool IsDodging()
+        {
+            return _dodging;
+        }
+
+        #endregion
+
+
+        #region Controles
+
         public void ToggleMovement(bool toggle)
         {
             _movementLocked = !toggle;
         }
-        
-        public float GetForwardMovement()
-        {
-            return _movement.y;
-        }
 
-        public float GetSideMovement()
-        {
-            return _movement.x;
-        }
-
-     
-
-        public float GetSpeed()
-        {
-            return _speed;
-        }
         public void SetMaxSpeed(float maxSpeed)
         {
             _speed = maxSpeed;
+        }
+
+        public void SetSpeed(float speed)
+        {
+            
         }
         
         /// <summary>
@@ -217,6 +238,9 @@ namespace Kuantech.Core
             _dodging = false;
             _dodgeSpeed = 0f;
         }
+
+        #endregion
+
 
         public override void Reset()
         {
@@ -261,6 +285,16 @@ namespace Kuantech.Core
             if (_animationModule == null) return;
             _animationModule.SetMovementParameters(_movement);
 
+        }
+        #endregion
+
+        #region Path Follower
+        public void SetPathToFollow(Path path)
+        {
+            if (PathFollower != null)
+            {
+                PathFollower.SetPath(path);
+            }
         }
         #endregion
         

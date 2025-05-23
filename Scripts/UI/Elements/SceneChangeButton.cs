@@ -4,7 +4,8 @@ using UnityEngine.UI;
 namespace Kuantech.Core.UI
 {
     
-    public class SceneChangeButton : MonoBehaviour {
+    public class SceneChangeButton : MonoBehaviour
+    {
         public string TransitioningSceneName;
         private void Start()
         {

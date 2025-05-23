@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Kuantech.Utils;
+using Kuantech.Utils.Math;
 using UnityEngine;
 
 namespace Kuantech.AI.Pathfinding
@@ -8,6 +10,8 @@ namespace Kuantech.AI.Pathfinding
     {
         public List<PathNode> PathNodes;
         public float TotalCost;
+
+        [NonSerialized] public BSpline PathSpline;
         
         /// <summary>
         /// Is this path shorter?
@@ -25,7 +29,28 @@ namespace Kuantech.AI.Pathfinding
         {
             return !PathNodes.IsNullOrEmpty();
         }
+        
+             
+        /// <summary>
+        /// Creates a bspline from path nodes
+        /// </summary>
+        public void UpdatePathSpline(int pathResolution, int pathDegree)
+        {
+            if(!IsValidPath())
+            {
+                Debug.LogError("Not a valid path");
+                return;
+            }
+            List<Vector3> points = new List<Vector3>();
+            foreach(var node in PathNodes)
+            {
+                points.Add(node.GetPosition());
+            }
+            PathSpline = new BSpline();
+            PathSpline.SetSplinePoints(points, pathDegree, pathResolution);
+        }
     }
+    
     /// <summary>
     /// Node based path finder using A* algorithm
     /// </summary>
@@ -146,5 +171,6 @@ namespace Kuantech.AI.Pathfinding
             path.Reverse(); // Reverse the list to get the path from start to end
             return path;
         }
+   
     }
 }

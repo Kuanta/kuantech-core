@@ -6,6 +6,7 @@ namespace Kuantech.Utils.Math
     public class BSpline
     {
         public List<Vector3> SplinePoints;
+        public Vector3 UpVector = Vector3.up;
         public bool Looping = false;
         
         
@@ -50,7 +51,18 @@ namespace Kuantech.Utils.Math
                 _normalizedArcLengths[i] = _arcLengths[i] / totalLength;
             }
         }
-
+        
+        /// <summary>
+        /// Returns the closest point to spline from given point
+        /// </summary>
+        /// <param name="point"></param>
+        /// <returns></returns>
+        public WorldPoint GetClosestPointOnSpline(Vector3 point)
+        {
+            float t = GetTAtWorldPoint(point);
+            return GetPointAtT(t);
+        }
+        
         #region Queries
         
         /// <summary>
@@ -85,41 +97,7 @@ namespace Kuantech.Utils.Math
             return totalDistance * t;
         }
 
-        public WorldPoint GetPointAtT(float t)
-        {
-            int lengthOfArray = SplinePoints.Count;
-            // Use the normalized arc lengths to map _splineT to the correct segment
-            for (int i = 1; i < _normalizedArcLengths.Length; i++)
-            {
-                if (t <= _normalizedArcLengths[i])
-                {
-                    int minIndex = i - 1;
-                    int maxIndex = i;
-                    int rotationTargetIndex = maxIndex + RotationLookAhead;
-                    rotationTargetIndex = Mathf.Min(rotationTargetIndex, lengthOfArray - 1);
-                    Vector3 direction = SplinePoints[rotationTargetIndex] - SplinePoints[minIndex];
-                    // Find the local t value between the two points
-                    float segmentT = (t - _normalizedArcLengths[minIndex]) / (_normalizedArcLengths[maxIndex] - _normalizedArcLengths[minIndex]);
-
-                    // Interpolate the position
-                    Vector3 floorPos = SplinePoints[minIndex];
-                    Vector3 ceilPos = SplinePoints[maxIndex];
-                    Vector3 poisition = Vector3.Lerp(floorPos, ceilPos, segmentT);
-                    return new WorldPoint()
-                    {
-                        Position = poisition,
-                        Rotation = Quaternion.LookRotation(direction),
-                    };
-                }
-            }
-
-            Vector3 diff = SplinePoints[lengthOfArray - 1] - SplinePoints[lengthOfArray - 2];
-            return new WorldPoint()
-            {
-                Position = SplinePoints[lengthOfArray - 1],
-                Rotation = Quaternion.LookRotation(diff),
-            };
-        }
+       
 
        public float GetTAtWorldPoint(Vector3 worldPosition)
         {
@@ -190,32 +168,84 @@ namespace Kuantech.Utils.Math
             return p1 + projection * segmentVector;
         }
         
+        private Vector3 ApplyLateralOffset(Vector3 position, Quaternion rotation, float lateralOffset)
+        {
+            if (Mathf.Abs(lateralOffset) < Mathf.Epsilon)
+                return position;
+
+            Vector3 tangent = rotation * Vector3.forward;
+            Vector3 right = Vector3.Cross(UpVector, tangent).normalized;
+            return position + right * lateralOffset;
+        }
+
+        /// <summary>
+        /// Returns the world point at given t of the spline
+        /// </summary>
+        /// <param name="t"></param>
+        /// <param name="lateralOffset">Lateral offset magnitude</param>
+        /// <returns></returns>
+        public WorldPoint GetPointAtT(float t, float lateralOffset = 0f)
+        {
+            int lengthOfArray = SplinePoints.Count;
+            for (int i = 1; i < _normalizedArcLengths.Length; i++)
+            {
+                if (t <= _normalizedArcLengths[i])
+                {
+                    int minIndex = i - 1;
+                    int maxIndex = i;
+                    int rotationTargetIndex = Mathf.Min(maxIndex + RotationLookAhead, lengthOfArray - 1);
+                    Vector3 direction = SplinePoints[rotationTargetIndex] - SplinePoints[minIndex];
+
+                    float segmentT = (t - _normalizedArcLengths[minIndex]) / (_normalizedArcLengths[maxIndex] - _normalizedArcLengths[minIndex]);
+
+                    Vector3 floorPos = SplinePoints[minIndex];
+                    Vector3 ceilPos = SplinePoints[maxIndex];
+                    Vector3 position = Vector3.Lerp(floorPos, ceilPos, segmentT);
+                    Quaternion rotation = Quaternion.LookRotation(direction);
+
+                    position = ApplyLateralOffset(position, rotation, lateralOffset);
+
+                    return new WorldPoint()
+                    {
+                        Position = position,
+                        Rotation = rotation,
+                    };
+                }
+            }
+
+            Vector3 finalDir = SplinePoints[^1] - SplinePoints[^2];
+            Quaternion finalRot = Quaternion.LookRotation(finalDir);
+            return new WorldPoint()
+            {
+                Position = ApplyLateralOffset(SplinePoints[^1], finalRot, lateralOffset),
+                Rotation = finalRot,
+            };
+        }
+        
         /// <summary>
         /// Returns the point at given distance
         /// </summary>
         /// <param name="distance"></param>
+        /// <param name="lateralOffset">Lateral offset magnitude</param>
         /// <returns></returns>
-        public WorldPoint GetPointAtDistance(float distance)
+        public WorldPoint GetPointAtDistance(float distance, float lateralOffset = 0f)
         {
             int lengthOfArray = SplinePoints.Count;
-            
+
             if (_arcLengths == null || _arcLengths.Length == 0)
-            {
                 ComputeArcLengths();
-            }
-            
-            // Eğer distance, toplam spline uzunluğunu aşarsa son noktayı döndürüyoruz
-            if (distance >= _arcLengths[lengthOfArray - 1])
+
+            if (distance >= _arcLengths[^1])
             {
-                Vector3 lastDirection = SplinePoints[lengthOfArray - 1] - SplinePoints[lengthOfArray - 2];
+                Vector3 lastDir = SplinePoints[^1] - SplinePoints[^2];
+                Quaternion lastRot = Quaternion.LookRotation(InvertDirection ? -lastDir : lastDir);
                 return new WorldPoint
                 {
-                    Position = SplinePoints[lengthOfArray - 1],
-                    Rotation = Quaternion.LookRotation(InvertDirection ? -lastDirection : lastDirection)
+                    Position = ApplyLateralOffset(SplinePoints[^1], lastRot, lateralOffset),
+                    Rotation = lastRot
                 };
             }
 
-            // Mesafeye göre segment bulma
             for (int i = 1; i < _arcLengths.Length; i++)
             {
                 if (distance <= _arcLengths[i])
@@ -223,36 +253,33 @@ namespace Kuantech.Utils.Math
                     int minIndex = i - 1;
                     int maxIndex = i;
                     int rotationTargetIndex = Mathf.Min(maxIndex + RotationLookAhead, lengthOfArray - 1);
-
                     Vector3 direction = SplinePoints[rotationTargetIndex] - SplinePoints[minIndex];
-                    
-                    // İki segment arasında kalan t değerini hesaplama
+
                     float segmentDistance = distance - _arcLengths[minIndex];
                     float segmentLength = _arcLengths[maxIndex] - _arcLengths[minIndex];
                     float segmentT = segmentDistance / segmentLength;
 
-                    // Pozisyonu interpolasyonla bulma
                     Vector3 floorPos = SplinePoints[minIndex];
                     Vector3 ceilPos = SplinePoints[maxIndex];
                     Vector3 position = Vector3.Lerp(floorPos, ceilPos, segmentT);
+                    Quaternion rotation = Quaternion.LookRotation(InvertDirection ? -direction : direction);
+
+                    position = ApplyLateralOffset(position, rotation, lateralOffset);
 
                     return new WorldPoint
                     {
                         Position = position,
-                        Rotation = Quaternion.LookRotation(InvertDirection ? -direction : direction)
+                        Rotation = rotation
                     };
                 }
             }
 
-            // Mesafe spline'ın sonuna denk geliyorsa son pozisyonu döndürme
-            Vector3 finalDirection = SplinePoints[lengthOfArray - 1] - SplinePoints[lengthOfArray - 2];
-            Quaternion rotation = InvertDirection
-                ? Quaternion.LookRotation(finalDirection * -1)
-                : Quaternion.LookRotation(finalDirection);
+            Vector3 finalDirection = SplinePoints[^1] - SplinePoints[^2];
+            Quaternion finalRotation = Quaternion.LookRotation(finalDirection);
             return new WorldPoint
             {
-                Position = SplinePoints[lengthOfArray - 1],
-                Rotation = rotation,
+                Position = ApplyLateralOffset(SplinePoints[^1], finalRotation, lateralOffset),
+                Rotation = finalRotation
             };
         }
 

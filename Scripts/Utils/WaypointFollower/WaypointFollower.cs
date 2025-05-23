@@ -20,18 +20,13 @@ namespace Kuantech.Utils
             public Action<WaypointFollower> FollowerReachedWaypoint;
         }
 
-        [Header("Properties")] 
+        [Header("Properties")] [SerializeField]
+        private GameObject ObjectToMove;
         [SerializeField] private float Speed;
         public float RotationLerpFactor = 10.0f;
         public float TargetReachThresh = 0.1f;
         public float UpdateRotationThresh = 0.1f;
         public bool ShouldUpdateRotation = true;
-
-        [Header("Spline")]
-        public SplineFollower SplineFollower;
-        
-        [Tooltip("If set to true, a spline will be calculated and agent will follow the spline. However this will prevent events for middle waypoints")]
-        public bool UseSpline = false;
 
         [Header("Offset")] 
         public Transform AnchorPoint;
@@ -44,7 +39,6 @@ namespace Kuantech.Utils
         [NonSerialized] public Waypoint CurrentWaypoint;
         private float _currentSpeed = 0;
         private int _currentSplinePointIndex;
-        private bool _useSpline = false;
         private Tween _moveTween;
         private Tween _rotateTween;
 
@@ -57,8 +51,8 @@ namespace Kuantech.Utils
         #region Property Setters
         public void AddWaypoint(Waypoint newWaypoint)
         {
-            if(WaypointsQueue == null) WaypointsQueue = new Queue<Waypoint>();
-            if (WaypointsList == null) WaypointsList = new List<Waypoint>();
+            WaypointsQueue ??= new Queue<Waypoint>();
+            WaypointsList ??= new List<Waypoint>();
             if(CurrentWaypoint == null || WaypointsQueue.Count == 0)
             {
                 //No current waypoint
@@ -81,25 +75,25 @@ namespace Kuantech.Utils
             }
         }
 
+        public void SetWaypoints(List<Vector3> points)
+        {
+            List<Waypoint> waypoints = new List<Waypoint>();
+            foreach (var point in points)
+            {
+                waypoints.Add(new Waypoint()
+                {
+                    Position = point
+                });
+            }
+            SetWaypoints(waypoints);
+        }
+        
         public void SetWaypoint(Waypoint waypoint)
         {
             WaypointsQueue = new Queue<Waypoint>();
-            WaypointsList = new List<Waypoint>();
-            WaypointsList.Add(waypoint);
+            WaypointsList = new List<Waypoint> {waypoint};
             WaypointsQueue.Enqueue(waypoint);
             CurrentWaypoint = waypoint;
-        }
-
-        public void CalculateSplinePoints()
-        {
-            List<Vector3> points = new List<Vector3>();
-            points.Add(transform.position);
-            foreach (var wp in WaypointsQueue)
-            {
-                points.Add(wp.Position);
-                if (points.Count <= 1) continue;
-            }
-            SplineFollower.SetSpline(points);
         }
         #endregion
 
@@ -108,13 +102,7 @@ namespace Kuantech.Utils
         {
             Speed = speed;
         }
-        public void SetSplineSpeed(float splineSpeed)
-        {
-            if (SplineFollower != null)
-            {
-                SplineFollower.FollowSpeed = splineSpeed;
-            }
-        }
+ 
         /// <summary>
         /// For a single shot use
         /// </summary>
@@ -126,43 +114,23 @@ namespace Kuantech.Utils
                 Position = worldPoint.GetTargetPosition(),
                 Rotation = worldPoint.GetRotation(),
             };
-            if (IsMoving() && !_useSpline)
+            if (IsMoving())
             {
                 WaypointsQueue.Enqueue(singleWaypoint);
                 return;
             }
-            
-            // Waypoint currentWaypoint = new Waypoint()
-            // {
-            //     Position = transform.position,
-            //     Rotation = transform.rotation,
-            // };
+     
             List<Waypoint> waypoints = new List<Waypoint>();
             waypoints.Add(singleWaypoint);
             singleWaypoint.FollowerReachedWaypoint = onReachedAction;
             SetWaypoints(waypoints);
-            FollowPath();
+            Follow();
         }
         
-        public void FollowPath()
+        public void Follow()
         {
             KillTweens();
             Moving = true;
-            if (UseSpline && WaypointsQueue.Count >= 2 && SplineFollower != null)
-            {
-                _useSpline = true;
-                CalculateSplinePoints();
-                WaypointsQueue.Clear();
-                SplineFollower.OnReachedTarget = () =>
-                {
-                    OnReachedFinalTarget?.Invoke();
-                };
-                SplineFollower.FollowSpline();
-            }
-            else
-            {
-                _useSpline = false;
-            }
             _targetPosition = GetTargetPosition();
         }
 
@@ -179,19 +147,11 @@ namespace Kuantech.Utils
         public void PauseMovement()
         {
             Halted = true;
-            if (SplineFollower != null)
-            {
-                SplineFollower.Halt();
-            }
         }
 
         public void ResumeMovement()
         {
             Halted = false;
-            if (SplineFollower != null)
-            {
-                SplineFollower.Resume();
-            }
         }
         
         public void Stop()
@@ -205,20 +165,15 @@ namespace Kuantech.Utils
         private void Update()
         {
             if (!IsMoving()) return;
-            if (!_useSpline)
-            {
-                UpdatePosition();
-            }
-            
-            //Spline update is done by the spline follower
+            UpdatePosition();
+            if(CurrentWaypoint != null) UpdateRotation(GetTargetDirection());
         }
 
         #region Regular Position Updates
-
         
         protected virtual void UpdatePosition()
         {
-            if(CurrentWaypoint == null && !_useSpline) return;
+            if(CurrentWaypoint == null) return;
             Vector3 error = _targetPosition - GetCurrentPosition();
             float errorMag = error.sqrMagnitude;
             if(errorMag <= TargetReachThresh*TargetReachThresh)
@@ -230,16 +185,15 @@ namespace Kuantech.Utils
             Vector3 direction = error.normalized;
             Vector3 moveDirection = direction;
          
-           // Vector3 positionUpdate =  moveDirection * Mathf.Min(deltaTime * Speed, errorMag);
-           Vector3 positionUpdate = moveDirection * deltaTime * Speed;
+            // Vector3 positionUpdate =  moveDirection * Mathf.Min(deltaTime * Speed, errorMag);
+            Vector3 positionUpdate = moveDirection * deltaTime * Speed;
             SetRotation(Quaternion.LookRotation(direction));
             SetPosition(GetCurrentPosition() + positionUpdate);
         }
 
-
-
         private void UpdateRotation(Vector3 targetDirection)
         {
+            if (CurrentWaypoint == null) return;
             if (targetDirection.sqrMagnitude <= UpdateRotationThresh * UpdateRotationThresh) return;
             SetRotation(Quaternion.Slerp(GetCurrentRotation(), Quaternion.LookRotation(targetDirection),
                 Time.deltaTime * RotationLerpFactor));
@@ -252,7 +206,11 @@ namespace Kuantech.Utils
         }
 
         private Vector3 _rotationTarget;
- 
+        private Vector3 GetTargetDirection()
+        {
+            Transform transformToMove = GetTransformToMove();
+            return CurrentWaypoint.IsLocal ? CurrentWaypoint.Rotation.eulerAngles - transformToMove.localRotation.eulerAngles : CurrentWaypoint.Rotation.eulerAngles;
+        }
         private void SetNextWaypoint()
         {
             WaypointsQueue ??= new Queue<Waypoint>();
@@ -265,64 +223,76 @@ namespace Kuantech.Utils
                 Moving = false;
                 return;
             }
+            OnReachedWaypoint?.Invoke(CurrentWaypoint); //Trigger event
             CurrentWaypoint = WaypointsQueue.Dequeue();
             _targetPosition = GetTargetPosition();
         }
 
         private Vector3 GetCurrentPosition()
         {
+            Transform transformToMove = GetTransformToMove();
             if (AnchorPoint != null)
             {
-                return transform.position + (transform.forward * AnchorPoint.transform.localPosition.z) ;
+                return transformToMove.position + (transformToMove.forward * AnchorPoint.transform.localPosition.z) ;
             }
-            return transform.position;
+            return transformToMove.position;
         }
 
         private Quaternion GetCurrentRotation()
         {
-            return transform.rotation;
+            Transform transformToMove = GetTransformToMove();
+            return transformToMove.rotation;
         }
 
+        private Transform GetTransformToMove()
+        {
+            if (ObjectToMove != null)
+            {
+                return ObjectToMove.transform;
+            }
+
+            return transform;
+        }
         public void SetPosition(Vector3 position)
         {
-            if (transform == null) return;
+            Transform transformToMove = GetTransformToMove();
+           
             if (AnchorPoint != null)
             {
-                position = position - (transform.forward * AnchorPoint.transform.localPosition.z) ;
+                position -= (transformToMove.forward * AnchorPoint.transform.localPosition.z) ;
             }
-            transform.position = position;
+            transformToMove.position = position;
         }
 
         public void SetRotation(Quaternion rotation)
         {
             if (!ShouldUpdateRotation) return;
-            transform.rotation = rotation;
+            Transform transformToMove = GetTransformToMove();
+            transformToMove.rotation = rotation;
         }
         
         private void SnapToPosition(Vector3 position, Quaternion rotation)
         {
-            if (gameObject == null || transform == null) return;
+            Transform transformToMove = GetTransformToMove();
+            if (transformToMove == null) return;
             if (SnapToPositionDelay > 0)
             {
                 _moveTween = DOTween.To(GetCurrentPosition, SetPosition, position, SnapToPositionDelay).SetEase(Ease.InOutQuad).OnComplete(()=>{
                     
                 });
-                _rotateTween = transform.DORotate(rotation.eulerAngles, SnapToPositionDelay).SetEase(Ease.InOutQuad);
+                _rotateTween = transformToMove.DORotate(transformToMove.rotation.eulerAngles, SnapToPositionDelay).SetEase(Ease.InOutQuad);
             }
             else
             {
                 SetPosition(position);
-                transform.rotation = rotation;
+                transformToMove.rotation = rotation;
                 OnReachedFinalTarget?.Invoke();
             }
-
         }
-
         #endregion
         
         public bool IsMoving()
         {
-            if (_useSpline) return SplineFollower.IsMoving();
             return Moving && !Halted;
         }
 

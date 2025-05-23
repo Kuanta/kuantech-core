@@ -28,7 +28,7 @@ namespace Kuantech.Puzzle.Pathfinding
 
         public void FollowPath()
         {
-            WaypointFollower.FollowPath();
+            WaypointFollower.Follow();
         }
 
         private void OnReachedTarget()

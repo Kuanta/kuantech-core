@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kuantech.Core.Combat;
-using Kuantech.Rpg;
 using Kuantech.Utils;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -130,6 +129,7 @@ namespace Kuantech.Core
         }
 
         #endregion
+        
         #region Modules
 
         /// <summary>

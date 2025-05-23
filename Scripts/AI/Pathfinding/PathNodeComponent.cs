@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Kuantech.AI.Pathfinding
@@ -11,28 +12,36 @@ namespace Kuantech.AI.Pathfinding
         public List<PathNodeComponent> MaskedNodes;
         public List<PathNodeComponent> MustConnectNodes;
         public bool RemoveFromAutoConnect;
-        public List<GameObject> ConnectedNodesGameObjects;
+        [NonSerialized] public List<GameObject> ConnectedNodesGameObjects;
+
+        private bool _initialized = false;
         
+        /// <summary>
+        /// Initialize, connects to the "must connected" node components
+        /// </summary>
         public void Initialize()
         {
+            if (_initialized) return;
+            _initialized = true;
             CreatePathNode();
-            if (ConnectedNodesGameObjects != null)
+            if (MustConnectNodes != null)
             {
                 if(PathNode.ConnectedNodes == null) PathNode.ConnectedNodes = new List<PathNode>();
-                foreach (var connectedObj in ConnectedNodesGameObjects)
+                foreach (var connectedObj in MustConnectNodes)
                 {
                     if (connectedObj == null)
                     {
                         Debug.LogError($"Null connection in {name}");
                         continue;
                     }
-                    if (connectedObj == gameObject) continue;
+                    if (connectedObj.gameObject == gameObject) continue;
                     if (connectedObj.TryGetComponent(out PathNodeComponent pathNodeComponent))
                     {
                         ConnectToNode(pathNodeComponent);
                     }
                 }
             }
+
         }
 
         public void CreatePathNode()
@@ -47,6 +56,7 @@ namespace Kuantech.AI.Pathfinding
         
         public bool CanConnectToNode(PathNodeComponent otherNode)
         {
+            Initialize();
             if (MaskedNodes.Contains(otherNode)) return false;
             if (MustConnectNodes.Contains(otherNode))
             {
@@ -79,7 +89,11 @@ namespace Kuantech.AI.Pathfinding
         {
             GetPathNode().ConnectedNodes.Add(node);
         }
-
+        
+        /// <summary>
+        /// Connects to a path node
+        /// </summary>
+        /// <param name="nodeComponent"></param>
         public void ConnectToNode(PathNodeComponent nodeComponent)
         {
             if (nodeComponent.PathNode == null)
@@ -90,10 +104,9 @@ namespace Kuantech.AI.Pathfinding
             if (PathNode == null)
             {
                 CreatePathNode();
-                
             }
 
-            if (ConnectedNodesGameObjects == null) ConnectedNodesGameObjects = new List<GameObject>();
+            ConnectedNodesGameObjects ??= new List<GameObject>();
             if (!ConnectedNodesGameObjects.Contains(nodeComponent.gameObject))
             {
                 ConnectedNodesGameObjects.Add(nodeComponent.gameObject);
@@ -101,17 +114,26 @@ namespace Kuantech.AI.Pathfinding
             if (IsConnectedToNode(nodeComponent)) return;
             ConnectToNode(nodeComponent.GetPathNode());
         }
+        
+        /// <summary>
+        /// Checks if path node is connected to given path node
+        /// </summary>
+        /// <param name="node"></param>
+        /// <returns></returns>
         public bool IsConnectedToNode(PathNode node)
         {
-            if (PathNode == null || PathNode.ConnectedNodes == null)
+            Initialize();
+            if (PathNode == null || node == null || PathNode.ConnectedNodes == null)
             {
                 Debug.LogError($"Check {name}");
+                return false;
             }
             return PathNode.ConnectedNodes.Contains(node);
         }
 
         public bool IsConnectedToNode(PathNodeComponent nodeComponent)
         {
+            Initialize();
             if (nodeComponent == null || nodeComponent.PathNode == null) return false;
             return IsConnectedToNode(nodeComponent.PathNode);
         }

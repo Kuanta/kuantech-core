@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Kuantech.Utils;
+using Kuantech.Utils.Math;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -8,6 +9,8 @@ namespace Kuantech.AI.Pathfinding
     public class PathfindingAgent : MonoBehaviour
     {
         [SerializeField] private WaypointFollower WaypointFollower;
+        [SerializeField] private SplineFollower SplineFollower;
+        
         public PathNode CurrentNode;
         
         //Events
@@ -16,9 +19,16 @@ namespace Kuantech.AI.Pathfinding
 
         public void Initialize()
         {
-            if (WaypointFollower == null) return;
-            WaypointFollower.OnReachedWaypoint += OnReachedWaypoint;
-            WaypointFollower.OnReachedFinalTarget += OnReachedTarget;
+            if (WaypointFollower != null)
+            {
+                WaypointFollower.OnReachedWaypoint += OnReachedWaypoint;
+                WaypointFollower.OnReachedFinalTarget += OnReachedTarget;
+            }
+            
+            if(SplineFollower != null)
+            {
+                SplineFollower.OnReachedTarget += OnReachedTarget;
+            }
         }
 
         public bool IsMoving()
@@ -36,11 +46,11 @@ namespace Kuantech.AI.Pathfinding
             return Pathfinder.GetShortestPath(startNode, endNode);
         }
 
-        public void GoToWorldPoint(WorldPoint point)
+        public virtual void GoToWorldPoint(WorldPoint point)
         {
             WaypointFollower.GoToWorldPoint(point);
         }
-        public bool GoToNode(PathNode node)
+        public virtual bool GoToNode(PathNode node)
         {
             Path shortestPath = GetShortestPath(node);
             if (!shortestPath.IsValidPath())
@@ -73,7 +83,7 @@ namespace Kuantech.AI.Pathfinding
         
         public void FollowPath()
         {
-            WaypointFollower.FollowPath();
+            WaypointFollower.Follow();
         }
 
         private void OnReachedTarget()

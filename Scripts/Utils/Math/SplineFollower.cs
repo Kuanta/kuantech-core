@@ -13,6 +13,8 @@ namespace Kuantech.Utils.Math
             FollowWithT,
         }
 
+        public GameObject ObjectToMove;
+        
         public Vector3 FollowRotationVector = new Vector3(0, 0, 1);
         public BSpline CurrentSpline = null;
         public int SplineDegree = 3;
@@ -29,6 +31,10 @@ namespace Kuantech.Utils.Math
         public float TThreshold = 0.01f;
         public FollowMethod CurrentFollowMethod = FollowMethod.FollowWithDistance;
         
+        [Header("Offset Settings")]
+        public float LateralOffset = 0f; // Pozitif sağa, negatif sola sapma
+        public Vector3 UpDirection = Vector3.up; // Spline düzlemine göre yukarı yön
+        
         private float _currentT;
         private float _currentDistance = -1;
 
@@ -41,14 +47,20 @@ namespace Kuantech.Utils.Math
 
         #region Spline Creation
 
-        public void SetSpline(List<Vector3> points)
+        public void CreateSplineFromControlPoints(List<Vector3> points)
         {
             CurrentSpline = new BSpline();
             CurrentSpline.SetSplinePoints(points, SplineDegree, SplineResolution);
             CurrentSpline.RotationLookAhead = RotationLookAhead;
         }
 
+        public void SetSpline(BSpline spline)
+        {
+            CurrentSpline = spline;
+            spline.RotationLookAhead = RotationLookAhead;
+        }
         #endregion
+        
         #region Controls
         public void GoToDistance(float distance)
         {
@@ -66,6 +78,7 @@ namespace Kuantech.Utils.Math
             GoToDistance(distanceAtT);
         }
         #endregion
+        
         private void Update()
         {
             if (!Moving || Paused || CurrentSpline == null) return;
@@ -170,25 +183,33 @@ namespace Kuantech.Utils.Math
         #endregion
         
         #region Position Setters
+
+        private Transform GetTransformToMove()
+        {
+            if (ObjectToMove != null) return ObjectToMove.transform;
+            return transform;
+        }
+        
         public void SetPositionWithT(float t)
         {
             _currentT = t;
-            WorldPoint pointAtT = CurrentSpline.GetPointAtT(t);
+            WorldPoint pointAtT = CurrentSpline.GetPointAtT(t, LateralOffset);
             SetPosition(pointAtT);
         }
 
         public void SetPositionWithDistance(float distance)
         {
             _currentDistance = distance;
-            SetPosition(CurrentSpline.GetPointAtDistance(distance));
+            SetPosition(CurrentSpline.GetPointAtDistance(distance, LateralOffset));
         }
         
         private void SetPosition(WorldPoint point)
         {
-            transform.position = point.Position;
-            if(SetRotation) transform.rotation = Quaternion.FromToRotation(FollowRotationVector, point.Rotation * Vector3.forward);
+            Transform transformToMove = GetTransformToMove();
+            transformToMove.position = point.Position;
+            if(SetRotation) transformToMove.rotation = Quaternion.FromToRotation(FollowRotationVector, point.Rotation * Vector3.forward);
         }
         #endregion
-       
+
     }
 }
