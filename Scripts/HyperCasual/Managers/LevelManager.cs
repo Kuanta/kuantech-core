@@ -13,6 +13,9 @@ namespace Kuantech.Core
     public class LevelDictionary : SerializableDictionary<int, Level>{}
     public class LevelManager : SubManager
     {
+        [Header("Properties")] [SerializeField]
+        private bool SetNextLevelAfterComplete;
+        
         [Header("Levels List")] 
         public List<Level> LevelDictionary = new List<Level>();
         public Level CurrentLevel;
@@ -171,10 +174,22 @@ namespace Kuantech.Core
             LevelCompletedEvent?.Invoke(this, CurrentLevel);
             CurrentLevel.ClearLevel();
             Destroy(CurrentLevel.gameObject);
+
+            if (SetNextLevelAfterComplete)
+            {
+                SetNextLevel();
+            }
+        }
+        
+        /// <summary>
+        /// Sets the next level
+        /// </summary>
+        public virtual void SetNextLevel()
+        {
             CurrentLevelIndex++;
             SetLevel(CurrentLevelIndex);
         }
-
+        
         private void UpdateLevelIndex()
         {
             //Save the level index
@@ -189,7 +204,7 @@ namespace Kuantech.Core
             CurrentLevel.ClearLevel();
             ChangeCurrentState(LevelState.Waiting);
         }
-
+        
         #endregion
     }
 }

@@ -10,7 +10,7 @@ namespace Kuantech.Core.UI
         private void Start()
         {
             GetComponent<Button>().onClick.AddListener(() => {
-                GameManager.Instance.ChangeScene(TransitioningSceneName);
+                GameManager.ChangeScene(TransitioningSceneName);
             });
         }
     }

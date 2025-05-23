@@ -33,6 +33,9 @@ namespace Kuantech.Midcore
         
         [Header("Upgrades")] 
         [SaveableField] [SerializeField] private ProgressablesHandler ProgressiblesHandler;
+
+        [Header("Level Progression")] 
+        [SaveableField] public Dictionary<(int, int), LevelProgressionData> LevelProgressionDatas; 
         
         [Header("Default Values")]
         public List<DefaultProgressableData> DefaultProgressables;
@@ -89,6 +92,46 @@ namespace Kuantech.Midcore
             SaveState();
         }
 
+        #endregion
+
+        #region Level Progression
+        
+        /// <summary>
+        /// Saves a level progression data
+        /// </summary>
+        /// <param name="worldIndex"></param>
+        /// <param name="levelIndex"></param>
+        /// <param name="score"></param>
+        public void SetLevelProgressionData(int worldIndex, int levelIndex, int score)
+        {
+            var key = (worldIndex, levelIndex);
+            if (LevelProgressionDatas.ContainsKey(key))
+            {
+                LevelProgressionData data = LevelProgressionDatas[key];
+                data.LevelScore = score;
+                LevelProgressionDatas[key] = data;
+            }
+            else
+            {
+                LevelProgressionDatas.Add(key, new LevelProgressionData()
+                {
+                    WorldIndex = worldIndex,
+                    LevelIndex = levelIndex,
+                    LevelScore = score
+                });
+            }
+        }
+        
+        /// <summary>
+        /// Checks whether the level is completed
+        /// </summary>
+        /// <param name="worldIndex"></param>
+        /// <param name="levelIndex"></param>
+        /// <returns></returns>
+        public bool IsLevelCompleted(int worldIndex, int levelIndex)
+        {
+            return LevelProgressionDatas.ContainsKey((worldIndex, levelIndex));
+        }
         #endregion
         
         #region Progression Queries

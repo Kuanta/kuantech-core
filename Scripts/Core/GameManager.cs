@@ -133,17 +133,18 @@ namespace Kuantech.Core
         #endregion
         
         #region SceneManagement
-        public void ChangeScene(string sceneName, LevelTransitionData levelTransitionData = null)
+        public static void ChangeScene(string sceneName, LevelTransitionData levelTransitionData = null)
         {
-            LevelTransitionData = levelTransitionData;
+            var ctx = GameManager.Instance;
+            ctx.LevelTransitionData = levelTransitionData;
             //Clear existing scene specific sub managers
-            if(_sceneSubManagers != null)
+            if(ctx._sceneSubManagers != null)
             {
-                foreach(var sceneSubManager in _sceneSubManagers)
+                foreach(var sceneSubManager in ctx._sceneSubManagers)
                 {
                     sceneSubManager.OnSceneLeave();
                 }
-                _sceneSubManagers = null;
+                ctx._sceneSubManagers = null;
             }
             
             //Change scene
