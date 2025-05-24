@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
 
-namespace Kuantech.HyperCasual.UI
+namespace Kuantech.Core.UI
 {
     public class ConfirmPanelButton : MonoBehaviour
     {

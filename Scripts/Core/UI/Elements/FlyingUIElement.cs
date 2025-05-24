@@ -4,7 +4,7 @@ using Kuantech.Core.FX;
 using UnityEngine;
 using UnityEngine.Events;
 
-namespace Kuantech.UI
+namespace Kuantech.Core.UI
 {
     public class FlyingUIElement : MonoBehaviour
     {

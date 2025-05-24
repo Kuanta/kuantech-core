@@ -30,7 +30,13 @@ namespace Kuantech.Core
 
             CurrentPhase = newPhase;
             CurrentPhase.OnEnter(ParentLevel);
+            ParentLevel.OnPhaseChange?.Invoke(new LevelPhaseChangeData()
+            {
+                OldPhase = oldPhase,
+                NewPhase = newPhase,
+            });
         }
+        
         public void ChangePhase(string phaseKey)
         {
             if (!_phases.TryGetValue(phaseKey, out var newPhase))

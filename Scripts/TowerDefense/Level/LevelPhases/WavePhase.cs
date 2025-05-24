@@ -5,7 +5,7 @@ namespace Kuantech.TowerDefense
 {
     public class WavePhase : LevelPhase
     {
-        public override string Key => "Wave Phase";
+        public override string Key => "WavePhase";
         
         public override void OnEnter(Level level)
         {

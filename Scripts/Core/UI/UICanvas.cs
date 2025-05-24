@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.Events;
 
-namespace Kuantech.UI
+namespace Kuantech.Core.UI
 {
     public class UICanvas : MonoBehaviour {
         
@@ -11,8 +11,8 @@ namespace Kuantech.UI
         }
 
         public float TestZPos = 10;
-        [SerializeField] private Camera GameCamera;
-        [SerializeField] private Camera CanvasCamera;
+        [SerializeField] private UnityEngine.Camera GameCamera;
+        [SerializeField] private UnityEngine.Camera CanvasCamera;
         [SerializeField] private RectTransform RectTransform;
         [SerializeField] private Canvas Canvas;
         /// <summary>
@@ -35,22 +35,22 @@ namespace Kuantech.UI
 
         #region Cameras
 
-        public Camera GetGameCamera()
+        public UnityEngine.Camera GetGameCamera()
         {
             return GameCamera;
         }
 
-        public Camera GetCanvasCamera()
+        public UnityEngine.Camera GetCanvasCamera()
         {
             return CanvasCamera;
         }
         #endregion
 
         #region Utility Methods
-        public Vector2 GlobalToScreenPosition(Vector3 worldPosition, Camera cam)
+        public Vector2 GlobalToScreenPosition(Vector3 worldPosition, UnityEngine.Camera cam)
         {
-            Camera mainCamera = GameCamera != null ? GameCamera : Camera.main;
-            Camera canvasCamera = CanvasCamera != null ? CanvasCamera : mainCamera;
+            UnityEngine.Camera mainCamera = GameCamera != null ? GameCamera : UnityEngine.Camera.main;
+            UnityEngine.Camera canvasCamera = CanvasCamera != null ? CanvasCamera : mainCamera;
 
             // Transform world position to screen point using the main camera
             Vector3 screenPos = cam.WorldToScreenPoint(worldPosition);

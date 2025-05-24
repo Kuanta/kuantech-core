@@ -5,7 +5,7 @@ namespace Kuantech.TowerDefense
 {
     public class PreparationPhase : LevelPhase
     {
-        public override string Key => "Preparation Phase";
+        public override string Key => "PreparationPhase";
         public float PreparationTime = -1;
         public PreparationPhase()
         {

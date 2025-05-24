@@ -2,7 +2,7 @@
 using TMPro;
 using UnityEngine;
 
-namespace Kuantech.UI
+namespace Kuantech.Core.UI
 {
     public class FloatingText : MonoBehaviour
     {

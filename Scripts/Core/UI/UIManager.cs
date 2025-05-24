@@ -16,6 +16,9 @@ namespace Kuantech.Core.UI
         [SerializeField] private List<UIMenu> MenusToInitializeOnStart;
         private Dictionary<string, UIMenu> _menusById = new Dictionary<string, UIMenu>();
 
+        [Header("Game UI")] 
+        [SerializeField] private LevelUI LevelUI;
+        
         public override async UniTask Initialize(GameManager gameManager)
         {
             await base.Initialize(gameManager);
@@ -53,6 +56,7 @@ namespace Kuantech.Core.UI
             var ctx = GetContext<UIManager>();
             return ctx._GetMenuById(menuId);
         }
+        
         #region Menu Manupilation
 
         public static void OpenMenu(string menuId)
@@ -155,6 +159,20 @@ namespace Kuantech.Core.UI
                 menu.Hide();
             }
         }
+        #endregion
+
+        #region Game UI
+        /// <summary>
+        /// Gets level UI
+        /// </summary>
+        /// <returns></returns>
+        public static LevelUI GetLevelUI()
+        {
+            var ctx = LevelManager.GetContext<UIManager>();
+            if (ctx == null) return null;
+            return ctx.LevelUI;
+        }
+
         #endregion
     }
 }

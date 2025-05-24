@@ -2,7 +2,7 @@
 using TMPro;
 using UnityEngine;
 
-namespace Kuantech.Core.HyperCasual.UI
+namespace Kuantech.Core.UI
 {
     public class ComboIndicator : MonoBehaviour
     {

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Kuantech.Core.UI;
 using Kuantech.Utils;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -51,6 +52,9 @@ namespace Kuantech.Core
         public bool AutoDetectLevelElements = false;
         public List<LevelElement> LevelElements;
         
+        //Runtime
+        public LevelUI LevelUI;
+        
         #region Level Lifecycle
         //A simple relayer to LevelManager
         public virtual void ChangeLevelState(LevelState newState)
@@ -81,6 +85,11 @@ namespace Kuantech.Core
             SetupPhaseSystem();
             ChangeLevelState(LevelState.Waiting);
             SetupComponents();
+            LevelUI = UIManager.GetLevelUI();
+            if (LevelUI != null)
+            {
+                LevelUI.OnLevelSetup(this);
+            }
         }
 
         protected virtual void SetupPhaseSystem()
@@ -170,15 +179,7 @@ namespace Kuantech.Core
         /// <param name="key"></param>
         public void ChangeLevelPhase(string key)
         {
-            LevelPhase oldPhase = PhaseSystem.CurrentPhase;
             PhaseSystem.ChangePhase(key);
-            LevelPhase newPhase = PhaseSystem.CurrentPhase;
-            
-            OnPhaseChange?.Invoke(new LevelPhaseChangeData
-            {
-                OldPhase = oldPhase,
-                NewPhase = newPhase,
-            });
         }
         
         /// <summary>

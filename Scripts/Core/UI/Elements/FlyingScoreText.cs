@@ -6,7 +6,7 @@ using UnityEngine.Events;
 using UnityEngine.UI;
 using Kuantech.Puzzle;
 
-namespace Kuantech.JigsawTen.UI
+namespace Kuantech.Core.UI
 {
     public class FlyingScoreText : FlyingUIElement
     {

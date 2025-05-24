@@ -1,9 +1,8 @@
-using Kuantech.Core;
 using Kuantech.Core.Store;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Kuantech.UI
+namespace Kuantech.Core.UI
 {
     public class FlyingCurrency : FlyingUIElement {
         [SerializeField] private Image CurrencyIcon;

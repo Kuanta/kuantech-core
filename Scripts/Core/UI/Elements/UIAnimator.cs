@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.Events;
 
-namespace Kuantech.UI
+namespace Kuantech.Core.UI
 {
     /// <summary>
     /// A class to handle animations for ui elements. For now it supports a single element
