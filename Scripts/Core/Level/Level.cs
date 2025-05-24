@@ -21,22 +21,32 @@ namespace Kuantech.Core
         public LevelState NewState;
     }
 
+    public struct LevelPhaseChangeData
+    {
+        public LevelPhase OldPhase;
+        public LevelPhase NewPhase;
+    }
+    
     public class Level : MonoBehaviour
     {
+        //Runtime
+        public LevelPhaseSystem PhaseSystem;
         [NonSerialized] public int LevelIndex;
         public int LevelNumber;
         public int PowerLevel;
         private LevelState _levelState;
+        
         public LevelState CurrentState
         {
             get {return _levelState;}
             set {
-                _levelState = value;
-                }
+               _levelState = value;
+            }
         }
 
         public Action<LevelStateChangeData> OnStateChange; //An event bound to level.
-
+        public Action<LevelPhaseChangeData> OnPhaseChange;
+        
         [Header("Components")] 
         public bool AutoDetectLevelElements = false;
         public List<LevelElement> LevelElements;
@@ -68,10 +78,15 @@ namespace Kuantech.Core
         
         public virtual void SetupLevel()
         {
+            SetupPhaseSystem();
             ChangeLevelState(LevelState.Waiting);
             SetupComponents();
         }
 
+        protected virtual void SetupPhaseSystem()
+        {
+            PhaseSystem = new LevelPhaseSystem(this);
+        }
         protected virtual void SetupComponents()
         {
             if (AutoDetectLevelElements)
@@ -84,7 +99,9 @@ namespace Kuantech.Core
                 component.OnSetupLevel();
             }
         }
-        
+
+        #region Level Lifecycle
+
         /// <summary>
         /// Sets the level state to Playing. Calls the PrePlay and PostPlay for level elements
         /// </summary>
@@ -106,6 +123,16 @@ namespace Kuantech.Core
             ChangeLevelState(LevelState.Playing);
         }
 
+
+        protected virtual void Update()
+        {
+            if (CurrentState != LevelState.Playing) return;
+            if (PhaseSystem != null && PhaseSystem.CurrentPhase != null)
+            {
+                PhaseSystem.CurrentPhase.TickPhase(Time.deltaTime);
+            }
+        }
+        
         public virtual void CompleteLevel()
         {
             if(CurrentState != LevelState.Playing) return;
@@ -132,6 +159,38 @@ namespace Kuantech.Core
             StartLevel();
         }
 
+        #endregion
+
+
+        #region Phase Lifecycle
+        
+        /// <summary>
+        /// Changes the level phase
+        /// </summary>
+        /// <param name="key"></param>
+        public void ChangeLevelPhase(string key)
+        {
+            LevelPhase oldPhase = PhaseSystem.CurrentPhase;
+            PhaseSystem.ChangePhase(key);
+            LevelPhase newPhase = PhaseSystem.CurrentPhase;
+            
+            OnPhaseChange?.Invoke(new LevelPhaseChangeData
+            {
+                OldPhase = oldPhase,
+                NewPhase = newPhase,
+            });
+        }
+        
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public LevelPhase GetCurrentPhase()
+        {
+            return PhaseSystem.CurrentPhase;
+        }
+        #endregion
+        
         //Resets all the states of the level
         public virtual void ResetLevelState()
         {
