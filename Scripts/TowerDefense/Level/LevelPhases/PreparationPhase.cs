@@ -14,7 +14,7 @@ namespace Kuantech.TowerDefense
         public override void OnEnter(Level level)
         {
             base.OnEnter(level);
-            Debug.Log("Preperation Phase Starting");
+            (ParentLevel as TowerDefenseLevel)?.ToggleSpawners(false);
         }
 
         public override void TickPhase(float deltaTime)

@@ -26,7 +26,7 @@ namespace Kuantech.Rpg.Inventory
         public int ItemLevel;
         public ItemRarities ItemRarity;
         public bool Equipped;
-        public Dictionary<StatAttributeAsset, StatModifier> StatModifiers;
+        public Dictionary<AttributeAsset, StatModifier> StatModifiers;
         public bool IsNew;
     }
 
@@ -234,9 +234,9 @@ namespace Kuantech.Rpg.Inventory
         #endregion
         #region Modifiers
 
-        public StatModifier GetStatModifier(StatAttributeAsset statType)
+        public StatModifier GetStatModifier(AttributeAsset type)
         {
-            return !StateData.StatModifiers.ContainsKey(statType) ? null : StateData.StatModifiers[statType];
+            return !StateData.StatModifiers.ContainsKey(type) ? null : StateData.StatModifiers[type];
         }
 
         public void AddModifier(StatModifier modifier)

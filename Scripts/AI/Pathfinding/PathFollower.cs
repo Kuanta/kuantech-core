@@ -90,6 +90,8 @@ namespace Kuantech.AI.Pathfinding
         /// <param name="lateralOffset">Deviation offset</param>
         public void FollowPath(Path path, float lateralOffset = 0)
         {
+            SetFollowSpeed(Speed);
+
             //First, check if need a waypoint
             SetPath(path);
             

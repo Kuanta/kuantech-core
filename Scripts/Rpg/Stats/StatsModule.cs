@@ -1,93 +1,65 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Kuantech.Core;
 using Kuantech.Utils;
 using UnityEngine;
-using UnityEngine.Serialization;
+using UnityEngine.Events;
 
-namespace Kuantech.Core
+namespace Kuantech.Rpg
 {
     [Serializable]
-    public class StatDictionary : SerializableDictionary<StatAttributeAsset, Attribute> { }
+    public class StatDictionary : SerializableDictionary<AttributeAsset, Attribute> { }
 
     [Serializable]
-    public class ModifierDataDictionary : SerializableDictionary<StatAttributeAsset, StatModifierData> { }
+    public class ModifierDataDictionary : SerializableDictionary<AttributeAsset, StatModifierData> { }
 
     [Serializable]
     public class StatsSerializableData : ActorModuleSerializableData
     {
         public int Level;
-        public int OverflowExperience;
         public Dictionary<string, int> AttributeRanks;
     }
-
-    /// <summary>
-    /// A Stat is a levelable variable. Damage, Range, AttackSpeed can be defined as stats.
-    /// Stats are increased by the overall level as well as with their ranks. 
-    /// </summary>
-    [Serializable]
-    public class Attribute
-    {
-        public StatAttributeAsset attributeAsset;
-        [Tooltip("Value at Rank 0 and Level 0")]
-        public float BaseValue;
-        [Tooltip("Value gained every rank")]
-        public float ValuePerRank;
-        [Tooltip("Value gained every level")]
-        public float ValuePerLevel;
-        [Tooltip("Lower and upper boundaries for the attribute")]
-
-        public float MultiplicationModifier;
-        public float AdditionModifier;
-        public Vector2 Limits;
-        public int Rank;
-        
-        /// <summary>
-        /// Calculates the final value of the stat.
-        /// </summary>
-        /// <param name="level"></param>
-        /// <returns></returns>
-        public float GetValue(int level)
-        {
-            float finalValue = BaseValue + Rank * ValuePerRank + level * ValuePerLevel;
-            if(Limits.x != 0 && Limits.y != 0)
-            {
-                finalValue = Mathf.Clamp(finalValue, Limits.x, Limits.y);
-            }
-            return finalValue;
-        }
-    }
-
+    
     public class StatsModule : ActorModule
     {
         [Header("Stats")]
-        public List<Attribute> Stats;
+        public List<AttributeDefinition> Stats;
         private Dictionary<string, Attribute> _statMap;
         public static float LevelFormulaX = 0.4f;
 
+        [Header("Resources")] 
+        public ResourceManager ResourceManager;
+        
         //Level
-        public int CurrentLevel = 0;
-        public int OverflowExperience = 0; //Overflow experience is TotalExperience - ExperienceToCurrentLevel
-        public int RequiredExperienceToNextLevel = 0;
+        public LevelVariable ActorLevel;
 
         //Events
-        public EventHandler<int> LevelUpEvent;
-        public EventHandler ExperienceEarnedEvent;
+        public UnityAction<int> LevelChangeEvent;
+        public UnityAction ExperienceEarnedEvent;
 
-        [NonSerialized] private Dictionary<StatAttributeAsset, HashSet<StatModifier>> Modifiers;
-        [NonSerialized] private Queue<StatAttributeAsset> DirtiedStats = new Queue<StatAttributeAsset>();
+        [NonSerialized] private Dictionary<AttributeAsset, HashSet<StatModifier>> Modifiers;
+        [NonSerialized] private Queue<AttributeAsset> DirtiedStats = new Queue<AttributeAsset>();
 
         public override void Initialize()
         {
             base.Initialize();
             _statMap = new Dictionary<string, Attribute>();
-            foreach (var stat in Stats)
-            {
-                if(stat == null) continue;
-                _statMap[stat.attributeAsset.Id] = stat;
-            }
+            ApplyStatsTable(Stats);
+            ResourceManager.Initialize(this);
         }
 
+        public void ApplyStatsTable(List<AttributeDefinition> defaultAttributes)
+        {
+            if (defaultAttributes.IsNullOrEmpty()) return;
+            foreach(var attributeDefinition in defaultAttributes)
+            {
+                Attribute attribute = new Attribute();
+                attribute.ApplyAttributeDefinition(attributeDefinition);
+                _statMap[attribute.attributeAsset.Id] = attribute;
+            }
+        }
+        
         public override void LoadState(ActorModuleSerializableData serializableData)
         {
             base.LoadState(serializableData);
@@ -95,9 +67,65 @@ namespace Kuantech.Core
             SetStatStates(statsSerializableData);
         }
 
+        public override void ModuleUpdate()
+        {
+            base.ModuleUpdate();
+            ResourceManager.TickResources(Time.deltaTime);
+        }
+        
+        #region Level & Experience
+
+        public LevelVariable GetActorLevelVariable()
+        {
+            return ActorLevel;
+        }
+        
+        /// <summary>
+        /// Returns the current actor level
+        /// </summary>
+        /// <returns></returns>
+        public int GetActorLevel()
+        {
+            return ActorLevel.CurrentLevel;
+        }
+        
+        /// <summary>
+        /// Adds experience points to the actor. The actor is leveled up if enough experience is earned
+        /// </summary>
+        /// <param name="experience"></param>
+        public void AddExperience(int experience)
+        {
+            int currentLevel = GetActorLevel();
+            ActorLevel.AddValue(experience);
+            int newLevel = ActorLevel.CurrentLevel;
+            if (newLevel > currentLevel)
+            {
+                LevelChangeEvent?.Invoke(newLevel);
+            }
+
+            //Fire the event so subscribers handle changed experience case
+            ExperienceEarnedEvent?.Invoke();
+        }
+
+        /// <summary>
+        /// Sets the level of the player
+        /// </summary>
+        /// <param name="level"></param>
+        public void SetLevel(int level)
+        {
+            ActorLevel.SetLevel(level);
+            LevelChangeEvent?.Invoke(level);
+        }
+
+        public float GetExperienceRequiredToLevelUp()
+        {
+            return ActorLevel.GetRequiredFromCurrentToNextLevel();
+        }
+        #endregion
+        
         #region Attributes
 
-        public Attribute GetAttribute(StatAttributeAsset attributeAsset)
+        public Attribute GetAttribute(AttributeAsset attributeAsset)
         {
             return GetAttribute(attributeAsset.Id);
         }
@@ -113,7 +141,7 @@ namespace Kuantech.Core
         /// </summary>
         /// <param name="attributeAsset"></param>
         /// <returns></returns>
-        public float GetAttributeMaxValue(StatAttributeAsset attributeAsset)
+        public float GetAttributeMaxValue(AttributeAsset attributeAsset)
         {
             Attribute att = GetAttribute(attributeAsset);
             if (att == null) return 0f;
@@ -125,14 +153,14 @@ namespace Kuantech.Core
         /// </summary>
         /// <param name="attributeAsset"></param>
         /// <returns></returns>
-        public float GetAttributeMinValue(StatAttributeAsset attributeAsset)
+        public float GetAttributeMinValue(AttributeAsset attributeAsset)
         {
             Attribute att = GetAttribute(attributeAsset);
             if (att == null) return 0f;
             return att.Limits.x;
         }
         
-        public float GetAttributeValue(StatAttributeAsset attributeAsset)
+        public float GetAttributeValue(AttributeAsset attributeAsset)
         {
             if(attributeAsset == null)
             {
@@ -145,7 +173,7 @@ namespace Kuantech.Core
         public float GetAttributeValue(string statId)
         {
             Attribute att = GetAttribute(statId);
-            return att.GetValue(CurrentLevel);
+            return att.GetValue(GetActorLevel());
         }
 
         /// <summary>
@@ -167,7 +195,7 @@ namespace Kuantech.Core
         /// </summary>
         /// <param name="attributeAsset">Attribute object</param>
         /// <returns></returns>
-        public int GetAttributeRank(StatAttributeAsset attributeAsset)
+        public int GetAttributeRank(AttributeAsset attributeAsset)
         {
             return GetAttributeRank(attributeAsset.Id);
         }
@@ -188,7 +216,7 @@ namespace Kuantech.Core
         /// </summary>
         /// <param name="attributeAsset">Attribute object</param>
         /// <param name="amountToIncrease">Amount to increase</param>
-        public void IncreaseAttributeRank(StatAttributeAsset attributeAsset, int amountToIncrease)
+        public void IncreaseAttributeRank(AttributeAsset attributeAsset, int amountToIncrease)
         {
             IncreaseAttributeRank(attributeAsset.Id, amountToIncrease);
         }
@@ -216,7 +244,7 @@ namespace Kuantech.Core
 
         public void AddModifier(StatModifier modifier)
         {
-            Modifiers ??= new Dictionary<StatAttributeAsset, HashSet<StatModifier>>();
+            Modifiers ??= new Dictionary<AttributeAsset, HashSet<StatModifier>>();
 
             if (!Modifiers.ContainsKey(modifier.AttributeAsset))
             {
@@ -266,9 +294,14 @@ namespace Kuantech.Core
             }
         }
 
-        public void DirtyStat(StatAttributeAsset statType)
+        public void DirtyStat(AttributeAsset type)
         {
-            DirtiedStats.Enqueue(statType);
+            DirtiedStats.Enqueue(type);
+        }
+
+        private void LateUpdate()
+        {
+            UpdateStatModifiers();
         }
 
         /// <summary>
@@ -277,13 +310,13 @@ namespace Kuantech.Core
         public void UpdateStatModifiers()
         {
             if (DirtiedStats == null || DirtiedStats.Count == 0) return;
-            StatAttributeAsset statType = DirtiedStats.Dequeue();
-            while (statType != null)
+            AttributeAsset type = DirtiedStats.Dequeue();
+            while (type != null)
             {
                 float additionMultipliersSum = 0;
-                float multiplicationModifiersSum = 0;
+                float multiplicationModifiersSum = 1;
                 //Handle Stat type
-                foreach (var statModifier in Modifiers[statType])
+                foreach (var statModifier in Modifiers[type])
                 {
                     if (statModifier.ModifierType == ModifierTypes.Addition)
                     {
@@ -296,110 +329,43 @@ namespace Kuantech.Core
 
                 }
 
+                multiplicationModifiersSum = Mathf.Max(0.1f, multiplicationModifiersSum);
                 try
                 {
-                    if (!_statMap.ContainsKey(statType.Id))
+                    if (!_statMap.ContainsKey(type.Id))
                     {
-                        Debug.LogWarning($"Trying to set value of {statType.ToString()} while {name} doesn't have a field for it");
+                        Debug.LogWarning($"Trying to set value of {type.ToString()} while {name} doesn't have a field for it");
                     }
                     else
                     {
-                        Attribute currAttribute = _statMap[statType.Id];
+                        Attribute currAttribute = _statMap[type.Id];
                         currAttribute.AdditionModifier = additionMultipliersSum;
                         currAttribute.MultiplicationModifier = multiplicationModifiersSum;
-                        _statMap[statType.Id] = currAttribute;
+                        _statMap[type.Id] = currAttribute;
                     }
 
                     if (DirtiedStats.IsNullOrEmpty())
                     {
                         break;
                     }
-                    statType = DirtiedStats.Dequeue();
+                    type = DirtiedStats.Dequeue();
                 }
                 catch (KeyNotFoundException e)
                 {
-                    Debug.LogError($"Key {statType} somehow not in stats");
-                    statType = DirtiedStats.Dequeue();
+                    Debug.LogError($"Key {type} somehow not in stats");
+                    type = DirtiedStats.Dequeue();
                 }
             }
 
         }
         #endregion
 
-        #region Level & Experience
-        /// <summary>
-        /// Adds experience points to the actor. The actor is leveled up if enough experience is earned
-        /// </summary>
-        /// <param name="experience"></param>
-        public void AddExperience(int experience)
-        {
-            OverflowExperience += experience;
-            RequiredExperienceToNextLevel = GetRequiredExperienceToLevelUp(CurrentLevel + 1);
-            //Check if added experience levels up the actor
-            while (OverflowExperience >= RequiredExperienceToNextLevel)
-            {
-                LevelUpEvent?.Invoke(this, CurrentLevel + 1);
-                OverflowExperience = OverflowExperience - RequiredExperienceToNextLevel;
-                CurrentLevel++;
 
-                //Can the actor level up once more?
-                RequiredExperienceToNextLevel = GetRequiredExperienceToLevelUp(CurrentLevel + 1);
-            }
-
-            //Fire the event so subscribers handle changed experience case
-            ExperienceEarnedEvent?.Invoke(this, EventArgs.Empty);
-        }
-
-        /// <summary>
-        /// Sets the level of the player
-        /// </summary>
-        /// <param name="level"></param>
-        public void SetLevel(int level)
-        {
-            CurrentLevel = level;
-            OverflowExperience = 0;
-            RequiredExperienceToNextLevel = GetRequiredExperienceToLevelUp(CurrentLevel);
-        }
-
-        /// <summary>
-        /// Returns the required amount of experience needed to achieve a level from its previous level. 
-        /// </summary>
-        /// <param name="level"></param>
-        /// <returns></returns>
-        public static int GetRequiredExperienceToLevelUp(int level)
-        {
-            if (level == 0) return 0;
-            return GetExperienceForLevel(level) - (int)Mathf.Max(GetExperienceForLevel(level-1), 0);
-        }
-
-        /// <summary>
-        /// Returns the total amount of experience an actor must earn from level 0 to this level.
-        /// </summary>
-        /// <param name="level"></param>
-        /// <returns></returns>
-        public static int GetExperienceForLevel(int level)
-        {
-            if(level == 0) return 0;
-            return (int)Mathf.Floor(Mathf.Pow((level) / StatsModule.LevelFormulaX, 2));
-        }
-
-        /// <summary>
-        /// Returns the percentage of exp that is required for next level
-        /// </summary>
-        /// <returns></returns>
-        public float GetPercentageExperience()
-        {
-            float reqExp = GetRequiredExperienceToLevelUp(CurrentLevel+1);
-            if(reqExp == 0) return 0;
-            return OverflowExperience / reqExp;
-        }
-        #endregion
 
         protected override ActorModuleSerializableData InstantiateState()
         {
             return new StatsSerializableData(){
                 Level = 0,
-                OverflowExperience = 0,
                 AttributeRanks = new Dictionary<string, int>(),
             };
         }
@@ -417,8 +383,9 @@ namespace Kuantech.Core
                     SetAttributeRank(pair.Key, pair.Value);
                 }
             }
-            CurrentLevel = serializableData.Level;
-            OverflowExperience = serializableData.OverflowExperience;
+
+            SetLevel(serializableData.Level);
+            //todo: Overflow
         }
 
         /// <summary>
@@ -427,9 +394,7 @@ namespace Kuantech.Core
         public void ResetStats()
         {
             //Reset level
-            CurrentLevel = 0;
-            OverflowExperience = 0;
-            RequiredExperienceToNextLevel = GetRequiredExperienceToLevelUp(1);
+            SetLevel(0);
         
             //Reset stat ranks
             if(_statMap == null) return;

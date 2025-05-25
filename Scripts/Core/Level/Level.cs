@@ -4,7 +4,6 @@ using System.Linq;
 using Kuantech.Core.UI;
 using Kuantech.Utils;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace Kuantech.Core
 {

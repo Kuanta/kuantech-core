@@ -9,16 +9,9 @@ namespace Kuantech.TowerDefense
         
         public override void OnEnter(Level level)
         {
+            base.OnEnter(level);
             Debug.Log("Wave Phase Starting");
-        }
-
-        public override void TickPhase(float deltaTime)
-        {
-      
-        }
-        public override void OnExit(Level level)
-        {
-                    
+            (ParentLevel as TowerDefenseLevel)?.ToggleSpawners(true);
         }
     }
 }

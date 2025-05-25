@@ -24,6 +24,16 @@ namespace Kuantech.Midcore
         public List<DefautlSubUpgradeData> SubUpgrades;
     }
     
+    /// <summary>
+    /// Defines a sub upgrade entry
+    /// </summary>
+    [Serializable]
+    public struct SubUpgradeEntry
+    {
+        public ProgressableDataAsset ParentAsset;
+        public ProgressableDataAsset SubUpgradeAsset;
+    }
+    
     public class ProgressionManager : SubManager
     {
         [Header("Player Level")] 
@@ -193,9 +203,14 @@ namespace Kuantech.Midcore
         /// </summary>
         /// <param name="asset"></param>
         /// <returns></returns>
-        public static int GetCurrentRank(ProgressableDataAsset asset)
+        public static int GetCurrentRank(ProgressableDataAsset asset, ProgressableDataAsset subAsset = null)
         {
             var ctx = GetContext<ProgressionManager>();
+            if (ctx == null) return -1;
+            if (subAsset != null)
+            {
+                return ctx.ProgressiblesHandler.GetSubUpgradeRank(asset, subAsset);
+            }
             return ctx.ProgressiblesHandler.GetCurrentRank(asset);
         }
 

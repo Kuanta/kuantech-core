@@ -6,6 +6,7 @@ using Kuantech.HyperCasual;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using System.Collections;
+using Kuantech.Rpg;
 using UnityEngine.Serialization;
 
 namespace Kuantech.ArcadeIdle
@@ -14,7 +15,7 @@ namespace Kuantech.ArcadeIdle
     public struct UpgradeStatPair
     {
         public UpgradeData UpgradeData;
-        [FormerlySerializedAs("Attribute")] public StatAttributeAsset attributeAsset;
+        [FormerlySerializedAs("Attribute")] public AttributeAsset attributeAsset;
     }
 
     public class ArcadeIdleCharacter : ArcadeIdleActor
@@ -35,12 +36,12 @@ namespace Kuantech.ArcadeIdle
 
         [FormerlySerializedAs("MovementSpeedAttribute")]
         [Header("Attributes")]
-        [SerializeField] protected StatAttributeAsset movementSpeedAttributeAsset;
-        [FormerlySerializedAs("CarryCapacityAttribute")] [SerializeField] protected StatAttributeAsset carryCapacityAttributeAsset;
+        [SerializeField] protected AttributeAsset movementSpeedAttributeAsset;
+        [FormerlySerializedAs("CarryCapacityAttribute")] [SerializeField] protected AttributeAsset carryCapacityAttributeAsset;
 
         [Header("Upgrades")]
         public List<UpgradeStatPair> UpgradeStatPairs;
-        private Dictionary<UpgradeData, StatAttributeAsset> _upgradesToAttributes;
+        private Dictionary<UpgradeData, AttributeAsset> _upgradesToAttributes;
 
         private ArcadeIdleAnimator _animModule;
         private static readonly int InteractHash = Animator.StringToHash("Interacting");
@@ -59,7 +60,7 @@ namespace Kuantech.ArcadeIdle
 
             UpgradeManager um = UpgradeManager.GetContext<UpgradeManager>();
             if(um == null) return;
-            _upgradesToAttributes = new Dictionary<UpgradeData, StatAttributeAsset>();
+            _upgradesToAttributes = new Dictionary<UpgradeData, AttributeAsset>();
             foreach(var pair in UpgradeStatPairs)
             {
                 int upgradeRank = UpgradeManager.GetCurrentUpgradeLevel(pair.UpgradeData.UpgradeId);

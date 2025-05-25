@@ -1,4 +1,5 @@
 ﻿using Kuantech.Core;
+using Kuantech.Rpg;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -16,7 +17,7 @@ namespace Kuantech.ArcadeIdle
 
         [FormerlySerializedAs("MovementSpeedAttribute")]
         [Header("Attributes")]
-        [SerializeField] private StatAttributeAsset movementSpeedAttributeAsset;
+        [SerializeField] private AttributeAsset movementSpeedAttributeAsset;
 
 
         private StatsModule _statModule;

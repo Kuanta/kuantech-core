@@ -1,4 +1,6 @@
-﻿namespace Kuantech.Core.Combat
+﻿using Kuantech.Rpg;
+
+namespace Kuantech.Core.Combat
 {
     public class ModifierStatusEffect : StatusEffect
     {

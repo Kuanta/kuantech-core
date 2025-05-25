@@ -1,7 +1,7 @@
 using System;
 using UnityEngine.Serialization;
 
-namespace Kuantech.Core
+namespace Kuantech.Rpg
 {
     public enum ModifierTypes
     {
@@ -12,7 +12,7 @@ namespace Kuantech.Core
     [Serializable]
     public struct StatModifierData
     {
-        public StatAttributeAsset Stat;
+        public AttributeAsset Stat;
         public string ModifierTag;
         public float BaseValue;
         public float LevelToValueFactor;
@@ -30,7 +30,7 @@ namespace Kuantech.Core
     {
         public int Level = 0; //Required for items
         public string ModifierTag = "";
-        public StatAttributeAsset AttributeAsset;
+        public AttributeAsset AttributeAsset;
         public float BaseValue;
         public float LevelToValueFactor = 1;
         private StatModifierData _data;

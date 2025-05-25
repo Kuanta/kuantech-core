@@ -20,6 +20,7 @@ namespace Kuantech.Core
     {
         [Header("Identifier")]
         public string Id;
+        public int FactionId = 0; //Since faction Id is used frequently, it is stated in Actor class
         
         [Header("Components")]
         public ActorVisualHandler VisualHandler;
@@ -102,7 +103,11 @@ namespace Kuantech.Core
 
         protected virtual void Update()
         {
-
+            if (!Initialized) return;
+            foreach (var module in ActorModulesList)
+            {
+                module.ModuleUpdate();
+            }
         }
 
         public virtual void Reset()
@@ -119,6 +124,17 @@ namespace Kuantech.Core
             {
                 module.Cleanup();
             }
+        }
+        
+        /// <summary>
+        /// Despawns the actor by sending it to the pool
+        /// </summary>
+        public virtual void Despawn()
+        {
+            Cleanup();
+            CurrentActorState = ActorState.Despawned;
+            VisualHandler.ClearCurrentVisual();
+            PoolManager.PoolObject(gameObject);
         }
         #endregion
 

@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using Kuantech.Core;
+using UnityEngine.Serialization;
 
 namespace Kuantech.Rpg.Inventory
 {
     [Serializable]
     public class WeaponData : ItemData
     {
-        public StatAttributeAsset BaseStat;
+        [FormerlySerializedAs("BaseStat")] public AttributeAsset @base;
         public bool Ranged = false;
         public Projectile ProjectilePrefab;
         public int SlotSize = 1; //1 for 1 handed, >1 for two handed

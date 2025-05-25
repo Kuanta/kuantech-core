@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Kuantech.Rpg;
+using UnityEngine;
 using UnityEngine.Serialization;
 
 namespace Kuantech.Core.Combat
@@ -9,8 +10,8 @@ namespace Kuantech.Core.Combat
     public class HealthcareModule : ActorModule
     {
         [FormerlySerializedAs("HealthAttribute")] [Header("Health Stats")] 
-        public StatAttributeAsset healthAttributeAsset;
-        
+        public AttributeAsset healthAttributeAsset;
+
         //Runtime 
         private StatsModule _statModule;
         public override void Initialize()
@@ -34,11 +35,26 @@ namespace Kuantech.Core.Combat
         {
             ReceiveDamage(hitInfo.DamageInfo);
         }
+        
         public void ReceiveDamage(DamageInfo damageInfo)
         {
-            Actor.GetModule<StatsModule>().GetAttributeValue(healthAttributeAsset);
+            if (!Actor.IsAlive()) return; //Can't kill which is already dead
+            Attribute attribute = _statModule.GetAttribute(healthAttributeAsset);
+            if (attribute == null)
+            {
+                Debug.LogWarning($"Health attribute is null for {Actor.gameObject.name}");
+                return;
+            }
+            float healthAfterDamage = CalculateHealthAfterDamage(damageInfo);
         }
 
+        public float CalculateHealthAfterDamage(DamageInfo damageInfo)
+        {
+            float currentHealth = GetCurrentHealth();
+            float damageAmount = damageInfo.DamageAmount;
+            return currentHealth - damageAmount; //todo(combat): Implement armor system here
+        }
+        
         public float GetCurrentHealth()
         {
             return Actor.GetModule<StatsModule>().GetAttributeValue(healthAttributeAsset);

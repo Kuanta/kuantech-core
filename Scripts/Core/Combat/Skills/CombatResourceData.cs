@@ -1,3 +1,4 @@
+using Kuantech.Rpg;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -7,7 +8,7 @@ namespace Kuantech.Core.Combat
     public class CombatResourceData : ScriptableObject {
         public string Name;
         public string Id;
-        [FormerlySerializedAs("MaxValueAttribute")] public StatAttributeAsset maxValueAttributeAsset;
-        [FormerlySerializedAs("RegenAttribute")] public StatAttributeAsset regenAttributeAsset;
+        [FormerlySerializedAs("MaxValueAttribute")] public AttributeAsset maxValueAttributeAsset;
+        [FormerlySerializedAs("RegenAttribute")] public AttributeAsset regenAttributeAsset;
     }
 }

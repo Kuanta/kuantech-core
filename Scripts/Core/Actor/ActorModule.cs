@@ -20,6 +20,12 @@ namespace Kuantech.Core
         {
             
         }
+
+        public virtual void ModuleUpdate()
+        {
+            
+        }
+        
         public virtual void Reset(){}
 
         public virtual void Cleanup(){}
