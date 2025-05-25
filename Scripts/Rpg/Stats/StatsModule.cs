@@ -233,6 +233,79 @@ namespace Kuantech.Rpg
         }
         #endregion
 
+        #region Resources
+        
+        /// <summary>
+        /// Gets resource data
+        /// </summary>
+        /// <param name="resourceAsset"></param>
+        /// <returns></returns>
+        public Resource GetResource(ResourceAsset resourceAsset)
+        {
+            return ResourceManager.GetResource(resourceAsset);
+        }
+        
+        /// <summary>
+        /// Adds value to the given resource
+        /// </summary>
+        /// <param name="asset"></param>
+        /// <param name="value"></param>
+        public void AddResourceValue(ResourceAsset asset, float value)
+        {
+            Resource resource = ResourceManager.GetResource(asset);
+            if (resource == null) return;
+        }
+        
+        /// <summary>
+        /// Sets the resource to given value
+        /// </summary>
+        /// <param name="asset"></param>
+        /// <param name="value"></param>
+        public void SetResourceValue(ResourceAsset asset, float value)
+        {
+            Resource resource = ResourceManager.GetResource(asset);
+            if (resource == null) return;
+            resource.SetValue(value);
+        }
+        
+        /// <summary>
+        /// Refreshes the resource
+        /// </summary>
+        /// <param name="asset"></param>
+        public void RefreshResourceValue(ResourceAsset asset)
+        {
+            Resource resource = ResourceManager.GetResource(asset);
+            if (resource == null) return;
+            resource.RefreshValue();
+        }
+        
+        /// <summary>
+        /// Returns the current value of the resource
+        /// </summary>
+        /// <param name="asset"></param>
+        /// <param name="defaultValue"></param>
+        /// <returns></returns>
+        public float GetResourceValue(ResourceAsset asset, float defaultValue = 0)
+        {
+            Resource resource = ResourceManager.GetResource(asset);
+            if (resource == null) return defaultValue;
+            return resource.GetValue();
+        }
+        
+        /// <summary>
+        /// Returns the max value of the given resource
+        /// </summary>
+        /// <param name="asset"></param>
+        /// <param name="defaultValue"></param>
+        /// <returns></returns>
+        public float GetResourceMaxValue(ResourceAsset asset, float defaultValue = 1)
+        {
+            Resource resource = ResourceManager.GetResource(asset);
+            if (resource == null) return defaultValue;
+            return resource.GetMaxValue();
+        }
+        
+        #endregion
         #region Modifiers
         public void AddModifiers(List<StatModifier> modifiers)
         {

@@ -23,7 +23,7 @@ namespace Kuantech.Core.Combat
             List<Actor> actors = CombatUtilities.GetActorsInRange(transform.position, DetectionRadius, TargetLayerMask);
             foreach (var actor in actors)
             {
-                if(actor == Actor) continue;
+                if(actor == Actor || !actor.IsAlive()) continue;
                 if (actor.FactionId == Actor.FactionId)
                 {
                     DetectedAllies.Add(actor);
@@ -35,7 +35,8 @@ namespace Kuantech.Core.Combat
             }
             _lastDetectTime = Time.time;
         }
-        
+
+   
         private void Update()
         {
             if (!Initialized || !AutoDetectTargets) return;

@@ -33,5 +33,6 @@ namespace Kuantech.Core.Combat
 
             return actors;
         }
+        
     }
 }

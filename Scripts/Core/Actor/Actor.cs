@@ -42,6 +42,7 @@ namespace Kuantech.Core
         public EventHandler OnModulesInitialized;
         
         //Lifecycle events
+        public UnityAction<ActorState> OnActorStateChanged;
         public UnityAction<Actor> OnSpawnedEvent;
         public UnityAction<Actor> OnDeathEvent;
         public UnityAction<Actor> OnDespawnedEvent;
@@ -132,13 +133,38 @@ namespace Kuantech.Core
         public virtual void Despawn()
         {
             Cleanup();
-            CurrentActorState = ActorState.Despawned;
+            ChangeActorState(ActorState.Despawned);
+            OnDespawnedEvent?.Invoke(this);
             VisualHandler.ClearCurrentVisual();
             PoolManager.PoolObject(gameObject);
         }
         #endregion
 
         #region Actor States
+        
+        /// <summary>
+        /// Changes the actor state
+        /// </summary>
+        /// <param name="state"></param>
+        public void ChangeActorState(ActorState state)
+        {
+            OnActorStateChanged?.Invoke(state);
+            CurrentActorState = state;
+        }
+        
+        /// <summary>
+        /// Kills the actor state, sets its state to dead
+        /// </summary>
+        public void KillActor()
+        {
+            ChangeActorState(ActorState.Dead);
+            OnDeathEvent?.Invoke(this);
+        }
+        
+        /// <summary>
+        /// Checks if actor is alive
+        /// </summary>
+        /// <returns></returns>
         public bool IsAlive()
         {
             return CurrentActorState == ActorState.Alive;

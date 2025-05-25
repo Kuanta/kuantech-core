@@ -1,6 +1,4 @@
 ﻿using Kuantech.Rpg;
-using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace Kuantech.Core.Combat
 {
@@ -9,8 +7,7 @@ namespace Kuantech.Core.Combat
     /// </summary>
     public class HealthcareModule : ActorModule
     {
-        [FormerlySerializedAs("HealthAttribute")] [Header("Health Stats")] 
-        public AttributeAsset healthAttributeAsset;
+        public ResourceAsset HealthResourceAsset;
 
         //Runtime 
         private StatsModule _statModule;
@@ -25,6 +22,7 @@ namespace Kuantech.Core.Combat
             base.OnModulesInitialized();
             _statModule = Actor.GetModule<StatsModule>();
         }
+        
         #region Lifecycle
 
         
@@ -36,16 +34,19 @@ namespace Kuantech.Core.Combat
             ReceiveDamage(hitInfo.DamageInfo);
         }
         
+        /// <summary>
+        /// Receives damage
+        /// </summary>
+        /// <param name="damageInfo"></param>
         public void ReceiveDamage(DamageInfo damageInfo)
         {
             if (!Actor.IsAlive()) return; //Can't kill which is already dead
-            Attribute attribute = _statModule.GetAttribute(healthAttributeAsset);
-            if (attribute == null)
-            {
-                Debug.LogWarning($"Health attribute is null for {Actor.gameObject.name}");
-                return;
-            }
             float healthAfterDamage = CalculateHealthAfterDamage(damageInfo);
+            _statModule.SetResourceValue(HealthResourceAsset, healthAfterDamage);
+            if (_statModule.GetResourceValue(HealthResourceAsset) <= 0.0f)
+            {
+                Actor.KillActor();
+            }
         }
 
         public float CalculateHealthAfterDamage(DamageInfo damageInfo)
@@ -57,12 +58,12 @@ namespace Kuantech.Core.Combat
         
         public float GetCurrentHealth()
         {
-            return Actor.GetModule<StatsModule>().GetAttributeValue(healthAttributeAsset);
+            return _statModule.GetResourceValue(HealthResourceAsset);
         }
 
         public float GetMaxHealth()
         {
-            return Actor.GetModule<StatsModule>().GetAttributeMaxValue(healthAttributeAsset);
+            return _statModule.GetResourceMaxValue(HealthResourceAsset);
         }
     }
 }

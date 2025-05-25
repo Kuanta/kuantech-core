@@ -1,5 +1,6 @@
 ﻿using Kuantech.AI.Pathfinding;
 using Kuantech.Core;
+using Kuantech.Core.Combat;
 using Kuantech.Rpg;
 using UnityEngine;
 
@@ -10,6 +11,7 @@ namespace Kuantech.TowerDefense
         [Header("Components")] 
         [SerializeField] private PathFollower PathFollower;
         [SerializeField] private float LateralOffsetMag;
+        [SerializeField] private TargetDetectionModule TargetDetector;
         
         [Header("Movement Speed Attribute")]
         [SerializeField] private AttributeAsset SpeedAttribute;
@@ -40,5 +42,16 @@ namespace Kuantech.TowerDefense
             Actor.Despawn();
             
         }
+
+        #region Combat
+
+        public override void ModuleUpdate()
+        {
+            base.ModuleUpdate();
+            
+            
+        }
+
+        #endregion
     }
 }
