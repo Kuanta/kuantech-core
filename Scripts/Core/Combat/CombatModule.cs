@@ -21,15 +21,9 @@ namespace Kuantech.Core.Combat
     }
     public class CombatModule: ActorModule
     {
-        [Header("Combat Resources")]
-        [SerializeField] private CombatResourceData HealthResourceData;
-        [NonSerialized] private CombatResource Health;
-        [SerializeField] private List<CombatResourceData> CombatResourcesList;
-        private Dictionary<CombatResourceData, CombatResource> _combatResources;
-
         [Header("Attack Pattern")]
         public WeaponAttackPattern DefaultAttackPattern;
-        public WeaponAttackPattern CurrentAttackPattern;
+        [NonSerialized] public WeaponAttackPattern CurrentAttackPattern;
 
         //Target
         public Actor CurrentTarget;
@@ -64,26 +58,6 @@ namespace Kuantech.Core.Combat
         private AnimationModule _animationModule;
         private StatsModule _statModule;
 
-        //Animation  hashes
-
-        public override void Initialize()
-        {
-            base.Initialize();
-            _combatResources = new Dictionary<CombatResourceData, CombatResource>();
-            foreach(var res in CombatResourcesList)
-            {
-                _combatResources[res] = new CombatResource()
-                {
-                    maxValueAttributeAsset = res.maxValueAttributeAsset,
-                    regenAttributeAsset = res.regenAttributeAsset,
-                };
-            }
-            Health = new CombatResource()
-            {
-                maxValueAttributeAsset = HealthResourceData.maxValueAttributeAsset,
-                regenAttributeAsset = HealthResourceData.maxValueAttributeAsset,
-            };
-        }
         public override void OnModulesInitialized()
         {
             base.OnModulesInitialized();

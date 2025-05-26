@@ -8,7 +8,7 @@ namespace Kuantech.Core.Combat
     public class CombatResourceData : ScriptableObject {
         public string Name;
         public string Id;
-        [FormerlySerializedAs("MaxValueAttribute")] public AttributeAsset maxValueAttributeAsset;
-        [FormerlySerializedAs("RegenAttribute")] public AttributeAsset regenAttributeAsset;
+        public AttributeAsset maxValueAttributeAsset;
+        public AttributeAsset regenAttributeAsset;
     }
 }

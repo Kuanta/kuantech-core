@@ -13,9 +13,15 @@ namespace Kuantech.TowerDefense
         [SerializeField] private float LateralOffsetMag;
         [SerializeField] private TargetDetectionModule TargetDetector;
         
-        [Header("Movement Speed Attribute")]
+        [Header("Attributes")]
         [SerializeField] private AttributeAsset SpeedAttribute;
+        [SerializeField] private AttributeAsset AttackSpeedAttribute;
+        [SerializeField] private AttributeAsset DamageAttribute;        
         
+        
+        private StatsModule _statsModule;
+        private CombatModule _combatModule;
+        private float _lastActionTime;
         public override void Initialize()
         {
             if (Initialized) return;
@@ -43,6 +49,40 @@ namespace Kuantech.TowerDefense
             
         }
 
+        #region Targeting
+
+        public void DetectTargets()
+        {
+            TargetDetector.DetectTargets();
+        }
+
+        public Actor GetEnemyTarget()
+        {
+            return TargetDetector.GetEnemyTarget();
+        }
+
+        public Actor GetAllyTarget()
+        {
+            return TargetDetector.GetAllyTarget();
+        }
+
+        public bool CanAttack()
+        {
+            float elapsedTime = Time.time - _lastActionTime;
+            float attackSpeed = _statsModule.GetAttributeValue(AttackSpeedAttribute);
+            if(elapsedTime < attackSpeed) return false;
+            return true;
+        }
+
+        public void AttackEnemy()
+        {
+            Actor actor = GetEnemyTarget();
+            CombatModule combatModule = Actor.GetModule<CombatModule>();
+            if (combatModule == null) return;
+            combatModule.Attack(actor);
+        }
+        
+        #endregion
         #region Combat
 
         public override void ModuleUpdate()
@@ -52,6 +92,15 @@ namespace Kuantech.TowerDefense
             
         }
 
+        private void AttackTarget()
+        {
+            TargetDetector.GetEnemyTarget();
+        }
+
+        public float GetDamage()
+        {
+            return _statsModule.GetAttributeValue(DamageAttribute);
+        }
         #endregion
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Core.Combat
@@ -14,6 +15,9 @@ namespace Kuantech.Core.Combat
         
         [NonSerialized] public List<Actor> DetectedEnemies;
         [NonSerialized] public List<Actor> DetectedAllies;
+
+        public TargetingBehaviour AllyTargetingBehaviour;
+        public TargetingBehaviour EnemyDetectingBehaviour;
         
         /// <summary>
         /// Detects allies and enemies
@@ -33,10 +37,49 @@ namespace Kuantech.Core.Combat
                     DetectedEnemies.Add(actor);
                 }
             }
+            SortActors();
             _lastDetectTime = Time.time;
         }
-
-   
+        
+        /// <summary>
+        /// Sorts actors depending on the targeting behaviour.
+        /// </summary>
+        public void SortActors()
+        {
+            //Sort enemies
+            if (!DetectedEnemies.IsNullOrEmpty() && DetectedEnemies.Count > 1 && EnemyDetectingBehaviour != null)
+            {
+                DetectedEnemies.Sort((a, b) => EnemyDetectingBehaviour.Compare(a, b, Actor));
+            }
+            
+            //Sort allies
+            if (!DetectedAllies.IsNullOrEmpty() && DetectedAllies.Count > 1 && AllyTargetingBehaviour != null)
+            {
+                DetectedAllies.Sort((a,b)=>AllyTargetingBehaviour.Compare(a, b, Actor));
+            }
+            
+        }
+        
+        /// <summary>
+        /// Returns the first enemy target
+        /// </summary>
+        /// <returns></returns>
+        public Actor GetEnemyTarget()
+        {
+            if (DetectedEnemies.IsNullOrEmpty()) return null;
+            return DetectedEnemies[0];
+        }
+        
+        /// <summary>
+        /// Returns the first ally target.
+        /// </summary>
+        /// <returns></returns>
+        public Actor GetAllyTarget()
+        {
+            if (DetectedAllies.IsNullOrEmpty()) return null;
+            return DetectedAllies[0];
+        }
+        
         private void Update()
         {
             if (!Initialized || !AutoDetectTargets) return;
