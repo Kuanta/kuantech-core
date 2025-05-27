@@ -28,7 +28,7 @@ namespace Kuantech.Rpg
         private Dictionary<string, Attribute> _statMap;
         public static float LevelFormulaX = 0.4f;
 
-        [Header("Resources")] 
+        [Header("Resources")] public List<ResourceDefinition> ResourceDefinitions;
         public ResourceManager ResourceManager;
         
         //Level
@@ -115,6 +115,7 @@ namespace Kuantech.Rpg
         public void SetLevel(int level)
         {
             ActorLevel.SetLevel(level);
+            if(ResourceManager != null) ResourceManager.Refresh();
             LevelChangeEvent?.Invoke(level);
         }
 

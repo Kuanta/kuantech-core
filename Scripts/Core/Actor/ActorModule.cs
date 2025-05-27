@@ -25,6 +25,11 @@ namespace Kuantech.Core
         {
             
         }
+
+        public virtual void OnActorStateChanged(ActorState newState)
+        {
+            
+        }
         
         public virtual void Reset(){}
 

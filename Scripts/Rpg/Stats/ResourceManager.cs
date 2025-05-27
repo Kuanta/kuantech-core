@@ -5,7 +5,6 @@ namespace Kuantech.Rpg
 {
     public class ResourceManager
     {
-        public List<ResourceDefinition> ResourceDefinitions;
         private Dictionary<string, Resource> _resources;
         private StatsModule _parentStatsModule;
         
@@ -13,13 +12,15 @@ namespace Kuantech.Rpg
         {
             _parentStatsModule = parentStatsModule;
             _resources = new Dictionary<string, Resource>();
-            if (ResourceDefinitions != null)
+            if (parentStatsModule.ResourceDefinitions != null)
             {
-                foreach (var definition in ResourceDefinitions)
+                foreach (var definition in parentStatsModule.ResourceDefinitions)
                 {
                     Resource resource = new Resource();
                     resource.StatsModule = parentStatsModule;
                     resource.ApplyResourceDefinition(definition);
+                    _resources[definition.ResourceAsset.Id] = resource;
+                    resource.RefreshValue();
                 }
             }
         }

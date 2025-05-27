@@ -2,6 +2,7 @@
 
 namespace Kuantech.Rpg
 {
+    [CreateAssetMenu(fileName = "ResourceAsset", menuName = "Kuantech/Rpg/Resource Asset")]
     public class ResourceAsset : ScriptableObject
     {
         public string Id;

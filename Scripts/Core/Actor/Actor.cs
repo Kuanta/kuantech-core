@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Kuantech.Core.Combat;
@@ -29,7 +30,7 @@ namespace Kuantech.Core
         protected List<ActorModule> ActorModulesList;
         protected Dictionary<Type, List<ActorModule>> Modules = new Dictionary<Type, List<ActorModule>>();
         public Dictionary<string, ActorModule> ModulesById = new Dictionary<string, ActorModule>();
-
+        
         protected bool Initialized;
         [Tooltip("If set to true, actor will initialize itself on start")]
         public bool InitializeOnStart;
@@ -89,7 +90,9 @@ namespace Kuantech.Core
 
             OnModulesInitialized?.Invoke(this, EventArgs.Empty);
             Initialized = true;
-
+            
+            PostInitialize();
+            
             //Call reset method
             Reset();
         }
@@ -130,13 +133,23 @@ namespace Kuantech.Core
         /// <summary>
         /// Despawns the actor by sending it to the pool
         /// </summary>
-        public virtual void Despawn()
+        public virtual void Despawn(float delay=0f)
         {
+            if (_despawnCoroutine != null) return;
+            _despawnCoroutine = _DespawnRoutine(delay);
+            StartCoroutine(_despawnCoroutine);
+        }
+        
+        private IEnumerator _despawnCoroutine;
+        private IEnumerator _DespawnRoutine(float delay)
+        {
+            yield return new WaitForSeconds(delay);
             Cleanup();
             ChangeActorState(ActorState.Despawned);
             OnDespawnedEvent?.Invoke(this);
             VisualHandler.ClearCurrentVisual();
             PoolManager.PoolObject(gameObject);
+            _despawnCoroutine = null;
         }
         #endregion
 
@@ -150,6 +163,10 @@ namespace Kuantech.Core
         {
             OnActorStateChanged?.Invoke(state);
             CurrentActorState = state;
+            foreach (var module in ActorModulesList)
+            {
+                module.OnActorStateChanged(CurrentActorState);
+            }
         }
         
         /// <summary>

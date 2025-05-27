@@ -49,7 +49,7 @@ namespace Kuantech.Rpg
 
         private int CalculateLevel(float total)
         {
-            int level = 1;
+            int level = 0;
             while (total >= GetTotalRequiredForLevel(level + 1))
             {
                 level++;
@@ -82,7 +82,7 @@ namespace Kuantech.Rpg
         public float GetRequiredForSingleLevel(int level)
         {
             if (level <= 0) return 0;
-            return baseRequirement * Mathf.Pow(level-1, growthFactor);
+            return baseRequirement * Mathf.Pow(level, growthFactor);
         }
         
         
@@ -90,8 +90,8 @@ namespace Kuantech.Rpg
         public float GetTotalRequiredForLevel(int level)
         {
             float sum = 0f;
-            if (level <= 1) return 0.0f;
-            for (int i = 2; i <= level; i++)
+            if (level <= 0) return 0.0f;
+            for (int i = 1; i <= level; i++)
             {
                 sum += GetRequiredForSingleLevel(i);
             }

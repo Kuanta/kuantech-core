@@ -47,13 +47,17 @@ namespace Kuantech.TowerDefense
         
         private void OnReachedEnd()
         {
-            // Handle logic when the actor reaches the end of the path
-            Debug.Log($"{Actor.name} has reached the end of the path.");
-            // You can add more logic here, like triggering an event or destroying the actor.
             Actor.Despawn();
-            
         }
 
+        public override void OnActorStateChanged(ActorState newState)
+        {
+            if(newState == ActorState.Dead || newState == ActorState.Despawned)
+            {
+                PathFollower.Stop();
+            }
+            
+        }
         #region Targeting
 
         public void DetectTargets()

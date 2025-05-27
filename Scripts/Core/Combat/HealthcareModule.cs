@@ -1,4 +1,6 @@
 ﻿using Kuantech.Rpg;
+using UnityEngine;
+using UnityEngine.Events;
 
 namespace Kuantech.Core.Combat
 {
@@ -9,6 +11,15 @@ namespace Kuantech.Core.Combat
     {
         public ResourceAsset HealthResourceAsset;
 
+        public bool DespawnAfterDeath = true;
+        [Tooltip("Delay that despawns the actor after death")] public float DespawnDelay = 1f;
+        
+        [Header("UI")] 
+        [SerializeField] private Healthbar Healthbar;
+        
+        //Events
+        public UnityAction<HealthcareModule> OnHealthChanged;
+        
         //Runtime 
         private StatsModule _statModule;
         public override void Initialize()
@@ -43,9 +54,19 @@ namespace Kuantech.Core.Combat
             if (!Actor.IsAlive()) return; //Can't kill which is already dead
             float healthAfterDamage = CalculateHealthAfterDamage(damageInfo);
             _statModule.SetResourceValue(HealthResourceAsset, healthAfterDamage);
+            OnHealthChanged?.Invoke(this);
+            Healthbar?.SetHealth(healthAfterDamage, GetMaxHealth());
             if (_statModule.GetResourceValue(HealthResourceAsset) <= 0.0f)
             {
                 Actor.KillActor();
+                if (Healthbar != null)
+                {
+                    Healthbar.ToggleVisual(false);
+                }
+                if(DespawnAfterDeath)
+                {
+                    Actor.Despawn(DespawnDelay); // Despawn actor after delay
+                }
             }
         }
 

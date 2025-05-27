@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Kuantech.Rpg;
 using UnityEngine;
 
 namespace Kuantech.Core.Combat
@@ -6,7 +7,7 @@ namespace Kuantech.Core.Combat
 
     [CreateAssetMenu(fileName = "Skill", menuName = "Kuantech/Combat/Skill", order = 0)]
     public class Skill : ScriptableObject {
-        public List<CombatResourceData> CombatResources;
+        public List<ResourceAsset> CombatResources;
         public float CastTime;
         public bool IsChanneled;
 
