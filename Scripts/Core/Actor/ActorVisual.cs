@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Kuantech.Core.FX;
 using Kuantech.Rpg.Inventory;
 using Kuantech.Utils;
 using UnityEngine;
@@ -47,6 +48,12 @@ namespace Kuantech.Core
         
         [Header("Inplace Items")]
         public List<InPlaceItemEntry> InPlaceItemsList;
+
+        [Header("Sprite Renderer")]
+        public SpriteRenderer SpriteRenderer;
+
+        [Header("Shader Effects")] 
+        public ShaderEffect HitShaderEffect;
         
         //Runtime
         public Actor ParentActor;
@@ -182,5 +189,6 @@ namespace Kuantech.Core
             ToggleVisualPartForSlot(slotType, true);
         }
         #endregion
+        
     }
 }

@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Kuantech.Core.Combat;
 using Kuantech.Utils;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -97,6 +96,12 @@ namespace Kuantech.Core
             Reset();
         }
 
+        public void Spawn()
+        {
+            Initialize(); //If not initialized, initialize it
+            ChangeActorState(ActorState.Alive);
+            Reset();
+        }
         public virtual void PostInitialize()
         {
             foreach (var module in ActorModulesList)

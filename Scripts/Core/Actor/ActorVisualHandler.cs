@@ -39,14 +39,15 @@ namespace Kuantech.Core
             CurrentActorVisual.gameObject.AttachToParent(ActorVisualSlot != null ? ActorVisualSlot : transform);
             CurrentActorVisual.Initialize();
             OnActorVisualSet?.Invoke(CurrentActorVisual);
-            
+            visual.gameObject.SetActive(true);
         }
 
         public void ClearCurrentVisual()
         {
             if (CurrentActorVisual == null) return;
             OnActorVisualRemoved?.Invoke(CurrentActorVisual);
-            Destroy(CurrentActorVisual.gameObject);
+            PoolManager.PoolObject(CurrentActorVisual.gameObject);
+            CurrentActorVisual = null;
         }
     }
 }

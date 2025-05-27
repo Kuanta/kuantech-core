@@ -43,6 +43,7 @@ namespace Kuantech.TowerDefense
             ActorTemplateAsset actorTemplate = GetNextActorTemplate();
             if (actorTemplate == null) return;
             Actor createdActor = actorTemplate.CreateActor();
+            createdActor.Spawn();
             createdActor.FactionId = ActorFactionId;
             createdActor.transform.position = SpawnPoint.position;
             TowerDefenseActorModule tdm = createdActor.GetModule<TowerDefenseActorModule>();

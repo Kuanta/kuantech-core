@@ -201,16 +201,18 @@ namespace Kuantech.Core
         #endregion
 
         #region Events
+
+        public override void OnActorStateChanged(ActorState newState)
+        {
+            base.OnActorStateChanged(newState);
+            if (Animator == null) return;
+            Animator.SetTrigger(Death);
+        }
         public void OnDamageReceive(HitInfo hitInfo)
         {
             if (Animator == null) return;
             Animator.SetInteger(DamageReceivedIndex, 0);
             Animator.SetTrigger(DamageReceived);
-        }
-        public void OnDeath(object sender, EventArgs empty)
-        {
-            if (Animator == null) return;
-            Animator.SetTrigger(Death);
         }
 
         public void OnActorVisualChanged(ActorVisual newVisual)

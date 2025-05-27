@@ -50,6 +50,13 @@ namespace Kuantech.Rpg
             ResourceManager.Initialize(this);
         }
 
+        public override void Reset()
+        {
+            base.Reset();
+            ResourceManager.Refresh();
+            
+            //Remove temporary modifiers?
+        }
         public void ApplyStatsTable(List<AttributeDefinition> defaultAttributes)
         {
             if (defaultAttributes.IsNullOrEmpty()) return;

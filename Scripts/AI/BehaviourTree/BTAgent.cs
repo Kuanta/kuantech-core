@@ -14,7 +14,7 @@ namespace Kuantech.AI
         public override void Initialize()
         {
             //todo: Can we remove this?
-            _waitForSeconds = new WaitForSeconds(Random.Range(0.1f, 0.2f));
+            _waitForSeconds = new WaitForSeconds(0.01f);
             SetBehaviourTree(DefaultBtBlueprint.CreateBehaviourTree());
         }
 

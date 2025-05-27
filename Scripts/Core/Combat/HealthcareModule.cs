@@ -28,6 +28,13 @@ namespace Kuantech.Core.Combat
             Actor.OnHitEvent += OnHit;
         }
 
+        public override void Reset()
+        {
+            base.Reset();
+            if(_statModule != null) _statModule.RefreshResourceValue(HealthResourceAsset);
+            UpdateHealthbar();
+        }
+        
         public override void OnModulesInitialized()
         {
             base.OnModulesInitialized();
@@ -55,8 +62,8 @@ namespace Kuantech.Core.Combat
             float healthAfterDamage = CalculateHealthAfterDamage(damageInfo);
             _statModule.SetResourceValue(HealthResourceAsset, healthAfterDamage);
             OnHealthChanged?.Invoke(this);
-            Healthbar?.SetHealth(healthAfterDamage, GetMaxHealth());
-            if (_statModule.GetResourceValue(HealthResourceAsset) <= 0.0f)
+            UpdateHealthbar();
+            if (healthAfterDamage <= 0.0f)
             {
                 Actor.KillActor();
                 if (Healthbar != null)
@@ -70,6 +77,13 @@ namespace Kuantech.Core.Combat
             }
         }
 
+        public void UpdateHealthbar()
+        {
+            if (Healthbar == null) return;
+            float currentHealth = GetCurrentHealth();
+            Healthbar.SetHealth(currentHealth, GetMaxHealth());
+        }
+        
         public float CalculateHealthAfterDamage(DamageInfo damageInfo)
         {
             float currentHealth = GetCurrentHealth();
