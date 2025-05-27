@@ -258,6 +258,41 @@ namespace Kuantech.Utils
         #endregion
         
         #region Geometry
+
+        /// <summary>
+        /// Verilen direction, worldUp ve local düzlem forward'ına göre bir rotasyon döndürür.
+        /// </summary>
+        /// <param name="direction">Hedef yön</param>
+        /// <param name="worldUp">Tanımlı dünya yukarı vektörü (örnek: Vector3.up veya Vector3.forward)</param>
+        /// <param name="referenceForward">Ground düzlemindeki yerel ileri yön (örnek: Vector3.forward veya Vector3.up)</param>
+        /// <returns>Uygulanabilir Quaternion rotasyonu</returns>
+        public static Quaternion GetRotationFromWorldForward(Vector3 direction, Vector3 worldUp, Vector3 referenceForward)
+        {
+            if (direction == Vector3.zero)
+                return Quaternion.identity;
+
+            // 1. Ground düzlemine projeksiyon
+            Vector3 groundDir = Vector3.ProjectOnPlane(direction, worldUp);
+            if (groundDir.sqrMagnitude < 1e-6f)
+            {
+                // Tam yukarı/aşağıya bakıyorsa fallback
+                return Quaternion.LookRotation(direction.normalized, worldUp);
+            }
+
+            // 2. Yaw açısı: düzlemdeki yön ile referans ileri yön arasındaki açı
+            float yaw = Vector3.SignedAngle(referenceForward, groundDir, worldUp);
+
+            // 3. Pitch açısı: yönün yer düzlemiyle yaptığı dik açı
+            Vector3 pitchAxis = Vector3.Cross(groundDir, worldUp).normalized;
+            float pitch = Vector3.SignedAngle(groundDir, direction, pitchAxis);
+
+            // 4. Rotasyonları sırayla uygula
+            Quaternion yawRot = Quaternion.AngleAxis(yaw, worldUp);
+            Quaternion pitchRot = Quaternion.AngleAxis(pitch, pitchAxis);
+
+            return yawRot * pitchRot;
+        }
+        
         public static Vector3 ProjectVector(Vector3 vec, Vector3 to)
         {
             Vector3 normalized = to.normalized;

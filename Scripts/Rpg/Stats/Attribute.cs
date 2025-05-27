@@ -35,7 +35,7 @@ namespace Kuantech.Rpg
         public Vector2 Limits;
         
         //Runtime
-        public float MultiplicationModifier;
+        public float MultiplicationModifier = 1;
         public float AdditionModifier;
         public int Rank;
         

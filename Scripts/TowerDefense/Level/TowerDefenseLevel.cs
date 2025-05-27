@@ -40,7 +40,7 @@ namespace Kuantech.TowerDefense
         private void RegisterPhases()
         {
             _preparationPhase = new PreparationPhase();
-            _preparationPhase.PreparationTime = 3;
+            _preparationPhase.PreparationTime = 1;
             _wavePhase = new WavePhase();
             
             PhaseSystem.RegisterPhase(_preparationPhase);

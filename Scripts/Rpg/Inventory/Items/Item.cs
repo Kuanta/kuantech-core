@@ -4,6 +4,7 @@ using Kuantech.Core;
 using Kuantech.Core.Combat;
 using Kuantech.Utils;
 using UnityEngine;
+using UnityEngine.Serialization;
 using Object = UnityEngine.Object;
 
 namespace Kuantech.Rpg.Inventory
@@ -28,36 +29,6 @@ namespace Kuantech.Rpg.Inventory
         public bool Equipped;
         public Dictionary<AttributeAsset, StatModifier> StatModifiers;
         public bool IsNew;
-    }
-
-    /// <summary>
-    /// Set of parameters for a single attack parameter of a weapon
-    /// </summary>
-    [Serializable]
-    public class WeaponAttackPattern
-    {
-        public AttackTypes AttackType;
-        public DamageInfo DamageInfo;
-        public float MovementSlow; //Factor between 0-1, movement speed while attacking will be MovementSpeed * (1-MovementSlow)
-        public float DamageTime;
-        public float AnimationTime;
-        public float WindupTime;
-        public float Cooldown;
-        public float Range;
-        public float Angle;
-        public float Width;
-        public float Knockback;
-        public float KnockbackTime;
-        public float ProjectileSpeed;
-        public float ProjectileDrop;
-        //public float ProjectileRisHeight;
-        public bool TargetedProjectile;
-        public GameObject ProjectilePrefab;
-
-        public DamageInfo GetDamageInfo()
-        {
-            return DamageInfo;
-        }
     }
 
 

@@ -7,7 +7,8 @@ namespace Kuantech.Core.Combat
     {
         public static List<Actor> GetActorsInRange(Vector3 position, float radius, LayerMask layerMask, string[] allowedTags = null)
         {
-            Collider[] hits = UnityEngine.Physics.OverlapSphere(position, radius, layerMask);
+            Collider2D[] hits = UnityEngine.Physics2D.OverlapCircleAll(position, radius, layerMask);
+           // Collider[] hits = UnityEngine.Physics.OverlapSphere(position, radius, layerMask);
             List<Actor> actors = new();
 
             foreach (var hit in hits)

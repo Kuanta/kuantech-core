@@ -10,10 +10,10 @@ namespace Kuantech.Rpg.Inventory
     {
         [FormerlySerializedAs("BaseStat")] public AttributeAsset @base;
         public bool Ranged = false;
-        public Projectile ProjectilePrefab;
+        [FormerlySerializedAs("oldProjectilePrefab")] [FormerlySerializedAs("ProjectilePrefab")] public Projectile projectilePrefab;
         public int SlotSize = 1; //1 for 1 handed, >1 for two handed
-        public List<WeaponAttackPattern> AttackPatterns;
-        public WeaponAttackPattern AlternativeAttackPatterns;
+        public List<AttackPattern> AttackPatterns;
+        public AttackPattern AlternativeAttackPatterns;
         public List<int> Skills;
         public float blockAmount = 0; //Additional armor value
         public float ScalingFactor = 1;

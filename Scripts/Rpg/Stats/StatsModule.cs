@@ -46,6 +46,7 @@ namespace Kuantech.Rpg
             base.Initialize();
             _statMap = new Dictionary<string, Attribute>();
             ApplyStatsTable(Stats);
+            ResourceManager = new ResourceManager();
             ResourceManager.Initialize(this);
         }
 

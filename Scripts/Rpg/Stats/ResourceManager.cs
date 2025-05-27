@@ -13,11 +13,14 @@ namespace Kuantech.Rpg
         {
             _parentStatsModule = parentStatsModule;
             _resources = new Dictionary<string, Resource>();
-            foreach (var definition in ResourceDefinitions)
+            if (ResourceDefinitions != null)
             {
-                Resource resource = new Resource();
-                resource.StatsModule = parentStatsModule;
-                resource.ApplyResourceDefinition(definition);
+                foreach (var definition in ResourceDefinitions)
+                {
+                    Resource resource = new Resource();
+                    resource.StatsModule = parentStatsModule;
+                    resource.ApplyResourceDefinition(definition);
+                }
             }
         }
         

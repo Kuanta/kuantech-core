@@ -6,6 +6,7 @@ namespace Kuantech.TowerDefense
 {
     public class ActorSummoner : LevelElement
     {
+        public int ActorFactionId = 0;
         public ActorTemplateAsset ActorTemplateAsset; //TEMPORARY
         public TowerDefensePath PathToSpawn;
         public Transform SpawnPoint; // The point where the actor will be spawned
@@ -42,6 +43,7 @@ namespace Kuantech.TowerDefense
             ActorTemplateAsset actorTemplate = GetNextActorTemplate();
             if (actorTemplate == null) return;
             Actor createdActor = actorTemplate.CreateActor();
+            createdActor.FactionId = ActorFactionId;
             createdActor.transform.position = SpawnPoint.position;
             TowerDefenseActorModule tdm = createdActor.GetModule<TowerDefenseActorModule>();
             if (tdm == null)

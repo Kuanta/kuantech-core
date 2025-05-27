@@ -1,8 +1,10 @@
-﻿using Kuantech.AI.Pathfinding;
+﻿using System;
+using Kuantech.AI.Pathfinding;
 using Kuantech.Core;
 using Kuantech.Core.Combat;
 using Kuantech.Rpg;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace Kuantech.TowerDefense
 {
@@ -16,18 +18,21 @@ namespace Kuantech.TowerDefense
         [Header("Attributes")]
         [SerializeField] private AttributeAsset SpeedAttribute;
         [SerializeField] private AttributeAsset AttackSpeedAttribute;
-        [SerializeField] private AttributeAsset DamageAttribute;        
-        
+        [SerializeField] private AttributeAsset DamageAttribute;
+
+        [NonSerialized] public bool CanAct; //Checks if the actor can act
         
         private StatsModule _statsModule;
         private CombatModule _combatModule;
         private float _lastActionTime;
+        
         public override void Initialize()
         {
             if (Initialized) return;
             base.Initialize();
             PathFollower.OnReachedPathEnd += OnReachedEnd;
         }
+        
         public void SetOnPath(Path path)
         {
             StatsModule sm  = Actor.GetModule<StatsModule>();
@@ -76,10 +81,10 @@ namespace Kuantech.TowerDefense
 
         public void AttackEnemy()
         {
-            Actor actor = GetEnemyTarget();
+            Actor enemy = GetEnemyTarget();
             CombatModule combatModule = Actor.GetModule<CombatModule>();
             if (combatModule == null) return;
-            combatModule.Attack(actor);
+            combatModule.AttackToTarget(enemy);
         }
         
         #endregion

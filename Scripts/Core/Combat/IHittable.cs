@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace Kuantech.Core.Combat
+namespace Kuantech.Core
 {
     [Serializable]
     public struct DamageInfo
