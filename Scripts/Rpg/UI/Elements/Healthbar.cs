@@ -30,6 +30,16 @@ namespace Kuantech.Rpg
 
         public void SetHealth(float current, float max)
         {
+            if (HideOnFullHealth && current >= max && HideParent != null)
+            {
+                FrontBar.value = 1;
+                BackBar.value = 1;
+                ToggleVisual(false);
+                return;
+            }
+            
+            ToggleVisual(true);
+            
             current = Mathf.Clamp(current, 0, max);
             
             if (CurrentHealthText != null)
@@ -42,25 +52,22 @@ namespace Kuantech.Rpg
                 MaxHealthText.text = current.Stringfy();
             }
             
-            if (HideOnFullHealth && current >= max && HideParent != null)
-            {
-                ToggleVisual(false);
-                return;
-            }
-            
-            ToggleVisual(true);
-            
             _targetFill = Mathf.Clamp01(current / max);
             if (FrontBar != null)
                 FrontBar.value = _targetFill;
 
-            if (BackBar != null)
+            if (BackBar == null) return;
+            
+            //If back bar is already smaller, set it instantly
+            if (BackBar.value <= _targetFill)
             {
-                // Hemen düşmesin diye zamanlayıcı başlat
+                BackBar.value = _targetFill;
+            }
+            else
+            {
                 _backBarDelayTimer = BackBarDelay;
                 _backAnimInProgress = true;
             }
-            
         }
 
         public void ToggleVisual(bool toggle)
@@ -95,6 +102,12 @@ namespace Kuantech.Rpg
             {
                 _backAnimInProgress = false;
             }
+        }
+
+        public void Reset()
+        {
+            FrontBar.value = 1.0f;
+            BackBar.value = 1.0f;
         }
 
     }
