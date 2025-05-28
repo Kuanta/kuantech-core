@@ -1,6 +1,4 @@
 ﻿using System;
-using Kuantech.Core;
-using Kuantech.Core.Combat;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -125,6 +123,8 @@ namespace Kuantech.Core
             {            
                 Animator.SetFloat(X, 0);
                 Animator.SetFloat(Y, 0);
+                Animator.SetBool(Death, false);
+                Animator.Rebind();
             }
             _targetMovementParameters = Vector2.zero;
             _movementParametersScale = Vector2.one;
@@ -206,7 +206,13 @@ namespace Kuantech.Core
         {
             base.OnActorStateChanged(newState);
             if (Animator == null) return;
-            Animator.SetTrigger(Death);
+            if (newState == ActorState.Dead)
+            {
+                Animator.SetBool(Death, true);
+            }else if (newState == ActorState.Alive)
+            {
+                Animator.SetBool(Death, false);
+            }
         }
         public void OnDamageReceive(HitInfo hitInfo)
         {
