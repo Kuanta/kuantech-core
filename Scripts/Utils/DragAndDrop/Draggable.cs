@@ -76,7 +76,7 @@ namespace Kuantech.Utils
             }
             else if(_receivedHitThisFrame && PositionWithGroundRay)
             {
-                Transform cameraTransform = DragManager.GetContext<DragManager>().MainCamera.transform;
+                Transform cameraTransform = DragManager.GetContext<DragManager>().GetMainCamera().transform;
                 Vector3 diff = cameraTransform.position - _lastHit.point;
                 diff.Normalize();
                 SetPosition(_lastHit.point + diff * OffsetDistance - _dragPositionOffset);
@@ -174,7 +174,7 @@ namespace Kuantech.Utils
             
             // Create a ray from the camera through the cursor position
             //Ray ray = dm.MainCamera.ScreenPointToRay(Input.mousePosition + GetDragPositionOffset());
-            Ray ray = dm.MainCamera.ScreenPointToRay(DragManager.GetCursorPosition(true));
+            Ray ray = dm.GetMainCamera().ScreenPointToRay(DragManager.GetCursorPosition(true));
 
             // Cast the ray and get the first object hit
             RaycastHit hit;
@@ -207,7 +207,7 @@ namespace Kuantech.Utils
         {
             Vector3 cursorPosition = DragManager.GetCursorPosition(true);
             DragManager dm = GameManager.Instance.GetSubManagerByType<DragManager>() as DragManager;
-            Ray ray = dm.MainCamera.ScreenPointToRay(cursorPosition);
+            Ray ray = dm.GetMainCamera().ScreenPointToRay(cursorPosition);
 
             // Vector3 o = ray.origin;
             // Vector3 d = ray.direction;

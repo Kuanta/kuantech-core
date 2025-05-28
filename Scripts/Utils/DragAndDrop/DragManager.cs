@@ -85,8 +85,17 @@ namespace Kuantech.Utils
         protected float _startTime;
         protected bool _startedClick;
         protected bool _dragging = false;
-        
 
+
+        public Camera GetMainCamera()
+        {
+            if (MainCamera == null)
+            {
+                MainCamera = Camera.main;
+            }
+            return MainCamera;
+        }
+        
         private void Update()
         {
             if (Input.GetMouseButtonDown(0))
@@ -165,7 +174,7 @@ namespace Kuantech.Utils
             }
             Vector3 mousePosition = GetCursorPosition(true);
             mousePosition.z = _dragCameraDistance;
-            return MainCamera.ScreenToWorldPoint(mousePosition);
+            return GetMainCamera().ScreenToWorldPoint(mousePosition);
         }
         /// <summary>
         /// Releases the dragging state
@@ -192,34 +201,58 @@ namespace Kuantech.Utils
         }
 
         private RaycastHit _lastHit;
+        private RaycastHit2D _lastHit2D;
         protected virtual void CheckWorld()
         {
-            Ray ray = MainCamera.ScreenPointToRay(GetCursorPosition(false));
-            RaycastHit hit;
-            if (UnityEngine.Physics.Raycast(ray, out hit, RaycastLength, DraggableLayer.value))
+            Vector3 screenPos = GetCursorPosition(false);
+            Ray ray =GetMainCamera().ScreenPointToRay(screenPos);
+
+            if (UnityEngine.Physics.Raycast(ray, out var hit3D, RaycastLength, DraggableLayer))
             {
-                _lastHit = hit;
-                HandleRaycastHit(hit);
+                _lastHit = hit3D;
+                HandleRaycastHit(hit3D);
+                return;
+            }
+
+            // Check 2D too
+            Vector2 screenPoint = screenPos;
+            Vector2 worldPoint = GetMainCamera().ScreenToWorldPoint(screenPoint);
+            
+            RaycastHit2D hit = Physics2D.Raycast(worldPoint, Vector2.zero, 0f, DraggableLayer);
+            if (hit.collider != null)
+            {
+                _lastHit2D = hit;
+                Handle2DRaycastHit(hit.collider, hit.point);
             }
             else
             {
                 OnClickedEmpty?.Invoke();
             }
+            OnClickedEmpty?.Invoke();
         }
-
-        protected virtual void OnCursorUp()
+        
+        protected virtual void Handle2DRaycastHit(Collider2D hit, Vector3 point)
         {
+            _draggedInterface = hit.GetComponent<IDraggable>();
             if (_draggedInterface != null)
             {
-                _draggedInterface.OnClickUp();
+                _draggedInterface.OnClickDown();
             }
-            if (draggedObject != null && _draggedInterface != null)
+
+            if (_draggedInterface != null && _draggedInterface.DragStart(point))
             {
-                OnDragEnd?.Invoke(this, _draggedInterface);
-                _draggedInterface.DragEnd();
+                draggedObject = hit.transform;
+                _dragCameraDistance = Vector3.Distance(GetMainCamera().transform.position, draggedObject.position) + DragCameraDistanceOffset;
+
+                if (!_draggedInterface.CanBeDragged())
+                {
+                    _draggedInterface = null;
+                    return;
+                }
+
+                _lastCursorWorldPosition = GetMouseWorldPosition();
+                OnDragStart?.Invoke(this, _draggedInterface);
             }
-            draggedObject = null;
-            _draggedInterface = null;
         }
         
         /// <summary>
@@ -238,7 +271,7 @@ namespace Kuantech.Utils
             if (_draggedInterface != null && _draggedInterface.DragStart(dragHitPoint))
             {
                 draggedObject = hit.collider.transform;
-                _dragCameraDistance = Vector3.Distance(MainCamera.transform.position, draggedObject.position) + DragCameraDistanceOffset;
+                _dragCameraDistance = Vector3.Distance(GetMainCamera().transform.position, draggedObject.position) + DragCameraDistanceOffset;
 
                 //Does _draggedInterface wants to be dragged?
                 bool canBeDragged = _draggedInterface.CanBeDragged();
@@ -252,6 +285,23 @@ namespace Kuantech.Utils
                 OnDragStart?.Invoke(this, _draggedInterface); //Invoke event for subscribers
             }
         }
+        
+        protected virtual void OnCursorUp()
+        {
+            if (_draggedInterface != null)
+            {
+                _draggedInterface.OnClickUp();
+            }
+            if (draggedObject != null && _draggedInterface != null)
+            {
+                OnDragEnd?.Invoke(this, _draggedInterface);
+                _draggedInterface.DragEnd();
+            }
+            draggedObject = null;
+            _draggedInterface = null;
+        }
+        
+
 
         // public void SetDraggable(IDraggable draggable)
         // {
