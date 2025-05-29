@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Kuantech.Core;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 
@@ -102,7 +103,6 @@ namespace Kuantech.Utils
             {
                 _startedClick = false;
                 _dragging = false;
-                if (Utils.Helpers.IsCursorOnUI()) return;
                 _startedClick = true;
                 _startPosition = GetCursorPosition(false);
                 _startTime = Time.time;
@@ -176,6 +176,7 @@ namespace Kuantech.Utils
             mousePosition.z = _dragCameraDistance;
             return GetMainCamera().ScreenToWorldPoint(mousePosition);
         }
+        
         /// <summary>
         /// Releases the dragging state
         /// </summary>
@@ -204,6 +205,21 @@ namespace Kuantech.Utils
         private RaycastHit2D _lastHit2D;
         protected virtual void CheckWorld()
         {
+            //Check graphics raycaster first
+            PointerEventData pointerData = new PointerEventData(EventSystem.current)
+            {
+                position = GetCursorPosition(false)
+            };
+            List<RaycastResult> results = new List<RaycastResult>();
+            GraphicsRaycaster.Raycast(pointerData, results);
+
+            if (results.Count > 0)
+            {
+                if (HandleUIRaycastHit(results)) return;
+            }   
+            
+            if (Utils.Helpers.IsCursorOnUI()) return;
+
             Vector3 screenPos = GetCursorPosition(false);
             Ray ray =GetMainCamera().ScreenPointToRay(screenPos);
 
@@ -229,6 +245,29 @@ namespace Kuantech.Utils
                 OnClickedEmpty?.Invoke();
             }
             OnClickedEmpty?.Invoke();
+        }
+
+        protected virtual bool HandleUIRaycastHit(List<RaycastResult> results)
+        {
+            foreach (var result in results)
+            {
+                var draggable = result.gameObject.GetComponent<IDraggable>();
+                if (draggable != null)
+                {
+                    _draggedInterface = draggable;
+                    _draggedInterface.OnClickDown();
+                    if (_draggedInterface.DragStart(result.worldPosition))
+                    {
+                        draggedObject = (draggable as MonoBehaviour).transform;
+                        _dragCameraDistance = Vector3.Distance(GetMainCamera().transform.position, draggedObject.position) + DragCameraDistanceOffset;
+                        _lastCursorWorldPosition = GetMouseWorldPosition();
+                        OnDragStart?.Invoke(this, _draggedInterface);
+                    }
+                    return true;
+                }
+            }
+
+            return false;
         }
         
         protected virtual void Handle2DRaycastHit(Collider2D hit, Vector3 point)

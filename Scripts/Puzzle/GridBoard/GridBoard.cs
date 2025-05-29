@@ -412,6 +412,36 @@ namespace Kuantech.Puzzle
                     return false;
                 }
             }
+            return true;
+        }
+        
+        /// <summary>
+        /// Checks if given coordinates are available
+        /// </summary>
+        /// <param name="tileCoordinates"></param>
+        /// <param name="anchorRow"></param>
+        /// <param name="anchorCol"></param>
+        /// <param name="anchorLayer"></param>
+        /// <returns></returns>
+        public bool AreCoordinatesAvailable(List<GridTileCoordinate> tileCoordinates, int anchorRow, int anchorCol, int anchorLayer)
+        {
+            if (tileCoordinates.IsNullOrEmpty())
+            {
+                //Single tile
+                return !IsTileOccupied(anchorRow, anchorCol, anchorLayer);
+            }
+            foreach (var localCoord in tileCoordinates)
+            {
+                int row = anchorRow + localCoord.Row;
+                int col = anchorCol + localCoord.Column;
+                int layer = anchorLayer + localCoord.Layer;
+                if (!IsCoordinateValid(row, col)) return false;
+
+                if (IsTileOccupied(row, col, layer))
+                {
+                    return false;
+                }
+            }
 
             return true;
         }
