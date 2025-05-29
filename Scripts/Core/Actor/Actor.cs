@@ -11,7 +11,8 @@ namespace Kuantech.Core
 {
     public enum ActorState
     {
-        Alive,
+        Default, //Initialized but not ready for action
+        Spawned,
         Dead,
         Despawned,
     }
@@ -35,7 +36,7 @@ namespace Kuantech.Core
         public bool InitializeOnStart;
 
         //Runtime
-        public ActorState CurrentActorState = ActorState.Alive;
+        public ActorState CurrentActorState = ActorState.Spawned;
         [NonSerialized] public bool Dirtied = false;
 
         //Events
@@ -79,6 +80,8 @@ namespace Kuantech.Core
             {
                 module.Initialize();
             }
+            ChangeActorState(ActorState.Default);
+
             if(actorSerializableData != null)
             {
                 //Load the data to the state
@@ -98,10 +101,17 @@ namespace Kuantech.Core
 
         public void Spawn()
         {
-            Initialize(); //If not initialized, initialize it
-            ChangeActorState(ActorState.Alive);
-            Reset();
+            if (!Initialized)
+            {
+                Initialize();
+            }
+            else
+            {
+                Reset();
+            }
+            ChangeActorState(ActorState.Spawned);
         }
+        
         public virtual void PostInitialize()
         {
             foreach (var module in ActorModulesList)
@@ -125,6 +135,7 @@ namespace Kuantech.Core
             {
                 module.Reset();
             }
+            ChangeActorState(ActorState.Default);
         }
 
         public virtual void Cleanup()
@@ -166,12 +177,13 @@ namespace Kuantech.Core
         /// <param name="state"></param>
         public void ChangeActorState(ActorState state)
         {
-            OnActorStateChanged?.Invoke(state);
+            ActorState oldState = CurrentActorState;
             CurrentActorState = state;
             foreach (var module in ActorModulesList)
             {
-                module.OnActorStateChanged(CurrentActorState);
+                module.OnActorStateChanged(oldState, state);
             }
+            OnActorStateChanged?.Invoke(state);
         }
         
         /// <summary>
@@ -189,7 +201,7 @@ namespace Kuantech.Core
         /// <returns></returns>
         public bool IsAlive()
         {
-            return CurrentActorState == ActorState.Alive;
+            return CurrentActorState == ActorState.Spawned;
         }
 
         #endregion

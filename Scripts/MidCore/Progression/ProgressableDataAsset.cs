@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Kuantech.Core;
 using Kuantech.Core.HyperCasual;
 using UnityEngine;
 
@@ -8,13 +9,8 @@ namespace Kuantech.Midcore
     /// A base class for progressables like skill upgrades, collectables, etc.
     /// </summary>
     [CreateAssetMenu(fileName = "ProgressableData", menuName = "Kuantech/MidCore/ProgressableData")]
-    public class ProgressableDataAsset : ScriptableObject
+    public class ProgressableDataAsset : MetadataAsset
     {
-        public string Id;
-        public string Name;
-        public Sprite Icon;
-        public Color Color;
-        
         [Header("Sub Upgrades")]
         public List<ProgressableDataAsset> SubUpgrades;
         

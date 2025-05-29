@@ -202,14 +202,14 @@ namespace Kuantech.Core
 
         #region Events
 
-        public override void OnActorStateChanged(ActorState newState)
+        public override void OnActorStateChanged(ActorState oldState, ActorState newState)
         {
-            base.OnActorStateChanged(newState);
+            base.OnActorStateChanged(oldState, newState);
             if (Animator == null) return;
             if (newState == ActorState.Dead)
             {
                 Animator.SetBool(Death, true);
-            }else if (newState == ActorState.Alive)
+            }else if (newState == ActorState.Spawned)
             {
                 Animator.SetBool(Death, false);
             }

@@ -184,7 +184,7 @@ namespace Kuantech.Core
                         Quaternion currentRot = Quaternion.Slerp(transform.rotation, targetRot,
                             Time.deltaTime * TargetFollowSlerpFactor);
                         transform.rotation = currentRot;
-                        _direction = currentRot * WorldForward;
+                        _direction = diffToTarget.normalized;
                     }
                 }
             }

@@ -290,7 +290,7 @@ namespace Kuantech.Utils
             Quaternion yawRot = Quaternion.AngleAxis(yaw, worldUp);
             Quaternion pitchRot = Quaternion.AngleAxis(pitch, pitchAxis);
 
-            return yawRot * pitchRot;
+            return yawRot ;
         }
         
         public static Vector3 ProjectVector(Vector3 vec, Vector3 to)

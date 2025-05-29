@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Kuantech.Core;
+using Kuantech.Core.Store;
 using UnityEngine;
 
 namespace Kuantech.TowerDefense
@@ -10,7 +11,8 @@ namespace Kuantech.TowerDefense
     {
         [Header("Data")] 
         public TowerDefenseLevelData LevelData;
-
+        public CurrencyAsset StartingCurrencyAsset;
+        
         [Header("Components")] 
         public List<TowerDefensePath> Paths;
         
@@ -56,6 +58,7 @@ namespace Kuantech.TowerDefense
             ToggleSpawners(false);
             //Start preparation phase
             PhaseSystem.ChangePhase(_preparationPhase);
+
         }
 
         protected override void Update()
@@ -75,6 +78,9 @@ namespace Kuantech.TowerDefense
         private void Reset()
         {
             TowerHealth = LevelData.TowerHealth;
+                        
+            //Set the starting gold
+            CurrencyManager.SetCurrency(StartingCurrencyAsset, LevelData.StartingGold);
         }
         #endregion
 

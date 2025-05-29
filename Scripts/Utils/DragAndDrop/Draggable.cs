@@ -74,9 +74,24 @@ namespace Kuantech.Utils
 
 
         #region Ghost Indicator
-        public GameObject GetGhostIndicator()
+        public void CheckProxyDraggable()
         {
             _usingExisting = false;
+            _ghostInstance = GetGhostInstance();
+            if (_ghostInstance == null) return;
+            Draggable proxyDraggableCandidate = _ghostInstance.GetComponent<Draggable>();
+            if (proxyDraggableCandidate != null)
+            {
+                OnProxyDraggableSet(proxyDraggableCandidate);
+            }
+        }
+        
+        /// <summary>
+        /// Instantiates the ghost indicator prefab if the prefab is not null
+        /// </summary>
+        /// <returns></returns>
+        public virtual GameObject GetGhostInstance()
+        {
             if (ExistingGhostIndicator != null)
             {
                 _usingExisting = true;
@@ -86,10 +101,16 @@ namespace Kuantech.Utils
             {
                 return PoolManager.GetObjectFromPool(GhostIndicatorPrefab);
             }
+
             return null;
         }
         
-        public void RemoveGhostIndicator()
+        protected virtual void OnProxyDraggableSet(Draggable draggable)
+        {
+            ProxyDraggable = draggable;
+        }
+        
+        public void RemoveGhostIndicator(bool succesfullDrop)
         {
             if (_ghostInstance == null) return;
             if (_usingExisting)
@@ -99,7 +120,16 @@ namespace Kuantech.Utils
                 _ghostInstance.transform.localScale = Vector3.one;
             }else
             {
-                PoolManager.PoolObject(_ghostInstance);
+                //Is this draggable used to spawn another draggable
+                if (succesfullDrop && ProxyDraggable != null)
+                {
+                    _ghostInstance = null;
+                    ProxyDraggable = null;
+                }
+                else
+                {
+                    PoolManager.PoolObject(_ghostInstance);
+                }
             }
         }
         #endregion
@@ -119,7 +149,9 @@ namespace Kuantech.Utils
             _parentBeforeDrag = transform.parent;
             _dragPositionOffset = dragHitPoint - transform.position;
             
-            _ghostInstance = GetGhostIndicator();
+            //Check Proxy Draggable
+            CheckProxyDraggable();
+       
             if (_ghostInstance != null)
             {
                 _ghostInstance.gameObject.SetActive(true);
@@ -134,8 +166,7 @@ namespace Kuantech.Utils
                 transform.SetParent(null);
                 transform.localScale = Vector3.one;
             }
-
-            ProxyDraggable = _ghostInstance.GetComponent<Draggable>();
+            
             
             if (ProxyDraggable != null)
             {
@@ -161,7 +192,6 @@ namespace Kuantech.Utils
 
         public virtual void Drag(Vector3 cursorPosition, Vector3 cursorPositionChange)
         {
-            //cursorPosition += GetDragPositionOffset();
             if(!CanBeDragged()) return;
             if (ProxyDraggable != null)
             {
@@ -176,6 +206,7 @@ namespace Kuantech.Utils
                 
                 SmoothDampPosition(point + planeNormal* OffsetDistance - _dragPositionOffset);
                 _lastDragPosition = point - _dragPositionOffset;
+                Debug.Log("Positioning to:" + transform.position);
             }
             else if(_receivedHitThisFrame && PositionWithGroundRay)
             {
@@ -212,22 +243,30 @@ namespace Kuantech.Utils
             OnDragEndEvent?.Invoke();
    
             _isDragged = false;
-            
+
+            Draggable draggableToCheck = ProxyDraggable != null ? ProxyDraggable : this;
+            bool sucessfulDrop = false;
             //Fail?
-            if(RequireDropZone && DropZone == null || DropZone != null && !DropZone.OnDrop(ProxyDraggable != null ? ProxyDraggable : this)) 
+            if(!CanBeDropped() || draggableToCheck.RequireDropZone && DropZone == null || DropZone != null && !DropZone.OnDrop(draggableToCheck))
             {
+                sucessfulDrop = false;
                 OnFailedDrop();
                 OnDrop?.Invoke(false);
                 ReturnToPreviousPosition();
-                return;
             }
-            OnSuccesfullDrop();
+            else
+            {
+                sucessfulDrop = true;
+                OnSuccesfullDrop();
+            }
             OnDrop?.Invoke(true);
             
             //Clear ghost indicator
-            RemoveGhostIndicator();
+            RemoveGhostIndicator(sucessfulDrop);
 
         }
+        
+        
         #endregion
 
         #region Queries
@@ -239,6 +278,15 @@ namespace Kuantech.Utils
         public virtual bool CanBeDragged()
         {
             return DragToggle;
+        }
+        
+        /// <summary>
+        /// A final check before drop
+        /// </summary>
+        /// <returns></returns>
+        public virtual bool CanBeDropped()
+        {
+            return true;
         }
         #endregion
 
@@ -410,8 +458,20 @@ namespace Kuantech.Utils
                 DropZone = DropZone,
                 DropPosition = _lastDragPosition
             });
+            if (ProxyDraggable != null)
+            {
+                ProxyDraggable.OnSuccesfullDropAsProxyDraggable();
+            }
         }
-
+        
+        /// <summary>
+        /// Called on proxy draggable in case of succesfull drop
+        /// </summary>
+        public virtual void OnSuccesfullDropAsProxyDraggable()
+        {
+            
+        }
+        
         public virtual void OnFailedDrop()
         {
             

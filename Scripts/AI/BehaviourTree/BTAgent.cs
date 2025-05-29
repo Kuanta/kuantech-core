@@ -18,6 +18,20 @@ namespace Kuantech.AI
             SetBehaviourTree(DefaultBtBlueprint.CreateBehaviourTree());
         }
 
+        public override void OnActorStateChanged(ActorState oldState, ActorState newState)
+        {
+            if (oldState == ActorState.Spawned && newState != ActorState.Spawned)
+            {
+                StopAgent();
+            }
+            else if (oldState != ActorState.Spawned && newState == ActorState.Spawned)
+            {
+                StartAgent();
+            }
+        }
+        
+        #region Behaviour Tree
+
         public void SetBehaviourTree(BehaviourTree bt)
         {
             bt.VariableTable ??= new BTVariableTable();
@@ -62,6 +76,9 @@ namespace Kuantech.AI
             Bt.VariableTable.RegisterVariable(key, variable);
         }
 
+
+        #endregion
+       
         public override void Reset()
         {
             StopAgent();

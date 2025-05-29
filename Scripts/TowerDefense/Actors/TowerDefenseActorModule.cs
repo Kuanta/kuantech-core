@@ -19,8 +19,7 @@ namespace Kuantech.TowerDefense
         [SerializeField] private AttributeAsset SpeedAttribute;
         [SerializeField] private AttributeAsset AttackSpeedAttribute;
         [SerializeField] private AttributeAsset DamageAttribute;
-
-        [NonSerialized] public bool CanAct; //Checks if the actor can act
+        
         
         private StatsModule _statsModule;
         private CombatModule _combatModule;
@@ -44,15 +43,19 @@ namespace Kuantech.TowerDefense
             LateralOffsetMag = Mathf.Abs(LateralOffsetMag);
             PathFollower.FollowPath(path, Random.Range(-1*LateralOffsetMag, LateralOffsetMag));
         }
-        
+
+        public bool CanAct()
+        {
+            return Actor.CurrentActorState == ActorState.Spawned;
+        }
         private void OnReachedEnd()
         {
             Actor.Despawn();
         }
 
-        public override void OnActorStateChanged(ActorState newState)
+        public override void OnActorStateChanged(ActorState oldState, ActorState newState)
         {
-            if(newState == ActorState.Dead || newState == ActorState.Despawned)
+            if(newState != ActorState.Spawned)
             {
                 PathFollower.Stop();
             }
@@ -73,42 +76,6 @@ namespace Kuantech.TowerDefense
         public Actor GetAllyTarget()
         {
             return TargetDetector.GetAllyTarget();
-        }
-
-        public bool CanAttack()
-        {
-            float elapsedTime = Time.time - _lastActionTime;
-            float attackSpeed = _statsModule.GetAttributeValue(AttackSpeedAttribute);
-            if(elapsedTime < attackSpeed) return false;
-            return true;
-        }
-
-        public void AttackEnemy()
-        {
-            Actor enemy = GetEnemyTarget();
-            CombatModule combatModule = Actor.GetModule<CombatModule>();
-            if (combatModule == null) return;
-            combatModule.AttackToTarget(enemy);
-        }
-        
-        #endregion
-        #region Combat
-
-        public override void ModuleUpdate()
-        {
-            base.ModuleUpdate();
-            
-            
-        }
-
-        private void AttackTarget()
-        {
-            TargetDetector.GetEnemyTarget();
-        }
-
-        public float GetDamage()
-        {
-            return _statsModule.GetAttributeValue(DamageAttribute);
         }
         #endregion
     }

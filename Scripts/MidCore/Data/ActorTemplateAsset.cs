@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Kuantech.Core;
+using Kuantech.Core.HyperCasual;
 using Kuantech.Rpg;
 using Kuantech.Utils;
 using UnityEngine;
@@ -11,11 +12,8 @@ namespace Kuantech.Midcore
     /// Defines a template for an actor.
     /// </summary>
     [CreateAssetMenu(fileName = "ActorTemplate", menuName = "Kuantech/Midcore/Actor Template")]
-    public class ActorTemplateAsset : ScriptableObject
+    public class ActorTemplateAsset : MetadataAsset
     {
-        [Header("Data")]
-        public ProgressableDataAsset ProgressableDataAsset;
-        
         [Header("Actor Prefab")] 
         public Actor ActorPrefab;
         
@@ -24,7 +22,13 @@ namespace Kuantech.Midcore
 
         [Header("Visuals")]
         public ActorVisual ActorVisualPrefab;
-
+        
+        [Header("Progressable Data")]
+        public ProgressableDataAsset ProgressableDataAsset;
+        
+        [Header("Price")] 
+        public BuyableInfo BuyableInfo;
+        
         public Actor CreateActor()
         {
             Actor actor = PoolManager.GetObjectFromPool(ActorPrefab.gameObject).GetComponent<Actor>();
@@ -51,8 +55,10 @@ namespace Kuantech.Midcore
             }
 
             actor.Initialize();
-            actor.VisualHandler.SetActorVisual(PoolManager.GetObjectFromPool(ActorVisualPrefab.gameObject).GetComponent<ActorVisual>());
-            
+            if (actor.VisualHandler != null)
+            {
+                actor.VisualHandler.SetActorVisual(PoolManager.GetObjectFromPool(ActorVisualPrefab.gameObject).GetComponent<ActorVisual>());
+            }
             return actor;
         }
     }
