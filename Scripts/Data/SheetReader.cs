@@ -5,16 +5,18 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
-using Google.Apis.Auth.OAuth2;
-using Google.Apis.Services;
-using Google.Apis.Sheets.v4;
-using Google.Apis.Sheets.v4.Data;
-using Google.Apis.Util.Store;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Networking;
 
+#if USE_GOOGLE_SHEETS
+using Google.Apis.Auth.OAuth2;
+using Google.Apis.Services;
+using Google.Apis.Sheets.v4;
+using Google.Apis.Sheets.v4.Data;
+using Google.Apis.Util.Store;
+#endif
 
 namespace Kuantech.Data
 {
@@ -117,11 +119,13 @@ namespace Kuantech.Data
 
         public async UniTask ClearCells(string SheetRange)
         {
+            #if USE_GOOGLE_SHEETS
             if (service == null) return;
             var request = service.Spreadsheets.Values.Clear(new ClearValuesRequest(), SheetId, SheetRange);
             await request.ExecuteAsync();
+            #endif
         }
-        
+#if USE_GOOGLE_SHEETS
         #region Auth
         private SheetsService service;
         static string[] Scopes = { SheetsService.Scope.Spreadsheets };
@@ -204,7 +208,7 @@ namespace Kuantech.Data
         }
 
         #endregion
-
+#endif
         #region Common Utilities
 
         public static float ReadFloatData(JToken row, int columnIndex, float defaultValue=0)
