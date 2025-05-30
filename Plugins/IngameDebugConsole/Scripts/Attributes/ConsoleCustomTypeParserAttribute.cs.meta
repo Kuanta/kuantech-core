@@ -1,8 +1,7 @@
 fileFormatVersion: 2
-guid: dd3b7385882055d4a8c2b91deb6b2470
-timeCreated: 1510076185
-licenseType: Store
+guid: b014aa072d9631848babd5dafb325d3d
 MonoImporter:
+  externalObjects: {}
   serializedVersion: 2
   defaultReferences: []
   executionOrder: 0
@@ -15,5 +14,5 @@ AssetOrigin:
   productId: 68068
   packageName: In-game Debug Console
   packageVersion: 1.8.1
-  assetPath: Assets/Kuantech/Core/Plugins/IngameDebugConsole/Android/DebugLogLogcatListener.cs
+  assetPath: Assets/Kuantech/Core/Plugins/IngameDebugConsole/Scripts/Attributes/ConsoleCustomTypeParserAttribute.cs
   uploadId: 757793

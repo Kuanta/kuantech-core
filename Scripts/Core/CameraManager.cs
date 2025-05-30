@@ -1,6 +1,6 @@
 using System;
 using System.Collections;
-using Cinemachine;
+using Unity.Cinemachine;
 using Kuantech.Core.Camera;
 using Kuantech.Utils;
 using UnityEngine;

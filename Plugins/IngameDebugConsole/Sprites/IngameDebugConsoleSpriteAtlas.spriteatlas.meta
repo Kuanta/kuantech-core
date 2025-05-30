@@ -1,8 +1,8 @@
 fileFormatVersion: 2
-guid: 391be5df5ef62f345bb76a1051c04da7
-timeCreated: 1465919887
-licenseType: Store
+guid: d829dcfc225f56440a2b10d9ac318aea
 NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 4343727234628468602
   userData: 
   assetBundleName: 
   assetBundleVariant: 
@@ -11,5 +11,5 @@ AssetOrigin:
   productId: 68068
   packageName: In-game Debug Console
   packageVersion: 1.8.1
-  assetPath: Assets/Kuantech/Core/Plugins/IngameDebugConsole/Prefabs/DebugLogItem.prefab
+  assetPath: Assets/Kuantech/Core/Plugins/IngameDebugConsole/Sprites/IngameDebugConsoleSpriteAtlas.spriteatlas
   uploadId: 757793

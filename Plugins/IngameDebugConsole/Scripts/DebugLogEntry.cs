@@ -1,26 +1,27 @@
-﻿//#define IDG_OMIT_ELAPSED_TIME
-//#define IDG_OMIT_FRAMECOUNT
-
+﻿using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using UnityEngine;
 
 // Container for a simple debug entry
 namespace IngameDebugConsole
 {
-	public class DebugLogEntry : System.IEquatable<DebugLogEntry>
+	public class DebugLogEntry
 	{
 		private const int HASH_NOT_CALCULATED = -623218;
 
 		public string logString;
 		public string stackTrace;
-
 		private string completeLog;
 
 		// Sprite to show with this entry
-		public Sprite logTypeSpriteRepresentation;
+		public LogType logType;
 
 		// Collapsed count
 		public int count;
+
+		// Index of this entry among all collapsed entries
+		public int collapsedIndex;
 
 		private int hashValue;
 
@@ -34,17 +35,18 @@ namespace IngameDebugConsole
 			hashValue = HASH_NOT_CALCULATED;
 		}
 
-		// Check if two entries have the same origin
-		public bool Equals( DebugLogEntry other )
+		public void Clear()
 		{
-			return this.logString == other.logString && this.stackTrace == other.stackTrace;
+			logString = null;
+			stackTrace = null;
+			completeLog = null;
 		}
 
 		// Checks if logString or stackTrace contains the search term
 		public bool MatchesSearchTerm( string searchTerm )
 		{
-			return ( logString != null && logString.IndexOf( searchTerm, System.StringComparison.OrdinalIgnoreCase ) >= 0 ) ||
-				( stackTrace != null && stackTrace.IndexOf( searchTerm, System.StringComparison.OrdinalIgnoreCase ) >= 0 );
+			return ( logString != null && DebugLogConsole.caseInsensitiveComparer.IndexOf( logString, searchTerm, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace ) >= 0 ) ||
+				( stackTrace != null && DebugLogConsole.caseInsensitiveComparer.IndexOf( stackTrace, searchTerm, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace ) >= 0 );
 		}
 
 		// Return a string containing complete information about this debug entry
@@ -57,7 +59,7 @@ namespace IngameDebugConsole
 		}
 
 		// Credit: https://stackoverflow.com/a/19250516/2373034
-		public override int GetHashCode()
+		public int GetContentHashCode()
 		{
 			if( hashValue == HASH_NOT_CALCULATED )
 			{
@@ -89,8 +91,8 @@ namespace IngameDebugConsole
 		// Checks if logString or stackTrace contains the search term
 		public bool MatchesSearchTerm( string searchTerm )
 		{
-			return ( logString != null && logString.IndexOf( searchTerm, System.StringComparison.OrdinalIgnoreCase ) >= 0 ) ||
-				( stackTrace != null && stackTrace.IndexOf( searchTerm, System.StringComparison.OrdinalIgnoreCase ) >= 0 );
+			return ( logString != null && DebugLogConsole.caseInsensitiveComparer.IndexOf( logString, searchTerm, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace ) >= 0 ) ||
+				( stackTrace != null && DebugLogConsole.caseInsensitiveComparer.IndexOf( stackTrace, searchTerm, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace ) >= 0 );
 		}
 	}
 
@@ -104,15 +106,22 @@ namespace IngameDebugConsole
 		public readonly int frameCount;
 #endif
 
-		public DebugLogEntryTimestamp( System.TimeSpan localTimeUtcOffset )
+#if !IDG_OMIT_ELAPSED_TIME && !IDG_OMIT_FRAMECOUNT
+		public DebugLogEntryTimestamp( System.DateTime dateTime, float elapsedSeconds, int frameCount )
+#elif !IDG_OMIT_ELAPSED_TIME
+		public DebugLogEntryTimestamp( System.DateTime dateTime, float elapsedSeconds )
+#elif !IDG_OMIT_FRAMECOUNT
+		public DebugLogEntryTimestamp( System.DateTime dateTime, int frameCount )
+#else
+		public DebugLogEntryTimestamp( System.DateTime dateTime )
+#endif
 		{
-			// It is 10 times faster to cache local time's offset from UtcNow and add it to UtcNow to get local time at any time
-			dateTime = System.DateTime.UtcNow + localTimeUtcOffset;
+			this.dateTime = dateTime;
 #if !IDG_OMIT_ELAPSED_TIME
-			elapsedSeconds = Time.realtimeSinceStartup;
+			this.elapsedSeconds = elapsedSeconds;
 #endif
 #if !IDG_OMIT_FRAMECOUNT
-			frameCount = Time.frameCount;
+			this.frameCount = frameCount;
 #endif
 		}
 
@@ -160,6 +169,19 @@ namespace IngameDebugConsole
 			// Append frame count in format: [#Frame]
 			sb.Append( "[#" ).Append( frameCount ).Append( "]" );
 #endif
+		}
+	}
+
+	public class DebugLogEntryContentEqualityComparer : EqualityComparer<DebugLogEntry>
+	{
+		public override bool Equals( DebugLogEntry x, DebugLogEntry y )
+		{
+			return x.logString == y.logString && x.stackTrace == y.stackTrace;
+		}
+
+		public override int GetHashCode( DebugLogEntry obj )
+		{
+			return obj.GetContentHashCode();
 		}
 	}
 }

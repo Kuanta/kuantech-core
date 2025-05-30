@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Cinemachine;
+using Unity.Cinemachine;
 using Kuantech.ArcadeIdle.UI;
 using Kuantech.Core;
 using Kuantech.HyperCasual;
