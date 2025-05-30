@@ -160,6 +160,12 @@ namespace Kuantech.Core
                 return;
             }
 
+            if (_targeted && !Target.gameObject.activeInHierarchy)
+            {
+                Despawn();
+                return;
+            }
+
             if (_targeted)
             {
                 Vector3 diffToTarget = Target.transform.position - transform.position;

@@ -7,7 +7,6 @@ namespace Kuantech.TowerDefense
     public class ActorSummoner : LevelElement
     {
         public int ActorFactionId = 0;
-        public ActorTemplateAsset ActorTemplateAsset; //TEMPORARY
         public TowerDefensePath PathToSpawn;
         public Transform SpawnPoint; // The point where the actor will be spawned
         
@@ -15,33 +14,18 @@ namespace Kuantech.TowerDefense
         public bool ToggledOn = true; // Whether the summoner is active or not
         //Runtime
         private float _lastSpawnedTime;
-        
-        public virtual ActorTemplateAsset GetNextActorTemplate()
-        {
-            // This method should be overridden in derived classes to provide the next actor template.
-            return ActorTemplateAsset;
-        }
 
         public virtual TowerDefensePath GetPathToSpawn()
         {
             return PathToSpawn;
         }
-        
-        
-        private void Update()
-        {
-            SpawnActor();
-        }
-        
+
         /// <summary>
         /// Spawns the actor
         /// </summary>
-        public virtual void SpawnActor()
+        public virtual Actor SpawnActor(ActorTemplateAsset actorTemplate)
         {
-            if (!CanSpawnActor()) return;
-            
-            ActorTemplateAsset actorTemplate = GetNextActorTemplate();
-            if (actorTemplate == null) return;
+            if (actorTemplate == null) return null;
             Actor createdActor = actorTemplate.CreateActor();
             createdActor.Spawn();
             createdActor.FactionId = ActorFactionId;
@@ -51,7 +35,7 @@ namespace Kuantech.TowerDefense
             {
                 Debug.LogWarning("Tower defense actor module is null for actor spawned from spawner");
                 createdActor.Despawn();
-                return;
+                return null;
             }
 
             TowerDefensePath path = GetPathToSpawn();
@@ -59,29 +43,15 @@ namespace Kuantech.TowerDefense
             {
                 Debug.LogWarning("Couldn't get tower defense path");
                 createdActor.Despawn();
-                return;
+                return null;
             }
             path.SetActorOnPath(createdActor);
             _lastSpawnedTime = Time.time;
             
             //Add to spawned actors
             ParentLevel.AddSpawnable(createdActor);
+            return createdActor;
         }
-        
-        /// <summary>
-        /// Checks whether the actor can be spawned based on cooldown and other conditions.
-        /// </summary>
-        /// <returns></returns>
-        public virtual bool CanSpawnActor()
-        {
-            // Check if enough time has passed since the last spawn    
-            if (!ToggledOn || ParentLevel == null || ParentLevel.CurrentState != LevelState.Playing) return false;
-            if(Time.time - _lastSpawnedTime < Cooldown)
-            {
-                return false;
-            }
 
-            return true;
-        }
     }
 }

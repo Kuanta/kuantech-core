@@ -99,12 +99,13 @@ namespace Kuantech.Core.UI
         public static UIMenu GetTopMenu()
         {
             var context = GetContext<UIManager>();
-            if (context == null) return null;
+            if (context == null || context._menuStack.IsNullOrEmpty()) return null;
             return context._menuStack.Peek();
         }
         
         public void PushToStack(UIMenu menu, bool callOpen = true)
         {
+            if (menu == null) return;
             if (_menuStack.Count > 0 && _menuStack.Peek() == menu)
                 return;
 

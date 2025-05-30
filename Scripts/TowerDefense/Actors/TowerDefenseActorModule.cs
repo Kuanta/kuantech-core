@@ -23,6 +23,7 @@ namespace Kuantech.TowerDefense
         private StatsModule _statsModule;
         private CombatModule _combatModule;
         private float _lastActionTime;
+        private TowerDefenseLevel _tdLevel;
         
         public override void Initialize()
         {
@@ -30,7 +31,7 @@ namespace Kuantech.TowerDefense
             base.Initialize();
             PathFollower.OnReachedPathEnd += OnReachedEnd;
         }
-        
+
         public void SetOnPath(Path path)
         {
             StatsModule sm  = Actor.GetModule<StatsModule>();
@@ -63,12 +64,25 @@ namespace Kuantech.TowerDefense
 
         public override void OnActorStateChanged(ActorState oldState, ActorState newState)
         {
+            if (newState == ActorState.Spawned)
+            {
+                _tdLevel = LevelManager.GetCurrentLevel() as TowerDefenseLevel;
+            }
             if(newState != ActorState.Spawned)
             {
                 PathFollower.Stop();
             }
-            
+            if (newState == ActorState.Dead && _tdLevel != null)
+            {
+                _tdLevel.OnActorDeath(Actor);
+            }
+
+            if (newState == ActorState.Despawned && _tdLevel != null)
+            {
+                _tdLevel.OnActorDespawn(Actor);
+            }
         }
+        
         #region Targeting
 
         public void DetectTargets()

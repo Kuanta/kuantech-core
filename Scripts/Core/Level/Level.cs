@@ -240,7 +240,7 @@ namespace Kuantech.Core
 
         #region Spawnables
 
-        public void AddSpawnable(ISpawnable spawnable)
+        public virtual void AddSpawnable(ISpawnable spawnable)
         {
             SpawnedActors ??= new HashSet<ISpawnable>();
             SpawnedActors.Add(spawnable);
