@@ -29,13 +29,23 @@ namespace Kuantech.Core
     
     public class Level : MonoBehaviour
     {
+                
+        [Header("Components")] 
+        public bool AutoDetectLevelElements = false;
+        public List<LevelElement> LevelElements;
+        
         //Runtime
         public LevelPhaseSystem PhaseSystem;
         [NonSerialized] public int LevelIndex;
-        public int LevelNumber;
-        public int PowerLevel;
+        [NonSerialized] public int LevelNumber;
+        [NonSerialized] public int PowerLevel;
         private LevelState _levelState;
+        public LevelUI LevelUI;
         
+        //Spawnables
+        public HashSet<ISpawnable> SpawnedActors = new HashSet<ISpawnable>();
+        
+        //Level State
         public LevelState CurrentState
         {
             get {return _levelState;}
@@ -43,16 +53,10 @@ namespace Kuantech.Core
                _levelState = value;
             }
         }
-
+        
+        //Events
         public Action<LevelStateChangeData> OnStateChange; //An event bound to level.
         public Action<LevelPhaseChangeData> OnPhaseChange;
-        
-        [Header("Components")] 
-        public bool AutoDetectLevelElements = false;
-        public List<LevelElement> LevelElements;
-        
-        //Runtime
-        public LevelUI LevelUI;
         
         #region Level Lifecycle
         //A simple relayer to LevelManager
@@ -160,13 +164,49 @@ namespace Kuantech.Core
                 component.OnFailLevel();
             }
         }
-
+        
+        /// <summary>
+        /// Restarts the level
+        /// </summary>
         public virtual void RestartLevel()
         {
             ResetLevelState();
             StartLevel();
         }
-
+        
+        //Resets all the states of the level
+        public virtual void ResetLevelState()
+        {
+            //Should this be before?
+            foreach (var component in LevelElements)
+            {
+                component.Reset();
+            }
+            Helpers.ResetAttributes(this);
+            ClearLevel();
+        }
+        
+        /// <summary>
+        /// Clears the level
+        /// </summary>
+        public virtual void ClearLevel()
+        {
+            //Clear Spawnables
+            foreach (var spawnable in SpawnedActors)
+            {
+                if (spawnable == null) continue;
+                spawnable.Despawn(0.0f);
+            }
+            SpawnedActors.Clear();
+        }
+        
+        /// <summary>
+        /// Destroys the level
+        /// </summary>
+        public virtual void DestroyLevel()
+        {
+            Destroy(gameObject);
+        }
         #endregion
 
 
@@ -191,28 +231,19 @@ namespace Kuantech.Core
         }
         #endregion
         
-        //Resets all the states of the level
-        public virtual void ResetLevelState()
-        {
-            //Should this be before?
-            foreach (var component in LevelElements)
-            {
-                component.Reset();
-            }
-            Helpers.ResetAttributes(this);
-            ClearLevel();
-        }
-        public virtual void ClearLevel()
-        {
 
-        }
-        public virtual void DestroyLevel()
-        {
-            Destroy(gameObject);
-        }
         public virtual float GetCurrentScore()
         {
             return 0f;
+        }
+        #endregion
+
+        #region Spawnables
+
+        public void AddSpawnable(ISpawnable spawnable)
+        {
+            SpawnedActors ??= new HashSet<ISpawnable>();
+            SpawnedActors.Add(spawnable);
         }
         #endregion
     }

@@ -11,13 +11,13 @@ namespace Kuantech.Core
 {
     public enum ActorState
     {
-        Default, //Initialized but not ready for action
+        Inactive, //Initialized but not ready for action
         Spawned,
         Dead,
         Despawned,
     }
     
-    public class Actor : MonoBehaviour, IHittable
+    public class Actor : MonoBehaviour, IHittable, ISpawnable
     {
         [Header("Identifier")]
         public string Id;
@@ -80,7 +80,7 @@ namespace Kuantech.Core
             {
                 module.Initialize();
             }
-            ChangeActorState(ActorState.Default);
+            ChangeActorState(ActorState.Inactive);
 
             if(actorSerializableData != null)
             {
@@ -111,7 +111,7 @@ namespace Kuantech.Core
             }
             ChangeActorState(ActorState.Spawned);
         }
-        
+
         public virtual void PostInitialize()
         {
             foreach (var module in ActorModulesList)
@@ -135,7 +135,7 @@ namespace Kuantech.Core
             {
                 module.Reset();
             }
-            ChangeActorState(ActorState.Default);
+            ChangeActorState(ActorState.Inactive);
         }
 
         public virtual void Cleanup()
@@ -151,7 +151,10 @@ namespace Kuantech.Core
         /// </summary>
         public virtual void Despawn(float delay=0f)
         {
-            if (_despawnCoroutine != null) return;
+            if (_despawnCoroutine != null)
+            {
+                StopCoroutine(_despawnCoroutine);
+            }
             _despawnCoroutine = _DespawnRoutine(delay);
             StartCoroutine(_despawnCoroutine);
         }
@@ -163,7 +166,10 @@ namespace Kuantech.Core
             Cleanup();
             ChangeActorState(ActorState.Despawned);
             OnDespawnedEvent?.Invoke(this);
-            VisualHandler.ClearCurrentVisual();
+            if (VisualHandler != null)
+            {
+                VisualHandler.ClearCurrentVisual();
+            }
             PoolManager.PoolObject(gameObject);
             _despawnCoroutine = null;
         }

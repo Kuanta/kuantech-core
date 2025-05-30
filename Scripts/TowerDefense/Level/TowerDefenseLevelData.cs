@@ -5,7 +5,7 @@ namespace Kuantech.TowerDefense
     [Serializable]
     public class TowerDefenseLevelData
     {
-        public float TowerHealth { get; set; }
+        public float TowerHealth;
         public int StartingGold;
     }
 }

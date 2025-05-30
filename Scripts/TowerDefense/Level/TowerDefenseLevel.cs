@@ -21,14 +21,15 @@ namespace Kuantech.TowerDefense
         private WavePhase _wavePhase;
         
         //Runtime
+        [NonSerialized] private TowerDefenseLevelUI _towerDefenseLevelUI;
         [NonSerialized] public float TowerHealth;
         public List<ActorSummoner> ActorSummoners = new List<ActorSummoner>();
         
         public override void SetupLevel()
         {
-            Debug.Log("Setting Up Level");
             TowerHealth = LevelData.TowerHealth;
             base.SetupLevel();
+            _towerDefenseLevelUI =LevelUI as TowerDefenseLevelUI;
             ActorSummoners = GetComponentsInChildren<ActorSummoner>().ToList();
             Paths = GetComponentsInChildren<TowerDefensePath>().ToList();
             foreach (var path in Paths)
@@ -72,12 +73,13 @@ namespace Kuantech.TowerDefense
         
         public override void ResetLevelState()
         {
+            base.ResetLevelState();
             Reset();
         }
 
         private void Reset()
         {
-            TowerHealth = LevelData.TowerHealth;
+            SetTowerHealth(GetMaxTowerHealth());
                         
             //Set the starting gold
             CurrencyManager.SetCurrency(StartingCurrencyAsset, LevelData.StartingGold);
@@ -101,18 +103,68 @@ namespace Kuantech.TowerDefense
         #endregion
         
         #region Win or Lose
+
+        public void ReceiveTowerDamage(int damage)
+        {
+            SetTowerHealth(GetTowerHealth()-damage);
+            if (GetTowerHealth() <= 0)
+            {
+                FailLevel();
+            }
+        }
+
+        public void SetTowerHealth(float towerHealth)
+        {
+            TowerHealth = towerHealth;
+            if (_towerDefenseLevelUI != null)
+            {
+                _towerDefenseLevelUI.SetHealthText(GetTowerHealth(), GetMaxTowerHealth());
+            }
+        }
+    
+        public float GetMaxTowerHealth()
+        {
+            return LevelData.TowerHealth;
+        }
+        
+        public float GetTowerHealth()
+        {
+            return TowerHealth;
+        }
+        
         public void CheckFailCondition()
         {
-            if(TowerHealth <= 0) FailLevel();
+            if(GetTowerHealth() <= 0) FailLevel();
+        }
+
+        public override void FailLevel()
+        {
+            base.FailLevel();
+            
+            //Halt Tower defense level elements
+            foreach (var spawnable in SpawnedActors)
+            {
+                if(spawnable == null) continue;
+                if (spawnable is Actor actor)
+                {
+                    actor.ChangeActorState(ActorState.Inactive);
+                }
+            }
         }
         #endregion
-
-
 
         #region Events
         public void OnPreperationPhaseEnd()
         {
             PhaseSystem.ChangePhase(_wavePhase);
+        }
+        
+        public void OnActorReachedEnd(Actor actor)
+        {
+            if (actor.FactionId > 0)
+            {
+                ReceiveTowerDamage(1);
+            }
         }
         #endregion
     }

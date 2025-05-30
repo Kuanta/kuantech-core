@@ -63,6 +63,9 @@ namespace Kuantech.TowerDefense
             }
             path.SetActorOnPath(createdActor);
             _lastSpawnedTime = Time.time;
+            
+            //Add to spawned actors
+            ParentLevel.AddSpawnable(createdActor);
         }
         
         /// <summary>

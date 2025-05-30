@@ -30,18 +30,7 @@ namespace Kuantech.Rpg
 
         public void SetHealth(float current, float max)
         {
-            if (HideOnFullHealth && current >= max && HideParent != null)
-            {
-                FrontBar.value = 1;
-                BackBar.value = 1;
-                ToggleVisual(false);
-                return;
-            }
-            
-            ToggleVisual(true);
-            
             current = Mathf.Clamp(current, 0, max);
-            
             if (CurrentHealthText != null)
             {
                 CurrentHealthText.text = current.Stringfy();
@@ -51,22 +40,34 @@ namespace Kuantech.Rpg
             {
                 MaxHealthText.text = current.Stringfy();
             }
-            
-            _targetFill = Mathf.Clamp01(current / max);
-            if (FrontBar != null)
-                FrontBar.value = _targetFill;
 
-            if (BackBar == null) return;
+            //Handle Bars
+            if (FrontBar != null && BackBar != null)
+            {
+                if (HideOnFullHealth && current >= max && HideParent != null)
+                {
+                    FrontBar.value = 1;
+                    BackBar.value = 1;
+                    ToggleVisual(false);
+                    return;
+                }
+                _targetFill = Mathf.Clamp01(current / max);
+                if (FrontBar != null)
+                    FrontBar.value = _targetFill;
+
+                if (BackBar == null) return;
             
-            //If back bar is already smaller, set it instantly
-            if (BackBar.value <= _targetFill)
-            {
-                BackBar.value = _targetFill;
-            }
-            else
-            {
-                _backBarDelayTimer = BackBarDelay;
-                _backAnimInProgress = true;
+                //If back bar is already smaller, set it instantly
+                if (BackBar.value <= _targetFill)
+                {
+                    BackBar.value = _targetFill;
+                }
+                else
+                {
+                    _backBarDelayTimer = BackBarDelay;
+                    _backAnimInProgress = true;
+                }
+                ToggleVisual(true);
             }
         }
 

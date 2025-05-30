@@ -1,5 +1,4 @@
-﻿using System;
-using Kuantech.AI.Pathfinding;
+﻿using Kuantech.AI.Pathfinding;
 using Kuantech.Core;
 using Kuantech.Core.Combat;
 using Kuantech.Rpg;
@@ -50,7 +49,16 @@ namespace Kuantech.TowerDefense
         }
         private void OnReachedEnd()
         {
+            //Get td level
+            TowerDefenseLevel tdLevel = LevelManager.GetCurrentLevel() as TowerDefenseLevel;
+            if (tdLevel == null)
+            {
+                Debug.LogError("Tower defense level is null");
+                return;
+            }
+            tdLevel.OnActorReachedEnd(Actor);
             Actor.Despawn();
+
         }
 
         public override void OnActorStateChanged(ActorState oldState, ActorState newState)

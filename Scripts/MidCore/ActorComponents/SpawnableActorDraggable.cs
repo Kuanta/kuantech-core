@@ -19,6 +19,11 @@ namespace Kuantech.Midcore
             }
 
             Actor.Spawn();
+            
+            //Register to level
+            Level level = LevelManager.GetCurrentLevel();
+            if (level == null) return;
+            level.AddSpawnable(Actor);
         }
     }
 }
