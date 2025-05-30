@@ -3,9 +3,8 @@ using System.Collections;
 using Kuantech.Core;
 using Kuantech.Core.HyperCasual.UI;
 using Kuantech.Core.UI;
-using Kuantech.HyperCasual.UI;
-using Kuantech.UI;
 using UnityEngine;
+using LevelCompletePanel = Kuantech.Core.UI.LevelCompletePanel;
 
 namespace Kuantech.Puzzle.UI
 {
@@ -22,8 +21,8 @@ namespace Kuantech.Puzzle.UI
         [Header("Panels")] 
         public GameObject HUD;
         public WinConditionIndicatorPanel WinConditionIndicatorPanel;
-        public PuzzleCompletePanel CompletePanel;
-        public PuzzleFailPanel FailedPanel;
+        public LevelCompletePanel CompletePanel;
+        public LevelFailPanel FailedPanel;
         public BoostersHUD BoostersHUD;
         public float CompletePanelShowDelay = 0f;
         public float FailedPanelShowDelay = 0f;
@@ -40,8 +39,8 @@ namespace Kuantech.Puzzle.UI
 
         public virtual void Initialize()
         {
-            if(CompletePanel != null) CompletePanel.Initialize(this);
-            if(FailedPanel != null) FailedPanel.Initialize(this);
+            if(CompletePanel != null) CompletePanel.Initialize();
+            if(FailedPanel != null) FailedPanel.Initialize();
 
             if (RestartConfirmPanel != null)
             {

@@ -2,9 +2,8 @@
 using Kuantech.Core;
 using Kuantech.Core.HyperCasual.UI;
 using Kuantech.Core.UI;
-using Kuantech.HyperCasual.UI;
-using Kuantech.UI;
 using UnityEngine;
+using LevelCompletePanel = Kuantech.Core.UI.LevelCompletePanel;
 
 namespace Kuantech.HyperCasual.Runner.UI
 {

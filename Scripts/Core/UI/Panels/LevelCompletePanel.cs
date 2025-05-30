@@ -1,18 +1,14 @@
-using Kuantech.Core;
 using Kuantech.Core.FX;
-using Kuantech.Core.UI;
-using Kuantech.UI;
 using UnityEngine.UI;
 
-namespace Kuantech.Puzzle.UI
+namespace Kuantech.Core.UI
 {
-    public class PuzzleCompletePanel : UIMenu
+    public class LevelCompletePanel : UIMenu
     {
-        public PuzzleLevelUI ParentUI;
         public Button ContinueButton;
         public Effect VictoryEffect;
 
-        public void Initialize(PuzzleLevelUI parentUI)
+        public void Initialize()
         {
             ContinueButton.onClick.AddListener(()=>{
                 LevelManager.GetContext<LevelManager>().CompleteLevel();

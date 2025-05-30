@@ -1,25 +1,25 @@
-using Kuantech.Core;
+﻿using Kuantech.Core;
 using Kuantech.Core.FX;
 using Kuantech.Core.UI;
-using Kuantech.UI;
 using TMPro;
 using UnityEngine.UI;
 
-namespace Kuantech.Puzzle.UI
+namespace Kuantech.Midcore.UI
 {
-    public class PuzzleFailPanel : UIMenu
+    public class FailPanel : UIElement
     {
         public TMP_Text FailMessageText;
         public Button RestartButton;
         public Effect LoseEffect;
-        public virtual void Initialize(PuzzleLevelUI parentUI)
+        
+        public virtual void Initialize(LevelUI parentUI)
         {
             RestartButton.onClick.AddListener(() =>
             {
                 LevelManager.GetContext<LevelManager>().RestartLevel();
             });
         }
-
+        
         public override void Open()
         {
             base.Open();
@@ -27,12 +27,6 @@ namespace Kuantech.Puzzle.UI
             {
                 LoseEffect.Play();
             }
-        }
-
-        public void SetFailText(string failText)
-        {
-            if (FailMessageText == null) return;
-            FailMessageText.text = failText;
         }
     }
 }

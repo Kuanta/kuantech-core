@@ -28,6 +28,11 @@ namespace Kuantech.Core.UI
                 _menusById[menu.MenuId] = menu;
             }
             _menuStack = new Stack<UIMenu>();
+
+            if (LevelUI != null)
+            {
+                LevelUI.Initialize();
+            }
         }
         
         public override void OnSubmanagersInitialized()

@@ -53,6 +53,7 @@ MonoBehaviour:
   EmitCount: 1
   ChildEmitters: []
   PlayWithEffectsManager: 0
+  ParticleSystemsToColor: []
 --- !u!1 &1985246411980025671
 GameObject:
   m_ObjectHideFlags: 0
@@ -298,10 +299,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e477640a32c026949a487d678547b708, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MenuId: CompletePanel
-  CloseButton: {fileID: 0}
   CloseDelay: 0
-  ParentUI: {fileID: 0}
+  MenuId: CompletePanel
+  IsPopup: 0
+  ClearStackOnOpen: 1
+  CloseButton: {fileID: 0}
   ContinueButton: {fileID: 7691401892261191494}
   VictoryEffect: {fileID: 4289675281358468816}
 --- !u!1 &3492125034854619709
@@ -361,12 +363,14 @@ MonoBehaviour:
   ComboCooldown: 1
   QueueSound: 0
   PlayWithAudioLibrary: 0
+  ComboSfxCollection: []
   BasePitch: 1
   MinPitch: 0
   MaxPitch: 1.5
   RandomizePitch: 0
   PitchVariation: 0
   AdjustPitch: 0
+  UseComboFromEffect: 0
   PitchAdjustmentPerPlay: 0.1
   PitchResetTime: 0
 --- !u!82 &9107834247114629911
@@ -574,9 +578,9 @@ RectTransform:
   - {fileID: 3633451278593783478}
   m_Father: {fileID: 4688974032985230208}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 674}
+  m_AnchorMin: {x: 0.5, y: 1}
+  m_AnchorMax: {x: 0.5, y: 1}
+  m_AnchoredPosition: {x: 0, y: -496}
   m_SizeDelta: {x: 800, y: 200}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3580630246385639698

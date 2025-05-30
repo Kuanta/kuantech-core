@@ -16,6 +16,12 @@ namespace Kuantech.Core.UI
         public List<PhasePanelsEntry> PhasePanels;
 
         private Dictionary<string, UIElement> _phasePanelsById = new Dictionary<string, UIElement>();
+
+        public virtual void Initialize()
+        {
+            
+        }
+        
         public virtual void OnLevelSetup(Level level)
         {
             level.OnStateChange += OnLevelStateChanged;
