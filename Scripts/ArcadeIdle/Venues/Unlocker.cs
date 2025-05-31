@@ -1,5 +1,10 @@
 using System.Collections.Generic;
-using Unity.Cinemachine;
+using Cinemachine;
+#if UNITY_6000
+    using Unity.Cinemachine;
+#else
+    using Cinemachine;
+#endif
 using Kuantech.ArcadeIdle.UI;
 using Kuantech.Core;
 using Kuantech.HyperCasual;

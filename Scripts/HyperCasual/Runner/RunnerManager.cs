@@ -1,6 +1,10 @@
 ﻿using System;
 using Cysharp.Threading.Tasks;
-using Unity.Cinemachine;
+#if UNITY_6000
+    using Unity.Cinemachine;
+#else
+ using Cinemachine;
+#endif
 using UnityEngine;
 
 namespace Kuantech.Core.HyperCasual.Runner

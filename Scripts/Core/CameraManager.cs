@@ -1,6 +1,10 @@
 using System;
 using System.Collections;
-using Unity.Cinemachine;
+#if UNITY_6000
+    using Unity.Cinemachine;
+#else
+    using Cinemachine;
+#endif
 using Kuantech.Core.Camera;
 using Kuantech.Utils;
 using UnityEngine;
