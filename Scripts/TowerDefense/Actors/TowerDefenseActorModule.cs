@@ -32,6 +32,12 @@ namespace Kuantech.TowerDefense
             PathFollower.OnReachedPathEnd += OnReachedEnd;
         }
 
+        public override void OnModulesInitialized()
+        {
+            base.OnModulesInitialized();
+            _combatModule = Actor.GetModule<CombatModule>();
+        }
+
         public void SetOnPath(Path path)
         {
             StatsModule sm  = Actor.GetModule<StatsModule>();
@@ -46,6 +52,11 @@ namespace Kuantech.TowerDefense
 
         public bool CanAct()
         {
+            //Is attacking?
+            if(_combatModule != null && _combatModule.IsAttacking())
+            {
+                return false;
+            }
             return Actor.CurrentActorState == ActorState.Spawned;
         }
         private void OnReachedEnd()

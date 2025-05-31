@@ -89,5 +89,12 @@ namespace Kuantech.Core.Combat
             if (elapsedTime < AutoDetectFrequency) return;
             DetectTargets();
         }
+
+        public override void Reset()
+        {
+            base.Reset();
+            if(DetectedEnemies != null) DetectedEnemies.Clear();
+            if(DetectedAllies != null) DetectedAllies.Clear();
+        }
     }
 }
