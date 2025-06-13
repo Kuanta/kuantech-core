@@ -34,7 +34,7 @@ namespace Kuantech.TowerDefense
         public override void OnLevelSetup(Level level)
         {
             base.OnLevelSetup(level);
-            level.OnStateChange += OnLevelStateChange;
+            level.OnStateChangeEvent += OnLevelStateChange;
         }
         
         #region Win Lose Panels

@@ -1,4 +1,5 @@
 ﻿using System;
+using Kuantech.Utils;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -12,9 +13,13 @@ namespace Kuantech.Core
         public AnimatorOverrideController DefaultAnimationSet;
         public Animator Animator;
 
-        private static readonly int X = Animator.StringToHash("Forward");
-        private static readonly int Y = Animator.StringToHash("Right");
-
+        [Header("Settings")]
+        [Tooltip("If set to true, movement will be sent to animator as a single float")]
+        public bool UseOneDimensionalMovement;
+        
+        [Tooltip("Up Vector3 for the actor. Used to determine the up direction in animations.")]
+        public Vector3 UpDirection = Vector3.up;
+        
         private Vector2 _targetMovementParameters = Vector2.zero;
         private Vector2 _movementParameters = Vector2.zero;
         private Vector2 _movementParametersScale = Vector2.one;
@@ -25,13 +30,16 @@ namespace Kuantech.Core
         public UnityEvent OnDamageFrameEvent;
         
         //Animation Hashes
+        private static readonly int X = Animator.StringToHash("Forward");
+        private static readonly int Y = Animator.StringToHash("Right");
+        private static readonly int Movement = Animator.StringToHash("Movement");
         private static readonly int Attack = Animator.StringToHash("Attack");
         private static readonly int Hold = Animator.StringToHash("Hold");
         private static readonly int AttackIndex = Animator.StringToHash("AttackIndex");
         private static readonly int HandIndex = Animator.StringToHash("HandIndex");
         public static readonly int AttackSpeed = Animator.StringToHash("AttackSpeed");
         public static readonly int TargetTime = Animator.StringToHash("TargetTime");
-        private static readonly int Death = Animator.StringToHash("Death");
+        private static readonly int Death = Animator.StringToHash("Dead");
         private static readonly int DamageReceived = Animator.StringToHash("DamageReceived");
         private static readonly int DamageReceivedIndex = Animator.StringToHash("DamageReceivedIndex");
         private static readonly int Aiming = Animator.StringToHash("Aiming");
@@ -73,16 +81,55 @@ namespace Kuantech.Core
                 Vector2.Lerp(_movementParameters, _targetMovementParameters * _movementParametersScale, Time.deltaTime * LerpFactor);
            
             if (Animator == null) return;
-            Animator.SetFloat(X, _movementParameters.x);
-            Animator.SetFloat(Y,_movementParameters.y);
+            SetMovementParameters();
         }
-
+        
+        private void SetMovementParameters()
+        {
+            if(UseOneDimensionalMovement)
+            {
+                Animator.SetFloat(Movement, _movementParameters.magnitude);
+            }
+            else
+            {
+                Animator.SetFloat(X, _movementParameters.x);
+                Animator.SetFloat(Y, _movementParameters.y);
+            }
+        }
         public void ApplyDefaultAnimationSet()
         {
             if (DefaultAnimationSet == null || Animator == null) return; 
             Animator.runtimeAnimatorController = DefaultAnimationSet;
         }
 
+       
+        public void SetTrigger(int hash)
+        {
+            Animator.SetTrigger(hash);
+        }
+
+        public override void Reset()
+        {
+            base.Reset();
+            if (Animator != null)
+            {            
+                Animator.SetFloat(X, 0);
+                Animator.SetFloat(Y, 0);
+                Animator.SetBool(Death, false);
+                Animator.Rebind();
+            }
+            _targetMovementParameters = Vector2.zero;
+            _movementParametersScale = Vector2.one;
+        }
+        
+        #region Movement
+        
+        public void SetMovementParametersFromMovementDirection(Vector3 direction, bool forced = false)
+        {
+            Vector2 movement = Helpers.GetVector2FromVector3WithUpDirection(direction, UpDirection);
+            SetMovementParameters(movement, forced);
+        }
+        
         public void SetMovementParameters(Vector2 movement, bool forced = false)
         {
             movement.Normalize();
@@ -110,28 +157,6 @@ namespace Kuantech.Core
         {
             _movementParametersScale = scale;
         }
-       
-        public void SetTrigger(int hash)
-        {
-            Animator.SetTrigger(hash);
-        }
-
-        public override void Reset()
-        {
-            base.Reset();
-            if (Animator != null)
-            {            
-                Animator.SetFloat(X, 0);
-                Animator.SetFloat(Y, 0);
-                Animator.SetBool(Death, false);
-                Animator.Rebind();
-            }
-            _targetMovementParameters = Vector2.zero;
-            _movementParametersScale = Vector2.one;
-        }
-        
-        #region Movement
-
         public void OnJump(object sender, EventArgs args)
         {
             Animator.SetTrigger(Jump);

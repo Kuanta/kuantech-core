@@ -161,14 +161,21 @@ namespace Kuantech.Utils
         }
         #endregion
         
-    
+        [NonSerialized] private Vector3 MovementDirection;
+        
         private void Update()
         {
             if (!IsMoving()) return;
             UpdatePosition();
             if(CurrentWaypoint != null) UpdateRotation(GetTargetDirection());
         }
-
+        
+        public Vector3 GetMovementDirection()
+        {
+            if(!IsMoving()) return Vector3.zero;
+            return MovementDirection;
+        }
+      
         #region Regular Position Updates
         
         protected virtual void UpdatePosition()
@@ -187,6 +194,7 @@ namespace Kuantech.Utils
          
             // Vector3 positionUpdate =  moveDirection * Mathf.Min(deltaTime * Speed, errorMag);
             Vector3 positionUpdate = moveDirection * deltaTime * Speed;
+            MovementDirection = moveDirection;
             SetRotation(Quaternion.LookRotation(direction));
             SetPosition(GetCurrentPosition() + positionUpdate);
         }

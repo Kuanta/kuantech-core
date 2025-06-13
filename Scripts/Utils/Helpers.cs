@@ -355,6 +355,28 @@ namespace Kuantech.Utils
             return projection; 
         }
         
+        public static Vector2 GetVector2FromVector3WithUpDirection(Vector3 v, Vector3 up)
+        {
+         // 1. Normalize up vector
+            Vector3 upNorm = up.normalized;
+        
+            // 2. Remove the component in up direction
+            Vector3 projected = v - Vector3.Dot(v, upNorm) * upNorm;
+        
+            // 3. Build coordinate axes on the plane
+            Vector3 right = Vector3.Cross(Vector3.forward, upNorm);
+            if (right == Vector3.zero) right = Vector3.right; // fallback
+            right.Normalize();
+        
+            Vector3 forward = Vector3.Cross(upNorm, right);
+        
+            // 4. Project onto these axes
+            float x = Vector3.Dot(projected, right);
+            float y = Vector3.Dot(projected, forward);
+        
+            return new Vector2(x, y);
+        }
+        
         public static Vector3 GetRelativeRightVector(this Transform parent, Transform target)
         {
             Vector3 diff = target.position - parent.position;

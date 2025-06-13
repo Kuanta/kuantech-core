@@ -55,8 +55,8 @@ namespace Kuantech.Core
         }
         
         //Events
-        public Action<LevelStateChangeData> OnStateChange; //An event bound to level.
-        public Action<LevelPhaseChangeData> OnPhaseChange;
+        public Action<LevelStateChangeData> OnStateChangeEvent; //An event bound to level.
+        public Action<LevelPhaseChangeData> OnPhaseChangeEvent;
         
         #region Level Lifecycle
         //A simple relayer to LevelManager
@@ -67,12 +67,20 @@ namespace Kuantech.Core
             {
                 Debug.LogError("Level Manager is null, can't change level state");
             }
-            //For subscribers that subscribe to level only
-            OnStateChange?.Invoke(new LevelStateChangeData
+
+            LevelStateChangeData levelStateChangeData = new LevelStateChangeData
             {
                 OldState = CurrentState,
                 NewState = newState,
-            });
+            };
+            
+            foreach (var module in Modules.Values)
+            {
+                module.OnLevelStateChange(levelStateChangeData);
+            }
+            
+            //For subscribers that subscribe to level only
+            OnStateChangeEvent?.Invoke(levelStateChangeData);
             
             //Inform level manager
             levelman.ChangeCurrentState(newState);
@@ -85,6 +93,7 @@ namespace Kuantech.Core
         
         public virtual void SetupLevel()
         {
+            DetectModules();
             SetupPhaseSystem();
             ChangeLevelState(LevelState.Waiting);
             SetupComponents();
@@ -182,6 +191,12 @@ namespace Kuantech.Core
             {
                 component.Reset();
             }
+            
+            //Reset level modules
+            foreach (var module in Modules.Values)
+            {
+                module.OnReset();
+            }
             Helpers.ResetAttributes(this);
             ClearLevel();
         }
@@ -196,6 +211,11 @@ namespace Kuantech.Core
             {
                 if (spawnable == null) continue;
                 spawnable.Despawn(0.0f);
+            }
+
+            foreach (var module in Modules.Values)
+            {
+                module.OnLevelClear();
             }
             SpawnedActors.Clear();
         }
@@ -219,6 +239,20 @@ namespace Kuantech.Core
         public void ChangeLevelPhase(string key)
         {
             PhaseSystem.ChangePhase(key);
+        }
+
+        public void OnLevelPhaseChange(LevelPhase oldPhase, LevelPhase newPhase)
+        {
+            foreach (var module in LevelModules)
+            {
+                module.OnLevelPhaseChange(oldPhase, newPhase);    
+            }
+            
+            OnPhaseChangeEvent?.Invoke(new LevelPhaseChangeData()
+            {
+                OldPhase = oldPhase,
+                NewPhase = newPhase,
+            });
         }
         
         /// <summary>
@@ -245,6 +279,28 @@ namespace Kuantech.Core
             SpawnedActors ??= new HashSet<ISpawnable>();
             SpawnedActors.Add(spawnable);
         }
+        #endregion
+
+        #region Modules
+        //Level Modules
+        protected List<LevelModule> LevelModules = new List<LevelModule>();
+        protected Dictionary<Type, LevelModule> Modules = new Dictionary<Type, LevelModule>();
+
+        protected virtual void DetectModules()
+        {
+            LevelModules = GetComponentsInChildren<LevelModule>().ToList();
+            foreach (LevelModule lm in LevelModules)
+            {
+                Modules[lm.GetType()] = lm;
+                lm.ParentLevel = this;
+            }
+
+            foreach (var lm in LevelModules)
+            {
+                lm.Initialize();
+            }
+        }
+
         #endregion
     }
 }

@@ -49,9 +49,6 @@ namespace Kuantech.Core
         [Header("Inplace Items")]
         public List<InPlaceItemEntry> InPlaceItemsList;
 
-        [Header("Sprite Renderer")]
-        public SpriteRenderer SpriteRenderer;
-
         [Header("Shader Effects")] 
         public ShaderEffect HitShaderEffect;
         

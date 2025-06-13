@@ -44,6 +44,7 @@ namespace Kuantech.Utils.Math
         public UnityAction OnReachedTarget;
 
         [NonSerialized] public bool StopAtReachindTarget = false;
+        [NonSerialized] public Vector3 MovementDirection = Vector3.zero;
 
         #region Spline Creation
 
@@ -207,8 +208,16 @@ namespace Kuantech.Utils.Math
         {
             Transform transformToMove = GetTransformToMove();
             transformToMove.position = point.Position;
+            MovementDirection = point.Rotation * Vector3.forward;
             if(SetRotation) transformToMove.rotation = Quaternion.FromToRotation(FollowRotationVector, point.Rotation * Vector3.forward);
         }
+        
+        public Vector3 GetMovementVector()
+        {
+            if(CurrentSpline == null || !IsMoving()) return Vector3.zero;
+            return MovementDirection;
+        }
+        
         #endregion
 
     }

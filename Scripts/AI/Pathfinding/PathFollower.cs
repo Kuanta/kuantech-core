@@ -159,9 +159,21 @@ namespace Kuantech.AI.Pathfinding
         /// Returns movement vector
         /// </summary>
         /// <returns></returns>
-        public Vector2 GetMovementVector()
+        public Vector3 GetMovementVector()
         {
-            return Vector2.up;
+            if(CurrentFollowMethod == FollowMethod.SplineFollower)
+            {
+                if(SplineFollower == null || SplineFollower.IsMoving() == false)
+                {
+                    return Vector2.zero;
+                }
+                return SplineFollower.GetMovementVector();
+            }
+            if (CurrentFollowMethod == FollowMethod.WaypointFollower && WaypointFollower != null)
+            {
+                return WaypointFollower.GetMovementDirection();
+            }
+            return Vector3.zero;
         }
         
         #region Event Handlers

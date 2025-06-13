@@ -68,7 +68,7 @@ namespace Kuantech.Puzzle.UI
             {
                 LevelIndicator.SetLevelIndex(level.LevelNumber + 1);
             }
-            level.OnStateChange += OnLevelStateChange;
+            level.OnStateChangeEvent += OnLevelStateChange;
             
             //Set win conditions
             WinConditionTracker tracker = CurrentLevel.WinConditionTracker;

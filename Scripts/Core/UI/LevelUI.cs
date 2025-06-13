@@ -24,8 +24,8 @@ namespace Kuantech.Core.UI
         
         public virtual void OnLevelSetup(Level level)
         {
-            level.OnStateChange += OnLevelStateChanged;
-            level.OnPhaseChange += OnLevelPhaseChanged;
+            level.OnStateChangeEvent += OnLevelStateChanged;
+            level.OnPhaseChangeEvent += OnLevelPhaseChanged;
 
             _phasePanelsById = new Dictionary<string, UIElement>();
             foreach(var panelEntry in PhasePanels)

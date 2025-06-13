@@ -72,8 +72,6 @@ namespace Kuantech.Core
 
         private void Update()
         {
-            if (_goingToWaypoint) SetWaypointMovementVectors();
-
             if (MovementLock.IsLocked())
             {
                 SetMovementVector(new Vector2(0,0));
@@ -241,7 +239,6 @@ namespace Kuantech.Core
 
         #endregion
 
-
         public override void Reset()
         {
             Stop();
@@ -254,49 +251,6 @@ namespace Kuantech.Core
             DodgeLock.Reset();
             MovementLock.Reset();
         }
-
-        #region Waypoint following
-        public void GoToWaypoint(Transform point, UnityAction handler, float threshold = 0.01f)
-        {
-            Stop();
-            _waypoint = point;
-            _goingToWaypoint = true;
-            _waypointReachedHandler = handler;
-            _movementThreshold = threshold;
-        }
-
-        private void SetWaypointMovementVectors()
-        {
-            Vector3 diffVec = _waypoint.position - transform.position;
-            if (diffVec.sqrMagnitude <= _movementThreshold * _movementThreshold)
-            {
-                _goingToWaypoint = false;
-                _waypoint = null;
-                _waypointReachedHandler?.Invoke();
-                _waypointReachedHandler = null;
-                Stop();
-                return;
-            }
-
-            diffVec.y = 0;
-            diffVec.Normalize();
-            Vector3 relative = transform.InverseTransformDirection(diffVec);
-            _movement = new Vector2(relative.x, relative.z);
-            if (_animationModule == null) return;
-            _animationModule.SetMovementParameters(_movement);
-
-        }
-        #endregion
-
-        #region Path Follower
-        public void SetPathToFollow(Path path)
-        {
-            if (PathFollower != null)
-            {
-                PathFollower.SetPath(path);
-            }
-        }
-        #endregion
         
         # region Dodge
 
