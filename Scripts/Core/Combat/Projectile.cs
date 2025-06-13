@@ -73,6 +73,8 @@ namespace Kuantech.Core
         private bool _targeted;
         private Vector3 _shotPosition;
         private Vector3 _direction;
+        private Vector3 _targetOffset;
+        
         /// <summary>
         /// Initializes and shoots the projectile
         /// </summary>
@@ -85,6 +87,7 @@ namespace Kuantech.Core
             //Set pos and rot
             Reset();
             _direction = CancelUpComponent(shootDirection).normalized;
+            _targetOffset = Vector3.zero;
             transform.position = shootPosition;
             Quaternion rot = GetForwardRotation(_direction);
             transform.rotation = rot;
@@ -114,7 +117,7 @@ namespace Kuantech.Core
             _targeted = Target != null;
             if (Target != null)
             {
-                Vector3 diffToTarget = (target.transform.position - _shotPosition);
+                Vector3 diffToTarget = (GetTargetPosition() - _shotPosition);
                 _direction = CancelUpComponent(diffToTarget).normalized;
                 _InitialDistanceToTarget = diffToTarget.magnitude;
                 _lifeTime = MaxLifetime; //todo: This should be handled better
@@ -130,6 +133,17 @@ namespace Kuantech.Core
             if(Visual != null) Visual.SetActive(true);
             _newPosition = transform.position;
             if(TrailRenderer != null) TrailRenderer.Clear();
+        }
+
+        public void SetTargetOffset(Vector3 targetOffset)
+        {
+            _targetOffset = targetOffset;
+        }
+        
+        private Vector3 GetTargetPosition()
+        {
+            if (Target == null) return Vector3.zero;
+            return Target.transform.position + _targetOffset;
         }
         
         private Vector3 CancelUpComponent(Vector3 direction)
@@ -168,7 +182,7 @@ namespace Kuantech.Core
 
             if (_targeted)
             {
-                Vector3 diffToTarget = Target.transform.position - transform.position;
+                Vector3 diffToTarget = GetTargetPosition() - transform.position;
                 diffToTarget = CancelUpComponent(diffToTarget);
                 float sqrMag = diffToTarget.sqrMagnitude;
 

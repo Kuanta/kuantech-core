@@ -176,7 +176,7 @@ namespace Kuantech.Core
             DamageInfo damage = GetCurrentAttackPattern().GetDamageInfo();
             if (CurrentTarget == null ||
                 !CurrentTarget.IsAlive() ||
-                Vector3.Distance(CurrentTarget.transform.position, transform.position) > GetCurrentAttackPattern().Range) return;
+                Vector3.Distance(CurrentTarget.GetHitPoint().position, transform.position) > GetCurrentAttackPattern().Range) return;
             CurrentTarget.OnHit(gameObject, damage);
         }
 
@@ -189,8 +189,9 @@ namespace Kuantech.Core
             }
             Projectile projectile = PoolManager.GetObjectFromPool(GetCurrentAttackPattern().ProjectilePrefab.gameObject).GetComponent<Projectile>();
             if (projectile == null) return;
-            
+            Vector3 targetOffset = CurrentTarget.GetHitPoint().position - CurrentTarget.transform.position;
             projectile.Shoot(this, null, GetAttackPosition(), _attackDirection, CurrentTarget.transform);
+            projectile.SetTargetOffset(targetOffset);
         }
         #endregion
         

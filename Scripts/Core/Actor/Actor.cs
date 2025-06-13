@@ -16,15 +16,15 @@ namespace Kuantech.Core
         Dead,
         Despawned,
     }
-    
+
     public class Actor : MonoBehaviour, IHittable, ISpawnable
     {
-        [Header("Identifier")]
-        public string Id;
+        [Header("Identifier")] public string Id;
         public int FactionId = 0; //Since faction Id is used frequently, it is stated in Actor class
-        
-        [Header("Components")]
-        public ActorVisualHandler VisualHandler;
+
+        [Header("Components")] public ActorVisualHandler VisualHandler;
+
+        [Tooltip("If set, attacks will target this point")] public Transform HitPoint;
         
         [Header("Modules")]
         protected List<ActorModule> ActorModulesList;
@@ -353,6 +353,12 @@ namespace Kuantech.Core
         public virtual bool CanBeHit()
         {
             return true;
+        }
+
+        public Transform GetHitPoint()
+        {
+            if (HitPoint == null) return transform;
+            return HitPoint;
         }
 
         public void OnHit(HitInfo hitInfo)
