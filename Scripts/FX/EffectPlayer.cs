@@ -13,6 +13,14 @@ namespace Kuantech.Core.FX
         public Effect Effect;
         public Effect EffectPrefab;
         public string EffectId;
+
+        public string GetEffectId()
+        {
+            if (EffectPrefab != null)
+            {
+                return EffectPrefab.EffectId;
+            }
+        }
         public Effect PlayEffect()
         {
             return PlayEffect(EffectPlaySettings.GetDefaultSettings());

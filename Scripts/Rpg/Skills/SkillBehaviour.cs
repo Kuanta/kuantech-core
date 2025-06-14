@@ -100,7 +100,7 @@ namespace Kuantech.Rpg.Skills
             EffectsModule effectModule = ParentSkill.ParentSpellBook.Actor.GetModule<EffectsModule>();
             if (effectModule != null)
             {
-                
+               
             }
             else
             {

@@ -84,5 +84,15 @@ namespace Kuantech.Core.FX
             if(DamageReceiveEffect != null) DamageReceiveEffect.Stop();
             
         }
+        
+        #region Fx Players
+
+        public EffectPlayer GetEffectPlayer(string effectId)
+        {
+            if (effectId.IsNullOrEmpty()) return null;
+            if (_effectsById.ContainsKey(effectId)) return _effectsById[effectId];
+            return null;
+        }
+        #endregion
     }
 }
