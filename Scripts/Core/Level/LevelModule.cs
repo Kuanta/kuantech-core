@@ -12,6 +12,12 @@ namespace Kuantech.Core
         {
             
         }
+
+        public virtual void PostLevelSetup()
+        {
+            
+        }
+        
         public virtual void OnLevelStateChange(LevelStateChangeData levelStateChangeData)
         {
             

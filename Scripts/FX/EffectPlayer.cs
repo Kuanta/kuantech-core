@@ -41,5 +41,19 @@ namespace Kuantech.Core.FX
             settings.DespawnAfterPlay = true;
             return PlayEffect(settings);
         }
+        
+        /// <summary>
+        /// Checks if the EffectPlayer is null, meaning it has no effect to play.
+        /// </summary>
+        /// <returns></returns>
+        public bool IsNull()
+        {
+            if(Effect == null && EffectPrefab == null && EffectId.IsNullOrEmpty())
+            {
+                return true;
+            }
+
+            return false;
+        }
     }
 }

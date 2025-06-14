@@ -29,7 +29,9 @@ namespace Kuantech.Core
     
     public class Level : MonoBehaviour
     {
-                
+        [Header("Common Properties")]
+        public bool AutoStartAfterSetup = false;
+        
         [Header("Components")] 
         public bool AutoDetectLevelElements = false;
         public List<LevelElement> LevelElements;
@@ -81,7 +83,7 @@ namespace Kuantech.Core
             
             //For subscribers that subscribe to level only
             OnStateChangeEvent?.Invoke(levelStateChangeData);
-            
+            CurrentState = newState;
             //Inform level manager
             levelman.ChangeCurrentState(newState);
         }
@@ -95,15 +97,21 @@ namespace Kuantech.Core
         {
             DetectModules();
             SetupPhaseSystem();
-            ChangeLevelState(LevelState.Waiting);
             SetupComponents();
             LevelUI = UIManager.GetLevelUI();
             if (LevelUI != null)
             {
                 LevelUI.OnLevelSetup(this);
             }
+            ChangeLevelState(LevelState.Waiting);
+            
+            //Call post level setup
+            foreach(var module in LevelModules)
+            {
+                module.PostLevelSetup();
+            }
         }
-
+        
         protected virtual void SetupPhaseSystem()
         {
             PhaseSystem = new LevelPhaseSystem(this);
