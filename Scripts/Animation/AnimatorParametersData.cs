@@ -10,6 +10,10 @@ namespace Kuantech.Core
         public string FloatParameterName;
         public float FloatParameterValue;
 
+        [Header("Integet")] 
+        public string IntegerParameterName;
+        public int IntegerParameterValue;
+        
         [Header("Boolean")]
         public string BoolParemeterName;
         public bool BoolParameterValue;
@@ -34,6 +38,11 @@ namespace Kuantech.Core
             if (!string.IsNullOrEmpty(TriggerParameterName))
             {
                 animator.SetTrigger(TriggerParameterName);
+            }
+
+            if (!string.IsNullOrEmpty(IntegerParameterName))
+            {
+                animator.SetInteger(IntegerParameterName, IntegerParameterValue);
             }
         }
     }

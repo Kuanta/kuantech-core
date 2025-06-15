@@ -23,6 +23,7 @@ namespace Kuantech.Core
                 CurrentActorVisual.Initialize();
             }
         }
+
         public ActorVisual GetActorVisual()
         {
             return CurrentActorVisual;

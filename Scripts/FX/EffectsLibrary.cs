@@ -43,13 +43,11 @@ namespace Kuantech.Core.FX
             foreach (var existingEffect in existingEffects)
             {
                 _existingEffectsById[existingEffect.EffectId] = existingEffect;
-                existingEffect.BoundToEffectsLibrary =  true;
             }
 
             foreach (var effect in ExistingEffectsList)
             {
                 _existingEffectsById[effect.EffectId] = effect;
-                effect.BoundToEffectsLibrary = true;
             }
             if(AudioLibrary != null) AudioLibrary.Initialize();
         }
@@ -64,12 +62,22 @@ namespace Kuantech.Core.FX
             return effect;
         }
 
-        public static void PlayEffect(Effect effectPrefab, EffectPlaySettings settings)
+        public static Effect PlayEffectPrefab(Effect effectPrefab, EffectPlaySettings settings)
         {
             EffectsLibrary context = GetContext<EffectsLibrary>();
-            if (context == null) return;
+            if (context == null) return null;
+            
+            //Is this an existing effect on library
+            Effect existingEffect = context.GetEffectById(effectPrefab.EffectId);
+            if (existingEffect != null)
+            {
+                return PlayEffect(effectPrefab.EffectId, settings);
+            }
+
+            //Instantiate the fx
             Effect effect = context.CreateEffectFromPrefab(effectPrefab);
             effect.Play(settings);
+            return effect;
         }
 
         public Effect GetEffectById(string effectId)
@@ -92,13 +100,19 @@ namespace Kuantech.Core.FX
             {
                 return Instantiate(effectPrefab);
             }
-            return EffectsPool.GetObject(effectPrefab.gameObject).GetComponent<Effect>();
+            Effect effect = EffectsPool.GetObject(effectPrefab.gameObject).GetComponent<Effect>();
+            if (effect == null) return null;
+            effect.SpawnedFromPool = true;
+            return effect;
         }
         public Effect GetEffectByTag(int effectTag)
         {
             if (_effectsByTag == null || !_effectsByTag.ContainsKey(effectTag)) return null;
             GameObject obj = EffectsPool.GetObject(_effectsByTag[effectTag].gameObject);
-            return obj.GetComponent<Effect>();
+            Effect effect =  obj.GetComponent<Effect>();
+            if (effect == null) return null;
+            effect.SpawnedFromPool = true;
+            return effect;
         }
         
         public Effect PlayEffect(int effectType, Transform parent, float effectCooldown)

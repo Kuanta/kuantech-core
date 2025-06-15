@@ -29,7 +29,8 @@ namespace Kuantech.Core.FX
         private static readonly int Play1 = Animator.StringToHash("Play");
 
         //If an effect is under the protection of effects library, it can't be destroyed with timed calls
-        [NonSerialized] public bool BoundToEffectsLibrary = false; 
+        [NonSerialized] public bool SpawnedFromPool = false; //This is used to determine if the effect was spawned from the pool or not. 
+        //[NonSerialized] public bool BoundToEffectsLibrary = false; 
         
         /// <summary>
         /// To simply play
@@ -62,7 +63,7 @@ namespace Kuantech.Core.FX
             }
 
             _Play(settings);
-            if (settings.DespawnAfterPlay && !BoundToEffectsLibrary)
+            if (settings.DespawnAfterPlay)
             {
                 StartCoroutine(PoolRoutine(Duration));
             }
@@ -156,13 +157,15 @@ namespace Kuantech.Core.FX
             StartCoroutine(PoolRoutine(duration));
         }
         #endregion
-
+        
         public void Stop()
         {
             if(Vfx!=null) Vfx.Stop();
-            if (Sfx == null) return;
-            Sfx.Stop(SfxFadeOutDuration);
-       
+            if (Sfx != null) Sfx.Stop(SfxFadeOutDuration);
+            if (SpawnedFromPool)
+            {
+                Despawn();
+            }
         }
         public void SetAudioPitch(float pitch)
         {
@@ -170,7 +173,7 @@ namespace Kuantech.Core.FX
         }
         private IEnumerator PoolRoutine(float duration)
         {
-            if(BoundToEffectsLibrary) yield break;
+            if(!SpawnedFromPool) yield break;
             if(Sfx != null && Sfx.Enqueued)
             {
                 ShouldBeRemoved = true;
@@ -184,9 +187,16 @@ namespace Kuantech.Core.FX
             
             if(Vfx != null) Vfx.Stop();
             if(Sfx != null) Sfx.Stop();
-            EffectsLibrary.GetContext<EffectsLibrary>().EffectsPool.PoolObject(gameObject);
+            Despawn();
         }
 
+        public void Despawn()
+        {
+            if (SpawnedFromPool)
+            {
+                EffectsLibrary.GetContext<EffectsLibrary>().EffectsPool.PoolObject(gameObject);
+            }
+        }
         public void OnSoundDequeued()
         {
             Sfx.Enqueued = false;

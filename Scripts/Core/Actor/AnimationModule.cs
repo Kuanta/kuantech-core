@@ -96,12 +96,23 @@ namespace Kuantech.Core
                 Animator.SetFloat(Y, _movementParameters.y);
             }
         }
+
+        public Animator GetAnimator()
+        {
+            return Animator;
+        }
+
+        public void SetClip(string clipName, AnimationClip clip)
+        {
+            Animator animator = GetAnimator();
+            if (animator == null) return;
+        }
+        
         public void ApplyDefaultAnimationSet()
         {
             if (DefaultAnimationSet == null || Animator == null) return; 
             Animator.runtimeAnimatorController = DefaultAnimationSet;
         }
-
        
         public void SetTrigger(int hash)
         {

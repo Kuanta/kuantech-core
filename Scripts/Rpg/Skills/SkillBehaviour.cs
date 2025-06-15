@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Kuantech.Core;
 using Kuantech.Core.FX;
 using UnityEngine;
@@ -13,15 +14,31 @@ namespace Kuantech.Rpg.Skills
         public Type Type => string.IsNullOrEmpty(className) ? null : Type.GetType(className);
         public string ClassName => className;
     }
+
+    [Serializable]
+    public struct SkillBehaviorFxData
+    {
+        public enum SKillBehaviourFxPlayType
+        {
+            OnCaster, //Attached to caster
+            AtCaster, //At casters position, without attaching to caster
+            AtCastPoint, //At point of cast
+
+        }
+
+        public SKillBehaviourFxPlayType PlayType;
+        public EffectPlayer EffectPlayer;
+        public bool StopOnBehaviourEnd;
+    }
     
     [Serializable]
     public struct SkillBehaviourData
     {
         public SkillBehaviourType SkillBehaviourType;
         public float Duration;
-        
-        //Behaviour effect
-        public EffectPlayer BehaviourFx;
+
+        [Header("Effects")] 
+        public List<SkillBehaviorFxData> SkillBehaviourFxDatas;
         
         //Animation data
         public AnimatorParametersData BehaviourStartAnimationData;
@@ -36,7 +53,7 @@ namespace Kuantech.Rpg.Skills
     
         private bool _isCompleted;
         private float _castStartTime;
-        private Effect _playedEffect;
+        public HashSet<Effect> PlayedEffects = new HashSet<Effect>();
 
         #region Lifecycle
 
@@ -48,18 +65,54 @@ namespace Kuantech.Rpg.Skills
 
         public void StartBehaviour(SkillCastData skillCastData)
         {
+            PlayedEffects.Clear();
             CurrentSkillCastData = skillCastData;
             _castStartTime = Time.time;
             _isCompleted = false;
             
             //Play animation
+            PlayBehaviourAnimation();
             
-            //Play effect
-     
+            //Play effects
+            PlayBehaviourEffects();
             
             OnBehaviourStarted();
         }
 
+        protected virtual void PlayBehaviourAnimation()
+        {
+            AnimationModule am = ParentSkill.ParentSpellBook.Actor.GetModule<AnimationModule>();
+            if (am != null)
+            {
+                BehaviourData.BehaviourStartAnimationData.SetParameters(am.Animator);
+            }
+        }
+
+        protected virtual void PlayBehaviourEffects()
+        {
+            foreach (var fx in BehaviourData.SkillBehaviourFxDatas)
+            {
+                if(fx.EffectPlayer.IsNull()) continue;
+                Effect effect = null;
+                switch(fx.PlayType)
+                {
+                    case SkillBehaviorFxData.SKillBehaviourFxPlayType.OnCaster:
+                        effect = PlayEffectOnCaster(fx.EffectPlayer);
+                        break;
+                    case SkillBehaviorFxData.SKillBehaviourFxPlayType.AtCaster:
+                        effect  = PlayEffectAtCasterPosition(fx.EffectPlayer);
+                        break;
+                    case SkillBehaviorFxData.SKillBehaviourFxPlayType.AtCastPoint:
+                        effect = PlayEffectAtCastPosition(fx.EffectPlayer);
+                        break;
+                }
+
+                if (effect != null && fx.StopOnBehaviourEnd)
+                {
+                    PlayedEffects.Add(effect);
+                }
+            }
+        }
         protected virtual void OnBehaviourStarted()
         {
             
@@ -85,6 +138,7 @@ namespace Kuantech.Rpg.Skills
         {
             
         }
+        
         public void CompleteBehaviour()
         {
             _isCompleted = true;
@@ -94,51 +148,75 @@ namespace Kuantech.Rpg.Skills
 
         #region Effects
 
-        public void PlayEffectAtCastPosition()
+        public Effect PlayEffectAtCastPosition(EffectPlayer effectPlayer)
         {
+            if (effectPlayer.IsNull()) return null;
             Vector3 effectPos = CurrentSkillCastData.CastPosition;
             Vector3 effectDir = CurrentSkillCastData.CastDirection;
-            Quaternion playRot = Quaternion.LookRotation(effectDir);
+            Quaternion playRot = Quaternion.identity;
+            if (effectDir.sqrMagnitude >= 0.001f)
+            {
+                playRot = Quaternion.LookRotation(effectDir);
+                
+            }
             EffectPlaySettings playSettings = EffectPlaySettings.GetPlayAtPositionSettings(effectPos, playRot);
-            PlaySkillEffect(playSettings);
+            return effectPlayer.PlayEffect(playSettings);
         }
         
         /// <summary>
-        /// A common utility method that plays an effect given id and play settings
+        /// Plays effect at caster position
         /// </summary>
-        /// <param name="effectId"></param>
-        /// <param name="playSettings"></param>
-        public void PlaySkillEffect(EffectPlaySettings playSettings)
+        /// <param name="effectPlayer"></param>
+        /// <returns></returns>
+        public Effect PlayEffectAtCasterPosition(EffectPlayer effectPlayer)
         {
-            _playedEffect = null;
-            if (BehaviourData.BehaviourFx.IsNull()) return;
-            string effectId = BehaviourData.BehaviourFx.GetEffectId();
-            
-            //Try to play the effect on actor effect module if possible
-            EffectsModule effectModule = ParentSkill.ParentSpellBook.Actor.GetModule<EffectsModule>();
-            if (effectModule != null)
-            {
-                EffectPlayer player = effectModule.GetEffectPlayer(effectId);
-                if (player != null)
-                {
-                    _playedEffect = player.PlayEffect(playSettings);
-                    return;
-                }
-            }
-            
-            //Play at given point
-            _playedEffect = BehaviourData.BehaviourFx.PlayEffect(playSettings);
+            if (effectPlayer.IsNull()) return null;
+            Vector3 effectPos = ParentSkill.ParentSpellBook.Actor.transform.position;
+            Quaternion playRot = ParentSkill.ParentSpellBook.Actor.transform.rotation;
+            EffectPlaySettings playSettings = EffectPlaySettings.GetPlayAtPositionSettings(effectPos, playRot);
+            return effectPlayer.PlayEffect(playSettings);
         }
 
-        public void StopSkillEffect()
+        public Effect PlayEffectOnCaster(EffectPlayer effectPlayer)
         {
-            if (_playedEffect == null) return;
-            _playedEffect.Stop();
+            if (effectPlayer.IsNull()) return null;
+            Vector3 effectPos = CurrentSkillCastData.CastPosition;
+            Vector3 effectDir = CurrentSkillCastData.CastDirection;
+            Quaternion playRot = Quaternion.identity;
+            if (effectDir.sqrMagnitude >= 0.001f)
+            {
+                playRot = Quaternion.LookRotation(effectDir);
+            }
+            EffectPlaySettings playSettings = EffectPlaySettings.GetPlayAtPositionSettings(effectPos, playRot);
+
+            //Try to play the effect on actor effect module if possible
+            EffectsModule effectModule = ParentSkill.ParentSpellBook.Actor.GetModule<EffectsModule>();
+            Effect effect;
+            if (effectModule != null)
+            {
+                effect = effectModule.PlayEffectOnActor(effectPlayer);
+                if (effect == null)
+                {
+                    return null;
+                }
+            }
+            effect = effectPlayer.PlayEffect(playSettings);
+            return effect;
+        }
+        
+        public void StopSkillEffects()
+        {
+            foreach (var effect in PlayedEffects)
+            {
+                effect.Stop(); 
+            }
         }
         #endregion
+        
         public virtual void ClearBehaviour()
         {
-            
+            //clear effects
+            StopSkillEffects();
         }
         
         #region Queries

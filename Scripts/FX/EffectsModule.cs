@@ -20,17 +20,19 @@ namespace Kuantech.Core.FX
         public Effect DeathEffect;
         private Effect _impact;
         
-        public List<EffectPlayer> EffectPlayers;
-        private Dictionary<string, EffectPlayer> _effectsById;
-        
+        public List<Effect> ExistingEffects;
+        private Dictionary<string, Effect> _effectsById;
+
+        [NonSerialized] public HashSet<Effect> ActiveEffects = new HashSet<Effect>();
+
         public override void Initialize()
         {
             base.Initialize();
             Actor.OnHitEvent += OnReceiveDamage;
-            _effectsById = new Dictionary<string, EffectPlayer>();
-            foreach(var effectPlayer in EffectPlayers)
+            _effectsById = new Dictionary<string, Effect>();
+            foreach(var effectPlayer in ExistingEffects)
             {
-                string effectId = effectPlayer.GetEffectId();
+                string effectId = effectPlayer.EffectId;
                 if (!effectId.IsNullOrEmpty())
                 {
                     _effectsById.Add(effectId, effectPlayer);
@@ -84,11 +86,70 @@ namespace Kuantech.Core.FX
         }
         
         #region Fx Players
-        public EffectPlayer GetEffectPlayer(string effectId)
+        public Effect GetExistingEffect(string effectId)
         {
             if (effectId.IsNullOrEmpty()) return null;
             if (_effectsById.ContainsKey(effectId)) return _effectsById[effectId];
             return null;
+        }
+        #endregion
+
+        #region Runtime Attached Effects
+        
+        /// <summary>
+        /// Plays an effect on the actor
+        /// </summary>
+        /// <param name="effectPlayer"></param>
+        public Effect PlayEffectOnActor(EffectPlayer effectPlayer)
+        {
+            EffectPlaySettings playSettings = EffectPlaySettings.GetPlayAtObjectSettings(Actor.transform, Vector3.zero, Quaternion.identity);
+            
+            //Does the effect is already on the actor?
+            Effect existingEffect = GetExistingEffect(effectPlayer.GetEffectId());
+            if (existingEffect != null)
+            {
+                return PlayExistignEffect(existingEffect.EffectId);
+            }
+            
+            //Effect isnt in the existing effects
+            Effect effect = effectPlayer.PlayEffect(playSettings);
+            if (effect == null) return null;
+            AddActiveEffect(effect);
+            return effect;
+        }
+
+        /// <summary>
+        /// Plays an existing effect
+        /// </summary>
+        /// <param name="effectId"></param>
+        /// <returns></returns>
+        public Effect PlayExistignEffect(string effectId)
+        {
+            Effect existingEffect = GetExistingEffect(effectId);
+            if (existingEffect == null) return null;
+            existingEffect.Play();
+            return existingEffect;
+        }
+        
+        /// <summary>
+        /// Adds an active effect
+        /// </summary>
+        /// <param name="effect"></param>
+        public void AddActiveEffect(Effect effect)
+        {
+            if (ActiveEffects == null) ActiveEffects = new HashSet<Effect>();
+            ActiveEffects.Add(effect);
+        }
+        
+        /// <summary>
+        /// Stops an active effect
+        /// </summary>
+        /// <param name="effect"></param>
+        public void StopActiveEffect(Effect effect)
+        {
+            if (ActiveEffects.IsNullOrEmpty() || !ActiveEffects.Contains(effect)) return;
+            ActiveEffects.Remove(effect);
+            effect.Stop();
         }
         #endregion
     }
