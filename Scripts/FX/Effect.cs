@@ -24,13 +24,17 @@ namespace Kuantech.Core.FX
         [Header("Animations")]
         public Animator Animator;
 
-        [NonSerialized] public bool ShouldBeRemoved = false; //This is used for queued audios
+        [Header("Shader Effect")] 
+        public ShaderEffect ShaderEffect;
+        public string ShaderEffectId;
+        [NonSerialized] public ShaderEffect PlayedShaderEffect;
+
 
         private static readonly int Play1 = Animator.StringToHash("Play");
 
         //If an effect is under the protection of effects library, it can't be destroyed with timed calls
         [NonSerialized] public bool SpawnedFromPool = false; //This is used to determine if the effect was spawned from the pool or not. 
-        //[NonSerialized] public bool BoundToEffectsLibrary = false; 
+
         
         /// <summary>
         /// To simply play
@@ -83,7 +87,6 @@ namespace Kuantech.Core.FX
 
         protected virtual void PlayEffects(EffectPlaySettings playSettings)
         {
-            ShouldBeRemoved = false;
             if(Sfx != null)
             {
                 Sfx.OnDeqeued = OnSoundDequeued;
@@ -91,7 +94,6 @@ namespace Kuantech.Core.FX
 
             //Sound
             if (!EffectsLibrary.CanPlayEffect(EffectId, playSettings.EffectCooldown)) return;
-
             if(!EffectsLibrary.PlayAudio(AudioTag))
             {
                 if (Sfx != null)
@@ -100,11 +102,38 @@ namespace Kuantech.Core.FX
                     Sfx.PlayThroughAudioLibrary();
                 }
             }
+            
+            //Visual Effect
             if (Vfx != null) Vfx.Play(playSettings);
+            
+            //Animation
             if(Animator != null) Animator.SetTrigger(Play1);
+            
+            //Shader Effect
+            if (ShaderEffect != null)
+            {
+                PlayedShaderEffect = ShaderEffect;
+                ShaderEffect.PlayShaderEffect();
+            }
+            else if (playSettings.EffectParent != null && !string.IsNullOrEmpty(ShaderEffectId) && playSettings.EffectParent.TryGetComponent<Actor>(out Actor actor))
+            {
+                EffectsModule em = actor.GetModule<EffectsModule>();
+                if (em != null)
+                {
+                    ShaderEffect se = em.GetShaderEffect(ShaderEffectId);
+                    if (se != null)
+                    {
+                        se.PlayShaderEffect();
+                        PlayedShaderEffect = se;
+                    }
+                }
+            }
+            
             EffectsLibrary.SetLastPlayedTime(EffectId);
         }
 
+
+        
         #region Old Play Methods
         public void Play(Vector3 position, Quaternion rotation, float effectCooldown, bool local = false)
         {
@@ -162,11 +191,16 @@ namespace Kuantech.Core.FX
         {
             if(Vfx!=null) Vfx.Stop();
             if (Sfx != null) Sfx.Stop(SfxFadeOutDuration);
+            if (PlayedShaderEffect != null)
+            {
+                PlayedShaderEffect.StopShaderEffect();
+            }
             if (SpawnedFromPool)
             {
                 Despawn();
             }
         }
+        
         public void SetAudioPitch(float pitch)
         {
             if (Sfx != null) Sfx.SetPitch(pitch);
@@ -176,7 +210,6 @@ namespace Kuantech.Core.FX
             if(!SpawnedFromPool) yield break;
             if(Sfx != null && Sfx.Enqueued)
             {
-                ShouldBeRemoved = true;
                 yield break;
             }
             if (duration < 0)
@@ -187,6 +220,7 @@ namespace Kuantech.Core.FX
             
             if(Vfx != null) Vfx.Stop();
             if(Sfx != null) Sfx.Stop();
+            if(PlayedShaderEffect != null) PlayedShaderEffect.StopShaderEffect();
             Despawn();
         }
 

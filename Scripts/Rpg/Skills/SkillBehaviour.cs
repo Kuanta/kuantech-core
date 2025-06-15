@@ -199,6 +199,8 @@ namespace Kuantech.Rpg.Skills
                 {
                     return null;
                 }
+
+                return effect;
             }
             effect = effectPlayer.PlayEffect(playSettings);
             return effect;
