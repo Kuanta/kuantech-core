@@ -36,6 +36,7 @@ namespace Kuantech.Rpg.Skills
     
         private bool _isCompleted;
         private float _castStartTime;
+        private Effect _playedEffect;
 
         #region Lifecycle
 
@@ -54,6 +55,7 @@ namespace Kuantech.Rpg.Skills
             //Play animation
             
             //Play effect
+     
             
             OnBehaviourStarted();
         }
@@ -92,23 +94,47 @@ namespace Kuantech.Rpg.Skills
 
         #region Effects
 
+        public void PlayEffectAtCastPosition()
+        {
+            Vector3 effectPos = CurrentSkillCastData.CastPosition;
+            Vector3 effectDir = CurrentSkillCastData.CastDirection;
+            Quaternion playRot = Quaternion.LookRotation(effectDir);
+            EffectPlaySettings playSettings = EffectPlaySettings.GetPlayAtPositionSettings(effectPos, playRot);
+            PlaySkillEffect(playSettings);
+        }
+        
+        /// <summary>
+        /// A common utility method that plays an effect given id and play settings
+        /// </summary>
+        /// <param name="effectId"></param>
+        /// <param name="playSettings"></param>
         public void PlaySkillEffect(EffectPlaySettings playSettings)
         {
+            _playedEffect = null;
             if (BehaviourData.BehaviourFx.IsNull()) return;
+            string effectId = BehaviourData.BehaviourFx.GetEffectId();
             
             //Try to play the effect on actor effect module if possible
             EffectsModule effectModule = ParentSkill.ParentSpellBook.Actor.GetModule<EffectsModule>();
             if (effectModule != null)
             {
-               
+                EffectPlayer player = effectModule.GetEffectPlayer(effectId);
+                if (player != null)
+                {
+                    _playedEffect = player.PlayEffect(playSettings);
+                    return;
+                }
             }
-            else
-            {
-                //Play at given point
-                BehaviourData.BehaviourFx.PlayEffect(playSettings);
-            }
+            
+            //Play at given point
+            _playedEffect = BehaviourData.BehaviourFx.PlayEffect(playSettings);
         }
 
+        public void StopSkillEffect()
+        {
+            if (_playedEffect == null) return;
+            _playedEffect.Stop();
+        }
         #endregion
         public virtual void ClearBehaviour()
         {

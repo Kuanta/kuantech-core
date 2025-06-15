@@ -30,12 +30,10 @@ namespace Kuantech.Core.FX
             _effectsById = new Dictionary<string, EffectPlayer>();
             foreach(var effectPlayer in EffectPlayers)
             {
-                if(!effectPlayer.EffectId.IsNullOrEmpty())
+                string effectId = effectPlayer.GetEffectId();
+                if (!effectId.IsNullOrEmpty())
                 {
-                    _effectsById[effectPlayer.EffectId] = effectPlayer;
-                }else if (effectPlayer.EffectPrefab != null && !effectPlayer.EffectPrefab.EffectId.IsNullOrEmpty())
-                {
-                    _effectsById[effectPlayer.EffectPrefab.EffectId] = effectPlayer;
+                    _effectsById.Add(effectId, effectPlayer);
                 }
                 else
                 {
@@ -86,7 +84,6 @@ namespace Kuantech.Core.FX
         }
         
         #region Fx Players
-
         public EffectPlayer GetEffectPlayer(string effectId)
         {
             if (effectId.IsNullOrEmpty()) return null;
