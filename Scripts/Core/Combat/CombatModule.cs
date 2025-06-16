@@ -194,20 +194,6 @@ namespace Kuantech.Core
             projectile.SetTargetOffset(targetOffset);
         }
         #endregion
-        
-        #region CastSkill
-        public bool CanUseSkill()
-        {
-            return !SkillLock.IsLocked() && Actor.IsAlive();
-        }
-
-        public void CastSkill(Skill skill)
-        {
-            if(!CanUseSkill()) return;
-
-            //Check skill resources
-        }
-        #endregion
 
         #region Attack Pattern Queries
 

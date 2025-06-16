@@ -11,6 +11,7 @@ namespace Kuantech.Core.FX
         public string EffectId;
         public float Duration;
         public float Delay = 0f;
+        public float DespawnDelay; //Give a bit of time for fade outs
 
         [Header("Visual Effect")]
         public VisualEffect Vfx;
@@ -25,6 +26,7 @@ namespace Kuantech.Core.FX
         public Animator Animator;
 
         [Header("Shader Effect")] 
+        [Tooltip("If set to true, renderers will be detected")] public bool DetectAllRenderers = true;
         public ShaderEffect ShaderEffect;
         public string ShaderEffectId;
         [NonSerialized] public ShaderEffect PlayedShaderEffect;
@@ -67,7 +69,9 @@ namespace Kuantech.Core.FX
             }
 
             _Play(settings);
-            if (settings.DespawnAfterPlay)
+            
+            //If duration is set, pool it
+            if (settings.DespawnAfterPlay && Duration > 0)
             {
                 StartCoroutine(PoolRoutine(Duration));
             }
@@ -113,6 +117,10 @@ namespace Kuantech.Core.FX
             if (ShaderEffect != null)
             {
                 PlayedShaderEffect = ShaderEffect;
+                if (DetectAllRenderers && playSettings.EffectParent != null)
+                {
+                    ShaderEffect.DetectAllRenderers(playSettings.EffectParent.gameObject);
+                }
                 ShaderEffect.PlayShaderEffect();
             }
             else if (playSettings.EffectParent != null && !string.IsNullOrEmpty(ShaderEffectId) && playSettings.EffectParent.TryGetComponent<Actor>(out Actor actor))
@@ -224,13 +232,27 @@ namespace Kuantech.Core.FX
             Despawn();
         }
 
+        private IEnumerator _despawnRoutine;
         public void Despawn()
         {
             if (SpawnedFromPool)
             {
-                EffectsLibrary.GetContext<EffectsLibrary>().EffectsPool.PoolObject(gameObject);
+                if (_despawnRoutine != null)
+                {
+                    StartCoroutine(_despawnRoutine);
+                }
+                _despawnRoutine = DespawnRoutine();
+                StartCoroutine(_despawnRoutine);
             }
         }
+
+        private IEnumerator DespawnRoutine()
+        {
+            yield return new WaitForSeconds(DespawnDelay);
+            _despawnRoutine = null;
+            EffectsLibrary.GetContext<EffectsLibrary>().EffectsPool.PoolObject(gameObject);
+        }
+        
         public void OnSoundDequeued()
         {
             Sfx.Enqueued = false;

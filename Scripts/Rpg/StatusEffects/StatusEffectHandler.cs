@@ -4,17 +4,28 @@ using UnityEngine;
 
 namespace Kuantech.Core.Combat
 {
-    public class StatusEffectHandler
+    public class StatusEffectHandler : ActorModule
     {
         public Queue<StatusEffect> EffectsToAdd = new Queue<StatusEffect>();
         public Queue<StatusEffect> EffectsToRemove = new Queue<StatusEffect>();
-        [SerializeField] private List<StatusEffect> Effects = new List<StatusEffect>();
 
+        private Dictionary<string, List<StatusEffect>> _statusEffectsMap =
+            new Dictionary<string, List<StatusEffect>>();
+        private List<StatusEffect> Effects = new List<StatusEffect>();
+        
+        /// <summary>
+        /// Adds a status effect
+        /// </summary>
+        /// <param name="effect"></param>
         public void AddStatusEffect(StatusEffect effect)
         {
             EffectsToAdd.Enqueue(effect);
         }
-
+        
+        /// <summary>
+        /// Removes a status effect
+        /// </summary>
+        /// <param name="effect"></param>
         public void RemoveStatusEffect(StatusEffect effect)
         {
             if (!Effects.Contains(effect))
@@ -33,7 +44,7 @@ namespace Kuantech.Core.Combat
                 if(effect.ToBeRemoved) continue;
                 if (effect.IsExpired())
                 {
-                    EffectsToRemove.Enqueue(effect);
+                    RemoveStatusEffect(effect);
                     continue;
                 }
 
@@ -55,13 +66,43 @@ namespace Kuantech.Core.Combat
             StatusEffect effect = EffectsToAdd.Dequeue();
             while (effect != null)
             {
-                Effects.Add(effect);
-                effect.OnAdd();
+                if (_AddEffect(effect))
+                {
+                    effect.OnAdd(Actor);
+                }
                 if (EffectsToAdd.IsNullOrEmpty()) break;
                 effect = EffectsToAdd.Dequeue();
             }
         }
-        
+
+        private bool _AddEffect(StatusEffect effect)
+        {
+            if (_statusEffectsMap == null) _statusEffectsMap = new Dictionary<string, List<StatusEffect>>();
+            string effectId = effect.GetId();
+            bool stackable = effect.StatusEffectData.Stackable;
+            
+            //Is status effect exists
+            if (!_statusEffectsMap.ContainsKey(effectId))
+            {
+                _statusEffectsMap[effectId] = new List<StatusEffect>();
+            }
+
+            if (_statusEffectsMap[effectId].Count == 0 || stackable)
+            {
+                _statusEffectsMap[effectId].Add(effect);
+                Effects.Add(effect);
+                return true;
+            }
+            
+            //there are already status effects of the same type and its not stackable
+            if (effect.StatusEffectData.RefreshOnApply)
+            {
+                //Don't add but refresh the existing one
+                _statusEffectsMap[effectId][0].Refresh();
+            }
+
+            return false;
+        }
         /// <summary>
         /// Remove queued effects from the status list
         /// </summary>
@@ -71,11 +112,20 @@ namespace Kuantech.Core.Combat
             StatusEffect effect = EffectsToRemove.Dequeue();
             while (effect != null)
             {
-                Effects.Remove(effect);
-                effect.OnRemove();
+                _RemoveEffect(effect);
                 if (EffectsToAdd.IsNullOrEmpty()) break;
                 effect = EffectsToRemove.Dequeue();
             }
+        }
+
+        private void _RemoveEffect(StatusEffect effect)
+        {
+            Effects.Remove(effect);
+            if (_statusEffectsMap.ContainsKey(effect.GetId()))
+            {
+                _statusEffectsMap[effect.GetId()].Remove(effect);
+            }
+            effect.OnRemove();
         }
     }
 }

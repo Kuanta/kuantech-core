@@ -12,7 +12,10 @@ namespace Kuantech.Rpg.Skills
         public AttributeAsset AttributeToScaleWith;
         public float AttributeScalingFactor;
     }
-
+    
+    /// <summary>
+    /// Numeric, scalable numeric variable that can be used in skills.
+    /// </summary>
     public class SkillVariable
     {
         public SkillVariableData SkillVariableData;

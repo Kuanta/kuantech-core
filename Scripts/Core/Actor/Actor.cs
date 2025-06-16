@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Kuantech.Core.Combat;
 using Kuantech.Utils;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -21,15 +22,18 @@ namespace Kuantech.Core
     {
         [Header("Identifier")] public string Id;
         public int FactionId = 0; //Since faction Id is used frequently, it is stated in Actor class
-
-        [Header("Components")] public ActorVisualHandler VisualHandler;
-
+ 
+        
         [Tooltip("If set, attacks will target this point")] public Transform HitPoint;
         
         [Header("Modules")]
         protected List<ActorModule> ActorModulesList;
         protected Dictionary<Type, List<ActorModule>> Modules = new Dictionary<Type, List<ActorModule>>();
         public Dictionary<string, ActorModule> ModulesById = new Dictionary<string, ActorModule>();
+        
+        //Common module references
+        public ActorVisualHandler VisualHandler;
+        public StatusEffectHandler StatusEffectHandler;
         
         protected bool Initialized;
         [Tooltip("If set to true, actor will initialize itself on start")]
@@ -74,12 +78,16 @@ namespace Kuantech.Core
                 module.Actor = this;
                 if(!module.ModuleId.IsNullOrEmpty()) ModulesById[module.ModuleId] = module;
             }
-
+            
             //Initialize modules after getting them all so that they can require each other in their initialize methods
             foreach(var module in ActorModulesList)
             {
                 module.Initialize();
             }
+
+            VisualHandler = GetModule<ActorVisualHandler>();
+            StatusEffectHandler = GetModule<StatusEffectHandler>();
+            
             ChangeActorState(ActorState.Inactive);
 
             if(actorSerializableData != null)

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Kuantech.Core;
 using Kuantech.Core.FX;
+using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Rpg.Skills
@@ -18,7 +19,7 @@ namespace Kuantech.Rpg.Skills
     [Serializable]
     public struct SkillBehaviorFxData
     {
-        public enum SKillBehaviourFxPlayType
+        public enum SkillBehaviourFxPlayType
         {
             OnCaster, //Attached to caster
             AtCaster, //At casters position, without attaching to caster
@@ -26,7 +27,7 @@ namespace Kuantech.Rpg.Skills
 
         }
 
-        public SKillBehaviourFxPlayType PlayType;
+        public SkillBehaviourFxPlayType PlayType;
         public EffectPlayer EffectPlayer;
         public bool StopOnBehaviourEnd;
     }
@@ -35,6 +36,14 @@ namespace Kuantech.Rpg.Skills
     public struct SkillBehaviourData
     {
         public SkillBehaviourType SkillBehaviourType;
+
+        [Header("Config Data")] 
+        [Tooltip("Behaviour specific config data")]
+        [SerializeReference]
+        [SubclassSelector]
+        public SkillBehaviourConfigData ConfigData; 
+        
+        [Header("Common Properties")]
         public float Duration;
 
         [Header("Effects")] 
@@ -54,7 +63,18 @@ namespace Kuantech.Rpg.Skills
         private bool _isCompleted;
         private float _castStartTime;
         public HashSet<Effect> PlayedEffects = new HashSet<Effect>();
-
+        
+        /// <summary>
+        /// Returns the parent actor
+        /// </summary>
+        /// <returns></returns>
+        public Actor GetParentActor()
+        {
+            if (ParentSkill == null) return null;
+            if (ParentSkill.ParentSpellBook == null) return null;
+            return ParentSkill.ParentSpellBook.Actor;
+        }
+        
         #region Lifecycle
 
         public void Initialize(Skill parentSkill, SkillBehaviourData behaviourData)
@@ -96,13 +116,13 @@ namespace Kuantech.Rpg.Skills
                 Effect effect = null;
                 switch(fx.PlayType)
                 {
-                    case SkillBehaviorFxData.SKillBehaviourFxPlayType.OnCaster:
+                    case SkillBehaviorFxData.SkillBehaviourFxPlayType.OnCaster:
                         effect = PlayEffectOnCaster(fx.EffectPlayer);
                         break;
-                    case SkillBehaviorFxData.SKillBehaviourFxPlayType.AtCaster:
+                    case SkillBehaviorFxData.SkillBehaviourFxPlayType.AtCaster:
                         effect  = PlayEffectAtCasterPosition(fx.EffectPlayer);
                         break;
-                    case SkillBehaviorFxData.SKillBehaviourFxPlayType.AtCastPoint:
+                    case SkillBehaviorFxData.SkillBehaviourFxPlayType.AtCastPoint:
                         effect = PlayEffectAtCastPosition(fx.EffectPlayer);
                         break;
                 }
@@ -142,8 +162,15 @@ namespace Kuantech.Rpg.Skills
         public void CompleteBehaviour()
         {
             _isCompleted = true;
+            OnBehaviourEnded();
             ParentSkill.OnSkillBehaviourCompleted();
         }
+
+        protected virtual void OnBehaviourEnded()
+        {
+            
+        }
+        
         #endregion
 
         #region Effects
