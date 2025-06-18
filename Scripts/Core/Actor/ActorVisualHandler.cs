@@ -1,4 +1,5 @@
 ﻿using Kuantech.Utils;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -21,6 +22,7 @@ namespace Kuantech.Core
             if (CurrentActorVisual != null)
             {
                 CurrentActorVisual.Initialize();
+                CurrentActorVisual.ParentActor = Actor;
             }
         }
 
@@ -39,6 +41,7 @@ namespace Kuantech.Core
             CurrentActorVisual = visual;
             CurrentActorVisual.gameObject.AttachToParent(ActorVisualSlot != null ? ActorVisualSlot : transform);
             CurrentActorVisual.Initialize();
+            CurrentActorVisual.ParentActor = Actor;
             OnActorVisualSet?.Invoke(CurrentActorVisual);
             visual.gameObject.SetActive(true);
         }

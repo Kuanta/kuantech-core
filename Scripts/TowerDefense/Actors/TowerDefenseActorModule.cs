@@ -23,7 +23,6 @@ namespace Kuantech.TowerDefense
         private StatsModule _statsModule;
         private CombatModule _combatModule;
         private MovementModule _movementModule;
-        private AnimationModule _animationModule;
         private float _lastActionTime;
         private TowerDefenseLevel _tdLevel;
         
@@ -38,16 +37,13 @@ namespace Kuantech.TowerDefense
         {
             if (Actor == null) return;
             
-            if(_animationModule != null)
+            if(PathFollower == null || PathFollower.IsMoving())
             {
-                if(PathFollower == null || PathFollower.IsMoving())
-                {
-                    _animationModule.SetMovementParameters(Vector2.zero);
-                }
-                if(PathFollower.IsMoving())
-                {
-                    _animationModule.SetMovementParametersFromMovementDirection(PathFollower.GetMovementVector());
-                }
+                Actor.MotionVectorsHandler.SetMovementVector(Vector3.zero);
+            }
+            if(PathFollower.IsMoving())
+            {
+                Actor.MotionVectorsHandler.SetMovementVector(PathFollower.GetMovementVector());
             }
         }
         public override void OnModulesInitialized()
@@ -55,7 +51,6 @@ namespace Kuantech.TowerDefense
             base.OnModulesInitialized();
             _combatModule = Actor.GetModule<CombatModule>();
             _movementModule = Actor.GetModule<MovementModule>();
-            _animationModule = Actor.GetModule<AnimationModule>();
         }
 
         public void SetOnPath(Path path)

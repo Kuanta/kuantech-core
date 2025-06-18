@@ -17,9 +17,6 @@ namespace Kuantech.Core
         [Tooltip("If set to true, movement will be sent to animator as a single float")]
         public bool UseOneDimensionalMovement;
         
-        [Tooltip("Up Vector3 for the actor. Used to determine the up direction in animations.")]
-        public Vector3 UpDirection = Vector3.up;
-        
         private Vector2 _targetMovementParameters = Vector2.zero;
         private Vector2 _movementParameters = Vector2.zero;
         private Vector2 _movementParametersScale = Vector2.one;
@@ -77,6 +74,13 @@ namespace Kuantech.Core
         private void Update()
         {
             if (GameManager.Instance.GameIsPaused || Animator == null) return;
+            
+            //Update from Motion Vectors Handler
+            if (Actor.MotionVectorsHandler != null)
+            {
+                UpdateMovementParameters();
+            }
+            
             _movementParameters =
                 Vector2.Lerp(_movementParameters, _targetMovementParameters * _movementParametersScale, Time.deltaTime * LerpFactor);
            
@@ -134,10 +138,16 @@ namespace Kuantech.Core
         }
         
         #region Movement
+
+        private void UpdateMovementParameters()
+        {
+            Vector3 localMovement = Actor.MotionVectorsHandler.GetLocalMovementVector();
+            _targetMovementParameters = new Vector2(localMovement.x, localMovement.z);
+        }
         
         public void SetMovementParametersFromMovementDirection(Vector3 direction, bool forced = false)
         {
-            Vector2 movement = Helpers.GetVector2FromVector3WithUpDirection(direction, UpDirection);
+            Vector2 movement = Helpers.GetVector2FromVector3WithUpDirection(direction, Actor.ActorUpVector);
             SetMovementParameters(movement, forced);
         }
         

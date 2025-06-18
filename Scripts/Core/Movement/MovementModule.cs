@@ -2,10 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Kuantech.AI.Pathfinding;
-using Kuantech.Core;
-using Kuantech.Core.Combat;
 using Kuantech.Core.Utils;
-using Kuantech.Utils.Math;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -15,10 +12,8 @@ namespace Kuantech.Core
     public class MovementModule : ActorModule
     {
         [SerializeField] private Rigidbody Rigidbody;
-        [SerializeField] private Vector2 _movement;
         [SerializeField] private float _speed;
         public Vector3 ForceMoveVector = Vector3.zero;
-        private AnimationModule _animationModule;
         private bool _movementLocked = false;
         
         //Waypoint
@@ -58,13 +53,10 @@ namespace Kuantech.Core
         [Header("Path Follower")] [SerializeField]
         private PathFollower PathFollower;
         
-        private Vector3 _momentumVector;
+        private Vector2 _movement;
         private float _dodgeMomentumPreserveTime = 0.5f;
         
-        public override void OnModulesInitialized()
-        {
-            _animationModule = Actor.GetModule<AnimationModule>();
-        }
+    
         private void FixedUpdate()
         {
             HandleMovement();
@@ -179,7 +171,7 @@ namespace Kuantech.Core
         #endregion
 
 
-        #region Controles
+        #region Controls
 
         public void ToggleMovement(bool toggle)
         {
@@ -216,8 +208,6 @@ namespace Kuantech.Core
         {
             if (!forced && (_goingToWaypoint || Jumping || MovementLock.IsLocked())) return;
             _movement = movement;
-            if (_animationModule == null) return;
-            _animationModule.SetMovementParameters(_movement);
         }
 
         public void Stop()
@@ -324,8 +314,6 @@ namespace Kuantech.Core
             }
        
             _movement = Vector2.zero;
-            if (_animationModule == null) return;
-            _animationModule.SetMovementParameters(_movement);
         }
 
         private void Land()

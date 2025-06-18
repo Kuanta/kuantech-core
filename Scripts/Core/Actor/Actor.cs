@@ -20,11 +20,12 @@ namespace Kuantech.Core
 
     public class Actor : MonoBehaviour, IHittable, ISpawnable
     {
-        [Header("Identifier")] public string Id;
+        [Header("Identifier")] 
+        public string Id;
         public int FactionId = 0; //Since faction Id is used frequently, it is stated in Actor class
- 
         
-        [Tooltip("If set, attacks will target this point")] public Transform HitPoint;
+        [Tooltip("If set, attacks will target this point")] 
+        public Transform HitPoint;
         
         [Header("Modules")]
         protected List<ActorModule> ActorModulesList;
@@ -38,7 +39,12 @@ namespace Kuantech.Core
         protected bool Initialized;
         [Tooltip("If set to true, actor will initialize itself on start")]
         public bool InitializeOnStart;
-
+        
+        [Header("Motion Vectors")]
+        public Vector3 ActorUpVector = Vector3.up;
+        public Vector3 ActorForwardVector = Vector3.forward;
+        public MotionVectorsHandler MotionVectorsHandler;
+        
         //Runtime
         public ActorState CurrentActorState = ActorState.Spawned;
         [NonSerialized] public bool Dirtied = false;
@@ -66,6 +72,11 @@ namespace Kuantech.Core
         public virtual void Initialize(ActorSerializableData actorSerializableData = null)
         {
             if (Initialized) return;
+            
+            //Motions vector handler
+            MotionVectorsHandler = new MotionVectorsHandler(this, ActorUpVector, ActorForwardVector);
+            
+            //Modules
             ActorModulesList = GetComponentsInChildren<ActorModule>().ToList();
             ModulesById = new Dictionary<string, ActorModule>();
             foreach (ActorModule module in ActorModulesList)
