@@ -104,7 +104,17 @@ namespace Kuantech.Core
             if (context == null) return null;
             return context.KtCamera;
         }
-
+        
+        /// <summary>
+        /// Gets the camera
+        /// </summary>
+        /// <returns></returns>
+        public static UnityEngine.Camera GetCamera()
+        {
+            var context = GetContext<CameraManager>();
+            if (context == null || context.KtCamera == null) return UnityEngine.Camera.main;
+            return context.KtCamera.Camera;
+        }
     }
 }
 

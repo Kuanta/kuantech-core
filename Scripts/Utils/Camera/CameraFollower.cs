@@ -1,300 +1,130 @@
 ﻿using System;
-using DG.Tweening;
 using UnityEngine;
-using Kuantech.Utils;
-using Unity.VisualScripting;
-using UnityEngine.Events;
 
-namespace Kuantech.Core
+namespace Kuantech.Core.Utils
 {
-    [Serializable]
-    public struct CameraParameters
-    {
-        public SphericalCoordinate Spherical;
-        public Vector3 PositionOffset;
-        public Vector3 LookatOffset;
-        
-        //If LookAt is enabled, rotation will be calculated from lookAt
-        public bool LookAt;
-        public Vector3 LookAtAngles;
-    }
-
-    public struct TransitionParameters
-    {
-        public bool TransitionPosition; //If set to true, position will be transitioned
-        public Transform FocusObjcet; //If not null, transition will be made by focusing this point
-        public Vector3 TargetPosition; //If targetObject is null, this will be used
-        public float PositionTransitionTime;
-        public bool TransitionRotation; //If set to true, rotation transition
-        public Quaternion TargetRotation;
-        public bool LookToFocus; //If set to true, camera will look towards focus
-        public float RotationTransitionTime;
-    }
-    
+    /// <summary>
+    /// Most basic camera positioner component
+    /// </summary>
     public class CameraFollower : MonoBehaviour
     {
-        public CameraParameters CameraParameters;
-        public bool Following = true;
-        [SerializeField] public Transform Target;
-        [SerializeField] public float FollowDistance = 5.0f;
-        [SerializeField] public float horizontalSensitivity = 1.0f;
-        [SerializeField] public float verticalSensitivity = 1.0f;
-        [SerializeField] public float Speed = 10.0f;
+        public GameObject CameraObject;
+        public CameraTarget CameraTarget;
 
-        [Header("Lerp Factors")] 
-        [SerializeField] private float PositionLerpFactor = 1f;
-        [SerializeField] private float RotationSlerpFactor = 1f;
-        [SerializeField] private float ZoomLerpFactor = 10f;
+        [Header("Camera Properties")] 
+        public float PositionLerpSpeed = 5f;
+        public float RotationLerpSpeed = 5f;
         
-        protected Vector3 TargetPosition;
-        protected Quaternion TargetRotation;
-
-        private float _yawAccel = 0f;
-        private float _pitchAccel = 0f;
-        private float _yawSpeed = 0f;
-        private float _pitchSpeed = 0f;
-
-        private float _deltaX = 0f;
-        private float _deltaY = 0f;
-
-        private float _zoomFactorTarget = 1f;
-        private float _currentZoomFactor = 1f;
         
-        //Transitioning
-        private bool Transitioning => _positionTransition || _rotationTransition;
-        private bool _positionTransition;
-        private bool _rotationTransition;
-        private UnityAction _transitionComplete;
+        //Runtime
+        [NonSerialized] protected Vector3 TargetPosition;
+        [NonSerialized] protected Vector3 TargetDirection;
         
-        public void SetDeltaX(float deltaX)
+        protected virtual void LateUpdate()
         {
-            _deltaX = deltaX;
+            if (CameraTarget == null) return;
+            SetTargetPosition();
+            SetTargetDirection();
+        
+            UpdatePosition(TargetPosition);
+            UpdateRotation(TargetDirection);
         }
-
-        public void SetDeltaY(float deltaY)
+        
+        /// <summary>
+        /// Snaps to target
+        /// </summary>
+        public void SnapToTarget()
         {
-            _deltaY = deltaY;
-        }
-        protected virtual void Update()
-        {
-            if (Transitioning)
+            if (CameraTarget != null)
             {
-                return;
+                SetTargetPosition();
+                SetTargetDirection();
             }
-            float zoomedFollow = FollowDistance * _currentZoomFactor;
-
-            _currentZoomFactor = Mathf.Lerp(_currentZoomFactor, _zoomFactorTarget, Time.deltaTime * ZoomLerpFactor);
             
-            _yawAccel = horizontalSensitivity * _deltaX;
-            _pitchAccel = verticalSensitivity * _deltaY;
-            
-            float yawSpeed = _yawSpeed + Time.deltaTime * _yawAccel;
-            float pitchSpeed = _pitchSpeed + Time.deltaTime * _pitchAccel;
-
-            CameraParameters.Spherical.Yaw -= _yawSpeed * Time.deltaTime + _yawAccel * Time.deltaTime * Time.deltaTime * 0.5f;  
-            CameraParameters.Spherical.Pitch += _pitchSpeed * Time.deltaTime + _pitchAccel * Time.deltaTime * Time.deltaTime * 0.5f;
-
-            _yawSpeed = yawSpeed;
-            _pitchSpeed = pitchSpeed;
-
-            CameraParameters.Spherical.Pitch = Mathf.Clamp(CameraParameters.Spherical.Pitch, -Mathf.Deg2Rad*179.9f, Mathf.Deg2Rad*179.9f);
-            CameraParameters.Spherical.Radius = zoomedFollow;
-
-            _yawSpeed *= 0.9f;
-            _pitchSpeed *= 0.9f;
-            
-            Vector3 desiredPos = GetDesiredPosition();
-            Quaternion desiredRotation = GetDesiredRotation(Target, desiredPos);
-            
-            transform.position = Vector3.Lerp(transform.position, desiredPos, PositionLerpFactor);
-            transform.rotation = Quaternion.Slerp(transform.rotation, desiredRotation, RotationSlerpFactor);
+            SetPosition(TargetPosition);
+            SetRotation(Quaternion.LookRotation(TargetDirection));
         }
         
         /// <summary>
-        /// Returns the desired position for the camera
+        /// Sets the position immediately
         /// </summary>
-        /// <returns></returns>
-        protected virtual Vector3 GetDesiredPosition()
+        /// <param name="position"></param>
+        public void SetPosition(Vector3 position)
         {
-            if (Target == null) return TargetPosition;
-            
-            TargetPosition = GetDesiredPositionForObject(Target);
-            return TargetPosition;
+            TargetPosition = position;
+            _SetPosition(position);
         }
         
         /// <summary>
-        /// Returns the desired rotation for the camera
+        /// Sets the rotation immediately
         /// </summary>
-        /// <returns></returns>
-        protected virtual Quaternion GetDesiredRotation(Transform target, Vector3 position)
+        /// <param name="rotation"></param>
+        public void SetRotation(Quaternion rotation)
         {
-            if (!CameraParameters.LookAt)
+            TargetDirection = rotation * Vector3.forward;
+            _SetRotation(rotation);
+        }
+        
+        public virtual void SetTargetPosition()
+        {
+            if (CameraTarget != null)
             {
-                return Quaternion.Euler(CameraParameters.LookAtAngles);
+                TargetPosition = CameraTarget.GetTargetPosition();
             }
-            if (target == null) return TargetRotation;
-            return GetDesiredRotationForObject(target, position);
-        }
-
-        private Quaternion GetDesiredRotationForObject(Transform target, Vector3 fromPosition)
-        {
-            Vector3 lookTarget = GetLookAtPosition(GetFocusPoint(target));
-            return Quaternion.LookRotation(lookTarget - fromPosition, Vector3.up);
-        }
-        /// <summary>
-        /// Returns the look position for a given position
-        /// </summary>
-        /// <param name="targetPosition"></param>
-        /// <returns></returns>
-        protected virtual Vector3 GetLookAtPosition(Vector3 targetPosition)
-        {
-            Vector3 camForward = CameraParameters.Spherical.GetForward().normalized;
-            Vector3 camRight = -1 * Vector3.Cross(camForward.normalized, Vector3.up).normalized;
-            return camRight * CameraParameters.LookatOffset.x + camForward * CameraParameters.LookatOffset.z 
-                                                              + Vector3.up * CameraParameters.LookatOffset.y + targetPosition;
-        }
-
-        /// <summary>
-        /// Returns the camera's should be position for a given target
-        /// </summary>
-        /// <param name="target"></param>
-        /// <returns></returns>
-        private Vector3 GetDesiredPositionForObject(Transform target)
-        {
-            Vector3 focusPoint = GetFocusPoint(target);
-            float angleDiff = Mathf.Asin(CameraParameters.LookatOffset.x / CameraParameters.Spherical.Radius);
-            Vector3 sphericalPos = Quaternion.AngleAxis(target.transform.rotation.eulerAngles.y, Vector3.up) * SphericalCoordinate.ToWorld(CameraParameters.Spherical.Radius, 
-                CameraParameters.Spherical.Yaw + angleDiff, 
-                CameraParameters.Spherical.Pitch) + focusPoint;
-            return sphericalPos;
         }
         
-       
-        /// <summary>
-        /// Returns the focus point for an object. Simply adds the position offset according to the focus object's rotation
-        /// </summary>
-        /// <param name="focusedObject"></param>
-        /// <returns></returns>
-        private Vector3 GetFocusPoint(Transform focusedObject)
+        public virtual void SetTargetDirection()
         {
-            return focusedObject.position + (Quaternion.AngleAxis(focusedObject.rotation.eulerAngles.y, Vector3.up) * CameraParameters.PositionOffset);
-        }
-        
-        /// <summary>
-        /// Zooms in or out by adjusting zoom in factor. If zoomInFactor>1 zoom in, otherwise zoomout 
-        /// </summary>
-        /// <param name="zoomInFactor"></param>
-        public void Zoom(float zoomInFactor)
-        {
-            _zoomFactorTarget = zoomInFactor;
-        }
-
-        public void ResetZoom()
-        {
-            _zoomFactorTarget = 1f;
-        }
-        
-        #region PublicInterface
-        public virtual void SetCameraParameters(CameraParameters cameraParameters)
-        {
-            CameraParameters = cameraParameters;
-            
-            //Set spherical coordinates with new class since class members are passed by ref
-            CameraParameters.Spherical = new SphericalCoordinate(cameraParameters.Spherical.Radius, cameraParameters.Spherical.Yaw, cameraParameters.Spherical.Pitch);
-        }
-        
-        /// <summary>
-        /// Sets the target position for camera
-        /// </summary>
-        /// <param name="desiredPosition"></param>
-        public void SetDesiredPosition(Vector3 desiredPosition)
-        {
-            TargetPosition = desiredPosition;
-        }
-
-        public void SetDesiredPositionForTarget(Transform target)
-        {
-            TargetPosition = GetDesiredPositionForObject(target);
-        }
-        
-        /// <summary>
-        /// Sets the target rotation for camera
-        /// </summary>
-        /// <param name="desiredRotation"></param>
-        public void SetDesiredRotation(Quaternion desiredRotation)
-        {
-            TargetRotation = desiredRotation;
-        }
-
-        public void SetTarget(Transform target)
-        {
-            Target = target;
-        }
-        #endregion
-        
-        #region Transition
-
-        
-        /// <summary>
-        /// Warps the camera to desired position 
-        /// </summary>
-        /// <param name="target"></param>
-        /// <param name="setTarget"></param>
-        public void WarpCamera(Transform target, bool setTarget = true)
-        {
-            TargetPosition = GetDesiredPositionForObject(target);
-            TargetRotation = GetDesiredRotation(target, TargetPosition);
-
-            transform.position = TargetPosition;
-            transform.rotation = TargetRotation;
-            if(setTarget) Target = target;
-        }
-
-        public void WarpCamera()
-        {
-            if (Target == null) return;
-            WarpCamera(Target, false);
-        }
-        
-        public void Transition(TransitionParameters transitionParameters, UnityAction transitionCompleteHandler)
-        {
-            _positionTransition = transitionParameters.TransitionPosition;
-            _rotationTransition = transitionParameters.TransitionRotation;
-            if (! _positionTransition && !_rotationTransition)
+            if (CameraTarget != null)
             {
-                Debug.LogWarning("No rotation or position transition is set to true");
-                _transitionComplete = null;
-                return;
+                TargetDirection  = CameraTarget.GetTargetRotation() * Vector3.forward;
             }
-            _transitionComplete = transitionCompleteHandler;
+        }
+        
+        protected virtual void UpdatePosition(Vector3 targetPosition)
+        {
+            _SetPosition(Vector3.Lerp(_GetPostition(), targetPosition, PositionLerpSpeed * Time.deltaTime));
+        }
 
-            Vector3 targetPosition = transform.position;
-            if (_positionTransition)
+        protected virtual void UpdateRotation(Vector3 targetDirection)
+        {
+            Quaternion targetRot = Quaternion.LookRotation(targetDirection);
+            SetRotation(Quaternion.Slerp(_GetRotation(), targetRot, Time.deltaTime * RotationLerpSpeed));
+        }
+
+        #region Setter & Getter
+
+        private Vector3 _GetPostition()
+        {
+            if (CameraObject != null) return CameraObject.transform.position;
+            return transform.position;
+        }
+
+        private Quaternion _GetRotation()
+        {
+            if (CameraObject != null) return CameraObject.transform.rotation;
+            return transform.rotation;
+        }
+
+        private void _SetPosition(Vector3 position)
+        {
+            if (CameraObject != null)
             {
-                targetPosition = transitionParameters.FocusObjcet != null ? GetDesiredPositionForObject(transitionParameters.FocusObjcet) : transitionParameters.TargetPosition;
-                transform.DOMove(targetPosition, transitionParameters.PositionTransitionTime).OnComplete(() =>
-                {
-                    _positionTransition = false;
-                    if(!_rotationTransition) transitionCompleteHandler?.Invoke();
-                });
+                CameraObject.transform.position = position;
             }
-
-            if (_rotationTransition)
+            else
             {
-                Quaternion targetRotation = transitionParameters.FocusObjcet != null && transitionParameters.LookToFocus
-                    ? GetDesiredRotationForObject(transitionParameters.FocusObjcet, targetPosition)
-                    : transitionParameters.TargetRotation;
-                
-                
-                transform.DORotateQuaternion(targetRotation, transitionParameters.RotationTransitionTime).OnComplete(() =>
-                {
-                    _rotationTransition = false;
-                    if(!_positionTransition) transitionCompleteHandler?.Invoke();
-                });
+                transform.position = position;
             }
+        }
 
+        private void _SetRotation(Quaternion rotation)
+        {
+            if (CameraObject != null) CameraObject.transform.rotation = rotation;
+            else transform.rotation = rotation;
         }
 
         #endregion
+    
     }
 }
