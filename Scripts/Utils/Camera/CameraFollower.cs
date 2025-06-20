@@ -9,25 +9,30 @@ namespace Kuantech.Core.Utils
     public class CameraFollower : MonoBehaviour
     {
         public GameObject CameraObject;
+        public UnityEngine.Camera Camera;
         public CameraTarget CameraTarget;
 
         [Header("Camera Properties")] 
         public float PositionLerpSpeed = 5f;
+        public float OrthographicSizeLerpSpeed = 5f;
         public float RotationLerpSpeed = 5f;
         
         
         //Runtime
         [NonSerialized] protected Vector3 TargetPosition;
         [NonSerialized] protected Vector3 TargetDirection;
+        [NonSerialized] protected float TargetOrthographicSize;
         
         protected virtual void LateUpdate()
         {
             if (CameraTarget == null) return;
             SetTargetPosition();
             SetTargetDirection();
+            //SetTargetOrthographicSize();
         
             UpdatePosition(TargetPosition);
             UpdateRotation(TargetDirection);
+            //UpdateOrthographicSize();
         }
         
         /// <summary>
@@ -39,10 +44,12 @@ namespace Kuantech.Core.Utils
             {
                 SetTargetPosition();
                 SetTargetDirection();
+                SetTargetOrthographicSize();
             }
             
             SetPosition(TargetPosition);
             SetRotation(Quaternion.LookRotation(TargetDirection));
+            SetOrthographicSize(TargetOrthographicSize);
         }
         
         /// <summary>
@@ -64,6 +71,12 @@ namespace Kuantech.Core.Utils
             TargetDirection = rotation * Vector3.forward;
             _SetRotation(rotation);
         }
+
+        public void SetOrthographicSize(float size)
+        {
+            TargetOrthographicSize = size;
+            _SetOrthographicSize(size);
+        }
         
         public virtual void SetTargetPosition()
         {
@@ -80,6 +93,14 @@ namespace Kuantech.Core.Utils
                 TargetDirection  = CameraTarget.GetTargetRotation() * Vector3.forward;
             }
         }
+
+        public virtual void SetTargetOrthographicSize()
+        {
+            if (CameraTarget != null)
+            {
+                TargetOrthographicSize = CameraTarget.GetTargetOrthographicSize();
+            }
+        }
         
         protected virtual void UpdatePosition(Vector3 targetPosition)
         {
@@ -92,6 +113,12 @@ namespace Kuantech.Core.Utils
             SetRotation(Quaternion.Slerp(_GetRotation(), targetRot, Time.deltaTime * RotationLerpSpeed));
         }
 
+        protected virtual void UpdateOrthographicSize()
+        {
+            SetOrthographicSize(Mathf.Lerp(_GetOrthographicSize(), 
+                TargetOrthographicSize, 
+                OrthographicSizeLerpSpeed * Time.deltaTime));
+        }
         #region Setter & Getter
 
         private Vector3 _GetPostition()
@@ -106,6 +133,12 @@ namespace Kuantech.Core.Utils
             return transform.rotation;
         }
 
+        private float _GetOrthographicSize()
+        {
+            if (Camera == null) return 1;
+            return Camera.orthographicSize;
+        }
+        
         private void _SetPosition(Vector3 position)
         {
             if (CameraObject != null)
@@ -124,6 +157,11 @@ namespace Kuantech.Core.Utils
             else transform.rotation = rotation;
         }
 
+        private void _SetOrthographicSize(float orthographicSize)
+        {
+            if (Camera == null) return;
+            Camera.orthographicSize = orthographicSize;
+        }
         #endregion
     
     }

@@ -4,6 +4,7 @@ namespace Kuantech.Core.Utils
 {
     public class CameraTarget : MonoBehaviour
     {
+        public float TargetOrthographicSize = 5.0f;
         public virtual Vector3 GetTargetPosition()
         {
             return transform.position;
@@ -12,6 +13,11 @@ namespace Kuantech.Core.Utils
         public virtual Quaternion GetTargetRotation()
         {
             return transform.rotation;
+        }
+
+        public virtual float GetTargetOrthographicSize()
+        {
+            return TargetOrthographicSize;
         }
     }
 }

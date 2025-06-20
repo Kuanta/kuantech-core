@@ -9,6 +9,7 @@ namespace Kuantech.Utils
     {
         public Vector3 Position;
         public Quaternion Rotation;
+        public float OrthographicSize;
         public bool IsScreenPosition = false;
         public Transform Target;
         public Vector3 LocalPosition;

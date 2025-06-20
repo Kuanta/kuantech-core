@@ -48,6 +48,17 @@ namespace Kuantech.Core.Utils
             }
             return _targetPoint.Rotation;
         }
+
+        public override float GetTargetOrthographicSize()
+        {
+            if (_targetPoint == null) return base.GetTargetOrthographicSize();
+            return _targetPoint.OrthographicSize;
+        }
+        
+        public bool IsCameraOrthographic()
+        {
+            return CameraManager.GetCamera().orthographic;
+        }
         
         public WorldPoint GetTargetPoint()
         {
@@ -69,6 +80,26 @@ namespace Kuantech.Core.Utils
             normal = yawRotation * normal;
             
             Vector3 anchorsCenter = (leftPosition + rightPosition + topPosition + bottomPosition) / 4.0f + CameraOffset;
+            
+            if (IsCameraOrthographic())
+            {
+                Vector3 cameraPosition = anchorsCenter;
+                Vector3 adjustedNormal = pitchRotation * yawRotation * normal;
+                // Ortographic size hesapla
+                float width = Vector3.Distance(leftPosition, rightPosition);
+                float height = Vector3.Distance(topPosition, bottomPosition);
+                float aspect = GetAspectRatio();
+                
+                float requiredOrthoSize = Mathf.Max(height * 0.5f, (width * 0.5f) / aspect);
+
+                WorldPoint wp = new WorldPoint
+                {
+                    Position = cameraPosition,
+                    OrthographicSize = requiredOrthoSize,
+                    Rotation = Quaternion.LookRotation(-adjustedNormal, Vector3.up)
+                };
+                return wp;
+            }
 
             float pitchAngle = PitchAngle + 90;
             if (pitchAngle <= 0) pitchAngle = 1;
