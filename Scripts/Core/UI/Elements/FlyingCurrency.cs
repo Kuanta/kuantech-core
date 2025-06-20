@@ -9,7 +9,7 @@ namespace Kuantech.Core.UI
 
         public void Fly(CurrencyAsset asset, Transform parent, Vector3 startPosition, Vector3 endPosition)
         {
-            CurrencyIcon.sprite = asset.CurrencyIcon;
+            CurrencyIcon.sprite = asset.Icon;
             Fly(startPosition, endPosition);
         }        
     }

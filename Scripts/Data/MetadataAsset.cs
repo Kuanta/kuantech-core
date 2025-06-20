@@ -13,5 +13,10 @@ namespace Kuantech.Core
         public string Description;
         public Sprite Icon;
         public Color MainColor;
+
+        public string GetId()
+        {
+            return Id;
+        }
     }
 }

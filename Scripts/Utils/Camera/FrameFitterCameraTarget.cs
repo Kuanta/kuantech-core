@@ -83,22 +83,30 @@ namespace Kuantech.Core.Utils
             
             if (IsCameraOrthographic())
             {
-                Vector3 cameraPosition = anchorsCenter;
-                Vector3 adjustedNormal = pitchRotation * yawRotation * normal;
-                // Ortographic size hesapla
-                float width = Vector3.Distance(leftPosition, rightPosition);
-                float height = Vector3.Distance(topPosition, bottomPosition);
-                float aspect = GetAspectRatio();
-                
-                float requiredOrthoSize = Mathf.Max(height * 0.5f, (width * 0.5f) / aspect);
 
-                WorldPoint wp = new WorldPoint
+                normal = pitchRotation * yawRotation * normal;
+
+                Quaternion rotation = Quaternion.LookRotation(-normal, Vector3.up);
+
+                // Anchor'ların projection düzlemiyle doğru boyutlarını al
+                float width = Vector3.ProjectOnPlane(rightPosition - leftPosition, normal).magnitude;
+                float height = Vector3.ProjectOnPlane(topPosition - bottomPosition, normal).magnitude;
+
+                float aspect = GetAspectRatio();
+
+                // Hem dikey hem yatay sığması için gereken en büyük size
+                float orthoSizeToFitHeight = height / 2f;
+                float orthoSizeToFitWidth = (width / aspect) / 2f;
+                float requiredOrthoSize = Mathf.Max(orthoSizeToFitHeight, orthoSizeToFitWidth);
+                
+                Debug.Log("Ortho size:"+requiredOrthoSize);
+                
+                return new WorldPoint
                 {
-                    Position = cameraPosition,
-                    OrthographicSize = requiredOrthoSize,
-                    Rotation = Quaternion.LookRotation(-adjustedNormal, Vector3.up)
+                    Position = anchorsCenter,
+                    Rotation = rotation,
+                    OrthographicSize = requiredOrthoSize
                 };
-                return wp;
             }
 
             float pitchAngle = PitchAngle + 90;
@@ -141,7 +149,6 @@ namespace Kuantech.Core.Utils
 
         private float GetAspectRatio()
         {
-          
             return CameraManager.GetCamera().aspect;
         }
         private float GetNearPlaneWidth()

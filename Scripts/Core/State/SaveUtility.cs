@@ -77,8 +77,10 @@ namespace Kuantech.Core
                 default:
                     string json = JsonConvert.SerializeObject(value, Formatting.None, new JsonSerializerSettings
                     {
-                        TypeNameHandling = TypeNameHandling.Auto
+                        TypeNameHandling = TypeNameHandling.Auto,
+                        ContractResolver = new UnitySerializeFieldContractResolver()
                     });
+
                     return System.Text.Encoding.UTF8.GetBytes(json);
             }
         }
@@ -102,7 +104,8 @@ namespace Kuantech.Core
                 string json = System.Text.Encoding.UTF8.GetString(bytes);
                 var obj = JsonConvert.DeserializeObject(json, fieldType, new JsonSerializerSettings
                 {
-                    TypeNameHandling = TypeNameHandling.Auto
+                    TypeNameHandling = TypeNameHandling.Auto,
+                    ContractResolver = new UnitySerializeFieldContractResolver()
                 });
 
                 field.SetValue(owner, obj);

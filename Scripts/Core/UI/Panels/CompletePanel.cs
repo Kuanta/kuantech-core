@@ -1,11 +1,17 @@
 using Kuantech.Core.FX;
+using Kuantech.Midcore.UI;
+using UnityEngine;
 using UnityEngine.UI;
 
 namespace Kuantech.Core.UI
 {
     public class CompletePanel : UIMenu
     {
+        [Header("Components")] 
+        public RewardsPanel RewardsPanel;
         public Button ContinueButton;
+        
+        
         public Effect VictoryEffect;
 
         public override void Initialize()

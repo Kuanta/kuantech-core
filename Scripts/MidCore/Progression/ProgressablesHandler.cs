@@ -56,11 +56,8 @@ namespace Kuantech.Midcore
         protected virtual ProgressibleData CreateDataEntry(ProgressableDataAsset asset)
         {
             //Create data entry
-            ProgressibleData data = new ProgressibleData()
-            {
-                Id = asset.Id,
-                Rank = new LevelVariable(),
-            };
+            ProgressibleData data = new ProgressibleData();
+            data.SetFromAsset(asset);
             CreateSubProgessibleDatas(asset);
             return data;
         }
@@ -80,7 +77,7 @@ namespace Kuantech.Midcore
             ProgressibleData data = CreateDataEntry(asset);
             data.ParentProgressibleId = parentAsset.Id;
             data.Id = ProgressableDataAsset.GetSubUpgradeAssetId(parentAsset, asset);
-            data.Rank.SetLevel(0);
+            data.SetRank(0);
             return data;
         }
         #region Queries
@@ -115,19 +112,19 @@ namespace Kuantech.Midcore
         {
             ProgressibleData data = GetProgressibleData(asset);
             if (data == null) return -1;
-            return data.Rank.CurrentLevel;
+            return data.GetRankValue();
         }
         public bool IsRankUnlocked(ProgressableDataAsset asset, int rank)
         {
             ProgressibleData data = GetProgressibleData(asset);
             if (data == null) return false;
-            return data.Rank.CurrentLevel >= rank;
+            return data.GetRankValue() >= rank;
         }
         public int GetProgressibleRank(ProgressableDataAsset asset)
         {
             ProgressibleData data = GetProgressibleData(asset);
             if (data == null) return -1;
-            return data.Rank.CurrentLevel;
+            return data.GetRankValue();
         }
         
         /// <summary>
@@ -141,9 +138,9 @@ namespace Kuantech.Midcore
             ProgressableDependencyEntry dependencyEntry = GetUpgradeDependencyEntry(asset, rank);
             if (dependencyEntry == null) return true;
             
-            //Check player level
-            int playerLevel = ProgressionManager.GetPlayerLevel().CurrentLevel;
-            if(dependencyEntry.RequiredPlayerRank > playerLevel) return false;
+            // //Check player level
+            // int playerLevel = ProgressionManager.GetPlayerLevel().CurrentLevel;
+            // if(dependencyEntry.RequiredPlayerRank > playerLevel) return false;
             
             //Check other conditions
             if (!dependencyEntry.UnlockConditions.IsNullOrEmpty())
@@ -208,10 +205,30 @@ namespace Kuantech.Midcore
                 data = CreateDataEntry(asset);
                 _progressibleDatas[asset.Id] = data;
             }
-            data.Rank.SetLevel(rank);
+            data.SetRank(rank);
+            return true;
+        }
+    
+        public virtual bool AddRankValue(ProgressableDataAsset asset, float value)
+        {
+            ProgressibleData data = GetProgressibleData(asset);
+            if (data == null) return false;
+            data.AddExperience(value);
             return true;
         }
 
+        public virtual bool SetRankValue(ProgressableDataAsset asset, float value)
+        {
+            ProgressibleData data = GetProgressibleData(asset);
+            if (data == null)
+            {
+                data = CreateDataEntry(asset);
+                _progressibleDatas[asset.Id] = data;
+            }
+            data.SetExperience(value);
+            return true;
+        }
+        
         /// <summary>
         /// Tries to buy the rank. Checks price and dependency conditions and pays for the price
         /// </summary>
@@ -256,7 +273,7 @@ namespace Kuantech.Midcore
                 return BuyRank(asset, 1); //This unlocks
             }
 
-            return BuyRank(asset, data.Rank.CurrentLevel+1);
+            return BuyRank(asset, data.GetRankValue()+1);
         }
         #endregion
         
@@ -283,7 +300,7 @@ namespace Kuantech.Midcore
         {
             ProgressibleData data = GetProgessibleDataById(ProgressableDataAsset.GetSubUpgradeAssetId(asset, subUpgradeAsset));
             if (data == null) return 0; //Default rank for a subupgrade is 0. Not -1, cause its not something we unlock (for now).
-            return data.Rank.CurrentLevel;
+            return data.GetRankValue();
         }
         
         /// <summary>
@@ -296,7 +313,7 @@ namespace Kuantech.Midcore
         {
             ProgressibleData subUpgradeData = GetSubUpgradeData(asset, subUpgradeAsset);
             if (subUpgradeData == null) return 0;
-            return subUpgradeData.Rank.CurrentLevel;
+            return subUpgradeData.GetRankValue();
         }
 
         /// <summary>
@@ -325,7 +342,7 @@ namespace Kuantech.Midcore
             {
                 subUpgradeData = CreateSubUpgradeData(asset, subUpgradeAsset);
             }
-            subUpgradeData.Rank.SetLevel(rank);
+            subUpgradeData.SetRank(rank);
             return true;
         }
         

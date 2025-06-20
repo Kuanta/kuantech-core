@@ -117,7 +117,7 @@ namespace Kuantech.HyperCasual
             bool canBuy = true;
             if(_upgradesMap[boosterId].currencyAsset != null)
             {
-                string currencyId = _upgradesMap[boosterId].currencyAsset.CurrencyId;
+                string currencyId = _upgradesMap[boosterId].currencyAsset.GetId();
                 int currentHeldAmount = 0; //todo(currency): Fix here
                 canBuy = price <= currentHeldAmount;
                 //if(canBuy) GameStateManager.GetContext<GameStateManager>().RemoveCurrency(currencyId, price);

@@ -59,7 +59,7 @@ namespace Kuantech.Midcore.UI
                 PriceInfo priceInfo = buyableInfo.PricesInfo[i];
                 if(!PriceTags.IsValidIndex(i)) continue;
                 PriceTag tag = PriceTags[i];
-                tag.SetCurrency(priceInfo.CurrencyAsset.CurrencyId);
+                tag.SetCurrency(priceInfo.CurrencyAsset.GetId());
                 tag.SetPriceText(priceInfo.GetPrice(rank, startRank));
 
             }

@@ -16,6 +16,7 @@ namespace Kuantech.Rpg.UI
             if (value == null)
             {
                 if(Fillbar != null) Fillbar.SetFill(0);
+                return;
             }
             if (Fillbar != null)
             {
@@ -23,7 +24,6 @@ namespace Kuantech.Rpg.UI
                 float RequiredExp = value.GetRequiredFromCurrentToNextLevel();
                 float percentage = value.GetCurrentProgressPercentage();
                 float fillAmount = percentage;
-                Debug.Log("Earned this level: " + earnidThisLevel+"RequiredExp: " + RequiredExp);
                 Fillbar.SetFill(fillAmount, earnidThisLevel, RequiredExp);
             }
             if(LevelText != null) LevelText.text = value.CurrentLevel.Stringfy();

@@ -35,8 +35,8 @@ namespace Kuantech.Core.Store
             _amountsById = new Dictionary<string, int>();
             foreach (var asset in CurrencyAssets)
             {
-                _amountsById[asset.CurrencyId] = 0; //Default
-                _assetsById[asset.CurrencyId] = asset;
+                _amountsById[asset.GetId()] = 0; //Default
+                _assetsById[asset.GetId()] = asset;
             }
         }
         public override void OnSubmanagersInitialized()
@@ -50,7 +50,7 @@ namespace Kuantech.Core.Store
 
         private void TriggerCurrencyUpdatedEvent(CurrencyAsset asset)
         {
-            TriggerCurrencyUpdatedEvent(asset.CurrencyId);
+            TriggerCurrencyUpdatedEvent(asset.Id);
         }
 
         private void TriggerCurrencyUpdatedEvent(string currencyId)
@@ -77,7 +77,7 @@ namespace Kuantech.Core.Store
 
         public static int GetCurrencyAmount(CurrencyAsset currencyAsset)
         {
-            return GetCurrencyAmount(currencyAsset.CurrencyId);
+            return GetCurrencyAmount(currencyAsset.GetId());
         }
 
         public static int GetCurrencyAmount(string currencyId)
@@ -97,7 +97,7 @@ namespace Kuantech.Core.Store
         public static void AddCurrency(CurrencyAsset currencyAsset, int amount)
         {
             if (currencyAsset == null) return;
-            AddCurrency(currencyAsset.CurrencyId, amount);
+            AddCurrency(currencyAsset.GetId(), amount);
         }
 
         public static void AddCurrency(string currencyId, int amount)
@@ -110,7 +110,7 @@ namespace Kuantech.Core.Store
         public static void RemoveCurrency(CurrencyAsset currencyAsset, int amount)
         {
             int currAmount = GetCurrencyAmount(currencyAsset);
-            RemoveCurrency(currencyAsset.CurrencyId, amount);
+            RemoveCurrency(currencyAsset.GetId(), amount);
         }
 
         public static void RemoveCurrency(string currencyId, int amount)
@@ -122,7 +122,7 @@ namespace Kuantech.Core.Store
         
         public static void SetCurrency(CurrencyAsset currencyAsset, int amount)
         {
-            SetCurrency(currencyAsset.CurrencyId, amount);
+            SetCurrency(currencyAsset.GetId(), amount);
         }
         
         [Button("Set Currency")]

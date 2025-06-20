@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Kuantech.Core;
 using Kuantech.Core.HyperCasual;
+using Kuantech.Rpg;
 using UnityEngine;
 
 namespace Kuantech.Midcore
@@ -17,6 +18,11 @@ namespace Kuantech.Midcore
         [Header("Store Entry")]
         public BuyableInfo BuyableInfo;
 
+        [Header("Levelable")] 
+        [Tooltip("If true, the progressable uses experience to set its rank")] 
+        public bool UsesExperience;
+        public LevelVariableData LevelVariableData;
+        
         public static string GetSubUpgradeAssetId(ProgressableDataAsset asset, ProgressableDataAsset subUpgradeAsset)
         {
             return $"{asset.Id}_{subUpgradeAsset.Id}";

@@ -206,7 +206,6 @@ namespace Kuantech.Utils
                 
                 SmoothDampPosition(point + planeNormal* OffsetDistance - _dragPositionOffset);
                 _lastDragPosition = point - _dragPositionOffset;
-                Debug.Log("Positioning to:" + transform.position);
             }
             else if(_receivedHitThisFrame && PositionWithGroundRay)
             {

@@ -5,7 +5,7 @@ using Kuantech.Core;
 using Kuantech.Rpg;
 using Sirenix.OdinInspector;
 using UnityEngine;
-using UnityEngine.Serialization;
+using UnityEngine.Assertions;
 
 namespace Kuantech.Midcore
 {
@@ -37,12 +37,14 @@ namespace Kuantech.Midcore
     public class ProgressionManager : SubManager
     {
         [Header("Player Level")] 
-        [SaveableField] public LevelVariable PlayerLevel;
+        public ProgressableDataAsset PlayerLevelDataAsset;
 
-        [Header("Collectibles")] public List<ProgressableDataAsset> Collectibles;
+        [Header("Collectibles")] 
+        public List<ProgressableDataAsset> Collectibles;
         
         [Header("Upgrades")] 
-        [SaveableField] [SerializeField] private ProgressablesHandler ProgressiblesHandler;
+        [SaveableField] 
+        [SerializeField] private ProgressablesHandler ProgressiblesHandler;
 
         [Header("Level Progression")] 
         [SaveableField] public Dictionary<(int, int), LevelProgressionData> LevelProgressionDatas; 
@@ -60,12 +62,15 @@ namespace Kuantech.Midcore
         {
             await base.Initialize(gameManager);
            ProgressiblesHandler.Initilaze();
-           
         }
 
         public override void SetDefaultState()
         {
             base.SetDefaultState();
+            
+            //Player Level
+            SetRank(PlayerLevelDataAsset, 0);
+            
             foreach(var defaultProgressable in DefaultProgressables)
             {
                 SetRank(defaultProgressable.Asset, defaultProgressable.StartRank, false);
@@ -83,25 +88,30 @@ namespace Kuantech.Midcore
         {
             var ctx = GetContext<ProgressionManager>();
             if (ctx == null) return null;
-            return ctx.PlayerLevel;
+            ProgressibleData data = ctx.ProgressiblesHandler.GetProgressibleData(ctx.PlayerLevelDataAsset);
+            if (data == null)
+            {
+                SetRank(ctx.PlayerLevelDataAsset, 0);
+            }
+            return ctx.ProgressiblesHandler.GetProgressibleData(ctx.PlayerLevelDataAsset).GetRank();
         }
         
         [Button("Add Experience")]
         public void AddExperience(int experience)
         {
-            PlayerLevel.AddValue(experience);
-            OnPlayerEarnedExperience?.Invoke(PlayerLevel);
+            AddRankValue(PlayerLevelDataAsset, experience);
+            OnPlayerEarnedExperience?.Invoke(GetPlayerLevel());
             SaveState();
         }
         
         [Button("Set Experience")]
         public void SetExperience(int experience)
         {
-            PlayerLevel.SetValue(experience);
-            OnPlayerEarnedExperience?.Invoke(PlayerLevel);
+            SetRankValue(PlayerLevelDataAsset, experience);
+            OnPlayerEarnedExperience?.Invoke(GetPlayerLevel());
             SaveState();
         }
-
+        
         #endregion
 
         #region Level Progression
@@ -275,6 +285,38 @@ namespace Kuantech.Midcore
             var ctx = GetContext<ProgressionManager>();
             if (ctx == null) return false;
             bool result=ctx.ProgressiblesHandler.SetRank(asset, rank);
+            if (!result) return false;
+            ctx.OnUpgradeRankSet?.Invoke(ctx.ProgressiblesHandler.GetProgressibleData(asset));
+            if (saveState)
+            {
+                ctx.SaveState();
+            }
+
+            return true;
+        }
+        
+        [Button("Add Rank Experience")]
+        public static bool AddRankValue(ProgressableDataAsset asset, float rankValue, bool saveState = true)
+        {
+            var ctx = GetContext<ProgressionManager>();
+            if (ctx == null) return false;
+            bool result = ctx.ProgressiblesHandler.AddRankValue(asset, rankValue);
+            if (!result) return false;
+            ctx.OnUpgradeRankSet?.Invoke(ctx.ProgressiblesHandler.GetProgressibleData(asset));
+            if (saveState)
+            {
+                ctx.SaveState();
+            }
+
+            return true;
+        }
+
+        [Button("Set Rank Experience")]
+        public static bool SetRankValue(ProgressableDataAsset asset, float rankValue, bool saveState = true)
+        {
+            var ctx = GetContext<ProgressionManager>();
+            if (ctx == null) return false;
+            bool result = ctx.ProgressiblesHandler.SetRankValue(asset, rankValue);
             if (!result) return false;
             ctx.OnUpgradeRankSet?.Invoke(ctx.ProgressiblesHandler.GetProgressibleData(asset));
             if (saveState)

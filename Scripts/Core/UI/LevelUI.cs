@@ -14,9 +14,11 @@ namespace Kuantech.Core.UI
     public class LevelUI : UICanvas
     {
         public List<PhasePanelsEntry> PhasePanels;
+        
+        //UI elements that could be accessed by other systems
+        public List<UIElement> UIElements;
 
         private Dictionary<string, UIElement> _phasePanelsById = new Dictionary<string, UIElement>();
-
         public virtual void Initialize()
         {
             
@@ -80,6 +82,23 @@ namespace Kuantech.Core.UI
             }
         }
 
+        #region Panels
+
+        public UIElement GetUIElementByType<T>()
+        {
+            if (UIElements.IsNullOrEmpty()) return null;
+            foreach (var uiElement in UIElements)
+            {
+                if (uiElement is T)
+                {
+                    return uiElement;
+                }
+            }
+
+            return null;
+        }
+
+        #endregion
         public virtual void Reset()
         {
             

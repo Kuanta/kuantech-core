@@ -5,16 +5,28 @@ using UnityEngine;
 namespace Kuantech.Rpg
 {
     [Serializable]
+    public struct LevelVariableData
+    {
+        public float BaseRequirement;
+        public float GrowthFactor;
+    }
+    
+    [Serializable]
     public class LevelVariable : ISaveable
     {
         [SerializeField] private float baseRequirement = 100f;
         [SerializeField] private float growthFactor = 1.5f;
-
-        [SaveableField] public float TotalValue = 0.0f;
+        public float TotalValue = 0.0f;
         public int CurrentLevel => CalculateLevel(TotalValue);
         public float ValueIntoCurrentLevel => TotalValue - GetTotalRequiredForLevel(CurrentLevel);
         public float ValueToNextLevel => GetTotalRequiredForLevel(CurrentLevel + 1) - TotalValue;
         public float CurrentLevelRequirement => GetTotalRequiredForLevel(CurrentLevel + 1) - GetTotalRequiredForLevel(CurrentLevel);
+        
+        public LevelVariable(LevelVariableData lvd)
+        {
+            baseRequirement = lvd.BaseRequirement;
+            growthFactor = lvd.GrowthFactor;
+        }
         
         public void AddValue(float amount)
         {
@@ -50,6 +62,7 @@ namespace Kuantech.Rpg
         private int CalculateLevel(float total)
         {
             int level = 0;
+            
             while (total >= GetTotalRequiredForLevel(level + 1))
             {
                 level++;
@@ -82,7 +95,7 @@ namespace Kuantech.Rpg
         public float GetRequiredForSingleLevel(int level)
         {
             if (level <= 0) return 0;
-            return baseRequirement * Mathf.Pow(level, growthFactor);
+            return Mathf.Max(baseRequirement, 1) * Mathf.Pow(level, growthFactor);
         }
         
         

@@ -40,8 +40,8 @@ namespace Kuantech.Midcore.UI
             
             var data = ProgressionManager.GetProgressibleData(CollectibleDataAsset);
             if (data == null) return;
-            if(LevelableFloatIndicator != null) LevelableFloatIndicator.UpdateValue(data.Rank);
-
+            if(LevelableFloatIndicator != null) LevelableFloatIndicator.UpdateValue(data.GetRank());
+            if(Name != null) Name.text = CollectibleDataAsset.Name;
         }
 
         public void OnClick()

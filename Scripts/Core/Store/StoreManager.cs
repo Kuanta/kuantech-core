@@ -58,7 +58,7 @@ namespace Kuantech.Core.HyperCasual
             }
             for(int i=0;i<PricesInfo.Count;++i)
             {
-                if(PricesInfo[i].CurrencyAsset.CurrencyId == currencyId)
+                if(PricesInfo[i].CurrencyAsset.GetId() == currencyId)
                 {
                     return PricesInfo[i].GetPrice(rank, startRank);
                 }
@@ -103,7 +103,7 @@ namespace Kuantech.Core.HyperCasual
             bool hasCurrency = true;
             for(int i=0;i< info.PricesInfo.Count;++i)
             {
-                string currencyId = info.PricesInfo[i].CurrencyAsset.CurrencyId;
+                string currencyId = info.PricesInfo[i].CurrencyAsset.GetId();
                 float availableCurrency = CurrencyManager.GetCurrencyAmount(currencyId);
                 if (availableCurrency < info.PricesInfo[i].GetPrice(rank, startRank))
                 {
@@ -133,7 +133,7 @@ namespace Kuantech.Core.HyperCasual
             if (!CanBeBought(info, rank, startRank)) return false;
             for (int i = 0; i < info.PricesInfo.Count; ++i)
             {
-                string currencyId = info.PricesInfo[i].CurrencyAsset.CurrencyId;
+                string currencyId = info.PricesInfo[i].CurrencyAsset.GetId();
                 int price = info.PricesInfo[i].GetPrice(rank, startRank);
                 CurrencyManager.RemoveCurrency(currencyId, price);
             }

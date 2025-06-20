@@ -28,11 +28,11 @@ namespace Kuantech.Core.Utils
             if (CameraTarget == null) return;
             SetTargetPosition();
             SetTargetDirection();
-            //SetTargetOrthographicSize();
+            SetTargetOrthographicSize();
         
             UpdatePosition(TargetPosition);
             UpdateRotation(TargetDirection);
-            //UpdateOrthographicSize();
+            UpdateOrthographicSize();
         }
         
         /// <summary>
