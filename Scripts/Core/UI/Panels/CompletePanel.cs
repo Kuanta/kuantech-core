@@ -10,6 +10,7 @@ namespace Kuantech.Core.UI
 
         public override void Initialize()
         {
+            if (Initialized) return;
             base.Initialize();
             ContinueButton.onClick.AddListener(OnCompleteLevelButton);
         }

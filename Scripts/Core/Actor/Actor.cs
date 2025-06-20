@@ -175,6 +175,7 @@ namespace Kuantech.Core
                 StopCoroutine(_despawnCoroutine);
             }
             _despawnCoroutine = _DespawnRoutine(delay);
+            if (!gameObject.activeInHierarchy) return;
             StartCoroutine(_despawnCoroutine);
         }
         

@@ -55,12 +55,10 @@ namespace Kuantech.Core
 
             foreach (var field in fields)
             {
-                Debug.Log($"Trying to load {field.Name}");
                 if (!System.Attribute.IsDefined(field, typeof(SaveableFieldAttribute))) continue;
 
                 if (!data.FieldData.TryGetValue(field.Name, out var fieldBytes))
                 {
-                    Debug.LogWarning($"Field {field.Name} not found in SaveData for type {target.GetType().Name}");
                     continue;
                 }
 

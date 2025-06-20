@@ -48,7 +48,9 @@ namespace Kuantech.Core
         
         public static Level GetCurrentLevel()
         {
-            return (GameManager.Instance.GetSubManagerByType<LevelManager>() as LevelManager).CurrentLevel;
+            var ctx = LevelManager.GetContext<LevelManager>();
+            if (ctx == null) return null;
+            return ctx.CurrentLevel;
         }
 
         public static int GetCurrentLevelIndex()

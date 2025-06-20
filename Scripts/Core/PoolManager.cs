@@ -18,13 +18,21 @@ namespace Kuantech.Core
         public static GameObject GetObjectFromPool(GameObject prefab)
         {
             PoolManager pm = GetContext<PoolManager>();
+            GameObject gameObj = null;
 
             if (pm == null)
             {
                 Debug.LogWarning("Requested object from pool while Pool Manager doesn't exist");
-                return Object.Instantiate(prefab);
+                gameObj = Object.Instantiate(prefab);
             }
-            return pm.Pool.GetObject(prefab);
+            else
+            {
+                gameObj = pm.Pool.GetObject(prefab);
+            }
+
+            if (gameObj == null) return null;
+            gameObj.transform.SetParent(null);
+            return gameObj;
         }
         public static void PoolObject(GameObject objectToPool, float delay=0)
         {

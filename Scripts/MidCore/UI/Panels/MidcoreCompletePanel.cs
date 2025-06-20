@@ -35,6 +35,11 @@ namespace Kuantech.Midcore.UI
         public override void OnCompleteLevelButton()
         {
             base.OnCompleteLevelButton();
+            Level currentLevel = LevelManager.GetCurrentLevel();
+            if (currentLevel != null)
+            {
+                currentLevel.ClearLevel();
+            }
             //Go to main menu
             string menuSceneName = MidcoreGameSceneManager.GetMenuSceneName();
             GameManager.ChangeScene(menuSceneName);
