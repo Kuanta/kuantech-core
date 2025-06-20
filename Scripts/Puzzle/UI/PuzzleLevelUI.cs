@@ -4,7 +4,7 @@ using Kuantech.Core;
 using Kuantech.Core.HyperCasual.UI;
 using Kuantech.Core.UI;
 using UnityEngine;
-using LevelCompletePanel = Kuantech.Core.UI.LevelCompletePanel;
+using UnityEngine.Serialization;
 
 namespace Kuantech.Puzzle.UI
 {
@@ -21,7 +21,7 @@ namespace Kuantech.Puzzle.UI
         [Header("Panels")] 
         public GameObject HUD;
         public WinConditionIndicatorPanel WinConditionIndicatorPanel;
-        public LevelCompletePanel CompletePanel;
+        [FormerlySerializedAs("midcoreCompletePanel")] [FormerlySerializedAs("CompletePanel")] public CompletePanel completePanel;
         public LevelFailPanel FailedPanel;
         public BoostersHUD BoostersHUD;
         public float CompletePanelShowDelay = 0f;
@@ -39,7 +39,7 @@ namespace Kuantech.Puzzle.UI
 
         public virtual void Initialize()
         {
-            if(CompletePanel != null) CompletePanel.Initialize();
+            if(completePanel != null) completePanel.Initialize();
             if(FailedPanel != null) FailedPanel.Initialize();
 
             if (RestartConfirmPanel != null)
@@ -166,7 +166,7 @@ namespace Kuantech.Puzzle.UI
         private IEnumerator _OpenCompletePanel()
         {
             yield return new WaitForSeconds(CompletePanelShowDelay);
-            if(CompletePanel != null) CompletePanel.Open();
+            if(completePanel != null) completePanel.Open();
         }
         public void OpenFailedPanel()
         {
@@ -241,7 +241,7 @@ namespace Kuantech.Puzzle.UI
         
         public virtual void Reset()
         {
-            if(CompletePanel != null) CompletePanel.Close();
+            if(completePanel != null) completePanel.Close();
             if(FailedPanel != null) FailedPanel.Close();
             if (WinConditionIndicatorPanel != null)
             {

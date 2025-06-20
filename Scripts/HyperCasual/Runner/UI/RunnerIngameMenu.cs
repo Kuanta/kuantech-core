@@ -3,13 +3,13 @@ using Kuantech.Core;
 using Kuantech.Core.HyperCasual.UI;
 using Kuantech.Core.UI;
 using UnityEngine;
-using LevelCompletePanel = Kuantech.Core.UI.LevelCompletePanel;
+using UnityEngine.Serialization;
 
 namespace Kuantech.HyperCasual.Runner.UI
 {
     public class RunnerIngameMenu : UIMenu
     {
-        public LevelCompletePanel LevelCompletePanel;
+        [FormerlySerializedAs("midcoreCompletePanel")] [FormerlySerializedAs("LevelCompletePanel")] public CompletePanel completePanel;
         public LevelFailedPanel LevelFailedPanel;
 
         [Header("Delay Timings")] 
@@ -18,27 +18,27 @@ namespace Kuantech.HyperCasual.Runner.UI
 
         public virtual void Initialize()
         {
-            if(LevelCompletePanel != null) LevelCompletePanel.Initialize();
+            if(completePanel != null) completePanel.Initialize();
             if(LevelFailedPanel != null) LevelFailedPanel.Initialize();
         }
         
         public override void Open()
         {
             base.Open();
-            if(LevelCompletePanel != null) LevelCompletePanel.Close();
+            if(completePanel != null) completePanel.Close();
             if(LevelFailedPanel != null) LevelFailedPanel.Close();
         }
 
         
         public void OnStateChange(LevelState newState)
         {
-            if (newState == LevelState.Completed && LevelCompletePanel != null)
+            if (newState == LevelState.Completed && completePanel != null)
             {
-                StartCoroutine(ShowPanelRoutine(LevelCompletePanel, LevelCompletePanelShowDelay));
+                StartCoroutine(ShowPanelRoutine(completePanel, LevelCompletePanelShowDelay));
             }
-            else if(LevelCompletePanel != null)
+            else if(completePanel != null)
             {
-                LevelCompletePanel.Close();
+                completePanel.Close();
             }
 
             if (newState == LevelState.Failed && LevelFailedPanel != null)

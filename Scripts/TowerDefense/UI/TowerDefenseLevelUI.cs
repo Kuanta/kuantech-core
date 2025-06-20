@@ -12,7 +12,7 @@ namespace Kuantech.TowerDefense
         [SerializeField] private Healthbar Healthbar;
 
         [Header("Panels")] 
-        public LevelCompletePanel CompletePanel;
+        public CompletePanel completePanel;
         public LevelFailPanel FailedPanel;
         public float CompletePanelShowDelay = 0f;
         public float FailedPanelShowDelay = 0f;
@@ -25,9 +25,9 @@ namespace Kuantech.TowerDefense
                 FailedPanel.Initialize();
             }
 
-            if (CompletePanel != null)
+            if (completePanel != null)
             {
-                CompletePanel.Initialize();
+                completePanel.Initialize();
             }
         }
 
@@ -58,7 +58,7 @@ namespace Kuantech.TowerDefense
         private IEnumerator _OpenCompletePanel()
         {
             yield return new WaitForSeconds(CompletePanelShowDelay);
-            if(CompletePanel != null) CompletePanel.Open();
+            if(completePanel != null) completePanel.Open();
         }
         public void OpenFailedPanel()
         {
@@ -80,7 +80,7 @@ namespace Kuantech.TowerDefense
 
         public override void Reset()
         {
-            if(CompletePanel != null) CompletePanel.Close();
+            if(completePanel != null) completePanel.Close();
             if(FailedPanel != null) FailedPanel.Close();
         }
     }

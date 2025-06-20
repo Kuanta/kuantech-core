@@ -3,16 +3,15 @@ using UnityEngine.UI;
 
 namespace Kuantech.Core.UI
 {
-    public class LevelCompletePanel : UIMenu
+    public class CompletePanel : UIMenu
     {
         public Button ContinueButton;
         public Effect VictoryEffect;
 
-        public void Initialize()
+        public override void Initialize()
         {
-            ContinueButton.onClick.AddListener(()=>{
-                LevelManager.GetContext<LevelManager>().CompleteLevel();
-            });
+            base.Initialize();
+            ContinueButton.onClick.AddListener(OnCompleteLevelButton);
         }
 
         public override void Open()
@@ -22,6 +21,11 @@ namespace Kuantech.Core.UI
             {
                 VictoryEffect.Play();
             }
+        }
+        
+        public virtual void OnCompleteLevelButton()
+        {
+      
         }
     }
 }

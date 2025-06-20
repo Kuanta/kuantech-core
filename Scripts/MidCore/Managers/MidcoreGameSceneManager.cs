@@ -8,6 +8,8 @@ namespace Kuantech.Midcore
     /// </summary>
     public class MidcoreGameSceneManager : SubManager
     {
+        public string MenuSceneName = "MenuScene";
+        
         public override void OnSubmanagersInitialized()
         {
             base.OnSubmanagersInitialized();
@@ -29,5 +31,13 @@ namespace Kuantech.Midcore
             }
             lm.SetLevel(levelIndex); //todo(levels): Implement world index
         }
+
+        public static string GetMenuSceneName()
+        {
+            var ctx = GetContext<MidcoreGameSceneManager>();
+            if (ctx == null) return "MenuScene";
+            return ctx.MenuSceneName;
+        }
+   
     }
 }

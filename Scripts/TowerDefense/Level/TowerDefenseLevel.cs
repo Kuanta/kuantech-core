@@ -228,7 +228,7 @@ namespace Kuantech.TowerDefense
         /// </summary>
         public void CompleteWave()
         {
-            if (CurrentWaveIndex >= LevelData.WaveData.Count)
+            if (CurrentWaveIndex >= LevelData.WaveData.Count - 1)
             {
                 CompleteLevel();
                 return;
@@ -335,11 +335,11 @@ namespace Kuantech.TowerDefense
 
         public void OnActorDespawn(Actor actor)
         {
-            if (IsActorEnemy(actor) && AliveEnemies.Contains(actor))
-            {
-                AliveEnemies.Remove(actor);
-            }
-            CheckWaveCompletion();
+            // if (IsActorEnemy(actor) && AliveEnemies.Contains(actor))
+            // {
+            //     AliveEnemies.Remove(actor);
+            // }
+            // CheckWaveCompletion();
         }
         #endregion
     }
