@@ -244,8 +244,12 @@ namespace Kuantech.Utils
             OnDragEndEvent?.Invoke();
    
             _isDragged = false;
-
+            
             Draggable draggableToCheck = ProxyDraggable != null ? ProxyDraggable : this;
+            if (ProxyDraggable != null)
+            {
+                ProxyDraggable.OnDragEndAsProxy();
+            }
             bool sucessfulDrop = false;
             //Fail?
             if(!CanBeDropped() || draggableToCheck.RequireDropZone && draggableToCheck.DropZone == null || 
@@ -267,8 +271,11 @@ namespace Kuantech.Utils
             RemoveGhostIndicator(sucessfulDrop);
 
         }
-        
-        
+
+        public virtual void OnDragEndAsProxy()
+        {
+            
+        }
         #endregion
 
         #region Queries

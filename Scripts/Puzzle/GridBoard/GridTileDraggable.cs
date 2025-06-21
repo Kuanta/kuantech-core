@@ -105,9 +105,19 @@ namespace Kuantech.Puzzle
             }
             base.DragEnd();
         }
+
+        public override void OnDragEndAsProxy()
+        {
+            base.OnDragEndAsProxy();
+            if (DropZone != null && DropZone is GridBoardDropZone zone)
+            {
+                zone.GridBoard.ClearHighlightedTiles();
+            }
+        }
         
         public void HighlightBoardBacgkroundTiles(GridBoard board, GridTileCoordinate coordinate)
         {
+            if (coordinate == null) return;
             List<GridTileCoordinate> coordinates = new List<GridTileCoordinate>();
             if (GridTileGroup != null)
             {
@@ -120,7 +130,7 @@ namespace Kuantech.Puzzle
                     });
                 }
             }
-            else
+            else if(!GridTile.Coordinates.IsNullOrEmpty())
             {
                 foreach (var coord in GridTile.Coordinates)
                 {
@@ -130,6 +140,10 @@ namespace Kuantech.Puzzle
                         Column = coord.Column + coordinate.Column,
                     });
                 }
+            }
+            else
+            {
+                coordinates.Add(coordinate);
             }
     
             board.HighlightTiles(coordinates);
