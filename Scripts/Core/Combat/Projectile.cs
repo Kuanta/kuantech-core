@@ -18,7 +18,15 @@ namespace Kuantech.Core
         public string ProjectileId;
         public float Speed;
         public float Range;
+        
+        [Header("Fake Throwable")]
         [SerializeField] protected float RiseHeight;
+        [Tooltip("Amount of seconds to reach the peak")]
+        [SerializeField] protected float RiseTime; 
+        [SerializeField] private bool UseRiseScaleFactor = false;
+        [Tooltip("For top down 2d throwables, the visual will scale to this at max height. Must be greter than 0")]
+        [SerializeField] protected float RiseScaleFactor; 
+        
         public float TargetFollowSlerpFactor;
         public float Knockback;
         public float KnockbackTime;
@@ -69,7 +77,8 @@ namespace Kuantech.Core
         public UnityAction<Projectile> ShotEvent;
         public UnityAction<Projectile> LifetimeEndEvent;
         public UnityAction<Projectile> OnImpactEvent;
-
+    
+        //Runtime
         private bool _targeted;
         private Vector3 _shotPosition;
         private Vector3 _direction;
@@ -91,6 +100,10 @@ namespace Kuantech.Core
             transform.position = shootPosition;
             Quaternion rot = GetForwardRotation(_direction);
             transform.rotation = rot;
+            if (Visual != null)
+            {
+                Visual.transform.localScale = Vector3.one;
+            }
             
             CastBy = castBy;
             ShotFrom = shotFrom;
@@ -210,15 +223,42 @@ namespace Kuantech.Core
             }
             
             //Act like targeted throwable. For actual throwable, see throwable class
-            Vector3 horizontalDiff = (transform.position - _shotPosition);
-            float normalizedHeight = Mathf.Clamp01(horizontalDiff.magnitude / _InitialDistanceToTarget);
-            float throwbleHeightAddition = Mathf.Sin(normalizedHeight * Mathf.PI) * RiseHeight;
+            float throwbleHeightAddition = GetThrowableHeightAddition();
             _newPosition += _direction * Time.deltaTime * CurrentSpeed;
-            transform.position = _newPosition + Vector3.up * throwbleHeightAddition;
+            SetHeightScale(GetNormalizedHeight());
+            transform.position = _newPosition + WorldUp * throwbleHeightAddition;
             CheckLifetime();
-         
         }
         
+        
+        protected virtual float GetNormalizedHeight()
+        {
+            if (RiseTime == 0.0f) return 0f;
+            if (_age < RiseTime)
+            {
+                return _age / RiseTime;
+            }
+            return Mathf.Clamp01(1.0f - (_age - RiseTime));
+        }
+        
+        protected virtual float GetThrowableHeightAddition()
+        {
+            float normalizedHeight = GetNormalizedHeight();
+            return Mathf.Sin(normalizedHeight * Mathf.PI) * RiseHeight;
+        }
+        
+        /// <summary>
+        /// Sets the height scale for top down 2d throwables
+        /// </summary>
+        /// <param name="normalizedHeight"></param>
+        protected virtual void SetHeightScale(float normalizedHeight)
+        {
+            if (!UseRiseScaleFactor) return;
+            if (Visual != null)
+            {
+                Visual.transform.localScale = Vector3.one * Mathf.Lerp(1, RiseScaleFactor, normalizedHeight);
+            }
+        }
         protected void CheckLifetime()
         {
             if (Despawned) return;
