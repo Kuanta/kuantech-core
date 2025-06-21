@@ -30,6 +30,7 @@ namespace Kuantech.Core
         /// <param name="objectToPool">Object to be pooled</param>
         public void PoolObject(GameObject objectToPool)
         {
+            if (objectToPool == null) return;
             if (!objectToPool.TryGetComponent(out PoolableComponent poolable))
             {
                 Debug.LogWarning($"Prefab {objectToPool.name} doesn't have poolable component");

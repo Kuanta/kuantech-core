@@ -200,6 +200,7 @@ namespace Kuantech.Utils
             }
             
             IDropZone newZone = CheckForDragBench();
+       
             if (PositionWithPlane)
             {
                 Vector3 point = HitAtPlane(planePoint, planeNormal);
@@ -231,6 +232,7 @@ namespace Kuantech.Utils
                 OnEnteredDropZone(newZone);
             }
             DropZone = newZone;
+            
             if (DropZone == null)
             {
                 return;
@@ -246,7 +248,8 @@ namespace Kuantech.Utils
             Draggable draggableToCheck = ProxyDraggable != null ? ProxyDraggable : this;
             bool sucessfulDrop = false;
             //Fail?
-            if(!CanBeDropped() || draggableToCheck.RequireDropZone && DropZone == null || DropZone != null && !DropZone.OnDrop(draggableToCheck))
+            if(!CanBeDropped() || draggableToCheck.RequireDropZone && draggableToCheck.DropZone == null || 
+               draggableToCheck.DropZone != null && !draggableToCheck.DropZone.OnDrop(draggableToCheck))
             {
                 sucessfulDrop = false;
                 OnFailedDrop();
@@ -452,14 +455,15 @@ namespace Kuantech.Utils
 
         public virtual void OnSuccesfullDrop()
         {
-            OnSuccesfullDropEvent?.Invoke(new DropInformation
+            DropInformation dropInformation = new DropInformation
             {
                 DropZone = DropZone,
                 DropPosition = _lastDragPosition
-            });
+            };
+            OnSuccesfullDropEvent?.Invoke(dropInformation);
             if (ProxyDraggable != null)
             {
-                ProxyDraggable.OnSuccesfullDropAsProxyDraggable();
+                ProxyDraggable.OnSuccesfullDropAsProxyDraggable(dropInformation);
             }
             else
             {
@@ -471,9 +475,9 @@ namespace Kuantech.Utils
         /// <summary>
         /// Called on proxy draggable in case of succesfull drop
         /// </summary>
-        public virtual void OnSuccesfullDropAsProxyDraggable()
+        public virtual void OnSuccesfullDropAsProxyDraggable(DropInformation dropInformation)
         {
-            
+            OnSuccesfullDropEvent?.Invoke(dropInformation);
         }
         
         public virtual void OnFailedDrop()

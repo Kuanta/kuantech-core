@@ -99,8 +99,6 @@ namespace Kuantech.Core.Utils
                 float orthoSizeToFitWidth = (width / aspect) / 2f;
                 float requiredOrthoSize = Mathf.Max(orthoSizeToFitHeight, orthoSizeToFitWidth);
                 
-                Debug.Log("Ortho size:"+requiredOrthoSize);
-                
                 return new WorldPoint
                 {
                     Position = anchorsCenter,

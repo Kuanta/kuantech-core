@@ -63,8 +63,7 @@ namespace Kuantech.Puzzle
             {
                 return DroppedTileHandler(draggableTile, row, col);
             }
-            draggableTile.HandleDropToBoard(GridBoard, row, col);
-            return true;
+            return draggableTile.HandleDropToBoard(GridBoard, row, col);
         }
 
         public bool CanTileDropped(GridTileDraggable draggableTile, int row, int col)

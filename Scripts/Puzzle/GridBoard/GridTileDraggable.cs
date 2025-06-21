@@ -135,16 +135,17 @@ namespace Kuantech.Puzzle
             board.HighlightTiles(coordinates);
         }
 
-        public virtual void HandleDropToBoard(GridBoard board, int rowToDrop, int colToDrop)
+        public virtual bool HandleDropToBoard(GridBoard board, int rowToDrop, int colToDrop)
         {
             if (GridTileGroup != null)
             {
-                GridTileGroup.PlaceOnBoard(board,rowToDrop,colToDrop);
+                if (!GridTileGroup.PlaceOnBoard(board, rowToDrop, colToDrop)) return false;
             }
 
             if (GridTile != null)
             {
-                board.SetTile(GridTile, rowToDrop, colToDrop);
+                bool result = board.SetTile(GridTile, rowToDrop, colToDrop);
+                if (!result) return false;
             }
             
             //Fire the event
@@ -154,6 +155,8 @@ namespace Kuantech.Puzzle
             {
                 Destroy(gameObject);
             }
+
+            return true;
         }
 
     }

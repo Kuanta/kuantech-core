@@ -91,15 +91,16 @@ namespace Kuantech.Puzzle
         /// <param name="board"></param>
         /// <param name="row"></param>
         /// <param name="col"></param>
-        public virtual void PlaceOnBoard(GridBoard board, int row, int col)
+        public virtual bool PlaceOnBoard(GridBoard board, int row, int col)
         {
             foreach (var pair in ChildTiles)
             {
                 GridTileCoordinate localCoord = pair.Key;
                 GridTile tile = pair.Value;
-                board.MoveTile(tile, localCoord.Row + row, localCoord.Column + col);
+                if (!board.MoveTile(tile, localCoord.Row + row, localCoord.Column + col)) return false;
             }
             OnPlacedOnBoard?.Invoke();
+            return false;
         }
 
         public void SetTilePositions(GridBoard board)

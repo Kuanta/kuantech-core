@@ -294,12 +294,12 @@ namespace Kuantech.Puzzle
         /// <param name="col">Desired col</param>
         /// <param name="layer"></param>
         /// <param name="setPosition">If flag is set to true, the position will be set</param>
-        public virtual void SetTile(GridTile gridTile, int row, int col, int layer=0, bool setPosition = true)
+        public virtual bool SetTile(GridTile gridTile, int row, int col, int layer=0, bool setPosition = true)
         {
             if (!IsCoordinateValid(row, col) || !IsLayerValid(layer) || !CanTileBePlaced(gridTile, row, col, layer))
             {
                 Debug.LogError("Couldn't set tile!");
-                return;
+                return false;
             }
 
             if (gridTile.ParentBoard != null)
@@ -313,6 +313,8 @@ namespace Kuantech.Puzzle
             {
                 PositionTileAtCoordinate(gridTile, row, col, layer);
             }
+
+            return true;
         }
 
         private void UpdateDirectionalTiles()
@@ -888,28 +890,29 @@ namespace Kuantech.Puzzle
         
         public Vector3 GetPointOnPlane(Vector3 globalPosition)
         {
-            
-            Vector3 diff = globalPosition - transform.position;
-            Vector3 projectedOntoNormal = Helpers.ProjectVector(diff, GetBoardNormal());
-            if (Mathf.Approximately(projectedOntoNormal.sqrMagnitude, 0f))
-            {
-                return globalPosition;
-            }
-            Ray ray = new Ray(globalPosition, GetBoardNormal());
-            return GetPointOnPlane(ray);
+            Vector3 groundPlaneNormal = Vector3.Cross(transform.rotation * ForwardVector, transform.rotation * RightVector).normalized;
+            Vector3 toPoint = globalPosition - transform.position;
+            Vector3 projection = Vector3.ProjectOnPlane(toPoint, groundPlaneNormal);
+            return transform.position + projection;
         }
         
         public Vector3 GetPointOnPlane(Ray ray)
         {
-            //todo: Fix this to comply with rotated boards
-            float rayDistance;
             Vector3 groundPlaneNormal = Vector3.Cross(transform.rotation * ForwardVector, transform.rotation * RightVector).normalized;
             Plane groundPlane = new Plane(groundPlaneNormal, transform.position);
-            if (groundPlane.Raycast(ray, out rayDistance))
+
+            // Check ray direction
+            if (Vector3.Dot(ray.direction, groundPlane.normal) > 0)
+                ray.direction = -ray.direction;
+
+            if (groundPlane.Raycast(ray, out float rayDistance))
             {
                 return ray.GetPoint(rayDistance);
             }
-            return Vector3.zero;
+
+            // Fallback: Closest point
+            Vector3 projected = ray.origin - Vector3.Dot(ray.origin - transform.position, groundPlane.normal) * groundPlane.normal;
+            return projected;
         }
 
         /// <summary>
