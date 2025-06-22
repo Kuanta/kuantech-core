@@ -21,7 +21,6 @@ namespace Kuantech.Utils.Math
         public int SplineResolution = 10;
         public int RotationLookAhead;
         public float FollowSpeed;
-        public int Direction = 1;
         public bool Moving = false;
         public bool Paused = false;
         public bool SetRotation = true;
@@ -91,6 +90,7 @@ namespace Kuantech.Utils.Math
         private void UpdateWithDistance()
         {
             float movementUpdate = Time.deltaTime * FollowSpeed;
+            
             //If targeted
             if (StopAtReachindTarget)
             {

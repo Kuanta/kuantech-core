@@ -29,6 +29,11 @@ namespace Kuantech.Midcore
         [Header("Price")] 
         public BuyableInfo BuyableInfo;
         
+        [Header("Default Datas")]
+        [SubclassSelector]
+        [SerializeReference]
+        public List<ActorData> DefaultDatas = new List<ActorData>();
+        
         public Actor CreateActor()
         {
             Actor actor = PoolManager.GetObjectFromPool(ActorPrefab.gameObject).GetComponent<Actor>();

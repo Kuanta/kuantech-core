@@ -16,12 +16,12 @@ namespace Kuantech.AI.ActionSequencer
         [SerializeField] private float MoveSpeed = 1;
 
         private Actor _actor;
-        private MovementModule _mm;
+        private RigidbodyMovementModule _mm;
         public override void Execute()
         {
             base.Execute();
             if(_actor == null) _actor = Parent.GetComponent<Actor>();
-            _mm = _actor.GetModule<MovementModule>();
+            _mm = _actor.GetModule<RigidbodyMovementModule>();
             if (_mm != null) return;
             IsComplete = true;
         }

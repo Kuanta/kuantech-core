@@ -10,10 +10,14 @@ namespace Kuantech.Core
         public Vector3 ActorUpVector = Vector3.up;
         public Vector3 ActorForwardVector = Vector3.forward;
         [NonSerialized] public Vector3 ActorRightVector = Vector3.right;
-
-        public Transform TargetedObject;
-        public Vector3 MovementVector;
+        
+        //Vectors
+        [NonSerialized] public Vector3 MovementVector;
+        [NonSerialized] public Vector3 ForceMoveVector = Vector3.zero; //Force move vector is used for knockback and other forceful movements        
         [NonSerialized] public Vector3 TargetVector = Vector3.zero;
+
+        //Target
+        public Transform TargetedObject;
 
         [NonSerialized] public Actor ParentActor;
 
@@ -86,7 +90,21 @@ namespace Kuantech.Core
         {
             SetMovementVector(GetSideMovement(), GetForwardMovement(), up);
         }
-                
+        
+        public void AddForceMovementVector(Vector3 forceMovementVector)
+        {
+            ForceMoveVector += forceMovementVector;
+        }
+        
+        public void RemoveForceMovementVector(Vector3 forceMovementVector)
+        {
+            ForceMoveVector -= forceMovementVector;
+            if (ForceMoveVector.sqrMagnitude < 0.01f)
+            {
+                ForceMoveVector = Vector3.zero; //Reset to zero if it is too small
+            }
+        }
+        
         /// <summary>
         /// Returns local movement vector (side, up, forward)
         /// </summary>
@@ -151,6 +169,12 @@ namespace Kuantech.Core
 
             Vector3 projected = Helpers.ProjectVectorOnPlane(vector, up, Vector3.zero);
             return projected;
+        }
+
+        public void Reset()
+        {
+            MovementVector = Vector3.zero;
+            ForceMoveVector = Vector3.zero;
         }
     }
 }

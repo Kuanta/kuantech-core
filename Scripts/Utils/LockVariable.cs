@@ -1,27 +1,31 @@
-﻿namespace Kuantech.Core.Utils
+﻿using System.Collections.Generic;
+
+namespace Kuantech.Core.Utils
 {
     public class LockVariable
     {
-        private int _lockAmount;
         private float _lastLockTime;
         
-        public void Lock()
+        private HashSet<string> _lockingSources = new HashSet<string>();
+        
+        public void Lock(string locker)
         {
-            _lockAmount++;
+            _lockingSources.Add(locker);
         }
 
-        public void Unlock()
+        public void Unlock(string locker)
         {
-            _lockAmount--;
+            _lockingSources.Remove(locker);
         }
         public void Reset()
         {
-            _lockAmount = 0;
+            _lockingSources.Clear();
+            ;
         }
 
         public bool IsLocked()
         {
-            return _lockAmount != 0;
+            return _lockingSources.Count > 0;
         }
     }
     

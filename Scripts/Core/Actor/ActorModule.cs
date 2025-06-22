@@ -4,11 +4,23 @@ using UnityEngine;
 
 namespace Kuantech.Core
 {
+    [Serializable]
+    public class ActorData
+    {
+            
+    }
+    
     public abstract class ActorModule : MonoBehaviour {
         [NonSerialized] public Actor Actor;
         [NonSerialized] public bool Initialized;
         public string ModuleId;
         [NonSerialized] public bool Dirtied = false;
+
+        public virtual void SetActorData(ActorData actorData)
+        {
+            
+        }
+        
         public virtual void Initialize()
         {
             if(Initialized) return;

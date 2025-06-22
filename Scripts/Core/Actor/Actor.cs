@@ -99,7 +99,6 @@ namespace Kuantech.Core
             VisualHandler = GetModule<ActorVisualHandler>();
             StatusEffectHandler = GetModule<StatusEffectHandler>();
             
-            ChangeActorState(ActorState.Inactive);
 
             if(actorSerializableData != null)
             {
@@ -114,6 +113,8 @@ namespace Kuantech.Core
             
             PostInitialize();
             
+            ChangeActorState(ActorState.Inactive);
+
             //Call reset method
             Reset();
         }
@@ -399,7 +400,7 @@ namespace Kuantech.Core
 
         public Vector3 GetActorDirection()
         {
-            MovementModule mm = GetModule<MovementModule>();
+            RigidbodyMovementModule mm = GetModule<RigidbodyMovementModule>();
             if (mm == null) return transform.forward;
             return mm.GetForwardVector();
         }

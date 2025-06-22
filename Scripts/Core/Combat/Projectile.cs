@@ -11,11 +11,11 @@ namespace Kuantech.Core
     {
         [Header("World Direction")]
         public Vector3 WorldForward = Vector3.up;
-
         public Vector3 WorldUp = Vector3.up;
         
         [Header("Properties")] 
         public string ProjectileId;
+        public bool Is2D = false;
         public float Speed;
         public float Range;
         
@@ -329,7 +329,6 @@ namespace Kuantech.Core
 
         protected virtual void HandleOnTriggerEnter(GameObject triggeredObject)
         {
-            //todo: Apply knockback
             if (CastBy != null && triggeredObject == CastBy.gameObject) return; //Don't trigger for the caster
 
             Actor targetActor = triggeredObject.GetComponent<Actor>();
@@ -354,10 +353,23 @@ namespace Kuantech.Core
             if (splashRadius > 0)
             {
                 Vector3 origin = transform.position;
-                Collider[] colliders = UnityEngine.Physics.OverlapSphere(origin, splashRadius);
-                foreach (Collider coll in colliders)
+
+                if (Is2D)
                 {
-                    Impact(coll.gameObject);    
+                    Collider2D[] colliders2D = UnityEngine.Physics2D.OverlapCircleAll(origin, splashRadius);
+                    foreach (Collider2D coll in colliders2D)
+                    {
+                        Impact(coll.gameObject);
+                    }
+                }
+                else
+                {
+                    // 3D
+                    Collider[] colliders3D = UnityEngine.Physics.OverlapSphere(origin, splashRadius);
+                    foreach (Collider coll in colliders3D)
+                    {
+                        Impact(coll.gameObject);
+                    }
                 }
             }
             else
@@ -386,6 +398,9 @@ namespace Kuantech.Core
                     DamageInfo = Damage,
                     Hitter = hitter,
                 });
+                //Apply knockback
+                MovementModule movementModule = target.GetModule<MovementModule>();
+                movementModule.Knockback(_direction, Knockback, KnockbackTime);
             }
         }
 

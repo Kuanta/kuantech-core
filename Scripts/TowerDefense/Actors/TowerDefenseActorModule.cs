@@ -3,6 +3,7 @@ using Kuantech.Core;
 using Kuantech.Core.Combat;
 using Kuantech.Rpg;
 using UnityEngine;
+using UnityEngine.Serialization;
 using Random = UnityEngine.Random;
 
 namespace Kuantech.TowerDefense
@@ -10,8 +11,6 @@ namespace Kuantech.TowerDefense
     public class TowerDefenseActorModule : ActorModule
     {
         [Header("Components")] 
-        [SerializeField] private PathFollower PathFollower;
-        [SerializeField] private float LateralOffsetMag;
         [SerializeField] private TargetDetectionModule TargetDetector;
         
         [Header("Attributes")]
@@ -22,47 +21,26 @@ namespace Kuantech.TowerDefense
         
         private StatsModule _statsModule;
         private CombatModule _combatModule;
-        private MovementModule _movementModule;
+        private PathFollowerMovementModule _pathFollowerMovementModule;
+
+        private RigidbodyMovementModule _rigidbodyMovementModule;
         private float _lastActionTime;
         private TowerDefenseLevel _tdLevel;
         
-        public override void Initialize()
-        {
-            if (Initialized) return;
-            base.Initialize();
-            PathFollower.OnReachedPathEnd += OnReachedEnd;
-        }
-        
-        private void Update()
-        {
-            if (Actor == null) return;
-            
-            if(PathFollower == null || PathFollower.IsMoving())
-            {
-                Actor.MotionVectorsHandler.SetMovementVector(Vector3.zero);
-            }
-            if(PathFollower.IsMoving())
-            {
-                Actor.MotionVectorsHandler.SetMovementVector(PathFollower.GetMovementVector());
-            }
-        }
+ 
+
         public override void OnModulesInitialized()
         {
             base.OnModulesInitialized();
             _combatModule = Actor.GetModule<CombatModule>();
-            _movementModule = Actor.GetModule<MovementModule>();
+            _rigidbodyMovementModule = Actor.GetModule<RigidbodyMovementModule>();
+            _pathFollowerMovementModule = Actor.GetModule<PathFollowerMovementModule>();
+            _pathFollowerMovementModule.OnReachedPathEndEvent += OnReachedEnd;
         }
 
         public void SetOnPath(Path path)
         {
-            StatsModule sm  = Actor.GetModule<StatsModule>();
-            if (sm != null && SpeedAttribute != null)
-            {
-                float speed = sm.GetAttributeValue(SpeedAttribute);
-                PathFollower.SetFollowSpeed(speed);
-            }
-            LateralOffsetMag = Mathf.Abs(LateralOffsetMag);
-            PathFollower.FollowPath(path, Random.Range(-1*LateralOffsetMag, LateralOffsetMag));
+            _pathFollowerMovementModule.SetOnPath(path);
         }
 
         public bool CanAct()
@@ -96,7 +74,7 @@ namespace Kuantech.TowerDefense
             }
             if(newState != ActorState.Spawned)
             {
-                PathFollower.Stop();
+                if(_pathFollowerMovementModule != null) _pathFollowerMovementModule.Stop();
             }
             if (newState == ActorState.Dead && _tdLevel != null)
             {

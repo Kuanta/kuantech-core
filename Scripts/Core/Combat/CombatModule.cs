@@ -279,7 +279,7 @@ namespace Kuantech.Core
             
             //todo(networking): Check server auth
 
-            if (Actor.GetModule<MovementModule>())
+            if (Actor.GetModule<RigidbodyMovementModule>())
             {
                 //todo: Transform this UE code to unity
                 // if(!ParentActor->HasAuthority()) return;

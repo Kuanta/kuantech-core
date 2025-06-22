@@ -57,7 +57,7 @@ namespace Kuantech.Core
         public override void OnModulesInitialized()
         {
             base.OnModulesInitialized();
-            MovementModule mm = Actor.GetModule<MovementModule>();
+            RigidbodyMovementModule mm = Actor.GetModule<RigidbodyMovementModule>();
             if (mm != null)
             {
                 mm.OnJumpEvent += OnJump;
@@ -154,7 +154,7 @@ namespace Kuantech.Core
         public void SetMovementParameters(Vector2 movement, bool forced = false)
         {
             movement.Normalize();
-            if (Actor.GetModule<MovementModule>() != null && Actor.GetModule<MovementModule>().IsDodging())
+            if (Actor.GetModule<RigidbodyMovementModule>() != null && Actor.GetModule<RigidbodyMovementModule>().IsDodging())
             {
                 if (movement.magnitude < 0.01f)
                 {
