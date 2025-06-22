@@ -127,5 +127,19 @@ namespace Kuantech.Core.Combat
             }
             effect.OnRemove();
         }
+
+        public void ClearStatusEffects()
+        {
+            foreach(var effect in Effects)
+            {
+                effect.OnRemove();
+            }
+        }
+
+        public override void Reset()
+        {
+            base.Reset();
+            ClearStatusEffects();
+        }
     }
 }

@@ -56,6 +56,7 @@ namespace Kuantech.Rpg
             ResourceManager.Refresh();
             
             //Remove temporary modifiers?
+            ClearModifiers();
         }
         public void ApplyStatsTable(List<AttributeDefinition> defaultAttributes)
         {
@@ -315,6 +316,7 @@ namespace Kuantech.Rpg
         }
         
         #endregion
+        
         #region Modifiers
         public void AddModifiers(List<StatModifier> modifiers)
         {
@@ -441,8 +443,6 @@ namespace Kuantech.Rpg
 
         }
         #endregion
-
-
 
         protected override ActorModuleSerializableData InstantiateState()
         {
