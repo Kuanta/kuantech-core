@@ -1,13 +1,9 @@
 using System;
 using System.Collections.Generic;
-using Kuantech.Core.Combat;
 using Kuantech.Core.Utils;
 using Kuantech.Rpg;
-using Kuantech.Rpg.Inventory;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
-using Cooldown = Kuantech.Rpg.Cooldown;
 
 namespace Kuantech.Core
 {
@@ -29,13 +25,16 @@ namespace Kuantech.Core
     [Serializable]
     public class AttackPattern
     {
-        [Header("Attack Patterns")]
+        [Header("Attack Shape")]
         public AttackTypes AttackType;
-        public DamageInfo DamageInfo;
         public float Angle;
         public float Width;
         public float Range;
-
+        
+        [Header("Damage")]
+        public DamageInfo DamageInfo;
+        public AttributeAsset AttributeToScaleDamage;
+        public float AttributeScaleFactor = 0f; //How much the attribute value scales the damage, 1 means 1:1 scaling
         
         [Header("Timings")]
         public float MovementSlow; //Factor between 0-1, movement speed while attacking will be MovementSpeed * (1-MovementSlow)
@@ -50,10 +49,6 @@ namespace Kuantech.Core
         
         [Header("Projectile")]
         public Projectile ProjectilePrefab;
-        public float ProjectileSpeed;
-        public float ProjectileDrop;
-        public bool TargetedProjectile;
-        
         
         public DamageInfo GetDamageInfo()
         {
@@ -123,7 +118,6 @@ namespace Kuantech.Core
             {
                 OnAttackWindupCompleted();
             }
-
             if (elapsedTime >= currentPattern.AttackTime && !_attacked)
             {
                 _attacked = true;
@@ -199,7 +193,11 @@ namespace Kuantech.Core
 
         public DamageInfo GetDamage()
         {
-            return GetCurrentAttackPattern().GetDamageInfo();
+            AttackPattern attackPattern = GetCurrentAttackPattern();
+            DamageInfo damageInfo = attackPattern.GetDamageInfo();
+            float statVariable = _statModule.GetAttributeValue(attackPattern.AttributeToScaleDamage);
+            damageInfo.DamageAmount += statVariable * attackPattern.AttributeScaleFactor;
+            return damageInfo;
         }
         
         #endregion
@@ -263,6 +261,7 @@ namespace Kuantech.Core
 
         public void SetCurrentAttackPattern(AttackPattern attackPattern)
         {
+            if (attackPattern.Cooldown < attackPattern.AttackTime) attackPattern.Cooldown = attackPattern.AttackTime;
             _currentAttackPattern = attackPattern;
         }
         #endregion

@@ -1,8 +1,6 @@
 ﻿using System.Collections.Generic;
 using Kuantech.Core;
 using Kuantech.Core.HyperCasual;
-using Kuantech.Rpg;
-using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Midcore
@@ -12,42 +10,34 @@ namespace Kuantech.Midcore
     /// Defines a template for an actor.
     /// </summary>
     [CreateAssetMenu(fileName = "ActorTemplate", menuName = "Kuantech/Midcore/Actor Template")]
-    public class ActorTemplateAsset : MetadataAsset
+    public class ActorBlueprint : MetadataAsset
     {
         [Header("Actor Prefab")] 
         public Actor ActorPrefab;
         
-        [Header("Stats")]
-        public List<AttributeDefinition> Attributes;
+        [Header("Blueprint Component")]
+        [SerializeReference]
+        public List<ActorBlueprintComponent> ActorBlueprintComponents = new List<ActorBlueprintComponent>();
+        
+        // [Header("Stats")]
+        // public List<AttributeDefinition> Attributes;
 
         [Header("Visuals")]
         public ActorVisual ActorVisualPrefab;
         
         [Header("Progressable Data")]
+        [Tooltip("Corresponding progressable data")]
         public ProgressableDataAsset ProgressableDataAsset;
         
         [Header("Price")] 
-        public BuyableInfo BuyableInfo;
-        
-        [Header("Default Datas")]
-        [SubclassSelector]
-        [SerializeReference]
-        public List<ActorData> DefaultDatas = new List<ActorData>();
+        public BuyableInfo BuyableInfo; //todo: Remove this from here
         
         public Actor CreateActor()
         {
             Actor actor = PoolManager.GetObjectFromPool(ActorPrefab.gameObject).GetComponent<Actor>();
             if (actor == null) return null;
-
-            if (!Attributes.IsNullOrEmpty())
-            {
-                //Apply stat defaults before initialize for upgrades to take place
-                StatsModule statsModule = actor.GetComponentInChildren<StatsModule>();
-                if (statsModule != null)
-                {
-                    statsModule.Stats = Attributes;
-                }
-            }
+            actor.Id = GetId();
+            
 
             if (ProgressableDataAsset != null)
             {
@@ -63,6 +53,12 @@ namespace Kuantech.Midcore
             if (actor.VisualHandler != null)
             {
                 actor.VisualHandler.SetActorVisual(PoolManager.GetObjectFromPool(ActorVisualPrefab.gameObject).GetComponent<ActorVisual>());
+            }
+                
+            //Sets blueprint comps
+            foreach(var blueprintComp in ActorBlueprintComponents)
+            {
+                blueprintComp.OnActorCreated(actor);
             }
             return actor;
         }

@@ -84,7 +84,7 @@ namespace Kuantech.Core.Combat
         
         private void Update()
         {
-            if (!Initialized || !AutoDetectTargets) return;
+            if (!Initialized || !AutoDetectTargets || Actor.CurrentActorState != ActorState.Spawned) return;
             float elapsedTime = Time.time - _lastDetectTime;
             if (elapsedTime < AutoDetectFrequency) return;
             DetectTargets();
