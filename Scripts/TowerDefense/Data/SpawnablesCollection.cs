@@ -11,9 +11,9 @@ namespace Kuantech.TowerDefense
     [CreateAssetMenu(fileName = "SpawnablesCollection", menuName = "Kuantech/TowerDefense/SpawnablesCollection", order = 1)]
     public class SpawnablesCollection : ScriptableObject
     {
-        public List<ActorTemplateAsset> ActorTemplates;
+        public List<ActorBlueprint> ActorTemplates;
 
-        public ActorTemplateAsset GetActorTemplate(int index)
+        public ActorBlueprint GetActorTemplate(int index)
         {
             if (ActorTemplates.IsNullOrEmpty()) return null;
             index = index % ActorTemplates.Count;

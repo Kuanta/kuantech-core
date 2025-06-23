@@ -3,8 +3,7 @@ using Kuantech.Core;
 using Kuantech.Core.Combat;
 using Kuantech.Rpg;
 using UnityEngine;
-using UnityEngine.Serialization;
-using Random = UnityEngine.Random;
+
 
 namespace Kuantech.TowerDefense
 {
@@ -12,12 +11,6 @@ namespace Kuantech.TowerDefense
     {
         [Header("Components")] 
         [SerializeField] private TargetDetectionModule TargetDetector;
-        
-        [Header("Attributes")]
-        [SerializeField] private AttributeAsset SpeedAttribute;
-        [SerializeField] private AttributeAsset AttackSpeedAttribute;
-        [SerializeField] private AttributeAsset DamageAttribute;
-        
         
         private StatsModule _statsModule;
         private CombatModule _combatModule;

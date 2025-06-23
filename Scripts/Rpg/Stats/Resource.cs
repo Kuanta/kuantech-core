@@ -1,5 +1,6 @@
 ﻿using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Kuantech.Rpg
 {
@@ -10,7 +11,7 @@ namespace Kuantech.Rpg
         public ResourceAsset ResourceAsset;
         [Tooltip("Attribute that dictates the max value")] public AttributeAsset MaxValueAttribute;
         [Tooltip("Attribute that dictates regeneration value")] public AttributeAsset RegenValueAttribute;
-        public float MaxValue;
+        public float DefaultMaxValue;
         public float RegenValue;
     }
     
@@ -29,7 +30,7 @@ namespace Kuantech.Rpg
             ResourceAsset = definition.ResourceAsset;
             MaxValueAttributeAsset = definition.MaxValueAttribute;
             RegenAttributeAsset = definition.RegenValueAttribute;
-            DefaultMaxValue = definition.MaxValue;
+            DefaultMaxValue = definition.DefaultMaxValue;
             DefaultRegenValue = definition.RegenValue;
         }
         

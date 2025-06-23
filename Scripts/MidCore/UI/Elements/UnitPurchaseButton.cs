@@ -10,7 +10,7 @@ namespace Kuantech.Midcore.UI
     public class UnitPurchaseButton : Draggable
     {
         [Header("Unit To Spawn")] 
-        [SerializeField] private ActorTemplateAsset UnitToSpawn;
+        [SerializeField] private ActorBlueprint UnitToSpawn;
 
         [Header("Components")] 
         [SerializeField] private Image Icon;
@@ -21,12 +21,12 @@ namespace Kuantech.Midcore.UI
         [Header("Effects")] [KTTag("AudioTags")]
         public int PurchaseSfx = 0;
         
-        public void SetUnitToSpawn(ActorTemplateAsset templateAsset)
+        public void SetUnitToSpawn(ActorBlueprint blueprint)
         {
-            UnitToSpawn = templateAsset;
+            UnitToSpawn = blueprint;
             if (Icon != null)
             {
-                Icon.sprite = templateAsset.ProgressableDataAsset.Icon;
+                Icon.sprite = blueprint.ProgressableDataAsset.Icon;
             }
         }
         

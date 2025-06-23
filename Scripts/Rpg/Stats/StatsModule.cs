@@ -187,6 +187,18 @@ namespace Kuantech.Rpg
         }
 
         /// <summary>
+        /// Sets the attribute
+        /// </summary>
+        /// <param name="attributeDefinition"></param>
+        /// <param name="insertAttribute"></param>
+        public void SetAttribute(AttributeDefinition attributeDefinition)
+        {
+            Attribute att = GetAttribute(attributeDefinition.AttributeAsset);
+            if (att == null) return;
+            att.ApplyAttributeDefinition(attributeDefinition);
+        }
+        
+        /// <summary>
         /// Sets the rank of the attribute
         /// </summary>
         /// <param name="statId"></param>

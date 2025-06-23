@@ -165,7 +165,7 @@ namespace Kuantech.TowerDefense
             //Peek next data
             WaveEntry entry = GetNextWaveEntry();
             ActorSummoner summoner = GetSummoner(entry.SpawnerIndex);
-            ActorTemplateAsset actorToSpawn = GetActorTemplate(entry.SpawnableIndex);
+            ActorBlueprint actorToSpawn = GetActorTemplate(entry.SpawnableIndex);
             if (actorToSpawn == null) return;
             Actor spawned = summoner.SpawnActor(actorToSpawn);
             if (spawned == null) return;
@@ -185,7 +185,7 @@ namespace Kuantech.TowerDefense
             return ActorSummoners[index];
         }
 
-        public ActorTemplateAsset GetActorTemplate(int index)
+        public ActorBlueprint GetActorTemplate(int index)
         {
             return SpawnablesCollection.GetActorTemplate(index);
         }

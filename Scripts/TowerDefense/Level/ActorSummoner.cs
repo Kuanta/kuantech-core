@@ -23,7 +23,7 @@ namespace Kuantech.TowerDefense
         /// <summary>
         /// Spawns the actor
         /// </summary>
-        public virtual Actor SpawnActor(ActorTemplateAsset actorTemplate)
+        public virtual Actor SpawnActor(ActorBlueprint actorTemplate)
         {
             if (actorTemplate == null) return null;
             Actor createdActor = actorTemplate.CreateActor();
