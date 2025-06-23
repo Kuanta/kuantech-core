@@ -23,7 +23,7 @@ namespace Kuantech.Core.Database
             }
         }
 
-        public override KtDataEntry GetEntry(string table, string entryId, string key)
+        public override KtDataType GetEntry(string table, string entryId, string key)
         {
             if (!_tablesLookup.ContainsKey(table))
             {

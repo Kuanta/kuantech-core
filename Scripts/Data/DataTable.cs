@@ -77,7 +77,7 @@ namespace Kuantech.Core.Database
             return _rowLookup[rowId];
         }
 
-        public KtDataEntry GetDataEntry(string rowId, string entryKey)
+        public KtDataType GetDataEntry(string rowId, string entryKey)
         {
             RowData rowData = GetRow(rowId);
             if (rowData == null) return null;
@@ -87,7 +87,7 @@ namespace Kuantech.Core.Database
             {
                 return null;
             }
-            return new KtDataEntry(rowData.Values[columnIndex]);
+            return rowData.Values[columnIndex];
         }
     }
 }

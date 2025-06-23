@@ -23,7 +23,7 @@ namespace Kuantech.Core.Database
         /// <param name="entryId">Entry id</param>
         /// <param name="key"></param>
         /// <returns></returns>
-        public virtual KtDataEntry GetEntry(string table, string entryId, string key)
+        public virtual KtDataType GetEntry(string table, string entryId, string key)
         {
             throw new NotImplementedException();
         }
@@ -40,7 +40,7 @@ namespace Kuantech.Core.Database
         /// <returns></returns>
         public virtual bool GetValue<T>(string table, string row, string column, out T value)
         {
-            KtDataEntry entry = GetEntry(table, row, column);
+            KtDataType entry = GetEntry(table, row, column);
             
             //Set default value for value
             value = default;

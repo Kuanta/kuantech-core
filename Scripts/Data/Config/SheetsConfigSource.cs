@@ -35,7 +35,7 @@ namespace Kuantech.Utils
                 string value = row[1].ToString();
                 if (ConfigDataDictionary.ContainsKey(configKey))
                 {
-                    KtDataType configEntry = ConfigDataDictionary[configKey].TypedValue;
+                    KtDataType configEntry = ConfigDataDictionary[configKey];
                     configEntry.ParseString(value);
                 }
             }

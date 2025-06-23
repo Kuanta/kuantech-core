@@ -6,7 +6,7 @@ namespace Kuantech.Utils
 {
  
     [Serializable]
-    public class ConfigDataDictionary : SerializableDictionary<string, KtDataEntry>
+    public class ConfigDataDictionary : SerializableDictionary<string, KtDataType>
     {
         
     }
@@ -18,7 +18,7 @@ namespace Kuantech.Utils
         {
         }
 
-        public virtual KtDataEntry GetConfig(string key)
+        public virtual KtDataType GetConfig(string key)
         {
             if (ConfigDataDictionary != null && ConfigDataDictionary.ContainsKey(key))
             {
@@ -30,7 +30,7 @@ namespace Kuantech.Utils
 
         public virtual bool GetValue<T>(string key, out T value)
         {
-            KtDataEntry dataEntry = GetConfig(key);
+            KtDataType dataEntry = GetConfig(key);
             value = default;
             if (dataEntry == null) return false;
             value = dataEntry.Get<T>();

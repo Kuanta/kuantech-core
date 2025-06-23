@@ -19,7 +19,7 @@ namespace Kuantech.Utils
 
             foreach (var entry in DataTable.Entries)
             {
-                ConfigDataDictionary[entry.Id] = new KtDataEntry(entry.Data);
+                ConfigDataDictionary[entry.Id] = entry.Data;
             }
         }
     }

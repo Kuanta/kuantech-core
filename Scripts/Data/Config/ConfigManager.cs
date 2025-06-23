@@ -17,28 +17,32 @@ namespace Kuantech.Utils
             await base.Initialize(gameManager);
 
             List<UniTask> tasks = new List<UniTask>();
-            foreach(var configSource in ConfigSources)
+            if (ConfigSources != null)
             {
-                if (configSource == null) continue;
-                tasks.Add(configSource.Initialize(this));
-            }
-            await tasks;
-            
-            //Register configs
-            foreach(var configSource in ConfigSources)
-            {
-                if (configSource == null) continue;
-                foreach (var key in configSource.ConfigDataDictionary.Keys)
+                foreach(var configSource in ConfigSources)
                 {
-                    if (_configIdToSource.ContainsKey(key))
+                    if (configSource == null) continue;
+                    tasks.Add(configSource.Initialize(this));
+                }
+                await tasks;
+            
+                //Register configs
+                foreach(var configSource in ConfigSources)
+                {
+                    if (configSource == null) continue;
+                    foreach (var key in configSource.ConfigDataDictionary.Keys)
                     {
-                        Debug.LogWarning("Duplicate key found in config sources: " + key);
-                        continue;
-                    }
+                        if (_configIdToSource.ContainsKey(key))
+                        {
+                            Debug.LogWarning("Duplicate key found in config sources: " + key);
+                            continue;
+                        }
 
-                    _configIdToSource[key] = configSource;
+                        _configIdToSource[key] = configSource;
+                    }
                 }
             }
+            
         }
 
 
