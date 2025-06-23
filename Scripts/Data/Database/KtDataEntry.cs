@@ -9,5 +9,11 @@ namespace Kuantech.Core.Database
 
         public KtDataEntry(KtDataType data) => TypedValue = data;
         public T Get<T>() => TypedValue.Get<T>();
+
+        public Type GetDataType()
+        {
+            return TypedValue.GetDataType();
+        }
+        
     }
 }

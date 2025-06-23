@@ -13,7 +13,7 @@ namespace Kuantech.Editor.Database
             GetWindow<ScriptableDatabaseTableEditor>().Show();
         }
 
-        private ScriptableObjectDatabaseTable table;
+        private DataTable table;
 
         private Vector2 scroll;
 
@@ -22,7 +22,7 @@ namespace Kuantech.Editor.Database
             EditorGUILayout.Space(10);
 
             // Table asset seçimi
-            table = (ScriptableObjectDatabaseTable)EditorGUILayout.ObjectField("Database Table", table, typeof(ScriptableObjectDatabaseTable), false);
+            table = (DataTable)EditorGUILayout.ObjectField("Database Table", table, typeof(DataTable), false);
 
             if (table == null)
             {
@@ -132,7 +132,7 @@ namespace Kuantech.Editor.Database
         }
     }
     
-    [CustomEditor(typeof(ScriptableObjectDatabaseTable))]
+    [CustomEditor(typeof(DataTable))]
     public class ScriptableObjectDatabaseTableEditorInspector : OdinEditor
     {
         public override void OnInspectorGUI()
@@ -144,12 +144,12 @@ namespace Kuantech.Editor.Database
     
             if (GUILayout.Button("📝 Edit in Table Window", GUILayout.Height(30)))
             {
-                var table = (ScriptableObjectDatabaseTable)target;
+                var table = (DataTable)target;
                 OpenEditor(table);
             }
         }
     
-        private void OpenEditor(ScriptableObjectDatabaseTable table)
+        private void OpenEditor(DataTable table)
         {
             var window = ScriptableDatabaseTableEditor.GetWindow<ScriptableDatabaseTableEditor>();
             window.titleContent = new GUIContent("Table Editor");

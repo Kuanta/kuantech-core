@@ -6,8 +6,8 @@ using UnityEngine;
 
 namespace Kuantech.Core.Database
 {
-    [CreateAssetMenu(fileName = "NewDatabaseTable", menuName = "Kuantech/Database/ScriptableObjectDatabaseTable")]
-    public class ScriptableObjectDatabaseTable : ScriptableObject, IKtDataTable
+    [CreateAssetMenu(fileName = "DataTable", menuName = "Kuantech/Data/DataTable")]
+    public class DataTable : ScriptableObject
     {
         public string TableName;
         public List<ColumnSchema> Schema = new();
@@ -89,19 +89,5 @@ namespace Kuantech.Core.Database
             }
             return new KtDataEntry(rowData.Values[columnIndex]);
         }
-        
-        // #if UNITY_EDITOR
-        // public void EditTable()
-        // {
-        //     var window = ScriptableDatabaseTableEditor.GetWindow<ScriptableDatabaseTableEditor>();
-        //     window.titleContent = new GUIContent("Table Editor");
-        //     
-        //     // Internal set için reflection ya da property olabilir
-        //     var tableField = typeof(ScriptableDatabaseTableEditor)
-        //         .GetField("table", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        //
-        //     tableField?.SetValue(window, this);
-        // }
-        // #endif
     }
 }

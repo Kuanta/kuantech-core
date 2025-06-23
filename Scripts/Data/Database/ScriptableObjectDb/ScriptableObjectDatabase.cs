@@ -6,11 +6,11 @@ namespace Kuantech.Core.Database
 {
     public class ScriptableObjectDatabase : KtDatabase
     {
-        public List<ScriptableObjectDatabaseTable> Tables;
-        private Dictionary<string, ScriptableObjectDatabaseTable> _tablesLookup;
+        public List<DataTable> Tables;
+        private Dictionary<string, DataTable> _tablesLookup;
         public override async UniTask Initialize()
         {
-            _tablesLookup = new Dictionary<string, ScriptableObjectDatabaseTable>();
+            _tablesLookup = new Dictionary<string, DataTable>();
             foreach (var table in Tables)
             {
                 if (_tablesLookup.ContainsKey(table.TableName))
