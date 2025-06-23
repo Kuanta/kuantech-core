@@ -35,7 +35,7 @@ namespace Kuantech.TowerDefense
             }
             
             Actor actor = ownerTree.VariableTable.GetVariable("EnemyTarget") as Actor;
-            if (actor == null)
+            if (actor == null || !actor.IsAlive())
             {
                 return BTNode.NodeStatus.FAILURE;
             }

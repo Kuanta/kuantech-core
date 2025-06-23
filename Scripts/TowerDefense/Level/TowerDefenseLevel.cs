@@ -312,6 +312,15 @@ namespace Kuantech.TowerDefense
             {
                 ReceiveTowerDamage(1);
             }
+            
+            //Remove from alive enemies
+            if (AliveEnemies.Contains(actor))
+            {
+                AliveEnemies.Remove(actor);
+            }
+            
+            //If there are no more enemies left, complete the wave
+            CheckWaveCompletion();
         }
 
         public override void AddSpawnable(ISpawnable spawnable)
