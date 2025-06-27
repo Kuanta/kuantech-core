@@ -222,6 +222,8 @@ namespace Kuantech.Utils
         {
             return new Vector2(vector3.x, vector3.z);
         }
+
+        #region Probability
         /// <summary>
         /// Returns an index from a list of probabilities
         /// </summary>
@@ -244,6 +246,9 @@ namespace Kuantech.Utils
 
             return probabilities.Length - 1;
         }
+        
+        #endregion
+
 
 
         #region Time
@@ -575,7 +580,22 @@ return GameObject.Instantiate(prefab);
             gameObject.transform.localRotation = Quaternion.identity;
             gameObject.transform.localScale = Vector3.one;
         }
-
+        
+        public static void SortChildren(this Transform parentTransform, Comparison<Transform> comparison)
+        {
+            List<Transform> children = new List<Transform>();
+            for (int i = 0; i < parentTransform.childCount; i++)
+            {
+                children.Add(parentTransform.GetChild(i));
+            }
+            
+            children.Sort(comparison);
+            
+            for (int i = 0; i < children.Count; i++)
+            {
+                children[i].SetSiblingIndex(i);
+            }
+        }
         #endregion
         
         #region Tricks

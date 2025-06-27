@@ -38,14 +38,11 @@ namespace Kuantech.Midcore
     {
         [Header("Player Level")] 
         public ProgressableDataAsset PlayerLevelDataAsset;
-
-        [Header("Collectibles")] 
-        public List<ProgressableDataAsset> Collectibles;
         
         [Header("Upgrades")] 
         [SaveableField] 
         [SerializeField] private ProgressablesHandler ProgressiblesHandler;
-
+        
         [Header("Level Progression")] 
         [SaveableField] public Dictionary<(int, int), LevelProgressionData> LevelProgressionDatas; 
         

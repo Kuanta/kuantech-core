@@ -1,7 +1,9 @@
-﻿using Kuantech.Core.UI;
+﻿using System;
+using Kuantech.Core.UI;
 using Kuantech.Rpg.UI;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 namespace Kuantech.Midcore.UI
@@ -9,7 +11,7 @@ namespace Kuantech.Midcore.UI
     /// <summary>
     /// A UI element to show collectible card
     /// </summary>
-    public class CollectiblePreviewCard : UIElement, IUIButtonAction
+    public class CollectiblePreviewCard : UIElement, KtButton.IUIButtonAction
     {
         [Header("Visuals")] 
         [SerializeField] private TMP_Text Name;
@@ -18,13 +20,28 @@ namespace Kuantech.Midcore.UI
         [SerializeField] private Image CollectibleIcon;
         
         [SerializeField] private UnlockableUIElementVisualHandler VisualStateHandler;
-        public ProgressableDataAsset CollectibleDataAsset;
+        public DeckCollectableAsset CollectibleDataAsset;
+
+        [SerializeField] private GameObject SelectedVisual;
+
+        [Header("Buttons")] 
+        [SerializeField] private KtButton UpgradeButton;
+
+        [NonSerialized] public bool IsDeckCard; //If its a deck card, clicking on it will open the info panel
+
+        public UnityAction<CollectiblePreviewCard> OnDeckCardClicked;
         
-        public void Initialize(ProgressableDataAsset dataAsset)
+        public void Initialize(DeckCollectableAsset dataAsset)
         {
             CollectibleDataAsset = dataAsset;
-            if(CollectibleIcon != null) CollectibleIcon.sprite = dataAsset.Icon;
             VisualStateHandler.SetVisuals();
+            SetCollectible(dataAsset);
+        }
+
+        public void SetCollectible(DeckCollectableAsset dataAsset)
+        {
+            CollectibleDataAsset = dataAsset;
+            if(CollectibleDataAsset != null && CollectibleIcon != null) CollectibleIcon.sprite = dataAsset.Icon;
         }
         
         /// <summary>
@@ -33,7 +50,12 @@ namespace Kuantech.Midcore.UI
         public void UpdatePreviewCard()
         {
             Initialize();
-            if (CollectibleDataAsset == null) return;
+            if (CollectibleDataAsset == null)
+            {
+                VisualStateHandler.SetVisual(UnlockableStates.Locked);
+                return;
+            }
+            
             bool isUnlocked = ProgressionManager.IsProgressibleUnlocked(CollectibleDataAsset);
             var state = isUnlocked ? UnlockableStates.Unlocked : UnlockableStates.Locked;
             VisualStateHandler.SetVisual(state);
@@ -44,9 +66,17 @@ namespace Kuantech.Midcore.UI
             if(Name != null) Name.text = CollectibleDataAsset.Name;
         }
 
-        public void OnClick()
+        public void ToggleSelected(bool selected)
         {
-            Debug.Log("Clicked on collectible card: " + CollectibleDataAsset.Name);
+            SelectedVisual.SetActive(selected);
+        }
+        
+        public virtual void OnClick()
+        {
+            if (IsDeckCard)
+            {
+                OnDeckCardClicked?.Invoke(this);
+            }
         }
     }
 }

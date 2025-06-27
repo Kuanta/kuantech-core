@@ -13,7 +13,7 @@ namespace Kuantech.Midcore.UI
     /// <summary>
     /// Represents a button in trait upgrade tree
     /// </summary>
-    public class UpgradeTreeButton : UIElement, IUIButtonAction
+    public class UpgradeTreeButton : UIElement, KtButton.IUIButtonAction
     {
 
         [NonSerialized] public UnlockableStates CurrentState;

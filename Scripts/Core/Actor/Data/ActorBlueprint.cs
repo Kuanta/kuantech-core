@@ -1,7 +1,9 @@
 ﻿using System.Collections.Generic;
 using Kuantech.Core;
 using Kuantech.Core.HyperCasual;
+using Kuantech.Rpg;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Kuantech.Midcore
 {
@@ -19,8 +21,8 @@ namespace Kuantech.Midcore
         [SerializeReference]
         public List<ActorBlueprintComponent> ActorBlueprintComponents = new List<ActorBlueprintComponent>();
         
-        // [Header("Stats")]
-        // public List<AttributeDefinition> Attributes;
+        [FormerlySerializedAs("Attributes")] [Header("Stats")]
+        public List<AttributeDefinition> AttributeDefinitions;
 
         [Header("Visuals")]
         public ActorVisual ActorVisualPrefab;
@@ -30,7 +32,7 @@ namespace Kuantech.Midcore
         public ProgressableDataAsset ProgressableDataAsset;
         
         [Header("Price")] 
-        public BuyableInfo BuyableInfo; //todo: Remove this from here
+        public BuyableInfo BuyableInfo;
         
         public Actor CreateActor()
         {

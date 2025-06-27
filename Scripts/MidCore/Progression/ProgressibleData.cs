@@ -13,6 +13,19 @@ namespace Kuantech.Midcore
         public string Id;//Id of the progresable
         [SaveableField] public LevelVariable Rank;//Rank of the progressable
 
+        public ProgressibleData(ProgressableDataAsset progressableDataAsset = null)
+        {
+            if (progressableDataAsset != null)
+            {
+                SetFromAsset(progressableDataAsset);
+            }
+            else
+            {
+                Id = string.Empty;
+                Rank = null;
+            }
+        }
+   
         public void SetFromAsset(ProgressableDataAsset progressableDataAsset)
         {
             if (progressableDataAsset == null)

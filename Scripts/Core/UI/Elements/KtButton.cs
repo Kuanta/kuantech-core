@@ -1,27 +1,24 @@
-using UnityEngine;
 using UnityEngine.UI;
 
 namespace Kuantech.Core.UI
 {
-    public interface IUIButtonAction
+    public class KtButton : Button
     {
-        void OnClick();
-    }
+        public interface IUIButtonAction
+        {
+            void OnClick();
+        }
     
-    [RequireComponent(typeof(Button))]
-    public class KtButton : MonoBehaviour
-    {
-        private Button _button;
         private IUIButtonAction[] _actions;
 
-        private void Awake()
+        protected override void Awake()
         {
-            _button = GetComponent<Button>();
+            base.Awake();
             _actions = GetComponents<IUIButtonAction>();
-            _button.onClick.AddListener(OnClicked);
+            onClick.AddListener(NotifyActions);
         }
 
-        private void OnClicked()
+        private void NotifyActions()
         {
             foreach (var action in _actions)
             {

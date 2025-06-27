@@ -19,7 +19,7 @@ namespace Kuantech.Midcore.UI
 
             ProgressionManager pm = ProgressionManager.GetContext<ProgressionManager>();
             if (pm == null) return;
-            List<ProgressableDataAsset> collectibleDataAssets = pm.Collectibles;
+            List<DeckCollectableAsset> collectibleDataAssets = DeckBuildingManager.GetCollectibles();
 
             foreach (var dataAsset in collectibleDataAssets)
             {
@@ -57,7 +57,7 @@ namespace Kuantech.Midcore.UI
             }
         }
         
-        public void AddCollectiblePreviewCard(ProgressableDataAsset collectibleDataAsset)
+        public void AddCollectiblePreviewCard(DeckCollectableAsset collectibleDataAsset)
         {
             if (CollectiblePreviewCards.ContainsKey(collectibleDataAsset.Id)) return;
             CollectiblePreviewCard collectiblePreviewCard = Instantiate(CollectiblePreviewCardPrefab, LockedCards);

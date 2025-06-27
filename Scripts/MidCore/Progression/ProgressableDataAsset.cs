@@ -19,8 +19,6 @@ namespace Kuantech.Midcore
         public BuyableInfo BuyableInfo;
 
         [Header("Levelable")] 
-        [Tooltip("If true, the progressable uses experience to set its rank")] 
-        public bool UsesExperience;
         public LevelVariableData LevelVariableData;
         
         public static string GetSubUpgradeAssetId(ProgressableDataAsset asset, ProgressableDataAsset subUpgradeAsset)

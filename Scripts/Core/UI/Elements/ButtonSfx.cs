@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Kuantech.Core.UI
 {
-    public class ButtonSfx : MonoBehaviour, IUIButtonAction
+    public class ButtonSfx : MonoBehaviour, KtButton.IUIButtonAction
     {
         [SerializeField] private Sound Audio;
         [KTTag("AudioTag")]

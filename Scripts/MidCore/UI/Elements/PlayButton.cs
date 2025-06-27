@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Kuantech.Midcore.UI
 {
-    public class PlayButton : MonoBehaviour, IUIButtonAction
+    public class PlayButton : MonoBehaviour, KtButton.IUIButtonAction
     {
         public void OnClick()
         {

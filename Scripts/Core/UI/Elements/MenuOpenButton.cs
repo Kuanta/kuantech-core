@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Kuantech.Core.UI
 {
-    public class MenuOpenButton : MonoBehaviour, IUIButtonAction
+    public class MenuOpenButton : MonoBehaviour, KtButton.IUIButtonAction
     {
         [SerializeField] private MenuGroup MenuGroup;
         [SerializeField] private UIMenu MenuToOpen;
