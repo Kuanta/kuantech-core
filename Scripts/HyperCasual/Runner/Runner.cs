@@ -163,19 +163,19 @@ namespace Kuantech.Core.HyperCasual.Runner
             if (_movingToPoint || MovementLock.IsLocked())
             {
                 //Leave the movement to Update
-                Rigidbody.velocity = Vector3.zero;
+                Rigidbody.linearVelocity = Vector3.zero;
                 return;
             }
 
             if (ForceMovementVector.sqrMagnitude >= 0.1f)
             {
-                Rigidbody.velocity = ForceMovementVector;
+                Rigidbody.linearVelocity = ForceMovementVector;
                 return;
             }
 
             Vector3 sideMovement = LocalToGlobalDirection(new Vector2(CurrentMovementVector.x, 0));
             Vector3 forwardMovement = LocalToGlobalDirection(new Vector2(0, CurrentMovementVector.y));
-            Rigidbody.velocity = sideMovement * SideSpeed + forwardMovement*_currentSpeed;
+            Rigidbody.linearVelocity = sideMovement * SideSpeed + forwardMovement*_currentSpeed;
         }
 
         protected virtual void ManualMovement()
@@ -252,7 +252,7 @@ namespace Kuantech.Core.HyperCasual.Runner
         public void MoveToPoint(Transform point, UnityAction pointReachedHandler)
         {
             if (_movingToPoint) return;
-            Rigidbody.velocity = Vector3.zero;
+            Rigidbody.linearVelocity = Vector3.zero;
             _movingToPoint = true;
             _target = point;
             _pointReachedHandler = pointReachedHandler;

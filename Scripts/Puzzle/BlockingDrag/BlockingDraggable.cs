@@ -30,7 +30,7 @@ namespace Kuantech.Puzzle.BlockingDrag
                 mag = MaxSpeed;
             }
             direction.Normalize();
-            Rigidbody.velocity = direction * mag;
+            Rigidbody.linearVelocity = direction * mag;
         }
 
         public override void Drag(Vector3 cursorPosition, Vector3 cursorPositionChange)
@@ -55,7 +55,7 @@ namespace Kuantech.Puzzle.BlockingDrag
         {
             if (!base.DragStart(hitPoint)) return false;
             Rigidbody.isKinematic = false;
-            Rigidbody.velocity = Vector3.zero;
+            Rigidbody.linearVelocity = Vector3.zero;
             _lastPosition = transform.position;
             return true;
         }
@@ -63,14 +63,14 @@ namespace Kuantech.Puzzle.BlockingDrag
         public override void DragEnd()
         {
             base.DragEnd();
-            Rigidbody.velocity = Vector3.zero;
+            Rigidbody.linearVelocity = Vector3.zero;
             Rigidbody.isKinematic = true;
 
         }
         
         public Vector3 GetCurrentVelocity()
         {
-            return Rigidbody.velocity;
+            return Rigidbody.linearVelocity;
         }
     }
 }

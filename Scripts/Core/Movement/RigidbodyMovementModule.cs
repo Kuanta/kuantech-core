@@ -83,13 +83,13 @@ namespace Kuantech.Core
             if (Actor == null) return;
             if (GameManager.IsGamePaused() || !Actor.IsAlive())
             {
-                Rigidbody.velocity = Vector3.zero;
+                Rigidbody.linearVelocity = Vector3.zero;
                 return;
             }
             if (Rigidbody == null || Jumping) return;
             
             //Rigidbody movement
-            float downSpeed = Rigidbody.velocity.y;
+            float downSpeed = Rigidbody.linearVelocity.y;
             Vector3 vel = transform.right * (_speed * _movement.x) +
                           transform.forward * (_movement.y * _speed) + ForceMoveVector;
 
@@ -115,7 +115,7 @@ namespace Kuantech.Core
             }
             else
             {
-                Rigidbody.velocity = vel;
+                Rigidbody.linearVelocity = vel;
             }
             
         }
@@ -158,7 +158,7 @@ namespace Kuantech.Core
                 dodgeMomentum = _dodgeDirection * _dodgeSpeed;
             }
 
-            Vector3 movementMomentum = Rigidbody.velocity;
+            Vector3 movementMomentum = Rigidbody.linearVelocity;
 
             return movementMomentum.sqrMagnitude > dodgeMomentum.sqrMagnitude ? movementMomentum : dodgeMomentum;
         }
@@ -212,10 +212,10 @@ namespace Kuantech.Core
 
         public void Stop()
         {
-            Vector3 currentRbVelocity = Rigidbody.velocity;
+            Vector3 currentRbVelocity = Rigidbody.linearVelocity;
             currentRbVelocity.x = 0;
             currentRbVelocity.z = 0;
-            Rigidbody.velocity = currentRbVelocity;
+            Rigidbody.linearVelocity = currentRbVelocity;
             SetMovementVector(Vector2.zero, forced:true);
             ForceMoveVector = Vector3.zero;
             foreach (var routine in _knockbackRoutines)
@@ -301,7 +301,7 @@ namespace Kuantech.Core
             OnJumpEvent?.Invoke(this, EventArgs.Empty);
             _jumpTime = Time.time;
             float jumpForce = Mathf.Sqrt(Mathf.Abs(2 * jumpHeight * UnityEngine.Physics.gravity.y)) * Rigidbody.mass;
-            Rigidbody.velocity = Vector3.zero;
+            Rigidbody.linearVelocity = Vector3.zero;
             Vector3 direction3d = new Vector3(direction.x, 0, direction.y);
             direction3d = transform.rotation * direction3d;
             Rigidbody.AddForce(Vector3.up * jumpForce + direction3d * Rigidbody.mass, ForceMode.Impulse);

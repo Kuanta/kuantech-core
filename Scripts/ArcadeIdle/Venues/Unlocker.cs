@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using Cinemachine;
 #if UNITY_6000
     using Unity.Cinemachine;
 #else

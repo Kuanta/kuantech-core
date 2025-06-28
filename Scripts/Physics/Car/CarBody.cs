@@ -102,7 +102,7 @@ namespace Kuantech.Physics.Car
         public void ApplyImpulseForce(float force, Vector2 direction)
         {
             _side = direction.x;
-            BodyRigidbody.velocity = transform.forward * force * CarData.MaxSpeed;
+            BodyRigidbody.linearVelocity = transform.forward * force * CarData.MaxSpeed;
             Vector3 globalDireciton = transform.TransformDirection(new Vector3(direction.x, 0, direction.y));
             AlignToDirection(globalDireciton);
         }
@@ -193,13 +193,13 @@ namespace Kuantech.Physics.Car
             if (horizontalSpeed > maxSpeed)
             {
                 float maxSpeedRatio = maxSpeed / horizontalSpeed;
-                BodyRigidbody.velocity = new Vector3(BodyRigidbody.velocity.x * maxSpeedRatio, BodyRigidbody.velocity.y, BodyRigidbody.velocity.z * maxSpeedRatio);
+                BodyRigidbody.linearVelocity = new Vector3(BodyRigidbody.linearVelocity.x * maxSpeedRatio, BodyRigidbody.linearVelocity.y, BodyRigidbody.linearVelocity.z * maxSpeedRatio);
             }
         }
 
         public float GetGroundSpeed()
         {
-            Vector3 velocity = BodyRigidbody.velocity;
+            Vector3 velocity = BodyRigidbody.linearVelocity;
             Vector3 horizontalVelocity = new Vector3(velocity.x, 0, velocity.z); // ignore the y component of the velocity
             return horizontalVelocity.magnitude;
         }
@@ -217,7 +217,7 @@ namespace Kuantech.Physics.Car
             bool grounded = IsGrounded();
             if (grounded) _lastGroundedTime = Time.time;
             UpdateWheelParameters();
-            BodyRigidbody.angularDrag = grounded ? GroudnAngularDrag : AirAngularDrag;
+            BodyRigidbody.angularDamping = grounded ? GroudnAngularDrag : AirAngularDrag;
             AlignStep();
             
             Vector3 newGroundIncline = GetGroundIncline();
@@ -293,7 +293,7 @@ namespace Kuantech.Physics.Car
         [SerializeField] private float StillVelocityThreshold = 0.1f;
         public bool IsStandingStill()
         {
-            if (BodyRigidbody.velocity.sqrMagnitude <= StillVelocityThreshold * StillVelocityThreshold) return true;
+            if (BodyRigidbody.linearVelocity.sqrMagnitude <= StillVelocityThreshold * StillVelocityThreshold) return true;
             return false;
         }
         [SerializeField] private GameObject TurnDebugger;
@@ -308,7 +308,7 @@ namespace Kuantech.Physics.Car
         public void Stop()
         {
             if(BodyRigidbody == null) return;
-            BodyRigidbody.velocity = Vector3.zero;
+            BodyRigidbody.linearVelocity = Vector3.zero;
             BodyRigidbody.angularVelocity = Vector3.zero;
             _impulseApplied = false;
         }
@@ -333,7 +333,7 @@ namespace Kuantech.Physics.Car
 
         private float GetNormalizedSpeed()
         {
-            float carSpeed = Vector3.Dot(transform.forward, BodyRigidbody.velocity);
+            float carSpeed = Vector3.Dot(transform.forward, BodyRigidbody.linearVelocity);
             float normalizedSpeed = carSpeed / CarData.MaxSpeed;
             return normalizedSpeed;
         }

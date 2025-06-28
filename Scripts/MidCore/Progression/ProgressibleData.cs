@@ -1,7 +1,6 @@
 ﻿using System;
 using Kuantech.Core;
 using Kuantech.Rpg;
-using Unity.Entities.UniversalDelegates;
 using UnityEngine;
 
 namespace Kuantech.Midcore

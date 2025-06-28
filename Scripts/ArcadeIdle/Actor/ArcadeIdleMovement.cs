@@ -36,7 +36,7 @@ namespace Kuantech.ArcadeIdle
         private void FixedUpdate()
         {
             if (!Initialized || _statModule == null) return;
-            _rigidbody.velocity = _currentMovementVector * _statModule.GetAttributeValue(movementSpeedAttributeAsset.Id);
+            _rigidbody.linearVelocity = _currentMovementVector * _statModule.GetAttributeValue(movementSpeedAttributeAsset.Id);
             if(_currentMovementVector != Vector3.zero)
             {
                 //Use target movement vector so that the player moves exactly where they aim for

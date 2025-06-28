@@ -60,7 +60,7 @@ namespace Kuantech.Physics.Car
 
             if (IsGrounded())
             {
-                Vector3 carVelocity = CarBody.GetRigidbody().velocity;
+                Vector3 carVelocity = CarBody.GetRigidbody().linearVelocity;
                 float speed = carVelocity.magnitude;
                 float angularSpeed = (speed / (2 * Mathf.PI * WheelVisualRadius))*Mathf.Rad2Deg;
                 float rightDot = Vector3.Dot(CarBody.transform.right, transform.right);

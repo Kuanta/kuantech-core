@@ -16,7 +16,7 @@ namespace Kuantech.Core.HyperCasual
 
         public void Reset()
         {
-            Rigidbody.velocity = Vector3.zero;
+            Rigidbody.linearVelocity = Vector3.zero;
             Rigidbody.angularVelocity = Vector3.zero;
             transform.localPosition = _initialLocalPosition;
             transform.localRotation = _initialLocalRotation;
