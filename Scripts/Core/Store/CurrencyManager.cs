@@ -50,7 +50,7 @@ namespace Kuantech.Core.Store
 
         private void TriggerCurrencyUpdatedEvent(CurrencyAsset asset)
         {
-            TriggerCurrencyUpdatedEvent(asset.Id);
+            TriggerCurrencyUpdatedEvent(asset.GetId());
         }
 
         private void TriggerCurrencyUpdatedEvent(string currencyId)

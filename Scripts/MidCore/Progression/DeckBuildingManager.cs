@@ -50,6 +50,7 @@ namespace Kuantech.Midcore
         {
             var ctx = DeckBuildingManager.GetContext<DeckBuildingManager>();
             if (ctx == null) return null;
+            if (string.IsNullOrEmpty(id)) return null;
             if (ctx._collectiblesById.ContainsKey(id)) return null;
             return ctx._collectiblesById[id];
         }
@@ -75,7 +76,7 @@ namespace Kuantech.Midcore
         public static bool IsEquipped(DeckCollectableAsset asset)
         {
             var ctx = GetContext<DeckBuildingManager>();
-            if (ctx == null) return false;
+            if (ctx == null || asset == null) return false;
             return ctx._equippedCollectiblesById.ContainsKey(asset.GetId());
         }
         
@@ -86,7 +87,7 @@ namespace Kuantech.Midcore
         public static bool EquipCollectible(DeckCollectableAsset collectible)
         {
             var ctx = DeckBuildingManager.GetContext<DeckBuildingManager>();
-            if (ctx == null) return false;
+            if (ctx == null || collectible == null) return false;
             
             //Is there empty slot
             for (int i = 0; i < ctx.DeckSize; ++i)
@@ -94,7 +95,7 @@ namespace Kuantech.Midcore
                 if (!ctx.CurrentDeck.IsValidIndex(i))
                 {
                     ctx.CurrentDeck.Add(new ProgressibleData(collectible));
-                    ctx._equippedCollectiblesById[collectible.Id] = collectible;
+                    ctx._equippedCollectiblesById[collectible.GetId()] = collectible;
                     ctx.SaveState();
                     return true;
                 }
@@ -102,7 +103,7 @@ namespace Kuantech.Midcore
                 if (ctx.CurrentDeck[i] == null)
                 {
                     ctx.CurrentDeck[i] = new ProgressibleData(collectible);
-                    ctx._equippedCollectiblesById[collectible.Id] = collectible;
+                    ctx._equippedCollectiblesById[collectible.GetId()] = collectible;
                     ctx.SaveState();
                     return true;
                 }
@@ -125,10 +126,10 @@ namespace Kuantech.Midcore
             }
             for(int i=0;i<ctx.CurrentDeck.Count; ++i)
             {
-                if (ctx.CurrentDeck.IsValidIndex(i) && ctx.CurrentDeck[i] != null && ctx.CurrentDeck[i].Id== collectible.Id)
+                if (ctx.CurrentDeck.IsValidIndex(i) && ctx.CurrentDeck[i] != null && ctx.CurrentDeck[i].Id== collectible.GetId())
                 {
                     ctx.CurrentDeck[i] = null;
-                    ctx._equippedCollectiblesById.Remove(collectible.Id);
+                    ctx._equippedCollectiblesById.Remove(collectible.GetId());
                     ctx.SaveState();
                     return true;
                 }

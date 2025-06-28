@@ -18,7 +18,7 @@ namespace Kuantech.Midcore
         [Header("Store Entry")]
         public BuyableInfo BuyableInfo;
 
-        [Header("Levelable")] 
+        [Header("Progressible Level")] 
         public LevelVariableData LevelVariableData;
         
         public static string GetSubUpgradeAssetId(ProgressableDataAsset asset, ProgressableDataAsset subUpgradeAsset)

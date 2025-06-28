@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Kuantech.Core;
+using Kuantech.Core.HyperCasual;
 using Kuantech.Rpg;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -243,7 +244,7 @@ namespace Kuantech.Midcore
         #region Buy & Upgrade
 
         /// <summary>
-        /// Renks up the upgrade
+        /// Ranks up the upgrade, checks its price
         /// </summary>
         /// <param name="asset"></param>
         public static bool RankUpUpgrade(ProgressableDataAsset asset)
@@ -353,6 +354,7 @@ namespace Kuantech.Midcore
             ctx.SaveState();
             return true;
         }
+
         #endregion
     }
 }

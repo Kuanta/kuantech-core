@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Kuantech.Core;
 using Kuantech.Core.HyperCasual;
 using Kuantech.Rpg;
@@ -20,9 +21,6 @@ namespace Kuantech.Midcore
         [Header("Blueprint Component")]
         [SerializeReference]
         public List<ActorBlueprintComponent> ActorBlueprintComponents = new List<ActorBlueprintComponent>();
-        
-        [FormerlySerializedAs("Attributes")] [Header("Stats")]
-        public List<AttributeDefinition> AttributeDefinitions;
 
         [Header("Visuals")]
         public ActorVisual ActorVisualPrefab;
@@ -33,6 +31,37 @@ namespace Kuantech.Midcore
         
         [Header("Price")] 
         public BuyableInfo BuyableInfo;
+        
+        private Dictionary<Type, ActorBlueprintComponent> _componentLookup;
+
+        private void EnsureComponentLookupBuilt()
+        {
+            if (_componentLookup != null)
+                return;
+
+            _componentLookup = new Dictionary<Type, ActorBlueprintComponent>();
+            foreach (var comp in ActorBlueprintComponents)
+            {
+                if (comp == null) continue;
+                var type = comp.GetType();
+                if (!_componentLookup.ContainsKey(type))
+                {
+                    _componentLookup[type] = comp;
+                }
+            }
+        }
+        
+        public T GetActorBlueprintComponent<T>() where T : ActorBlueprintComponent
+        {
+            EnsureComponentLookupBuilt();
+
+            if (_componentLookup.TryGetValue(typeof(T), out var comp))
+            {
+                return comp as T;
+            }
+
+            return null;
+        }
         
         public Actor CreateActor()
         {

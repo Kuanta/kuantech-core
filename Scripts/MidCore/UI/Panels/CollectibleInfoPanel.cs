@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using Kuantech.Core.UI;
+using Kuantech.Gridguard;
 using Kuantech.Rpg;
+using Kuantech.Rpg.UI;
 using Kuantech.Utils;
 using TMPro;
 using UnityEngine;
@@ -14,6 +16,8 @@ namespace Kuantech.Midcore.UI
         [SerializeField] private TMP_Text Name;
         [SerializeField] private TMP_Text Description;
         [SerializeField] private Image Icon;
+        [SerializeField] private LevelableFloatIndicator CollectibleLevelIndicator;
+        [SerializeField] private UpgradeButton UpgradeButton;
         
         public List<AttributeIndicator> AttributeIndicators;
         private Dictionary<string, AttributeIndicator> _attributeIndicatorsById = new Dictionary<string, AttributeIndicator>();
@@ -26,6 +30,8 @@ namespace Kuantech.Midcore.UI
             {
                 Icon.sprite = dataAsset.Icon;
             }
+            
+            UpgradeButton.SetProgressable(dataAsset);
             
             UpdateStats(dataAsset);
         }
@@ -42,15 +48,15 @@ namespace Kuantech.Midcore.UI
             ActorBlueprint actorBlueprint = deckCollectableAsset.ActorBlueprint;
             int collectableLevel = ProgressionManager.GetCurrentRank(deckCollectableAsset);
 
-            foreach (var attribute in actorBlueprint.AttributeDefinitions)
-            {
-                if (_attributeIndicatorsById.ContainsKey(attribute.AttributeAsset.Id))
-                {
-                    _attributeIndicatorsById[attribute.AttributeAsset.Id].SetAttribute(attribute, collectableLevel);
-                }
-                    
-            }
+            StatsLoaderActorBlueprintComponent statsLoader =
+                actorBlueprint.GetActorBlueprintComponent<StatsLoaderActorBlueprintComponent>();
+            if (statsLoader == null) return;
 
+            foreach (var indicator in AttributeIndicators)
+            {
+                AttributeDefinition definition = statsLoader.GetAttributeDefinition(actorBlueprint.GetId(), indicator.AttributeAsset);
+                indicator.SetAttribute(definition, collectableLevel);
+            }
         }
     }
 }

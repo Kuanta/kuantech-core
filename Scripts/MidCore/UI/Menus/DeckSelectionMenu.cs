@@ -20,8 +20,13 @@ namespace Kuantech.Midcore.UI
         [SerializeField] private RectTransform EquippedCardsPanel;
         [SerializeField] private RectTransform AllCollectiblesPanel;
         
+        //Runtime
+        private CollectiblePreviewCard CurrentlySelectedCard; //last selected card
+        private CollectiblePreviewCard CardToEquip; //card that will be equipped when the player clicks on a deck card
+        
         public override void Initialize()
         {
+            if (Initialized) return;
             base.Initialize();
             DeckCards = new List<CollectiblePreviewCard>();
             
@@ -31,8 +36,8 @@ namespace Kuantech.Midcore.UI
             foreach(var dataAsset in collectibleDataAssets)
             {
                 CollectiblePreviewCard card = Instantiate(CollectiblePreviewCardPrefab, AllCollectiblesPanel);
-                card.Initialize(dataAsset);
-                card.OnDeckCardClicked += OnPreviewCardClicked;
+                card.Initialize(this, false);
+                card.SetCollectableAsset(dataAsset);
                 CollectiblePreviewCards[dataAsset.GetId()] = card;
             }
             
@@ -42,23 +47,18 @@ namespace Kuantech.Midcore.UI
             
             for(int i=0;i < deckSize; ++i)
             {
-                ProgressibleData data = DeckBuildingManager.GetCurrentDeck()[i];
-                if (data == null) continue;
-                
                 CollectiblePreviewCard card = Instantiate(CollectiblePreviewCardPrefab, EquippedCardsPanel);
-                card.OnDeckCardClicked += OnPreviewCardClicked;
-                card.IsDeckCard = true;
-
-                DeckCollectableAsset dataAsset = null;
-                if (currentDeck.IsValidIndex(i))
-                {
-                    
-                    dataAsset = DeckBuildingManager.GetProgressibleDataAssetById(currentDeck[i].Id);
-
-                }
-                card.Initialize(dataAsset);
+                card.Initialize(this, true);
                 DeckCards.Add(card);
                 card.transform.SetParent(EquippedCardsPanel);
+
+                DeckCollectableAsset dataAsset = null;
+                if (currentDeck.IsValidIndex(i) && currentDeck[i] != null)
+                {
+                    dataAsset = DeckBuildingManager.GetProgressibleDataAssetById(currentDeck[i].Id);
+                }
+                card.SetCollectableAsset(dataAsset);
+       
             }
         }
         
@@ -73,17 +73,111 @@ namespace Kuantech.Midcore.UI
             foreach (var card in CollectiblePreviewCards.Values)
             {
                 card.UpdatePreviewCard();
+                card.ToggleClickMeIndicator(false);
+            }
+            
+            //Sort collectibles
+            AllCollectiblesPanel.transform.SortChildren(SortCards);
+        }
+
+        private int SortCards(Transform a, Transform b)
+        {
+            var cardA = a.gameObject.GetComponent<CollectiblePreviewCard>();
+            var cardB = b.gameObject.GetComponent<CollectiblePreviewCard>();
+            if (cardA == null) return 1;
+            if (cardB == null) return -1;
+            
+            bool aUnlocked = ProgressionManager.IsProgressibleUnlocked(cardA.CollectibleDataAsset);
+            bool bUnlocked = ProgressionManager.IsProgressibleUnlocked(cardB.CollectibleDataAsset);
+            if(aUnlocked && !bUnlocked)
+            {
+                return -1; // A is unlocked, B is locked
+            }
+
+            if (bUnlocked && !aUnlocked)
+            {
+                return 1;
+            }
+            
+            //Compare their names
+            return string.Compare(cardA.CollectibleDataAsset.Name, cardB.CollectibleDataAsset.Name, System.StringComparison.Ordinal);
+        }
+        public void OnPreviewCardClicked(CollectiblePreviewCard card)
+        {
+            if (CurrentlySelectedCard == card) return;
+            DeselectCard();
+            if (CardToEquip == null)
+            {
+                if (card.IsDeckCard)
+                {
+                    OpenCollectibleInfoPanel(card.CollectibleDataAsset);
+                }
+                else
+                {
+                    SelectCard(card);
+                }
+            }
+            else
+            {
+                if (card.IsDeckCard)
+                {
+                    //Swap
+                    if(card.CollectibleDataAsset != null)
+                    {
+                        DeckBuildingManager.UnequipCollectible(card.CollectibleDataAsset);
+                    }
+                    DeckBuildingManager.EquipCollectible(CardToEquip.CollectibleDataAsset);
+                }
+                else
+                {
+                    CardToEquip.ToggleSelected(false);
+                    CardToEquip = card;
+                }
             }
         }
 
-        private void OnPreviewCardClicked(CollectiblePreviewCard card)
+        private void SelectCard(CollectiblePreviewCard card)
         {
-            Debug.Log("Clicked on collectible card: " + card.CollectibleDataAsset.Name);
-            UpdateCollectibleInfoPanel(card.CollectibleDataAsset);
+            if(CurrentlySelectedCard != null)
+            {
+                CurrentlySelectedCard.ToggleSelected(false);
+            }
+
+            CurrentlySelectedCard = card;
+            card.ToggleSelected(true);
         }
 
-        private void UpdateCollectibleInfoPanel(ProgressableDataAsset dataAsset)
+        private void DeselectCard()
         {
+            if (CurrentlySelectedCard != null)
+            {
+                CurrentlySelectedCard.ToggleSelected(false);
+            }
+
+            CurrentlySelectedCard = null;
+        }
+
+        public void SetCardToEquip(CollectiblePreviewCard card)
+        {
+            if (CardToEquip == card) return;
+            ClearCardToEquip();
+            CardToEquip = card;
+        }
+
+        public void ClearCardToEquip()
+        {
+            if(CardToEquip != null)
+            {
+                CardToEquip.ToggleSelected(false);
+            }
+
+            CardToEquip = null;
+        }
+        
+        public void OpenCollectibleInfoPanel(ProgressableDataAsset dataAsset)
+        {
+            if (CollectibleInfoPanel == null) return;
+            DeselectCard();
             if (dataAsset is DeckCollectableAsset deckCollectableAsset)
             {
                 CollectibleInfoPanel.Open();

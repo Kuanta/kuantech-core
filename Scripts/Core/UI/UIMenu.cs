@@ -30,7 +30,7 @@ namespace Kuantech.Core.UI
    
         public override void Open()
         {
-            Initialize();
+            if(!Initialized) Initialize();
             base.Open();
             UIManager.GetContext<UIManager>().PushToStack(this, false); //Don't call open again
         }

@@ -30,7 +30,7 @@ namespace Kuantech.Core.Combat
 
         public string GetId()
         {
-            return StatusEffectData.MetaData.Id;
+            return StatusEffectData.MetaData.GetId();
         }
         
         public virtual void Init(StatusEffectData statusEffectData)

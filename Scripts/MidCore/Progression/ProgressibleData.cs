@@ -33,7 +33,7 @@ namespace Kuantech.Midcore
                 Debug.LogError("Null progressable data asset");
                 return;
             }
-            Id = progressableDataAsset.Id;
+            Id = progressableDataAsset.GetId();
             Rank = new LevelVariable(progressableDataAsset.LevelVariableData);
         }
         

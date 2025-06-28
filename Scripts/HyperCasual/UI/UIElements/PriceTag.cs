@@ -1,4 +1,5 @@
 using Kuantech.Core.HyperCasual;
+using Kuantech.Core.Store;
 using Kuantech.Utils;
 using TMPro;
 using UnityEngine;
@@ -12,6 +13,7 @@ namespace Kuantech.HyperCasual.UI
         [SerializeField] protected string CurrencyId;
         [SerializeField] private TMP_Text PriceText;
         [SerializeField] private Image CurrencyIcon;
+
         
         /// <summary>
         /// Sets the price text by gettign it from the store manager
@@ -30,23 +32,19 @@ namespace Kuantech.HyperCasual.UI
         {
             PriceText.text = price.Stringfy();
         }
+        
         /// <summary>
         /// Sets the currency 
         /// </summary>
         /// <param name="currencyId"></param>
-        public void SetCurrency(string currencyId)
+        public void SetCurrency(CurrencyAsset currencyAsset)
         {
             //Set currency
-            CurrencyId = currencyId;
-            
-            //Set icon
-            UIResourcesManager uiResMan = UIResourcesManager.GetContext<UIResourcesManager>();
-            if(uiResMan != null && CurrencyIcon != null)
+            CurrencyId = currencyAsset.GetId();
+            if (CurrencyIcon != null)
             {
-                Sprite icon = UIResourcesManager.GetCurrencyIcon(CurrencyId);
-                if(icon != null) CurrencyIcon.sprite = icon;
+                CurrencyIcon.sprite = currencyAsset.Icon;
             }
-
         }
     }
 }

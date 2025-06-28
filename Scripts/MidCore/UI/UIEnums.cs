@@ -5,5 +5,6 @@
         Unlocked,
         Locked,
         Purchasable,
+        Empty,
     }
 }

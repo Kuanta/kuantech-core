@@ -75,7 +75,7 @@ namespace Kuantech.Midcore
         private ProgressibleData CreateSubUpgradeData(ProgressableDataAsset parentAsset, ProgressableDataAsset asset)
         {
             ProgressibleData data = CreateDataEntry(asset);
-            data.ParentProgressibleId = parentAsset.Id;
+            data.ParentProgressibleId = parentAsset.GetId();
             data.Id = ProgressableDataAsset.GetSubUpgradeAssetId(parentAsset, asset);
             data.SetRank(0);
             return data;
@@ -83,7 +83,7 @@ namespace Kuantech.Midcore
         #region Queries
         public ProgressibleData GetProgressibleData(ProgressableDataAsset asset)
         {
-            return GetProgessibleDataById(asset.Id);
+            return GetProgessibleDataById(asset.GetId());
         }
 
         public ProgressibleData GetProgessibleDataById(string id)
@@ -203,7 +203,7 @@ namespace Kuantech.Midcore
             if (data == null)
             {
                 data = CreateDataEntry(asset);
-                _progressibleDatas[asset.Id] = data;
+                _progressibleDatas[asset.GetId()] = data;
             }
             data.SetRank(rank);
             return true;
@@ -223,7 +223,7 @@ namespace Kuantech.Midcore
             if (data == null)
             {
                 data = CreateDataEntry(asset);
-                _progressibleDatas[asset.Id] = data;
+                _progressibleDatas[asset.GetId()] = data;
             }
             data.SetExperience(value);
             return true;

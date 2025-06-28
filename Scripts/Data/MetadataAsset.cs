@@ -8,13 +8,13 @@ namespace Kuantech.Core
     [CreateAssetMenu(fileName = "MetadataAsset", menuName = "Kuantech/Data/MetadataAsset")]
     public class MetadataAsset : ScriptableObject
     {
-        public string Id;
+        [SerializeField] protected string Id;
         public string Name;
         public string Description;
         public Sprite Icon;
         public Color MainColor;
 
-        public string GetId()
+        public virtual string GetId()
         {
             return Id;
         }
