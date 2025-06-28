@@ -5,7 +5,7 @@ using Kuantech.Core.Database;
 using Kuantech.Rpg;
 using Kuantech.Utils;
 
-namespace Kuantech.Gridguard
+namespace Kuantech.Core
 {
     /// <summary>
     /// Reads necessary data from the database and applies it to the actor.
