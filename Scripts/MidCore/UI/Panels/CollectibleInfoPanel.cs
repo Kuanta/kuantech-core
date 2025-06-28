@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Kuantech.Core;
 using Kuantech.Core.UI;
 using Kuantech.Rpg;
 using Kuantech.Rpg.UI;

@@ -2,11 +2,12 @@
 using System.Collections.Generic;
 using Kuantech.Core;
 using Kuantech.Core.HyperCasual;
+using Kuantech.Midcore;
 using Kuantech.Rpg;
 using UnityEngine;
 using UnityEngine.Serialization;
 
-namespace Kuantech.Midcore
+namespace Kuantech.Core
 {
     
     /// <summary>

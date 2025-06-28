@@ -1,4 +1,5 @@
-﻿using Kuantech.Core.FX;
+﻿using Kuantech.Core;
+using Kuantech.Core.FX;
 using Kuantech.Core.HyperCasual;
 using Kuantech.HyperCasual.UI;
 using Kuantech.Utils;

@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Kuantech.Core;
+using UnityEngine;
 
 namespace Kuantech.Midcore
 {
