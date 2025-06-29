@@ -472,11 +472,6 @@ namespace Kuantech.Utils
             {
                 ProxyDraggable.OnSuccesfullDropAsProxyDraggable(dropInformation);
             }
-            else
-            {
-                //Set the position of the draggable
-                SetPosition(_lastDragPosition);
-            }
         }
         
         /// <summary>
