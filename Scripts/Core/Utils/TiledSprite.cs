@@ -20,6 +20,7 @@ namespace Kuantech.Utils
         [SerializeField] private SpriteRenderer SpriteRenderer;
         [SerializeField] private List<TiledSpriteEntry> SpriteEntries;
         [SerializeField] private Sprite DefaultSprite;
+        [SerializeField] private Vector3 UpVector = Vector3.up;
         
         /// <summary>
         /// Sets the sprite
@@ -33,7 +34,7 @@ namespace Kuantech.Utils
                 if (entry.ConnectivityMask.Equals(eightConnectivitiy))
                 {
                     SpriteRenderer.sprite = entry.Sprite;
-                    transform.localRotation = Quaternion.Euler(0, entry.Angle, 0);
+                    transform.localRotation = Quaternion.AngleAxis(entry.Angle, UpVector);
                     return;
                 }
             }
@@ -42,24 +43,20 @@ namespace Kuantech.Utils
             SpriteRenderer.sprite = DefaultSprite;
         }
 
+        public void SetSprite(ConnectivityMask mask)
+        {
+            SetSprite(mask.GetEightConnectivity());
+        }
+        
         public void SetColor(Color color)
         {
             SpriteRenderer.color = color;
         }
+        
         [Button("Test Sprite")]
         private void TestSprite(ConnectivityMask mask)
         {
-            bool[] eightConnectivity = new bool[8];
-            eightConnectivity[(int)GridBoard.Directions.TopLeft] = mask.Get(GridBoard.Directions.TopLeft) > 0;
-            eightConnectivity[(int)GridBoard.Directions.Top] = mask.Get(GridBoard.Directions.Top) > 0;
-            eightConnectivity[(int)GridBoard.Directions.TopRight] = mask.Get(GridBoard.Directions.TopRight) > 0;
-            eightConnectivity[(int)GridBoard.Directions.Left] = mask.Get(GridBoard.Directions.Left) > 0;
-            eightConnectivity[(int)GridBoard.Directions.Right] = mask.Get(GridBoard.Directions.Right) > 0;
-            eightConnectivity[(int)GridBoard.Directions.BottomLeft] = mask.Get(GridBoard.Directions.BottomLeft) > 0;
-            eightConnectivity[(int)GridBoard.Directions.Bottom] = mask.Get(GridBoard.Directions.Bottom) > 0;
-            eightConnectivity[(int)GridBoard.Directions.BottomRight] = mask.Get(GridBoard.Directions.BottomRight) > 0;
-
-            SetSprite(eightConnectivity);
+            SetSprite(mask);
         }
    
     }

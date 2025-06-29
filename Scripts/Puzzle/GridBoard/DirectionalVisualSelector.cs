@@ -28,7 +28,7 @@ namespace Kuantech.Puzzle
             for (int i = 0; i < 4; ++i)
             {
                 GridBoard.Directions direction = (GridBoard.Directions) i;
-                GridTile tile = AttachedTile.ParentBoard.GetTileAtDirection(direction, AttachedTile);
+                GridTile tile = (AttachedTile.ParentBoard as GridBoard).GetTileAtDirection(direction, AttachedTile);
                 if(tile == null) continue;
                 if (tile.TryGetComponent(out DirectionalVisualSelector dvs) && dvs.Tag == Tag)
                 {

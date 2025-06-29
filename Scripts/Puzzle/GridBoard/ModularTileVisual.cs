@@ -40,7 +40,7 @@ namespace Kuantech.Puzzle
         
         private bool HasSameTileAtDirection(GridBoard.Directions direction)
         {
-            GridTile tileAtDirection = AttachedTile.ParentBoard.GetTileAtDirection(direction, AttachedTile);
+            GridTile tileAtDirection = (AttachedTile.ParentBoard as GridBoard).GetTileAtDirection(direction, AttachedTile);
             if (tileAtDirection == null) return false;
             if (tileAtDirection.TryGetComponent(out ModularTileVisual modularTileVisual))
             {

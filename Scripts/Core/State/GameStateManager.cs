@@ -38,7 +38,7 @@ public class GameStateManager : SubManager
     public static void UpdateSaveData(ISaveable saveable)
     {
         var ctx = GameStateManager.GetContext<GameStateManager>();
-        if (ctx.GameState == null || saveable == null) return;
+        if (ctx == null || ctx.GameState == null || saveable == null) return;
 
         string id = GetSaveableId(saveable);
         var data = SaveUtility.Serialize(saveable);

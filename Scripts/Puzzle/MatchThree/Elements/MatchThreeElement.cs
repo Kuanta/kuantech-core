@@ -135,7 +135,7 @@ namespace Kuantech.Puzzle.MatchThree
                 Debug.LogError("An edge case about angle:"+angle);
                 return;
             }
-            MatchThreeElement otherElement = ParentBoard.GetTile(AnchorRow + direction.y, AnchorColumn+direction.x, AnchorLayer) as MatchThreeElement;
+            MatchThreeElement otherElement = GetParentGridBoard().GetTile(AnchorRow + direction.y, AnchorColumn+direction.x, AnchorLayer) as MatchThreeElement;
             if(otherElement != null && otherElement._canBeMoved)
             {
                 (ParentBoard as MatchThreeBoard).MakeAMove(this, otherElement);
@@ -149,7 +149,7 @@ namespace Kuantech.Puzzle.MatchThree
             }
             if(ParentMatchThreeBoard == null) return;
             WaypointFollower.Waypoint newWaypoint = new WaypointFollower.Waypoint{
-                Position = ParentBoard.GetLocalPosition(AnchorRow, AnchorColumn),
+                Position = GetParentGridBoard().GetLocalPosition(AnchorRow, AnchorColumn),
                 IsLocal = true,
             };
             WaypointFollower.AddWaypoint(newWaypoint);
@@ -194,7 +194,7 @@ namespace Kuantech.Puzzle.MatchThree
             //todo: Play destroy effect 
             if(CurrentData != null && CurrentData.EffectPlayer != null)
             {
-                CurrentData.EffectPlayer.PlayEffectAtPosition(ParentBoard.GetGlobalPosition(AnchorRow, AnchorColumn), 
+                CurrentData.EffectPlayer.PlayEffectAtPosition(GetParentGridBoard().GetGlobalPosition(AnchorRow, AnchorColumn), 
                 Quaternion.identity);
             }
         }

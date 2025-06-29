@@ -25,7 +25,7 @@ namespace Kuantech.Puzzle.MatchThree
         }
         public override void Interact()
         {
-            ExplosionEffect.PlayEffectAtPosition(ParentBoard.GetGlobalPosition(AnchorRow, AnchorColumn), Quaternion.identity);
+            ExplosionEffect.PlayEffectAtPosition(GetParentGridBoard().GetGlobalPosition(AnchorRow, AnchorColumn), Quaternion.identity);
             //Destroy nearby elements
             List<MatchThreeElement> elements = GetElementsToDestroy();
             foreach(var element in elements)

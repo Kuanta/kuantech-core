@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace Kuantech.Puzzle
 {
@@ -26,6 +27,9 @@ namespace Kuantech.Puzzle
         [Header("Existing Tiles")] 
         public List<GameObject> ExistingLayers;
         
+        //Events
+        public UnityAction<BoardTile> OnTilePlacedToBoard;
+        
         //Editor
         [Header("Editor Background")] 
         [SerializeField] protected GameObject Editorbackground;
@@ -46,7 +50,7 @@ namespace Kuantech.Puzzle
             return true;
         }
         
-        public virtual bool SetTile(BoardTile tile, BoardTileCoordinate coordinate)
+        public virtual bool SetTile(BoardTile tile, BoardTileCoordinate coordinate, bool setPosition = true)
         {
             if (!CanSetTile(tile, coordinate)) return false;
             if (tile.ParentBoard != null)
@@ -57,6 +61,8 @@ namespace Kuantech.Puzzle
             tile.ParentBoard = this;
             tile.CurrentCoordinate = coordinate;
             RegisterTile(tile, coordinate);
+            tile.OnSetToBoard();
+            OnTilePlacedToBoard?.Invoke(tile);
             return true;
         }
 

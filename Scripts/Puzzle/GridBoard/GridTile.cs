@@ -19,6 +19,19 @@ namespace Kuantech.Puzzle
     {
         public int DummyVar;
 
+        public GridTileCoordinate()
+        {
+            Row = 0;
+            Column = 0;
+            Layer = 0;
+        }
+        public GridTileCoordinate(int row, int col, int layer = 0)
+        {
+            Row = row;
+            Column = col;
+            Layer = layer;
+        }
+        
         public static GridTileCoordinate FromVector2(Vector2Int rowCol)
         {
             return new GridTileCoordinate()
@@ -35,7 +48,7 @@ namespace Kuantech.Puzzle
         public int GridTypeId;
         public List<GridTileCoordinate> Coordinates;
         public Vector3 AnchorOffset;
-        [NonSerialized] public GridBoard ParentBoard;
+        
         [NonSerialized] public int AnchorRow;
         [NonSerialized] public int AnchorColumn;
         [NonSerialized] public int AnchorLayer;
@@ -88,7 +101,12 @@ namespace Kuantech.Puzzle
                 // }
             }
         }
-        public GridTileCoordinate GetCurrentCoordinates()
+        
+        /// <summary>
+        /// Returns the anchor coordinates
+        /// </summary>
+        /// <returns></returns>
+        public GridTileCoordinate GetCurrentCoordinate()
         {
             return new GridTileCoordinate()
             {
@@ -130,7 +148,7 @@ namespace Kuantech.Puzzle
         public virtual PathNode GetCurrentPathNode()
         {
             if (ParentBoard == null) return null;
-            return ParentBoard.GetPathNodeAtCoordinate(new GridTileCoordinate()
+            return (ParentBoard as GridBoard)?.GetPathNodeAtCoordinate(new GridTileCoordinate()
             {
                 Row = AnchorRow,
                 Column = AnchorColumn,
@@ -181,6 +199,11 @@ namespace Kuantech.Puzzle
         private Vector3 GetLocalPosition(GridBoard board, float row, float col)
         {
             return board.RightVector * (col * board.CellWidth) + board.ForwardVector * (row * board.CellHeight);
+        }
+
+        public GridBoard GetParentGridBoard()
+        {
+            return ParentBoard as GridBoard;
         }
     }
 }

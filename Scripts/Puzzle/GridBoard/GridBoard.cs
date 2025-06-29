@@ -259,12 +259,7 @@ namespace Kuantech.Puzzle
         {
             MaskedTiles.Clear();
         }
-        
-        public bool IsCoordinateValid(GridTileCoordinate coordinate)
-        {
-            return IsCoordinateValid(coordinate.Row, coordinate.Column);
-        }
-        
+
         public bool IsCoordinateValid(int row, int col)
         {
             if(row < 0 || col < 0 || row >= RowCount || col >= ColumnCount) return false;
@@ -277,7 +272,7 @@ namespace Kuantech.Puzzle
             return true;
         }
         
-        public bool IsTileValidAndEmpty(GridTileCoordinate coordinate)
+        public override bool IsTileValidAndEmpty(BoardTileCoordinate coordinate)
         {
             return IsTileValidAndEmpty(coordinate.Row, coordinate.Column);
         }
@@ -286,37 +281,38 @@ namespace Kuantech.Puzzle
             return !IsTileOccupied(row, col, layer) && IsCoordinateValid(row, col);
         }
 
-        /// <summary>
-        /// Sets the tile for a grid tile
-        /// </summary>
-        /// <param name="gridTile">Grid Tile to set</param>
-        /// <param name="row">Desired row</param>
-        /// <param name="col">Desired col</param>
-        /// <param name="layer"></param>
-        /// <param name="setPosition">If flag is set to true, the position will be set</param>
-        public virtual bool SetTile(GridTile gridTile, int row, int col, int layer=0, bool setPosition = true)
+        public override bool CanSetTile(BoardTile tile, BoardTileCoordinate boardTileCoordinate)
         {
-            if (!IsCoordinateValid(row, col) || !IsLayerValid(layer) || !CanTileBePlaced(gridTile, row, col, layer))
-            {
-                Debug.LogError("Couldn't set tile!");
-                return false;
-            }
+            if (!base.CanSetTile(tile, boardTileCoordinate)) return false;
+            GridTileCoordinate gridTileCoordinate = boardTileCoordinate as GridTileCoordinate;
+            if (gridTileCoordinate == null) return false;
+            
+            return IsLayerValid(gridTileCoordinate.Layer) && CanTileBePlaced(tile as GridTile, gridTileCoordinate.Row, gridTileCoordinate.Column,
+                gridTileCoordinate.Layer);
+        }
+        
 
-            if (gridTile.ParentBoard != null)
-            {
-                gridTile.ParentBoard.UnsetTile(gridTile);
-            }
-            gridTile.ParentBoard = this;
-            gridTile.SetRowCol(row, col, layer);
-            SetTileArrayForTile(gridTile, row, col, layer);
-            if(setPosition)
-            {
-                PositionTileAtCoordinate(gridTile, row, col, layer);
-            }
-
-            return true;
+        public bool SetTile(GridTile gridTile, int row, int col, int layer=0, bool setPosition = true)
+        {
+            return SetTile(gridTile, new GridTileCoordinate(row, col, layer), setPosition);
         }
 
+        public override bool SetTile(BoardTile tile, BoardTileCoordinate coordinate, bool setPosition = true)
+        {
+            GridTileCoordinate gridTileCoordinate = coordinate as GridTileCoordinate;
+            GridTile gridTile = tile as GridTile;
+            if (gridTileCoordinate == null || gridTile == null) return false;
+            if (!base.SetTile(tile, coordinate, setPosition)) return false;
+            
+            gridTile.SetRowCol(coordinate.Row, coordinate.Column, coordinate.Layer);
+            SetTileArrayForTile(gridTile, coordinate.Row, coordinate.Column, coordinate.Layer);
+            if (setPosition)
+            {
+                PositionTileAtCoordinate(gridTile, coordinate.Row, coordinate.Column, coordinate.Layer);
+            }
+            return true;
+        }
+        
         private void UpdateDirectionalTiles()
         {
             for(int r=0;r<RowCount;++r)
@@ -498,8 +494,7 @@ namespace Kuantech.Puzzle
         /// <param name="col"></param>
         /// <param name="layer"></param>
         /// <returns></returns>
-        public void 
-            UnsetTile(int anchorRow, int anchorCol, int anchorLayer=0)
+        public void UnsetTile(int anchorRow, int anchorCol, int anchorLayer=0)
         {
             GridTile tile = GetTile(anchorRow, anchorCol, anchorLayer);
             if (tile == null) return;
@@ -514,19 +509,10 @@ namespace Kuantech.Puzzle
             }
         }
         
-        public void UnsetTile(GridTile tile)
+        public override void UnsetTile(BoardTile tile)
         {
-            // if (tile.Coordinates.IsNullOrEmpty())
-            // {
-            //     UnsetTile(tile.AnchorRow, tile.AnchorColumn, tile.AnchorLayer);
-            // }
-            // else
-            // {
-            //     int row = tile.AnchorRow + tile.Coordinates[0].Row;
-            //     int col = tile.AnchorColumn + tile.Coordinates[0].Column;
-            //     UnsetTile(row, col, tile.AnchorLayer);
-            // }
-            ClearTileArrayForTile(tile, tile.AnchorRow, tile.AnchorColumn,tile.AnchorLayer);
+            GridTile gridTile = tile as GridTile;
+            ClearTileArrayForTile(gridTile, gridTile.AnchorRow, gridTile.AnchorColumn,gridTile.AnchorLayer);
             tile.ParentBoard = null;
         }
         
@@ -846,7 +832,9 @@ namespace Kuantech.Puzzle
 
         public override bool IsCoordinateValid(BoardTileCoordinate tileCoordinate)
         {
-            return IsTileValidAndEmpty(tileCoordinate);
+            GridTileCoordinate gridTileCoordinate = tileCoordinate as  GridTileCoordinate;
+            if (gridTileCoordinate == null) return false;
+            return IsCoordinateValid(gridTileCoordinate.Row, gridTileCoordinate.Column);
         }
 
         public void ApplyOperationToTiles(TileOperation operation, int layer=0)
