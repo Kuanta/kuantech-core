@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Collections;
+using System.Linq;
 
 namespace Kuantech.Core.Utils
 {
@@ -39,7 +40,7 @@ namespace Kuantech.Core.Utils
 
         public virtual int Count => items.Count - toRemove.Count;
 
-        public IEnumerator<T> GetEnumerator() => items.GetEnumerator();
+        public IEnumerator<T> GetEnumerator() => items.ToList().GetEnumerator();
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
     
