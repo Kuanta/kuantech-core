@@ -17,8 +17,6 @@ namespace Kuantech.Puzzle
     [Serializable]
     public class GridTileCoordinate : BoardTileCoordinate
     {
-        public int DummyVar;
-
         public GridTileCoordinate()
         {
             Row = 0;
@@ -39,6 +37,25 @@ namespace Kuantech.Puzzle
                 Row = rowCol.y,
                 Column = rowCol.x,
             };
+        }
+        public static GridTileCoordinate operator +(GridTileCoordinate coord, Vector2Int offset)
+        {
+            return new GridTileCoordinate
+            (
+                row: coord.Row + offset.y,
+                col: coord.Column + offset.x,
+                layer: coord.Layer
+            );
+        }
+
+        public static GridTileCoordinate operator +(GridTileCoordinate coord, GridTileCoordinate other)
+        {
+            return new GridTileCoordinate
+            (
+                row: coord.Row + other.Row,
+                col: coord.Column + other.Column,
+                layer: coord.Layer
+            );
         }
     }
     

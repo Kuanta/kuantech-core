@@ -7,11 +7,14 @@ namespace Kuantech.Midcore
     /// <summary>
     /// A draggable class used for units that are spawned with drag
     /// </summary>
-    public class SpawnableActorDraggable : MonoBehaviour
+    public class SpawnerDraggable : MonoBehaviour
     {
         [SerializeField] private Draggable Draggable;
-        [SerializeField] private Actor Actor;
+        [SerializeField] private MonoBehaviour spawnableBehaviour; // Editor'de atanabilir
+        [SerializeField] private bool RegisterToCurrentLevel;
 
+        private ISpawnable Spawnable => spawnableBehaviour as ISpawnable;
+        
         private void Start()
         {
             if (Draggable == null) return;
@@ -20,18 +23,14 @@ namespace Kuantech.Midcore
         
         public void OnSuccesfullDropAsProxyDraggable(DropInformation dropInformation)
         {
-            if (Actor == null)
+            Spawnable.Spawn();
+            if (RegisterToCurrentLevel)
             {
-                Actor = GetComponent<Actor>();
-                if (Actor == null) return;
+                //Register to level
+                Level level = LevelManager.GetCurrentLevel();
+                if (level == null) return;
+                level.AddSpawnable(Spawnable);
             }
-
-            Actor.Spawn();
-            
-            //Register to level
-            Level level = LevelManager.GetCurrentLevel();
-            if (level == null) return;
-            level.AddSpawnable(Actor);
         }
     }
 }
