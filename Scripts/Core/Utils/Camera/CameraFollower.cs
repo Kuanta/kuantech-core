@@ -145,10 +145,6 @@ namespace Kuantech.Core.Utils
             {
                 CameraObject.transform.position = position;
             }
-            else
-            {
-                transform.position = position;
-            }
         }
 
         private void _SetRotation(Quaternion rotation)
