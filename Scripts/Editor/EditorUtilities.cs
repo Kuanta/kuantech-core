@@ -114,7 +114,7 @@ namespace Kuantech.Editor
             else if (fieldToLoad is FloatField floatField)
             {
                 float decodedValue;
-                if (float.TryParse(encodedValue, out decodedValue))
+                if (float.TryParse(encodedValue,NumberStyles.Float, CultureInfo.InvariantCulture, out decodedValue))
                 {
                     floatField.value = decodedValue;
                 }

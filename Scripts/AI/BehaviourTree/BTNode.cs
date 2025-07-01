@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Reflection;
 using DTT.Utils.Extensions;
 using Sirenix.OdinInspector;
@@ -152,7 +153,7 @@ namespace Kuantech.AI
                     else if (fieldInfo.FieldType == typeof(float))
                     {
                         float value;
-                        if (float.TryParse(keyValuePair.Value, out value))
+                        if (float.TryParse(keyValuePair.Value, NumberStyles.Float, CultureInfo.InvariantCulture,out value))
                         {
                             fieldInfo.SetValue(_leafAction, value);
                         }
