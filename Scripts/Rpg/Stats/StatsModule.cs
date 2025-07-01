@@ -63,10 +63,15 @@ namespace Kuantech.Rpg
             if (defaultAttributes.IsNullOrEmpty()) return;
             foreach(var attributeDefinition in defaultAttributes)
             {
-                Attribute attribute = new Attribute();
-                attribute.ApplyAttributeDefinition(attributeDefinition);
-                _statMap[attribute.attributeAsset.Id] = attribute;
+                CreateAttribute(attributeDefinition);
             }
+        }
+
+        public void CreateAttribute(AttributeDefinition attributeDefinition)
+        {
+            Attribute attribute = new Attribute();
+            attribute.ApplyAttributeDefinition(attributeDefinition);
+            _statMap[attribute.attributeAsset.Id] = attribute;
         }
         
         public override void LoadState(ActorModuleSerializableData serializableData)
@@ -191,10 +196,21 @@ namespace Kuantech.Rpg
         /// </summary>
         /// <param name="attributeDefinition"></param>
         /// <param name="insertAttribute"></param>
-        public void SetAttribute(AttributeDefinition attributeDefinition)
+        public void SetAttribute(AttributeDefinition attributeDefinition, bool insertAttribute=false)
         {
             Attribute att = GetAttribute(attributeDefinition.AttributeAsset);
-            if (att == null) return;
+            if (att == null)
+            {
+                if (insertAttribute)
+                {
+                    CreateAttribute(attributeDefinition);
+                    att = GetAttribute(attributeDefinition.AttributeAsset);
+                }
+                else
+                {
+                    return;
+                }
+            }
             att.ApplyAttributeDefinition(attributeDefinition);
         }
         

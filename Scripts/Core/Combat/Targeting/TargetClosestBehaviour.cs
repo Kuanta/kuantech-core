@@ -3,7 +3,7 @@
 namespace Kuantech.Core
 {
     [CreateAssetMenu(fileName = "TargetClosestBehaviour", menuName = "Kuantech/Combat/Targeting Behaviour/Target Closest Behaviour")]
-    public class TargetClosestBehaviour : TargetingBehaviour
+    public class TargetClosestBehaviour : TargetPriorityBehaviour
     {
         public override int Compare(Actor a, Actor b, Actor self)
         {

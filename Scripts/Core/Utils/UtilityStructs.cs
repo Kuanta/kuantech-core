@@ -14,10 +14,12 @@ namespace Kuantech.Utils
         public Transform Target;
         public Vector3 LocalPosition;
         public Quaternion LocalRotation;
+        public Vector3 OffsetPosition;
         
         public Vector3 GetTargetPosition()
         {
-            return Target != null ? Target.TransformPoint(LocalPosition) : Position;
+            Vector3 pos = Target != null ? Target.TransformPoint(LocalPosition) : Position;
+            return pos + OffsetPosition;
         }
 
         public Quaternion GetRotation()

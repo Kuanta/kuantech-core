@@ -62,9 +62,9 @@ namespace Kuantech.Core
         public AttackPattern DefaultAttackPattern;
         private AttackPattern _currentAttackPattern;
 
-        //Target
-        public Actor CurrentTarget;
-        public Vector3 CurrentTargetPosition = Vector3.zero;
+        // //Target
+        // public Actor CurrentTarget;
+        // public Vector3 CurrentTargetPosition = Vector3.zero;
 
         [Header("Collision")]
         private Collider[] _results = new Collider[32];
@@ -89,8 +89,8 @@ namespace Kuantech.Core
 
 
         //Quick module references
-        private AnimationModule _animationModule;
         private StatsModule _statModule;
+        private TargetManager _targetManager;
         
         //Runtime
         private float _attackStartTime;
@@ -105,8 +105,9 @@ namespace Kuantech.Core
         public override void OnModulesInitialized()
         {
             base.OnModulesInitialized();
-            _animationModule = Actor.GetModule<AnimationModule>();
+            
             _statModule = Actor.GetModule<StatsModule>();
+            _targetManager = Actor.GetModule<TargetManager>();
         }
 
         private void Update()
@@ -147,6 +148,15 @@ namespace Kuantech.Core
             }
         }
 
+        #region Target
+        
+        public Actor GetCurrentTarget()
+        {
+            if (_targetManager == null) return null;
+            return _targetManager.GetCurrentTarget();
+        }
+        #endregion
+        
         #region Attack Pattern Manupilation
 
 
@@ -168,10 +178,11 @@ namespace Kuantech.Core
         public void TargetAttack()
         {
             DamageInfo damage = GetCurrentAttackPattern().GetDamageInfo();
-            if (CurrentTarget == null ||
-                !CurrentTarget.IsAlive() ||
-                Vector3.Distance(CurrentTarget.GetHitPoint().position, transform.position) > GetCurrentAttackPattern().Range) return;
-            CurrentTarget.OnHit(gameObject, damage);
+            Actor currentTarget = GetCurrentTarget();
+            if (currentTarget == null ||
+                !currentTarget.IsAlive() ||
+                Vector3.Distance(currentTarget.GetHitPoint().position, transform.position) > GetCurrentAttackPattern().Range) return;
+            currentTarget.OnHit(gameObject, damage);
         }
 
         public void RangedProjectileAttack()
@@ -181,11 +192,20 @@ namespace Kuantech.Core
                 Debug.LogError("Projectile class is null but attack pattern is ranged projectile");
                 return;
             }
+            Actor currentTarget = GetCurrentTarget();
             Projectile projectile = PoolManager.GetObjectFromPool(GetCurrentAttackPattern().ProjectilePrefab.gameObject).GetComponent<Projectile>();
             if (projectile == null) return;
-            Vector3 targetOffset = CurrentTarget.GetHitPoint().position - CurrentTarget.transform.position;
-            projectile.Shoot(this, null, GetAttackPosition(), _attackDirection, CurrentTarget.transform);
-            projectile.SetTargetOffset(targetOffset);
+            if (currentTarget != null)
+            {
+                Vector3 targetOffset = currentTarget.GetHitPoint().position - currentTarget.transform.position;
+                projectile.Shoot(this, null, GetAttackPosition(), _attackDirection, currentTarget.transform);
+                projectile.SetTargetOffset(targetOffset);
+            }
+            else
+            {
+                projectile.Shoot(this, null, GetAttackPosition(), _attackDirection, null);
+            }
+            
         }
         #endregion
 
@@ -206,7 +226,10 @@ namespace Kuantech.Core
         public void Attack(Vector3 attackDirection, Actor target = null)
         {
             if (!CanAttack()) return;
-            CurrentTarget = target;
+            if (target != null && _targetManager != null)
+            {
+                _targetManager.SetCurrentTarget(target);
+            }
             
             OnAttackStarted(attackDirection);
 
@@ -238,7 +261,7 @@ namespace Kuantech.Core
         /// <returns></returns>
         public bool CanAttack()
         {
-            if (GetCurrentAttackPattern().AttackType == AttackTypes.Target && CurrentTarget == null) return false;
+            if (GetCurrentAttackPattern().AttackType == AttackTypes.Target && GetCurrentTarget() == null) return false;
             return !_isAttacking && !AttackLock.IsLocked() && Actor.IsAlive();
         }
         

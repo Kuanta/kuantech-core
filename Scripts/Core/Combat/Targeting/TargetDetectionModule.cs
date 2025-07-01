@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using Kuantech.Core.Utils;
 using Kuantech.Utils;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Kuantech.Core.Combat
 {
@@ -16,8 +18,8 @@ namespace Kuantech.Core.Combat
         [NonSerialized] public List<Actor> DetectedEnemies;
         [NonSerialized] public List<Actor> DetectedAllies;
 
-        public TargetingBehaviour AllyTargetingBehaviour;
-        public TargetingBehaviour EnemyDetectingBehaviour;
+        public TargetPriorityBehaviour allyTargetPriorityBehaviour;
+        public TargetPriorityBehaviour EnemyDetectingBehaviour;
         
         /// <summary>
         /// Detects allies and enemies
@@ -44,6 +46,20 @@ namespace Kuantech.Core.Combat
         }
         
         /// <summary>
+        /// Sets the candidate enemy targets for the actor.
+        /// </summary>
+        /// <param name="enemies"></param>
+        public void SetEnemyTargets(List<Actor> enemies)
+        {
+            DetectedEnemies = new List<Actor>(enemies);
+        }
+        
+        public void SetAllyTargets(List<Actor> allies)
+        {
+            DetectedAllies = new List<Actor>(allies);
+        }
+        
+        /// <summary>
         /// Sorts actors depending on the targeting behaviour.
         /// </summary>
         public void SortActors()
@@ -55,9 +71,9 @@ namespace Kuantech.Core.Combat
             }
             
             //Sort allies
-            if (!DetectedAllies.IsNullOrEmpty() && DetectedAllies.Count > 1 && AllyTargetingBehaviour != null)
+            if (!DetectedAllies.IsNullOrEmpty() && DetectedAllies.Count > 1 && allyTargetPriorityBehaviour != null)
             {
-                DetectedAllies.Sort((a,b)=>AllyTargetingBehaviour.Compare(a, b, Actor));
+                DetectedAllies.Sort((a,b)=>allyTargetPriorityBehaviour.Compare(a, b, Actor));
             }
             
         }

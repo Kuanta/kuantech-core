@@ -2,7 +2,10 @@
 
 namespace Kuantech.Core
 {
-    public abstract class TargetingBehaviour : ScriptableObject
+    /// <summary>
+    /// Behaviour that defines how to compare actors for targeting purposes.
+    /// </summary>
+    public abstract class TargetPriorityBehaviour : ScriptableObject
     {
         /// <summary>
         /// Compares two actors. Return:
