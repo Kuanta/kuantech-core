@@ -40,7 +40,6 @@ namespace Kuantech.Core
         public float MovementSlow; //Factor between 0-1, movement speed while attacking will be MovementSpeed * (1-MovementSlow)
         public float WindupTime;
         public float AttackTime;
-        public float AnimationTime;
         public float Cooldown;
         
         [Header("Knosckback")]
@@ -49,6 +48,9 @@ namespace Kuantech.Core
         
         [Header("Projectile")]
         public Projectile ProjectilePrefab;
+        
+        [Header("Animation")]
+        public AnimationData AttackAnimationData;
         
         public DamageInfo GetDamageInfo()
         {
@@ -62,10 +64,6 @@ namespace Kuantech.Core
         public AttackPattern DefaultAttackPattern;
         private AttackPattern _currentAttackPattern;
 
-        // //Target
-        // public Actor CurrentTarget;
-        // public Vector3 CurrentTargetPosition = Vector3.zero;
-
         [Header("Collision")]
         private Collider[] _results = new Collider[32];
         public LayerMask Targets;
@@ -75,12 +73,14 @@ namespace Kuantech.Core
         [Header("Combo")]
         public float ComboRefreshTime = 1f; //Time in seconds to reset the combo
 
+        [Header("Config")] 
+        [SerializeField] public float RangeTolerance = 0.1f;
+        
         //Locks & Cooldowns
         //public Cooldown GlobalCooldown;
         public LockVariable AttackLock = new LockVariable();
         public LockVariable SkillLock = new LockVariable();
         
-   
     
         //Events
         public UnityAction<CombatModule> AttackStartedEvent;
@@ -91,6 +91,7 @@ namespace Kuantech.Core
         //Quick module references
         private StatsModule _statModule;
         private TargetManager _targetManager;
+        private AnimationModule _animationModule;
         
         //Runtime
         private float _attackStartTime;
@@ -107,6 +108,7 @@ namespace Kuantech.Core
             base.OnModulesInitialized();
             
             _statModule = Actor.GetModule<StatsModule>();
+            _animationModule = Actor.GetModule<AnimationModule>();
             _targetManager = Actor.GetModule<TargetManager>();
         }
 
@@ -177,12 +179,25 @@ namespace Kuantech.Core
         /// </summary>
         public void TargetAttack()
         {
-            DamageInfo damage = GetCurrentAttackPattern().GetDamageInfo();
+            DamageInfo damage = GetDamage();
             Actor currentTarget = GetCurrentTarget();
             if (currentTarget == null ||
-                !currentTarget.IsAlive() ||
-                Vector3.Distance(currentTarget.GetHitPoint().position, transform.position) > GetCurrentAttackPattern().Range) return;
-            currentTarget.OnHit(gameObject, damage);
+                !currentTarget.IsAlive()) return;
+
+            if (!IsInAttackRange(currentTarget.GetHitPoint().transform))
+            {
+                return;
+            }
+            
+            HitInfo hitInfo = new HitInfo()
+            {
+                Hitter = gameObject,
+                DamageInfo = damage,
+                HitDirection = _attackDirection,
+                KnockbackForce = GetCurrentAttackPattern().Knockback,
+                KnockbackDuration = GetCurrentAttackPattern().KnockbackTime
+            };
+             currentTarget.OnHit(hitInfo);
         }
 
         public void RangedProjectileAttack()
@@ -223,9 +238,9 @@ namespace Kuantech.Core
         #endregion
 
         #region Attack Commands
-        public void Attack(Vector3 attackDirection, Actor target = null)
+        public bool Attack(Vector3 attackDirection, Actor target = null)
         {
-            if (!CanAttack()) return;
+            if (!CanAttack()) return false;
             if (target != null && _targetManager != null)
             {
                 _targetManager.SetCurrentTarget(target);
@@ -242,14 +257,15 @@ namespace Kuantech.Core
             {
                 _currentComboIndex = 0;
             }
-            
+
+            return true;
             //todo(networking): Notify clients
         }
 
-        public void AttackToTarget(Actor target)
+        public bool AttackToTarget(Actor target)
         {
             Vector3 direciton = (target.transform.position - transform.position).normalized;
-            Attack(direciton, target);
+            return Attack(direciton, target);
         }
 
         #endregion
@@ -273,7 +289,7 @@ namespace Kuantech.Core
         public bool IsInAttackRange(Transform target)
         {
             float sqrDist = Vector3.SqrMagnitude(target.position - Actor.transform.position);
-            return sqrDist <= GetCurrentAttackPattern().Range * GetCurrentAttackPattern().Range;
+            return sqrDist <= (GetCurrentAttackPattern().Range + RangeTolerance) * (GetCurrentAttackPattern().Range + RangeTolerance);
         }
         
         public AttackPattern GetCurrentAttackPattern()
@@ -299,6 +315,14 @@ namespace Kuantech.Core
             _attackStartTime = Time.time;
             _attackDirection = attackDirection;
             
+            if(_animationModule != null)
+            {
+                _animationModule.PlayAnimation(GetCurrentAttackPattern().AttackAnimationData);
+            }
+            else
+            {
+                Debug.LogWarning("CombatModule: AnimationModule is null, cannot set attack animation.");            
+            }
             //todo(networking): Check server auth
 
             if (Actor.GetModule<RigidbodyMovementModule>())

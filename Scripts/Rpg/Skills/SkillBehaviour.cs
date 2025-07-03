@@ -50,7 +50,7 @@ namespace Kuantech.Rpg.Skills
         public List<SkillBehaviorFxData> SkillBehaviourFxDatas;
         
         //Animation data
-        public AnimatorParametersData BehaviourStartAnimationData;
+        public AnimationData BehaviourStartAnimationData;
     }
     
     public class SkillBehaviour

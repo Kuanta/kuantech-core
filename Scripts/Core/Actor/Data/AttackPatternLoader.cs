@@ -46,7 +46,7 @@ namespace Kuantech.Core
                 };
                 attackPattern.Range = db.GetFloat(TableName, actorId, AttackRangeKey);
                 attackPattern.AttackTime = db.GetFloat(TableName, actorId, AttackTimeKey);
-                attackPattern.AnimationTime = db.GetFloat(TableName, actorId, AnimationTimeKey);
+                //attackPattern.AnimationTime = db.GetFloat(TableName, actorId, AnimationTimeKey);
                 attackPattern.Cooldown = db.GetFloat(TableName, actorId, CooldownTimeKey);
 
                 attackPattern.AttributeScaleFactor = db.GetFloat(TableName, actorId, AttributeScaleFactorKey, 1f);

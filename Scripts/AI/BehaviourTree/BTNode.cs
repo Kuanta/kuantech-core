@@ -20,6 +20,7 @@ namespace Kuantech.AI
             LEAF,
             SUB_GRAPH,
             RANDOM_SELECTOR,
+            PARALLEL,
         }
         public enum NodeStatus
         {
@@ -86,13 +87,14 @@ namespace Kuantech.AI
                     AddChild(new BTSequence(nodeName));
                     break;
                 case NodeTypes.LEAF:
-                    Debug.LogError("Leaf?");
                     BTLeafAction action = (BTLeafAction) Assembly.GetExecutingAssembly().CreateInstance(actionName);
                     AddChild(new BTLeaf(nodeName, action));
                     break;
                 case NodeTypes.RANDOM_SELECTOR:
-                    Debug.LogError("YEs?");
                     AddChild(new BTRandomSelector(nodeName));
+                    break;
+                case NodeTypes.PARALLEL:
+                    AddChild(new BTParallel(nodeName));
                     break;
                 default:
                     break;
@@ -343,6 +345,54 @@ namespace Kuantech.AI
                 return NodeStatus.RUNNING;
             }
             return NodeStatus.RUNNING;
+        }
+    }
+
+    [Serializable]
+    public class BTParallel : BTNode
+    {
+        public BTParallel(string name = "Parallel")
+        {
+            Name = name;
+        }
+
+        public override void OnEnter()
+        {
+            base.OnEnter();
+            foreach (var child in Children)
+            {
+                child.OnEnter();
+            }
+        }
+
+        public override void OnExit()
+        {
+            base.OnExit();
+            foreach (var child in Children)
+            {
+                child.OnExit();
+            }
+        }
+
+        public override NodeStatus Process()
+        {
+            bool anyRunning = false;
+            bool allSucceeded = true;
+
+            foreach (var child in Children)
+            {
+                var status = child.Process();
+
+                if (status == NodeStatus.RUNNING)
+                    anyRunning = true;
+                else if (status == NodeStatus.FAILURE)
+                    allSucceeded = false;
+            }
+
+            if (anyRunning)
+                return NodeStatus.RUNNING;
+
+            return allSucceeded ? NodeStatus.SUCCESS : NodeStatus.FAILURE;
         }
     }
 }

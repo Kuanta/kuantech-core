@@ -9,11 +9,20 @@ namespace Kuantech.TowerDefense
     public class BasicAttackAction : BTLeafAction
     {
         private bool _attacked = false;
-
+        private Actor _enemyActor;
         public override void EnterNode(BehaviourTree ownerTree)
         {
             base.EnterNode(ownerTree);
             _attacked = false;
+            TargetManager tm = ownerTree.OwnerAgent.Actor.GetModule<TargetManager>();
+            if (tm == null)
+            {
+                _enemyActor = ownerTree.VariableTable.GetVariable<Actor>("EnemyTarget");
+            }
+            else
+            {
+                _enemyActor = tm.GetCurrentTarget();
+            }
         }
         public override BTNode.NodeStatus Tick(BehaviourTree ownerTree)
         {
@@ -34,13 +43,15 @@ namespace Kuantech.TowerDefense
                 return BTNode.NodeStatus.RUNNING;
             }
             
-            Actor actor = ownerTree.VariableTable.GetVariable("EnemyTarget") as Actor;
-            if (actor == null || !actor.IsAlive())
+            if (_enemyActor == null || !_enemyActor.IsAlive())
             {
                 return BTNode.NodeStatus.FAILURE;
             }
-            
-            cm.AttackToTarget(actor);
+
+            if (!cm.AttackToTarget(_enemyActor))
+            {
+                return BTNode.NodeStatus.FAILURE;
+            }
             _attacked = true;
             return BTNode.NodeStatus.RUNNING;
         }

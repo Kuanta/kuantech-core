@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using Kuantech.Core.Utils;
 using Kuantech.Utils;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace Kuantech.Core.Combat
 {

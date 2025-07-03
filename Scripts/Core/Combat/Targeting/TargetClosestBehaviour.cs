@@ -5,21 +5,19 @@ namespace Kuantech.Core
     [CreateAssetMenu(fileName = "TargetClosestBehaviour", menuName = "Kuantech/Combat/Targeting Behaviour/Target Closest Behaviour")]
     public class TargetClosestBehaviour : TargetPriorityBehaviour
     {
-        public override int Compare(Actor a, Actor b, Actor self)
+        public override float GetTargetPriority(Actor a, Actor self)
         {
-            float distToA = (self.transform.position - a.transform.position).sqrMagnitude;
-            float distToB = (self.transform.position - b.transform.position).sqrMagnitude;
-            
-            if (distToA < distToB)
+            float distToSelf = (self.transform.position - a.transform.position).sqrMagnitude;
+            TargetManager tm = a.GetModule<TargetManager>();
+            if(tm != null && tm.SlotAllocator != null)
             {
-                return -1; // a is closer
+                TargetSlot bestSlot = tm.SlotAllocator.GetBestSlot(a);
+                if (bestSlot != null)
+                {
+                    distToSelf = (self.transform.position - bestSlot.WorldPoint.GetTargetPosition()).sqrMagnitude;
+                }
             }
-            else if (distToA > distToB)
-            {
-                return 1; // b is closer
-            }
-
-            return 0;
+            return 1 / distToSelf; // Closer actors have higher priority
         }
     }
 }

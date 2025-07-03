@@ -106,23 +106,34 @@ namespace Kuantech.Core
             return Animator;
         }
 
-        public void SetClip(string clipName, AnimationClip clip)
-        {
-            Animator animator = GetAnimator();
-            if (animator == null) return;
-        }
-        
+        #region Animation Sets
         public void ApplyDefaultAnimationSet()
         {
             if (DefaultAnimationSet == null || Animator == null) return; 
             Animator.runtimeAnimatorController = DefaultAnimationSet;
         }
-       
+
+        #endregion
+
+        #region Animation Play
+        public void SetClip(string clipName, AnimationClip clip)
+        {
+            Animator animator = GetAnimator();
+            if (animator == null) return;
+        }
         public void SetTrigger(int hash)
         {
             Animator.SetTrigger(hash);
         }
 
+        public void PlayAnimation(AnimationData animationData)
+        {
+            Animator animator = GetAnimator();
+            if (animator == null) return;
+            animationData.SetParameters(animator);
+        }
+        #endregion
+  
         public override void Reset()
         {
             base.Reset();

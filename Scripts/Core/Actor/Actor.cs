@@ -384,8 +384,16 @@ namespace Kuantech.Core
 
         public void OnHit(HitInfo hitInfo)
         {
+            MovementModule mm = GetModule<MovementModule>();
+            if (mm != null)
+            {
+                mm.Knockback(hitInfo.HitDirection, 
+                    hitInfo.KnockbackForce, 
+                    hitInfo.KnockbackDuration);
+            }
             OnHitEvent?.Invoke(hitInfo);
         }
+        
         public void OnHit(GameObject attacker, DamageInfo damageInfo)
         {
             OnHitEvent?.Invoke(new HitInfo()

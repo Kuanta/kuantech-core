@@ -5,9 +5,10 @@ namespace Kuantech.Core
 {
     public class TargetSlot
     {
+        public int Index;
         public WorldPoint WorldPoint;
-        public bool IsOccupied;
         public Actor OccupyingActor;
+        public TargetSlotAllocator OwnerTargetSlotAllocator;
     }
     
     public class TargetSlotAllocator
@@ -29,13 +30,14 @@ namespace Kuantech.Core
                 Vector3 offset = Quaternion.AngleAxis(angle, localUp) * localForward * radius;
                 _slots[i] = new TargetSlot
                 {
+                    Index= i,
                     WorldPoint = new WorldPoint()
                     {
                         OffsetPosition = offset, //If we want to rotate the slots with the parent actor, use LocalPosition
                         Target = parent,
                     },
-                    IsOccupied = false,
-                    OccupyingActor = null
+                    OccupyingActor = null,
+                    OwnerTargetSlotAllocator = this,
                 };
             }
         }
@@ -51,9 +53,9 @@ namespace Kuantech.Core
             int bestSlotIndex = -1;
             for(int i=0;i<_slots.Length; i++)
             {
-                if (_slots[i].OccupyingActor != null)
+                if (IsSlotOccupied(_slots[i]))
                 {
-                    //todo: Maybe check the targeted actor of occupying actor
+                    //todo: Maybe check the targeted actor of occupying actor. If its null this slot is free
                     continue;
                 }
 
@@ -70,9 +72,28 @@ namespace Kuantech.Core
             return _slots[bestSlotIndex];
         }
 
+        public bool IsSlotOccupied(TargetSlot slot)
+        {
+            Actor occupyingActor = slot.OccupyingActor;
+            
+            //No alive occupying actor check
+            if (occupyingActor == null || !slot.OccupyingActor.IsAlive()) return false;
+            
+            //Check if occupying actor actually targeting this
+            TargetManager tm = occupyingActor.GetModule<TargetManager>();
+            if (tm == null) return true;
+            if (tm.CurrentTargetSlot == slot) return true;
+            return false; //Not the same slot
+        }
+        
         public void RegisterActorToSlot(Actor attackingActor, int slotIndex)
         {
             _slots[slotIndex].OccupyingActor = attackingActor;
+        }
+
+        public void RemoveActorFromSlot(int slotIndex)
+        {
+            _slots[slotIndex].OccupyingActor = null;
         }
     }
 }

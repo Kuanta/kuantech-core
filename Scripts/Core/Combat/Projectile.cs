@@ -397,10 +397,11 @@ namespace Kuantech.Core
                 {
                     DamageInfo = Damage,
                     Hitter = hitter,
+                    HitDirection = _direction,
+                    KnockbackDuration = KnockbackTime,
+                    KnockbackForce = Knockback,
                 });
-                //Apply knockback
-                MovementModule movementModule = target.GetModule<MovementModule>();
-                movementModule.Knockback(_direction, Knockback, KnockbackTime);
+     
             }
         }
 

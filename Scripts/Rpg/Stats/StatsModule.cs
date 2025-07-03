@@ -188,6 +188,7 @@ namespace Kuantech.Rpg
         public float GetAttributeValue(string statId)
         {
             Attribute att = GetAttribute(statId);
+            if (att == null) return 0f;
             return att.GetValue(GetActorLevel());
         }
 

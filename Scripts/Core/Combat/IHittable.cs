@@ -14,6 +14,9 @@ namespace Kuantech.Core
     {
         public GameObject Hitter;
         public DamageInfo DamageInfo;
+        public Vector3 HitDirection;
+        public float KnockbackForce;
+        public float KnockbackDuration;
     }
     
     public interface IHittable

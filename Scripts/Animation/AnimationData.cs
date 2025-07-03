@@ -4,8 +4,11 @@ using UnityEngine;
 namespace Kuantech.Core
 {
     [Serializable]
-    public class AnimatorParametersData
+    public class AnimationData
     {
+        [Header("Animation Timing")]
+        public float AnimationTime;
+        
         [Header("Float")]
         public string FloatParameterName;
         public float FloatParameterValue;

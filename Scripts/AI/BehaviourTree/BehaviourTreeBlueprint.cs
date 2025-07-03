@@ -51,6 +51,9 @@ namespace Kuantech.AI
                 case BTNode.NodeTypes.RANDOM_SELECTOR:
                     node = new BTRandomSelector(nodeData.NodeName);
                     break;
+                case BTNode.NodeTypes.PARALLEL:
+                    node = new BTParallel(nodeData.NodeName);
+                    break;
                 default:
                     //What to do?
                     node = new BTSequence(nodeData.NodeName);

@@ -25,10 +25,16 @@ namespace Kuantech.RealTimeStrategy
         public Actor SpawnActor(ActorBlueprint actorBlueprint)
         {
             Actor spawned = actorBlueprint.CreateActor();
-            spawned.OnDespawnedEvent += OnActorDespawned;
             if (spawned == null) return null;
-            AddActor(spawned);
+            RegisterActor(spawned);
             return spawned;
+        }
+
+        public void RegisterActor(Actor actor)
+        {
+            if (actor == null) return;
+            actor.OnDespawnedEvent += OnActorDespawned;
+            AddActor(actor);
         }
         
         /// <summary>
