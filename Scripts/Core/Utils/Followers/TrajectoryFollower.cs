@@ -95,4 +95,9 @@ public class TrajectoryFollower : MonoBehaviour
         transform.position = new Vector3(-5, -2, 0);
         GoToPoint(target);
     }
+
+    public void Stop()
+    {
+        _isMoving = false;
+    }
 }

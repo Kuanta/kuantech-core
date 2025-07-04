@@ -49,12 +49,26 @@ namespace Kuantech.Core.Combat
         /// <param name="enemies"></param>
         public void SetEnemyTargets(List<Actor> enemies)
         {
-            DetectedEnemies = new List<Actor>(enemies);
+            if (enemies.IsNullOrEmpty())
+            {
+                DetectedEnemies = new List<Actor>();
+            }
+            else
+            {
+                DetectedEnemies = new List<Actor>(enemies);
+            }
         }
         
         public void SetAllyTargets(List<Actor> allies)
         {
-            DetectedAllies = new List<Actor>(allies);
+            if (allies.IsNullOrEmpty())
+            {
+                DetectedAllies = new List<Actor>();
+            }
+            else
+            {
+                DetectedAllies = new List<Actor>(allies);
+            }
         }
         
         /// <summary>

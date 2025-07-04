@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Kuantech.Core;
+using UnityEngine.Events;
 
 namespace Kuantech.RealTimeStrategy
 {
@@ -9,8 +10,11 @@ namespace Kuantech.RealTimeStrategy
     public class UnitsManager : LevelModule
     {
         private Dictionary<int, HashSet<Actor>> _actorsByFaction;
-        
+        public HashSet<Actor> SpawnedActors = new HashSet<Actor>();
+
         //todo(rts): Factions management here. Something like factions lookup table
+
+        public UnityAction OnActorRemoved;
         
         public override void Initialize()
         {
@@ -25,15 +29,15 @@ namespace Kuantech.RealTimeStrategy
         public Actor SpawnActor(ActorBlueprint actorBlueprint)
         {
             Actor spawned = actorBlueprint.CreateActor();
+            SpawnedActors.Add(spawned);
             if (spawned == null) return null;
-            RegisterActor(spawned);
             return spawned;
         }
 
         public void RegisterActor(Actor actor)
         {
             if (actor == null) return;
-            actor.OnDespawnedEvent += OnActorDespawned;
+            actor.OnDeathEvent += OnActorDeath;
             AddActor(actor);
         }
         
@@ -63,8 +67,10 @@ namespace Kuantech.RealTimeStrategy
             int factionId = actor.FactionId;
             if (_actorsByFaction == null || !_actorsByFaction.ContainsKey(factionId))
                 return;
-
+            if(SpawnedActors != null && SpawnedActors.Contains(actor))
+                SpawnedActors.Remove(actor);
             _actorsByFaction[factionId].Remove(actor);
+            OnActorRemoved?.Invoke();
         }
         
         /// <summary>
@@ -101,11 +107,30 @@ namespace Kuantech.RealTimeStrategy
         public override void OnLevelClear()
         {
             base.OnLevelClear();
+            ClearSpawnedActors();
             _actorsByFaction.Clear(); //Despawning actors isn't untis managers responsabilitiy
         }
-
+        
+        /// <summary>
+        /// Clears all spawned actors. Spawned ac
+        /// </summary>
+        public void ClearSpawnedActors()
+        {
+            if (_actorsByFaction == null) return;
+            foreach (var actor in SpawnedActors)
+            {
+                if (actor != null)
+                {
+                    //Play a vfx here?
+                    actor.Despawn(0.0f);
+                }
+            }
+            SpawnedActors.Clear();
+            _actorsByFaction.Clear(); //Clear this also    
+        }
+        
         #region Event Handlers
-        public void OnActorDespawned(Actor actor)
+        public void OnActorDeath(Actor actor)
         {
             if (actor == null) return;
             RemoveActor(actor);

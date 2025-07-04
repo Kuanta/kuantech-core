@@ -15,7 +15,13 @@ namespace Kuantech.Core
            PhaseStartTime = Time.time;
        }
        public virtual void TickPhase(float deltaTime){}
+       
        public virtual void OnExit(Level level) { }
+
+       public void CompletePhase()
+       {
+            
+       }
        
        public float GetPhaseDuration()
        {

@@ -308,7 +308,18 @@ namespace Kuantech.Core
                 lm.Initialize();
             }
         }
-
+        
+        public T GetLevelModule<T>() where T : LevelModule
+        {
+            foreach (var pair in Modules)
+            {
+                if (pair.Value is T)
+                {
+                    return pair.Value as T;
+                }
+            }
+            return null;
+        }
         #endregion
     }
 }

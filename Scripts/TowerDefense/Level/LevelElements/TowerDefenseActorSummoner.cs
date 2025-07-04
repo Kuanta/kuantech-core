@@ -1,19 +1,11 @@
 ﻿using Kuantech.Core;
-using Kuantech.Midcore;
 using UnityEngine;
 
 namespace Kuantech.TowerDefense
 {
-    public class ActorSummoner : LevelElement
+    public class TowerDefenseActorSummoner : ActorSummoner
     {
-        public int ActorFactionId = 0;
         public TowerDefensePath PathToSpawn;
-        public Transform SpawnPoint; // The point where the actor will be spawned
-        
-        public float Cooldown = 1f;
-        public bool ToggledOn = true; // Whether the summoner is active or not
-        //Runtime
-        private float _lastSpawnedTime;
 
         public virtual TowerDefensePath GetPathToSpawn()
         {
@@ -23,13 +15,11 @@ namespace Kuantech.TowerDefense
         /// <summary>
         /// Spawns the actor
         /// </summary>
-        public virtual Actor SpawnActor(ActorBlueprint actorTemplate)
+        public override Actor SpawnActor(ActorBlueprint actorTemplate)
         {
             if (actorTemplate == null) return null;
-            Actor createdActor = actorTemplate.CreateActor();
+            Actor createdActor = base.SpawnActor(actorTemplate);
             createdActor.Spawn();
-            createdActor.FactionId = ActorFactionId;
-            createdActor.transform.position = SpawnPoint.position;
             TowerDefenseActorModule tdm = createdActor.GetModule<TowerDefenseActorModule>();
             if (tdm == null)
             {
@@ -46,7 +36,6 @@ namespace Kuantech.TowerDefense
                 return null;
             }
             path.SetActorOnPath(createdActor);
-            _lastSpawnedTime = Time.time;
             
             //Add to spawned actors
             ParentLevel.AddSpawnable(createdActor);

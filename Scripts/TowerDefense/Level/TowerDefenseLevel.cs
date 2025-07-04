@@ -26,7 +26,7 @@ namespace Kuantech.TowerDefense
         //Runtime
         [NonSerialized] private TowerDefenseLevelUI _towerDefenseLevelUI;
         [NonSerialized] public float TowerHealth;
-        public List<ActorSummoner> ActorSummoners = new List<ActorSummoner>();
+        public List<TowerDefenseActorSummoner> ActorSummoners = new List<TowerDefenseActorSummoner>();
         
         public HashSet<Actor> AliveEnemies = new HashSet<Actor>();
         private Queue<WaveEntry> _currentWaveQueue = new Queue<WaveEntry>();
@@ -39,7 +39,7 @@ namespace Kuantech.TowerDefense
             TowerHealth = LevelData.TowerHealth;
             base.SetupLevel();
             _towerDefenseLevelUI =LevelUI as TowerDefenseLevelUI;
-            ActorSummoners = GetComponentsInChildren<ActorSummoner>().ToList();
+            ActorSummoners = GetComponentsInChildren<TowerDefenseActorSummoner>().ToList();
             Paths = GetComponentsInChildren<TowerDefensePath>().ToList();
             foreach (var path in Paths)
             {
@@ -118,7 +118,7 @@ namespace Kuantech.TowerDefense
             {
                 _currentWaveQueue.Enqueue(entry);
             }
-            SetRemainingEnemyCount(waveData.EnemyCount);
+            SetRemainingEnemyCount(waveData.GeneratedEnemyCount);
         }
         
         /// <summary>
@@ -141,7 +141,7 @@ namespace Kuantech.TowerDefense
 
         public int GetMaxEnemyCount()
         {
-            return GetCurrentWaveData().EnemyCount;
+            return GetCurrentWaveData().GeneratedEnemyCount;
         }
         public WaveData GetCurrentWaveData()
         {
@@ -164,7 +164,7 @@ namespace Kuantech.TowerDefense
             
             //Peek next data
             WaveEntry entry = GetNextWaveEntry();
-            ActorSummoner summoner = GetSummoner(entry.SpawnerIndex);
+            TowerDefenseActorSummoner summoner = GetSummoner(entry.SpawnerIndex);
             ActorBlueprint actorToSpawn = GetActorTemplate(entry.SpawnableIndex);
             if (actorToSpawn == null) return;
             Actor spawned = summoner.SpawnActor(actorToSpawn);
@@ -174,7 +174,7 @@ namespace Kuantech.TowerDefense
             _remainingEnemyCount--;
         }
 
-        public ActorSummoner GetSummoner(int index)
+        public TowerDefenseActorSummoner GetSummoner(int index)
         {
             if (ActorSummoners.IsNullOrEmpty())
             {
@@ -198,7 +198,7 @@ namespace Kuantech.TowerDefense
         {
             foreach (var spawner in ActorSummoners)
             {
-                spawner.ToggledOn = toggle;
+                spawner.Toggled = toggle;
             }
         }
 

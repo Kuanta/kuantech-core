@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Kuantech.Core.Utils;
+using UnityEngine.Serialization;
 
 namespace Kuantech.TowerDefense
 {
@@ -12,12 +13,17 @@ namespace Kuantech.TowerDefense
     }
 
     [Serializable]
-    public struct WaveData
+    public class WaveData
     {
-        public int EnemyCount;
+        public int GeneratedEnemyCount;
         public WeightedProbabilityArray<int> EnemyProbabilities;
         public List<WaveEntry> WaveEntries; //Predefined
         public float WaveSpawnDelay; //Delay between each spawn in the wave
+
+        public int GetEnemyCount()
+        {
+            return GeneratedEnemyCount + WaveEntries.Count;
+        }
     }
     
     [Serializable]

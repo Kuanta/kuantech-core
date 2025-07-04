@@ -10,13 +10,13 @@ namespace Kuantech.TowerDefense
         public override void OnEnter(Level level)
         {
             base.OnEnter(level);
-            TowerDefenseLevel tdLevel = (ParentLevel as TowerDefenseLevel);
-            if (tdLevel == null)
+            WaveHandlerModule whm = ParentLevel.GetLevelModule<WaveHandlerModule>();
+            if (whm == null)
             {
-                Debug.LogError("Current level is not tower defense level");
+                Debug.LogError("Current level doesn't have wave handler module");
                 return;
             }
-            tdLevel.SetNextWave();
+            whm.SetNextWave();
             (ParentLevel as TowerDefenseLevel)?.ToggleSpawners(true);
         }
     }
