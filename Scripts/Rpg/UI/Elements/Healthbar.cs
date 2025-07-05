@@ -7,6 +7,9 @@ namespace Kuantech.Rpg
 {
     public class Healthbar : MonoBehaviour
     {
+        [Header("Settings")]
+        public bool ShowAlways = false;
+        
         [Header("Bar Images")]
         public Slider FrontBar;  // Anında güncellenen bar
         public Slider BackBar;   // Yavaşça güncellenen bar (arkada kalan)
@@ -48,7 +51,7 @@ namespace Kuantech.Rpg
                 {
                     FrontBar.value = 1;
                     BackBar.value = 1;
-                    ToggleVisual(false);
+                    ToggleVisual(ShowAlways);
                     return;
                 }
                 _targetFill = Mathf.Clamp01(current / max);
