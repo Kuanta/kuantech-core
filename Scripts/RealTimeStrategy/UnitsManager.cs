@@ -37,15 +37,18 @@ namespace Kuantech.RealTimeStrategy
         public void RegisterActor(Actor actor)
         {
             if (actor == null) return;
-            actor.OnDeathEvent += OnActorDeath;
-            AddActor(actor);
+            if (AddActor(actor))
+            {
+                actor.OnDeathEvent -= OnActorDeath;
+                actor.OnDeathEvent += OnActorDeath;
+            }
         }
         
         /// <summary>
         /// Adds an actor
         /// </summary>
         /// <param name="actor"></param>
-        private void AddActor(Actor actor)
+        private bool AddActor(Actor actor)
         {
             int factionId = actor.FactionId;
             if(_actorsByFaction == null)
@@ -55,7 +58,12 @@ namespace Kuantech.RealTimeStrategy
                 _actorsByFaction[factionId] = new HashSet<Actor>();
             }
 
+            if (_actorsByFaction[factionId].Contains(actor))
+            {
+                return false;
+            }
             _actorsByFaction[factionId].Add(actor);
+            return true;
         }
         
         /// <summary>
@@ -69,7 +77,10 @@ namespace Kuantech.RealTimeStrategy
                 return;
             if(SpawnedActors != null && SpawnedActors.Contains(actor))
                 SpawnedActors.Remove(actor);
-            _actorsByFaction[factionId].Remove(actor);
+            if (_actorsByFaction.ContainsKey(factionId) && _actorsByFaction[factionId].Contains(actor))
+            {
+                _actorsByFaction[factionId].Remove(actor);
+            }
             OnActorRemoved?.Invoke();
         }
         
@@ -108,7 +119,12 @@ namespace Kuantech.RealTimeStrategy
         {
             base.OnLevelClear();
             ClearSpawnedActors();
-            _actorsByFaction.Clear(); //Despawning actors isn't untis managers responsabilitiy
+        }
+
+        public override void OnReset()
+        {
+            base.OnReset();
+            ClearSpawnedActors();
         }
         
         /// <summary>
