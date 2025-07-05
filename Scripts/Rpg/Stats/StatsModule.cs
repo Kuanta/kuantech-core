@@ -216,6 +216,18 @@ namespace Kuantech.Rpg
         }
         
         /// <summary>
+        /// Sets the base value of an attribute
+        /// </summary>
+        /// <param name="attributeAsset"></param>
+        /// <param name="value"></param>
+        public void SetAttributeValue(AttributeAsset attributeAsset, float value)
+        {
+            Attribute att = GetAttribute(attributeAsset);
+            if (att == null) return;
+            att.BaseValue = value;
+        }
+        
+        /// <summary>
         /// Sets the rank of the attribute
         /// </summary>
         /// <param name="statId"></param>
