@@ -13,24 +13,33 @@ namespace Kuantech.HyperCasual.UI
         [SerializeField] protected string CurrencyId;
         [SerializeField] private TMP_Text PriceText;
         [SerializeField] private Image CurrencyIcon;
-
+        [Tooltip("If price is 0, this text will be shown as long as its not empty")]
+        [SerializeField] private string FreeText;        
         
         /// <summary>
         /// Sets the price text by gettign it from the store manager
         /// </summary>
-        public virtual void SetPriceText()
+        public virtual void SetPrice()
         {
+            if (BuyableId.IsNullOrEmpty()) return;
             BuyableInfo info = StoreManager.GetContext<StoreManager>().GetBuyableInfo(BuyableId);
-            PriceText.text = info.GetPrice(CurrencyId).Stringfy();
+            SetPrice(info.GetPrice(CurrencyId));
         }
 
         /// <summary>
         /// Sets the price text directly to the given argument
         /// </summary>
         /// <param name="price"></param>
-        public void SetPriceText(int price)
+        public void SetPrice(int price)
         {
-            PriceText.text = price.Stringfy();
+            if (price <= 0 && !FreeText.IsNullOrEmpty())
+            {
+                PriceText.text = FreeText;
+            }
+            else
+            {
+                PriceText.text = price.Stringfy();
+            }
         }
         
         /// <summary>

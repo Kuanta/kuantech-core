@@ -19,7 +19,7 @@ namespace Kuantech.Core.UI
         [SerializeField] private bool UsePool;
         private bool _active = false;
         
-        public void Fly(Vector3 initialVelocity)
+        public void Fly()
         {
             _active = true;
             _timer = 0f;

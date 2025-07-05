@@ -41,6 +41,11 @@ namespace Kuantech.Puzzle
         {
             return ParentBoard != null;
         }
+
+        public virtual bool CanBePlacedToBoard(Board board)
+        {
+            return true;
+        }
         
         #region Events
 

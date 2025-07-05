@@ -60,6 +60,8 @@ namespace Kuantech.Midcore
         {
             await base.Initialize(gameManager);
            ProgressiblesHandler.Initilaze();
+           
+           SetDefaultProgressables(); //Unlocks defaults if they are not unlocked
         }
 
         public override void SetDefaultState()
@@ -68,9 +70,15 @@ namespace Kuantech.Midcore
             
             //Player Level
             SetRank(PlayerLevelDataAsset, 0);
-            
+            SetDefaultProgressables();
+        }
+
+        private void SetDefaultProgressables()
+        {
             foreach(var defaultProgressable in DefaultProgressables)
             {
+                int currRank = GetCurrentRank(defaultProgressable.Asset);
+                if(currRank >= defaultProgressable.StartRank) continue;
                 SetRank(defaultProgressable.Asset, defaultProgressable.StartRank, false);
                 
                 //Set sub upgrades too
