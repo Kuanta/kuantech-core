@@ -16,7 +16,10 @@ namespace Kuantech.Midcore.UI
             if (PlayerLevelBar != null)
             {
                 ProgressionManager pm = ProgressionManager.GetContext<ProgressionManager>();
-                pm.OnPlayerEarnedExperience += OnPlayerEarnedExperienceHandler;
+                if (pm != null)
+                {
+                    pm.OnPlayerEarnedExperience += OnPlayerEarnedExperienceHandler;
+                }
                 UpdatePlayerLevelBar();
             }
         }

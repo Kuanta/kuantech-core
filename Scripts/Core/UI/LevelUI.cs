@@ -84,14 +84,14 @@ namespace Kuantech.Core.UI
 
         #region Panels
 
-        public UIElement GetUIElementByType<T>()
+        public T GetUIElementByType<T>() where T : UIElement
         {
             if (UIElements.IsNullOrEmpty()) return null;
             foreach (var uiElement in UIElements)
             {
                 if (uiElement is T)
                 {
-                    return uiElement;
+                    return uiElement as T;
                 }
             }
 

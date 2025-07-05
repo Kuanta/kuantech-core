@@ -13,12 +13,19 @@ namespace Kuantech.Midcore
         [SerializeReference]
         public List<Reward> Rewards;
         
+        [SerializeReference]
+        public List<Reward> FailedRewards;
+        
         public override void OnLevelStateChange(LevelStateChangeData changeData)
         {
             if (changeData.NewState == LevelState.Completed)
             {
                 EarnRewards();
-                SetRewardsUI();
+                SetRewardsUI(GetRewardsPanelFromCompletePanel());
+            }else if (changeData.NewState == LevelState.Failed)
+            {
+                EarnFailedRewards();
+                SetRewardsUI(GetRewardsPanelFromFailedPanel());
             }
         }
 
@@ -30,15 +37,36 @@ namespace Kuantech.Midcore
             }
         }
 
-        private void SetRewardsUI()
+        private void EarnFailedRewards()
         {
-            Level parentLevel = ParentLevel;
-            if (parentLevel.LevelUI == null) return;
-            CompletePanel completePanel = parentLevel.LevelUI.GetUIElementByType<CompletePanel>() as CompletePanel;
-            if (completePanel == null) return;
-            RewardsPanel rewardsPanel = completePanel.RewardsPanel;
+            foreach (var reward in FailedRewards)
+            {
+                reward.EarnReward();
+            }
+        }
+        
+        private void SetRewardsUI(RewardsPanel rewardsPanel)
+        {
             if (rewardsPanel == null) return;
             rewardsPanel.ShowRewards(Rewards);
+        }
+
+        private RewardsPanel GetRewardsPanelFromCompletePanel()
+        {
+            Level parentLevel = ParentLevel;
+            if (parentLevel.LevelUI == null) return null;
+            CompletePanel completePanel = parentLevel.LevelUI.GetUIElementByType<CompletePanel>();
+            if (completePanel == null) return null;
+            return completePanel.RewardsPanel;
+        }
+
+        private RewardsPanel GetRewardsPanelFromFailedPanel()
+        {
+            Level parentLevel = ParentLevel;
+            if (parentLevel.LevelUI == null) return null; 
+            LevelFailPanel failPanel = parentLevel.LevelUI.GetUIElementByType<LevelFailPanel>();
+            if (failPanel == null) return null;
+            return failPanel.RewardsPanel;
         }
     }
 }

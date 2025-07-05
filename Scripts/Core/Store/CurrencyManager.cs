@@ -77,6 +77,7 @@ namespace Kuantech.Core.Store
 
         public static int GetCurrencyAmount(CurrencyAsset currencyAsset)
         {
+            if (currencyAsset == null) return 0;
             return GetCurrencyAmount(currencyAsset.GetId());
         }
 

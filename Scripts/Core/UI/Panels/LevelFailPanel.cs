@@ -1,22 +1,26 @@
-using Kuantech.Core;
 using Kuantech.Core.FX;
-using Kuantech.Core.UI;
+using Kuantech.Midcore.UI;
 using TMPro;
+using UnityEngine;
 using UnityEngine.UI;
 
 namespace Kuantech.Core.UI
 {
     public class LevelFailPanel : UIMenu
     {
-        public TMP_Text FailMessageText;
-        public Button RestartButton;
-        public Effect LoseEffect;
+        [Header("Components")]
+        public RewardsPanel RewardsPanel;
+        [SerializeField] private TMP_Text FailMessageText;
+        [SerializeField] private Button RestartButton;
+        [SerializeField] private Effect LoseEffect;
+        
         public virtual void Initialize()
         {
-            RestartButton.onClick.AddListener(() =>
+            if (RestartButton != null)
             {
-                LevelManager.GetContext<LevelManager>().RestartLevel();
-            });
+                RestartButton.onClick.AddListener(OnRestartButtonClicked);
+            }
+   
         }
 
         public override void Open()
@@ -32,6 +36,11 @@ namespace Kuantech.Core.UI
         {
             if (FailMessageText == null) return;
             FailMessageText.text = failText;
+        }
+
+        protected virtual void OnRestartButtonClicked()
+        {
+            LevelManager.GetContext<LevelManager>().RestartLevel();
         }
     }
 }

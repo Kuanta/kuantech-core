@@ -9,10 +9,8 @@ namespace Kuantech.Core.UI
     {
         [Header("Components")] 
         public RewardsPanel RewardsPanel;
-        public Button ContinueButton;
-        
-        
-        public Effect VictoryEffect;
+        [SerializeField] private Button ContinueButton;
+        [SerializeField] private Effect VictoryEffect;
 
         public override void Initialize()
         {
