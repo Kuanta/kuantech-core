@@ -45,7 +45,7 @@ namespace Kuantech.RealTimeStrategy
         /// Adds an actor
         /// </summary>
         /// <param name="actor"></param>
-        public void AddActor(Actor actor)
+        private void AddActor(Actor actor)
         {
             int factionId = actor.FactionId;
             if(_actorsByFaction == null)
@@ -134,6 +134,18 @@ namespace Kuantech.RealTimeStrategy
         {
             if (actor == null) return;
             RemoveActor(actor);
+        }
+
+        public override void OnLevelStateChange(LevelStateChangeData levelStateChangeData)
+        {
+            base.OnLevelStateChange(levelStateChangeData);
+            foreach (var actors in _actorsByFaction)
+            {
+                foreach (var actor in actors.Value)
+                {
+                    actor.ChangeActorState(ActorState.Inactive);
+                }
+            }
         }
         #endregion
      

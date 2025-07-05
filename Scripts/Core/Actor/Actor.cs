@@ -155,7 +155,6 @@ namespace Kuantech.Core
             {
                 module.Reset();
             }
-            ChangeActorState(ActorState.Inactive);
         }
 
         public virtual void Cleanup()

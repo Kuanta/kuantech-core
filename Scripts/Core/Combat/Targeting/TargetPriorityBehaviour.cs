@@ -13,7 +13,7 @@ namespace Kuantech.Core
         /// 0  if a == b
         /// 1  if a > b (b is prior)
         /// </summary>
-        public int Compare(Actor a, Actor b, Actor self)
+        public virtual int Compare(Actor a, Actor b, Actor self)
         {
             float scoreA = GetTargetPriority(a, self);
             float scoreB = GetTargetPriority(b, self);

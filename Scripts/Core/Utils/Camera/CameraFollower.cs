@@ -34,6 +34,12 @@ namespace Kuantech.Core.Utils
             UpdateRotation(TargetDirection);
             UpdateOrthographicSize();
         }
+
+        public void SetCameraTarget(CameraTarget target, bool snapTo=false)
+        {
+            CameraTarget = target;
+            if(snapTo) SnapToTarget();
+        }
         
         /// <summary>
         /// Snaps to target
