@@ -1,5 +1,6 @@
 using Cysharp.Threading.Tasks;
 using Kuantech.Core;
+using Kuantech.Core.FX;
 using UnityEngine;
 
 public class GameStateManager : SubManager
@@ -56,6 +57,7 @@ public class GameStateManager : SubManager
         if (ctx == null)
         {
             Debug.LogError("Game State Manager is null");
+            return false;
         }
         if (ctx.GameState == null || saveable == null) return false;
         string id = GetSaveableId(saveable);
