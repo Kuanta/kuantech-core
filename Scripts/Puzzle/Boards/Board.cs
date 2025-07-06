@@ -46,7 +46,7 @@ namespace Kuantech.Puzzle
         
         public virtual bool CanSetTile(BoardTile tile, BoardTileCoordinate coordinate)
         {
-            if (!IsTileValidAndEmpty(coordinate) || tile.CanBePlacedToBoard(this)) return false;
+            if (!IsTileValidAndEmpty(coordinate) || !tile.CanBePlacedToBoard(this)) return false;
             return true;
         }
         
