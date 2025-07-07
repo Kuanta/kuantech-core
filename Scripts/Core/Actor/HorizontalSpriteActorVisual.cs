@@ -2,21 +2,20 @@ using UnityEngine;
 
 namespace Kuantech.Core
 {
-    public class HorizontalSpriteActorVisual : ActorVisual
+    public class HorizontalSpriteActorVisual : MonoBehaviour
     {
+        public ActorVisual ActorVisual;
         public Vector3 FacingDirection = Vector3.forward;
         public float AimDirectionThreshold = 0.1f;
         private Vector3 _lastDirection;
         
         private void Update()
         {
-            if (ParentActor == null) return;
+            if (ActorVisual == null || ActorVisual.ParentActor == null) return;
 
-            Vector3 aimDirection = ParentActor.MotionVectorsHandler.GetTargetVector();
+            Vector3 aimDirection = ActorVisual.ParentActor.MotionVectorsHandler.GetTargetVector();
             if (aimDirection.sqrMagnitude > AimDirectionThreshold)
             {
-                Debug.Log("Aim Direction "+" "+aimDirection);
-
                 float dot = Vector3.Dot(aimDirection, FacingDirection);
                 Vector3 localScale = transform.localScale;
 
