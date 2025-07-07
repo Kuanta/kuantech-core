@@ -8,7 +8,8 @@ namespace Kuantech.Core.UI
         [Header("UI Menu")]
         public string MenuId;
         public bool IsPopup = false;
-        [Tooltip("Closes and pops all previous menu stacks")] public bool ClearStackOnOpen = true;
+        [Tooltip("Closes and pops all previous menu stacks")] 
+        public bool ClearStackOnOpen = true;
         [SerializeField] protected Button CloseButton;
         
         //Animations
@@ -37,11 +38,6 @@ namespace Kuantech.Core.UI
 
         public override void Close()
         {
-            if (UIManager.GetTopMenu() != this)
-            {
-                Debug.LogWarning($"Menu {MenuId} tried to close itself while not being on top of stack.");
-                return;
-            }
             base.Close();
             UIManager.GetContext<UIManager>().PopFromStack(this, false); //Don't call close again
         }

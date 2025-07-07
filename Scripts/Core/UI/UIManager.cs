@@ -135,7 +135,7 @@ namespace Kuantech.Core.UI
  
         public void PopFromStack(UIMenu menu, bool callClose = true)
         {
-            if (_menuStack.Peek() != menu) return;
+            if (_menuStack.IsNullOrEmpty() || _menuStack.Peek() != menu) return;
             UIMenu menuToClose = _menuStack.Pop();
             if (_menuStack.Count == 1 && menu == _defaultMenu)
             {
