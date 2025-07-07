@@ -5,7 +5,6 @@ using Kuantech.Core.HyperCasual;
 using Kuantech.Midcore;
 using Kuantech.Rpg;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace Kuantech.Core
 {
@@ -70,7 +69,7 @@ namespace Kuantech.Core
             Actor actor = PoolManager.GetObjectFromPool(ActorPrefab.gameObject).GetComponent<Actor>();
             if (actor == null) return null;
             actor.Id = GetId();
-            
+            actor.FactionId = FactionId;
 
             if (ProgressableDataAsset != null)
             {

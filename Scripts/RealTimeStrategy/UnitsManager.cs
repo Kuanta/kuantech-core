@@ -108,11 +108,17 @@ namespace Kuantech.RealTimeStrategy
                 return;
             if(SpawnedActors != null && SpawnedActors.Contains(actor))
                 SpawnedActors.Remove(actor);
+            UnregisterActor(actor);
+            OnActorRemoved?.Invoke();
+        }
+
+        private void UnregisterActor(Actor actor)
+        {
+            int factionId = actor.FactionId;
             if (_actorsByFaction.ContainsKey(factionId) && _actorsByFaction[factionId].Contains(actor))
             {
                 _actorsByFaction[factionId].Remove(actor);
             }
-            OnActorRemoved?.Invoke();
         }
         
         /// <summary>
@@ -158,10 +164,10 @@ namespace Kuantech.RealTimeStrategy
                 {
                     //Play a vfx here?
                     actor.Despawn(0.0f);
+                    UnregisterActor(actor);
                 }
             }
             SpawnedActors.Clear();
-            _actorsByFaction.Clear(); //Clear this also    
         }
         
         #region Pop limit
