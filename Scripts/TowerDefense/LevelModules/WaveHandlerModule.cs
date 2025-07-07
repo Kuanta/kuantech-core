@@ -125,8 +125,14 @@ namespace Kuantech.TowerDefense
                     SpawnerIndex = -1 //-1 means random spawner
                 });
             }
+            
+            //Set actor limits
+            UnitsManager um = ParentLevel.GetLevelModule<UnitsManager>();
+            if (um != null)
+            {
+                um.SetMaxUnitPerFaction(waveData.EnemyFactionId, waveData.MaxEnemyCount);
+            }
         }
-
 
         #endregion
         #region Summoners

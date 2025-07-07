@@ -15,11 +15,13 @@ namespace Kuantech.TowerDefense
     [Serializable]
     public class WaveData
     {
+        public int EnemyFactionId = 1; //Faction ID of the enemies in this wave
+        public List<WaveEntry> WaveEntries; //Predefined
+        public int MaxEnemyCount = -1; //If greater than -1, limits the number of enemies in the wave      
         public int GeneratedEnemyCount;
         public WeightedProbabilityArray<int> EnemyProbabilities;
-        public List<WaveEntry> WaveEntries; //Predefined
         public float WaveSpawnDelay; //Delay between each spawn in the wave
-
+        
         public int GetEnemyCount()
         {
             return GeneratedEnemyCount + WaveEntries.Count;

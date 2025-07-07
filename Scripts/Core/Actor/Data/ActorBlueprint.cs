@@ -17,6 +17,7 @@ namespace Kuantech.Core
     public class ActorBlueprint : MetadataAsset
     {
         [Header("Actor Prefab")] 
+        public int FactionId;
         public Actor ActorPrefab;
         
         [Header("Blueprint Component")]

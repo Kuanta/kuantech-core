@@ -249,7 +249,7 @@ namespace Kuantech.Core
             PhaseSystem.ChangePhase(key);
         }
 
-        public void OnLevelPhaseChange(LevelPhase oldPhase, LevelPhase newPhase)
+        public virtual void OnLevelPhaseChange(LevelPhase oldPhase, LevelPhase newPhase)
         {
             foreach (var module in LevelModules)
             {

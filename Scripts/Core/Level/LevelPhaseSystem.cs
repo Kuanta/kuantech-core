@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Kuantech.Core
@@ -23,8 +24,22 @@ namespace Kuantech.Core
                 _phases.Add(phase.Key, phase);
         }
 
-        public void ChangePhase(LevelPhase newPhase)
+        private IEnumerator _currentRoutine = null;
+        public void ChangePhase(LevelPhase newPhase, float changeDelay = 0f)
         {
+            if (_currentRoutine != null)
+            {
+                ParentLevel.StopCoroutine(_currentRoutine);
+                _currentRoutine = null;
+            }
+
+            _currentRoutine = ChangePhaseRoutine(newPhase, changeDelay);
+            ParentLevel.StartCoroutine(_currentRoutine);
+        }
+
+        private IEnumerator ChangePhaseRoutine(LevelPhase newPhase, float changeDelay)
+        {
+            yield return new WaitForSeconds(changeDelay);
             var oldPhase = CurrentPhase;
             oldPhase?.OnExit(ParentLevel);
 
@@ -32,16 +47,18 @@ namespace Kuantech.Core
             CurrentPhase.OnEnter(ParentLevel);
            
             ParentLevel.OnLevelPhaseChange(oldPhase, newPhase);
+
+            _currentRoutine = null;
         }
         
-        public void ChangePhase(string phaseKey)
+        public void ChangePhase(string phaseKey, float delay=0.0f)
         {
             if (!_phases.TryGetValue(phaseKey, out var newPhase))
             {
                 Debug.LogError($"Phase '{phaseKey}' is not registered.");
                 return;
             }
-            ChangePhase(newPhase);
+            ChangePhase(newPhase, delay);
         }
 
         public void Reset()

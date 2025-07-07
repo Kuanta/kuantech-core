@@ -14,6 +14,9 @@ namespace Kuantech.Midcore
         [Header("Deck Collectibles")]
         public List<DeckCollectableAsset> DeckCollectibles;
         
+        [Header("Default Deck")]
+        public List<DeckCollectableAsset> DefaultDeck;
+
         //Current Deck
         [SaveableField] public List<ProgressibleData> CurrentDeck;
         
@@ -34,6 +37,17 @@ namespace Kuantech.Midcore
             }
         }
 
+        public override void SetDefaultState()
+        {
+            base.SetDefaultState();
+            for (int i = 0; i < DefaultDeck.Count; ++i)
+            {
+                if(i>= DeckSize) break;
+                if(DefaultDeck[i] == null) continue;
+                EquipCollectible(DefaultDeck[i]);
+            }
+        }
+        
         public static int GetDeckSize()
         {
             var ctx = DeckBuildingManager.GetContext<DeckBuildingManager>();
@@ -65,6 +79,14 @@ namespace Kuantech.Midcore
             if (ctx == null) return null;
             return ctx.DeckCollectibles;
         }
+
+        public static DeckCollectableAsset GetCollectible(string collectibleId)
+        {
+            var ctx = DeckBuildingManager.GetContext<DeckBuildingManager>();
+            if (ctx == null || collectibleId == null) return null;
+            if (ctx._collectiblesById.ContainsKey(collectibleId)) return ctx._collectiblesById[collectibleId];
+            return null;
+        }
         
         public static List<ProgressibleData> GetCurrentDeck()
         {
@@ -72,7 +94,25 @@ namespace Kuantech.Midcore
             if (ctx == null) return null;
             return ctx.CurrentDeck;
         }
-
+        
+        /// <summary>
+        /// Returns a list of currently equipped collectable assets
+        /// </summary>
+        /// <returns></returns>
+        public static List<DeckCollectableAsset> GetCurrentCollectableAssets()
+        {
+            var ctx = DeckBuildingManager.GetContext<DeckBuildingManager>();
+            if (ctx == null) return null;
+            List<DeckCollectableAsset> equippedAssets = new List<DeckCollectableAsset>();
+            foreach (var data in ctx.CurrentDeck)
+            {
+                if(data == null || data.Id.IsNullOrEmpty()) continue;
+                DeckCollectableAsset asset = GetCollectible(data.Id);
+                if(asset != null) equippedAssets.Add(asset);
+            }
+            return equippedAssets;
+        }
+        
         public static bool IsEquipped(DeckCollectableAsset asset)
         {
             var ctx = GetContext<DeckBuildingManager>();

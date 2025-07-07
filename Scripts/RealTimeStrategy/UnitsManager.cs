@@ -1,16 +1,30 @@
 ﻿using System.Collections.Generic;
 using Kuantech.Core;
+using Kuantech.Utils;
+using UnityEngine;
 using UnityEngine.Events;
 
 namespace Kuantech.RealTimeStrategy
 {
+    public struct MaxUnitPerFactionEntry
+    {
+        public int FactionId;
+        public int MaxUnit;
+    }
+    
     /// <summary>
     /// A level module to handle all units in the level.
     /// </summary>
     public class UnitsManager : LevelModule
     {
+        [Header("Unit Counts")] 
+        public List<MaxUnitPerFactionEntry> MaxUnitsPerFaction;
+        public int MaxUnitCount = 50;
+
         private Dictionary<int, HashSet<Actor>> _actorsByFaction;
+        private Dictionary<int, int> _maxUnitsPerFaction;
         public HashSet<Actor> SpawnedActors = new HashSet<Actor>();
+        
 
         //todo(rts): Factions management here. Something like factions lookup table
 
@@ -19,6 +33,13 @@ namespace Kuantech.RealTimeStrategy
         public override void Initialize()
         {
             _actorsByFaction = new Dictionary<int, HashSet<Actor>>();
+            if (!MaxUnitsPerFaction.IsNullOrEmpty())
+            {
+                foreach (var entry in MaxUnitsPerFaction)
+                {
+                    SetMaxUnitPerFaction(entry.FactionId, entry.MaxUnit);
+                }
+            }
         }
         
         /// <summary>
@@ -28,12 +49,20 @@ namespace Kuantech.RealTimeStrategy
         /// <returns></returns>
         public Actor SpawnActor(ActorBlueprint actorBlueprint)
         {
+            if (!CanSpawnActor(actorBlueprint)) return null;
             Actor spawned = actorBlueprint.CreateActor();
             SpawnedActors.Add(spawned);
             if (spawned == null) return null;
             return spawned;
         }
 
+
+        public int GetSpawnedActorCount()
+        {
+            return SpawnedActors.Count;
+        }
+
+        
         public void RegisterActor(Actor actor)
         {
             if (actor == null) return;
@@ -65,6 +94,8 @@ namespace Kuantech.RealTimeStrategy
             _actorsByFaction[factionId].Add(actor);
             return true;
         }
+
+       
         
         /// <summary>
         /// Removes an actor
@@ -115,18 +146,6 @@ namespace Kuantech.RealTimeStrategy
             return enemyActors;
         }
         
-        public override void OnLevelClear()
-        {
-            base.OnLevelClear();
-            ClearSpawnedActors();
-        }
-
-        public override void OnReset()
-        {
-            base.OnReset();
-            ClearSpawnedActors();
-        }
-        
         /// <summary>
         /// Clears all spawned actors. Spawned ac
         /// </summary>
@@ -145,7 +164,59 @@ namespace Kuantech.RealTimeStrategy
             _actorsByFaction.Clear(); //Clear this also    
         }
         
+        #region Pop limit
+        
+        public bool CanSpawnActor(ActorBlueprint actorBlueprint)
+        {
+            if (GetSpawnedActorCount() >= MaxUnitCount && MaxUnitCount >= 0) return false;
+            int actorPerFaction = GetSpawnedActorIdByFaction(actorBlueprint.FactionId);
+            int maxActorPerFaction = GetMaxActorCountByFaction(actorBlueprint.FactionId);
+            if (maxActorPerFaction >= 0 && actorPerFaction >= maxActorPerFaction)
+            {
+                return false;
+            }
+
+            return true;
+        }
+        
+        public int GetMaxActorCountByFaction(int faction)
+        {
+            if (_maxUnitsPerFaction.ContainsKey(faction))
+            {
+                return _maxUnitsPerFaction[faction];
+            }
+
+            return -1;
+        }
+        
+        public int GetSpawnedActorIdByFaction(int faction)
+        {
+            if (_actorsByFaction == null || !_actorsByFaction.ContainsKey(faction))
+                return -1; //Limitless
+            return _actorsByFaction[faction].Count;    
+        }
+        
+        public void SetMaxUnitPerFaction(int faction, int actorCount)
+        {
+            if (_maxUnitsPerFaction == null) _maxUnitsPerFaction = new Dictionary<int, int>();
+            _maxUnitsPerFaction[faction] = actorCount;
+        }
+
+        #endregion
+
         #region Event Handlers
+        
+        public override void OnLevelClear()
+        {
+            base.OnLevelClear();
+            ClearSpawnedActors();
+        }
+
+        public override void OnReset()
+        {
+            base.OnReset();
+            ClearSpawnedActors();
+        }
         public void OnActorDeath(Actor actor)
         {
             if (actor == null) return;
