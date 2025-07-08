@@ -9,7 +9,7 @@ namespace Kuantech.Midcore
     /// <summary>
     /// A base class for progressables like skill upgrades, collectables, etc.
     /// </summary>
-    [CreateAssetMenu(fileName = "ProgressableData", menuName = "Kuantech/MidCore/ProgressableData")]
+    [CreateAssetMenu(fileName = "ProgressableData", menuName = "Kuantech/Midcore/ProgressableData")]
     public class ProgressableDataAsset : MetadataAsset
     {
         [Header("Sub Upgrades")]

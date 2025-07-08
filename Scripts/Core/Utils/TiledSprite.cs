@@ -33,7 +33,7 @@ namespace Kuantech.Utils
                 bool satisfied = true;
                 if (entry.ConnectivityMask.Equals(eightConnectivitiy))
                 {
-                    SpriteRenderer.sprite = entry.Sprite;
+                    if(SpriteRenderer != null) SpriteRenderer.sprite = entry.Sprite;
                     transform.localRotation = Quaternion.AngleAxis(entry.Angle, UpVector);
                     return;
                 }

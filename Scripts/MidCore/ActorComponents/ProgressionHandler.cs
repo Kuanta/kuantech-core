@@ -1,23 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Kuantech.Core;
 using Kuantech.Rpg;
+using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Midcore
 {
-    /// <summary>
-    /// Entry that matches a sub-upgrade with an attribute.
-    /// </summary>
-    [Serializable]
-    public struct ModifierUpgradesEntry
-    {
-        public ProgressableDataAsset ParentAsset;
-        public ProgressableDataAsset SubUpgradeAsset;
-        public AttributeAsset AttributeAsset;
-        public float BaseValue;
-        public float LevelToValueFactor;
-    }
+
     
     public class ProgressionHandler : ActorModule
     {
@@ -25,7 +14,7 @@ namespace Kuantech.Midcore
         public ProgressableDataAsset ActorProgressableAsset;
         
         [Tooltip("List of progressables that corresponds to stat modifiers")]
-        public List<ModifierUpgradesEntry> ModifierUpgrades;
+        public List<TraitUpgradeProgressable> ModifierUpgrades;
 
         private StatsModule _statsModule;
 
@@ -39,7 +28,7 @@ namespace Kuantech.Midcore
             _statsModule.SetLevel(GetActorLevel());
             
             //Set upgrades
-            SetProgressableModifiers();
+            SetTraitUpgrades();
             
             //todo: Implement passives and spells
         }
@@ -58,19 +47,15 @@ namespace Kuantech.Midcore
         /// <summary>
         /// Sets the modifiers from progressables
         /// </summary>
-        private void SetProgressableModifiers()
+        private void SetTraitUpgrades()
         {
+            if(ModifierUpgrades.IsNullOrEmpty()) return;
             foreach (var entry in ModifierUpgrades)
             {
-                int rank = ProgressionManager.GetCurrentRank(entry.ParentAsset, entry.SubUpgradeAsset);
-                StatModifier modifier = new StatModifier()
-                {
-                    AttributeAsset = entry.AttributeAsset,
-                    BaseValue = entry.BaseValue,
-                    Level = rank,
-                    LevelToValueFactor = entry.LevelToValueFactor,
-                    ModifierType = ModifierTypes.Addition,
-                };
+                int rank = ProgressionManager.GetCurrentRank(entry);
+                if(rank < 0) continue;
+                StatModifier modifier = new StatModifier(entry.ModifierData);
+                modifier.Level = rank;
                 _statsModule.AddModifier(modifier);
             }
         }

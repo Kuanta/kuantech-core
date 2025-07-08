@@ -29,6 +29,7 @@ namespace Kuantech.Core
         public bool SetCurrentTarget(Actor target)
         {
             if (CurrentTarget != null && CurrentTarget == target) return true; //Don't change target 
+            Actor.MotionVectorsHandler.SetTargetObject(target.transform);
             UnsetCurrentTarget();
             CurrentTarget = target;
             return true;
@@ -65,7 +66,7 @@ namespace Kuantech.Core
                 //Clear slot
                 CurrentTargetSlot.OccupyingActor = null;
             }
-
+            Actor.MotionVectorsHandler.SetTargetObject(null);
             CurrentTargetSlot = null;
         }
         
