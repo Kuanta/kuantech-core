@@ -27,7 +27,7 @@ namespace Kuantech.Core
 
         public string ProjectilePrefabCategory = "Projectiles";
         
-        public override void OnActorCreated(Actor actor)
+        public override void OnActorCreated(ActorBlueprint blueprint, Actor actor)
         {
             string actorId = actor.Id;
             KtDatabase db = KtDatabaseManager.GetDatabase(DatabaseName);

@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using Kuantech.Core;
 using Kuantech.Core.HyperCasual;
 using Kuantech.Midcore;
-using Kuantech.Rpg;
 using UnityEngine;
 
 namespace Kuantech.Core
@@ -90,7 +88,7 @@ namespace Kuantech.Core
             //Sets blueprint comps
             foreach(var blueprintComp in ActorBlueprintComponents)
             {
-                blueprintComp.OnActorCreated(actor);
+                blueprintComp.OnActorCreated(this, actor);
             }
             return actor;
         }
