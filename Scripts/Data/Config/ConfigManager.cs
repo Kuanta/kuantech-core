@@ -1,15 +1,24 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Kuantech.Core;
+using Kuantech.Core.Database;
 using UnityEngine;
 
 namespace Kuantech.Utils
 {
+    [Serializable]
+    public struct ConfigEntry
+    {
+        public string Key;
+        [SerializeReference]
+        public KtDataType Value;
+    }
+    
     public class ConfigManager : SubManager
     {
         private Dictionary<string, ConfigSource> _configIdToSource;
         
-        [SerializeReference]
         public List<ConfigSource> ConfigSources;
         
         public override async UniTask Initialize(GameManager gameManager)
@@ -44,7 +53,6 @@ namespace Kuantech.Utils
             }
             
         }
-
 
         /// <summary>
         /// Configs are stored in a dictionary with their keys. This gets the corresponding config source

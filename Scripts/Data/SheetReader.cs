@@ -31,12 +31,48 @@ namespace Kuantech.Data
         public UnityAction OnSheetFailedToRead;
         public UnityAction OnSheetWritten;
         public UnityAction OnSheetFailedToWrite;
+        
         public string GetRequestUrl(string SheetRange)
         {
             return $"https://sheets.googleapis.com/v4/spreadsheets/{SheetId}/values/{SheetRange}?key={ApiKey}";
         }
+        
+        public async UniTask<JObject> GetSheetDataAsync(string sheetRange)
+        {
+            string url = GetRequestUrl(sheetRange);
+            try
+            {
+                using (UnityWebRequest request = UnityWebRequest.Get(url))
+                {
+                    request.timeout = 5;
+                    var operation = await request.SendWebRequest().ToUniTask();
 
-        public async UniTask GetSheetData(string SheetRange)
+                    if (request.result != UnityWebRequest.Result.Success)
+                    {
+                        Debug.LogError($"Error fetching sheet data: {request.error}");
+                        OnSheetFailedToRead?.Invoke();
+                        return null;
+                    }
+                    else
+                    {
+                        string jsonResponse = request.downloadHandler.text;
+                        JObject data = JObject.Parse(jsonResponse);
+                        OnSheetRead?.Invoke(data); // İstersen bunu koru
+                        return data;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e.ToString());
+                OnSheetFailedToRead?.Invoke();
+                return null;
+            }
+        }
+
+        #region Compability
+
+        public async UniTask GetSheetData_Old(string SheetRange)
         {
             string url = GetRequestUrl(SheetRange);
             try
@@ -67,6 +103,9 @@ namespace Kuantech.Data
             }
             
         }
+
+        #endregion
+        
 
         public async UniTask ParseSheetData(string json)
         {

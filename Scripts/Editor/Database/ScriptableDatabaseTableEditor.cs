@@ -103,7 +103,7 @@ namespace Kuantech.Editor.Database
             EditorGUILayout.EndHorizontal();
         }
 
-        private void DrawKtDataCell(KtDataType data)
+        private void DrawKtDataCell(DataTable.CellData data)
         {
             if (data == null)
             {
@@ -111,7 +111,7 @@ namespace Kuantech.Editor.Database
                 return;
             }
 
-            switch (data)
+            switch (data.Value)
             {
                 case KtFloat f:
                     f.Value = EditorGUILayout.FloatField(f.Value, GUILayout.Width(100));

@@ -7,6 +7,7 @@ namespace Kuantech.Core.Database
     public class KtDatabaseManager : SubManager
     {
         public List<KtDatabase> Databases;
+        
         private Dictionary<string, KtDatabase> _databases = new Dictionary<string, KtDatabase>();
 
         public override async UniTask Initialize(GameManager gameManager)

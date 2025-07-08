@@ -1,23 +1,32 @@
 ﻿using System;
+using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Kuantech.Core.Database;
+using UnityEngine;
 
 namespace Kuantech.Utils
 {
- 
-    [Serializable]
-    public class ConfigDataDictionary : SerializableDictionary<string, KtDataType>
+   
+    public class ConfigSource : MonoBehaviour
     {
-        
-    }
-    public class ConfigSource
-    {
-        public ConfigDataDictionary ConfigDataDictionary;
+
+        public Dictionary<string, KtDataType> ConfigDataDictionary;
+        public List<ConfigEntry> ConfigEntries;
         
         public virtual async UniTask Initialize(ConfigManager configManager)
         {
+            
         }
 
+        public void CreateDictionary()
+        {
+            ConfigDataDictionary = new Dictionary<string, KtDataType>();
+            foreach (var configEntry in ConfigDataDictionary)
+            {
+                ConfigDataDictionary[configEntry.Key] = configEntry.Value;
+            }
+        }
+        
         public virtual KtDataType GetConfig(string key)
         {
             if (ConfigDataDictionary != null && ConfigDataDictionary.ContainsKey(key))

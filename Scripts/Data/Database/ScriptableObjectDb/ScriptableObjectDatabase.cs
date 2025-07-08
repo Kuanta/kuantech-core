@@ -8,6 +8,7 @@ namespace Kuantech.Core.Database
     {
         public List<DataTable> Tables;
         private Dictionary<string, DataTable> _tablesLookup;
+        
         public override async UniTask Initialize()
         {
             _tablesLookup = new Dictionary<string, DataTable>();
@@ -36,5 +37,9 @@ namespace Kuantech.Core.Database
             return dbTable.GetDataEntry(entryId, key);
         }
 
+        public override List<DataTable> GetTables()
+        {
+            return Tables;
+        }
     }
 }

@@ -44,12 +44,12 @@ namespace Kuantech.Puzzle
                     LevelDesignsCollection.UpdateFromSheetData(_sheetData, Type.GetType(ClassName));
                 }
             });
-            await SheetReader.GetSheetData(LevelDesignSheetRange);
+            await SheetReader.GetSheetData_Old(LevelDesignSheetRange);
         }
 
         public async void UpdateDataFromRemote()
         {
-            await SheetReader.GetSheetData(LevelDesignSheetRange);
+            await SheetReader.GetSheetData_Old(LevelDesignSheetRange);
         }
 
         public async void UpdateLevelDataCollection()
@@ -92,7 +92,7 @@ namespace Kuantech.Puzzle
             {
                 UpdateForEditor(readData);
             });
-            await SheetReader.GetSheetData(LevelDesignSheetRange);
+            await SheetReader.GetSheetData_Old(LevelDesignSheetRange);
         }
         
         private void UpdateForEditor(JObject sheetData)

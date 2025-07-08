@@ -10,6 +10,7 @@ namespace Kuantech.Core.Database
     public class DataTable : ScriptableObject
     {
         public string TableName;
+        
         public List<ColumnSchema> Schema = new();
         
         public List<RowData> Rows = new();
@@ -24,28 +25,33 @@ namespace Kuantech.Core.Database
             public KtDataType Data;
         }
         
+        
+        [Serializable]
+        public class CellData
+        {
+            public string Key;
+            [SerializeReference]
+            public KtDataType Value;
+        }
+        
         [Serializable]
         public class RowData
         {
             public string Id;
-
             [SerializeReference]
-            public List<KtDataType> Values;
-        }
-        
-        [Button("Add New Row")]
-        public void AddNewRow(string rowId)
-        {
-            var row = new RowData {Id = rowId};
-            row.Values = new List<KtDataType>();
-            foreach (var column in Schema)
-            {
-                var clone = CloneKtData(column.Data);
-                row.Values.Add(clone);
-            }
+            public List<CellData> Values;
 
-            Rows.Add(row);
+            public CellData GetCellData(string key)
+            {
+                int columnIndex = Values.FindIndex(c => c.Key == key);
+                if (columnIndex < 0)
+                {
+                    return null;
+                }
+                return Values[columnIndex];
+            }
         }
+
 
         public void BuildTable()
         {
@@ -71,6 +77,7 @@ namespace Kuantech.Core.Database
             return original.Clone();
         }
 
+        #region Reading
         public RowData GetRow(string rowId)
         {
             if (_rowLookup.IsNullOrEmpty() || !_rowLookup.ContainsKey(rowId)) return null;
@@ -81,13 +88,37 @@ namespace Kuantech.Core.Database
         {
             RowData rowData = GetRow(rowId);
             if (rowData == null) return null;
-            
-            int columnIndex = Schema.FindIndex(c => c.Name ==entryKey);
-            if (columnIndex < 0)
-            {
-                return null;
-            }
-            return rowData.Values[columnIndex];
+            CellData cellData = rowData.GetCellData(entryKey);
+            if (cellData == null) return null;
+            return cellData.Value;
         }
+
+        #endregion
+
+        #region Write
+                
+        [Button("Add New Row")]
+        public RowData AddNewRow(string rowId)
+        {
+            var row = new RowData {Id = rowId};
+            row.Values = new List<CellData>();
+            foreach (var column in Schema)
+            {
+                CellData cellData = new CellData();
+                cellData.Key = column.Name;
+                cellData.Value = CloneKtData(column.Data);
+                row.Values.Add(cellData);
+            }
+
+            Rows.Add(row);
+            if (_rowLookup != null)
+            {
+                _rowLookup.Add(rowId, row);
+            }
+            return row;
+        }
+        #endregion
+
+        
     }
 }

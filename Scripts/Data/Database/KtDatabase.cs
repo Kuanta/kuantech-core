@@ -1,5 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Reflection;
 using Cysharp.Threading.Tasks;
+using Kuantech.Core.Database.Attributes;
+using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Kuantech.Core.Database
@@ -7,9 +11,19 @@ namespace Kuantech.Core.Database
     public abstract class KtDatabase : MonoBehaviour
     {
         [SerializeField] private string Name;
+
+        [SerializeField] private DatabaseSheetReader SheetReader;
         
         public virtual async UniTask Initialize()
         {
+            await UpdateDatabase();
+        }
+        
+        [Button("Update Database")]
+        public async UniTask UpdateDatabase()
+        {
+            if (SheetReader == null) return;
+            await SheetReader.UpdateDatabase(this);
         }
         
         public string GetDbName()
@@ -28,7 +42,13 @@ namespace Kuantech.Core.Database
             throw new NotImplementedException();
         }
 
-        #region Value Getters
+        #region Database Info
+
+        public abstract List<DataTable> GetTables();
+
+        #endregion
+        
+        #region Reading
         /// <summary>
         /// Returns the value of the specified type for the given table, row, and column.
         /// </summary>
@@ -88,5 +108,58 @@ namespace Kuantech.Core.Database
         }
         #endregion
 
+        #region Parameters Setting
+        public void SetVariables(object instance, string tableName, string rowId)
+        {
+            var type = instance.GetType();
+            var members = type.GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+
+            foreach (var member in members)
+            {
+                var attribute = member.GetCustomAttribute<KtDatabaseVariableAttribute>();
+                if (attribute == null) continue;
+
+                string column = attribute.ColumnName;
+
+                if (member is PropertyInfo prop && prop.CanWrite)
+                {
+                    SetValueForMember(prop.PropertyType, value => prop.SetValue(instance, value), tableName, rowId, column);
+                }
+                else if (member is FieldInfo field)
+                {
+                    SetValueForMember(field.FieldType, value => field.SetValue(instance, value), tableName, rowId, column);
+                }
+            }
+        }
+        
+        private void SetValueForMember(Type memberType, Action<object> assign, string table, string row, string column)
+        {
+            object result = null;
+
+            if (memberType == typeof(int))
+                result = GetInteger(table, row, column);
+            else if (memberType == typeof(float))
+                result = GetFloat(table, row, column);
+            else if (memberType == typeof(string))
+                result = GetString(table, row, column);
+            else if (memberType == typeof(bool))
+                result = GetBool(table, row, column);
+            else if (memberType.IsEnum)
+            {
+                string enumString = GetString(table, row, column);
+                if (Enum.TryParse(memberType, enumString, out var enumValue))
+                    result = enumValue;
+            }
+            else
+            {
+                if (GetValue(table, row, column, out object value))
+                    result = value;
+            }
+
+            if (result != null)
+                assign(result);
+        }
+        #endregion
+        
     }
 }

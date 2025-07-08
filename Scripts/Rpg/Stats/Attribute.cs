@@ -7,7 +7,7 @@ namespace Kuantech.Rpg
     /// Defines default values for an attribute
     /// </summary>
     [Serializable]
-    public struct AttributeDefinition
+    public class AttributeDefinition
     {
         public AttributeAsset AttributeAsset;
         public float BaseValue;
