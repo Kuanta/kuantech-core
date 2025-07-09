@@ -25,15 +25,15 @@ namespace Kuantech.Puzzle.Tutorials
             base.StartTask();
             if (ParentPuzzleLevel == null) return;
             if (TutorialText.IsNullOrEmpty()) return;
-            ParentPuzzleLevel.LevelUI.SetTutorialText(TutorialText);
-            ParentPuzzleLevel.LevelUI.ToggleTutorialText(true);
+            ParentPuzzleLevel.PuzzleLevelUI.SetTutorialText(TutorialText);
+            ParentPuzzleLevel.PuzzleLevelUI.ToggleTutorialText(true);
         }
 
         public override void EndTask()
         {
             if (ParentPuzzleLevel == null) return;
-            if(HideTutorialTextOnComplete) ParentPuzzleLevel.LevelUI.ToggleTutorialText(false);
-            ParentPuzzleLevel.LevelUI.ToggleTutorialHand(false);
+            if(HideTutorialTextOnComplete) ParentPuzzleLevel.PuzzleLevelUI.ToggleTutorialText(false);
+            ParentPuzzleLevel.PuzzleLevelUI.ToggleTutorialHand(false);
             base.EndTask();
         }
     }

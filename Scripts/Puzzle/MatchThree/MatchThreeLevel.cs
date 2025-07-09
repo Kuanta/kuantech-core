@@ -35,7 +35,7 @@ namespace Kuantech.Puzzle.MatchThree
             // {
             //     _elementToRequiredCount[condition.RequiredElement] = condition.RequiredAmount;
             // }
-            _matchThreeLevelUI = ((MatchThreeLevelUI)LevelUI);
+            _matchThreeLevelUI = ((MatchThreeLevelUI)PuzzleLevelUI);
             MatchThreeBoard.Setup();
             MatchThreeBoard.OnMove += OnMove;
         }
@@ -55,7 +55,7 @@ namespace Kuantech.Puzzle.MatchThree
         protected override void ResetUI()
         {
             base.ResetUI();
-            _matchThreeLevelUI = ((MatchThreeLevelUI)LevelUI);
+            _matchThreeLevelUI = ((MatchThreeLevelUI)PuzzleLevelUI);
             if(_matchThreeLevelUI == null) return;
             _matchThreeLevelUI.SetRemainingMoves(MaxMoveCount);
             _matchThreeLevelUI.ResetWinConditionPanel();

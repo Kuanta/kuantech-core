@@ -5,6 +5,7 @@ using Kuantech.Core.Utils;
 using Kuantech.Puzzle.UI;
 using Kuantech.Utils;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Kuantech.Puzzle
 {
@@ -21,7 +22,7 @@ namespace Kuantech.Puzzle
 
         [Header("UI")] 
         public bool HideHUD = false;
-        public PuzzleLevelUI LevelUI;
+        public PuzzleLevelUI PuzzleLevelUI;
         
         [NonSerialized] public PuzzleLevelState CurrentPuzzleLevelState;
 
@@ -48,13 +49,13 @@ namespace Kuantech.Puzzle
             FindLevelDesign();
             SetSubLevel();
             CreateWinConditionTracker();
-            LevelUI = PuzzleUIManager.GetLevelUI();
-            if (LevelUI != null)
+            PuzzleLevelUI = PuzzleUIManager.GetLevelUI();
+            if (PuzzleLevelUI != null)
             {
-                LevelUI.OnLevelSetup(this);
+                PuzzleLevelUI.OnLevelSetup(this);
                             
                 //Toggle HUD (Useful for CPI levels
-                LevelUI.ToggleHUD(!HideHUD);
+                PuzzleLevelUI.ToggleHUD(!HideHUD);
             }
 
             
@@ -65,7 +66,7 @@ namespace Kuantech.Puzzle
         protected override void PlayLevel()
         {
             base.PlayLevel();
-            if(LevelUI != null) LevelUI.OnPlayLevel();
+            if(PuzzleLevelUI != null) PuzzleLevelUI.OnPlayLevel();
         }
         public virtual bool IsHardLevel()
         {
@@ -139,7 +140,7 @@ namespace Kuantech.Puzzle
             if(WinConditionTracker != null) WinConditionTracker.AddScore(scoreKey, score);
             //CheckWinCondition();
             //Update UI
-            LevelUI.SetScore(scoreKey, WinConditionTracker);
+            PuzzleLevelUI.SetScore(scoreKey, WinConditionTracker);
         }
 
         public virtual void EarnFlatScore(int score)
@@ -148,7 +149,7 @@ namespace Kuantech.Puzzle
             {
                 WinConditionTracker.AddFlatScore(score);
             }
-            LevelUI.SetScore(null, WinConditionTracker);
+            PuzzleLevelUI.SetScore(null, WinConditionTracker);
         }
         
         /// <summary>
@@ -186,12 +187,12 @@ namespace Kuantech.Puzzle
 
         public virtual void OnStageCompleted(int completedStageIndex)
         {
-            LevelUI.OnStageCompleted(completedStageIndex);
+            PuzzleLevelUI.OnStageCompleted(completedStageIndex);
         }
     
         public virtual void OnNewStage(int newStageIndex)
         {
-            LevelUI.OnNewStage(newStageIndex);
+            PuzzleLevelUI.OnNewStage(newStageIndex);
             foreach (var component in LevelElements)
             {
                 if (component is PuzzleLevelElement puzzleLevelElement)
@@ -275,7 +276,7 @@ namespace Kuantech.Puzzle
             }
             CurrentBooster = booster;
             CurrentBooster.ActivateBooster(this);
-            LevelUI.SetUIForBooster(booster);
+            PuzzleLevelUI.SetUIForBooster(booster);
             return true;
         }
         
@@ -304,7 +305,7 @@ namespace Kuantech.Puzzle
         /// </summary>
         private void DeactivateCurrentBooster()
         {
-            if(LevelUI != null) LevelUI.DisableBoosterUI();
+            if(PuzzleLevelUI != null) PuzzleLevelUI.DisableBoosterUI();
             CurrentBooster = null;
         }
         #endregion
