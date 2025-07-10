@@ -83,6 +83,5 @@ namespace Kuantech.Core
         }
         #endregion
 
-
     }
 }

@@ -72,6 +72,7 @@ namespace Kuantech.Core
             }
             VisualPartsHandler.Initialize();
         }
+        
 
         #region Item Slotting
         public bool HasSlotFor(EquipmentSlotType slotType)

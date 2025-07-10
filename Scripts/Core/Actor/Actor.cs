@@ -395,7 +395,8 @@ namespace Kuantech.Core
         
         public void OnHit(GameObject attacker, DamageInfo damageInfo)
         {
-            OnHitEvent?.Invoke(new HitInfo()
+           
+            OnHit(new HitInfo()
             {
                 Hitter = attacker,
                 DamageInfo = damageInfo,

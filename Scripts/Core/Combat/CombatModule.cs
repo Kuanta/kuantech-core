@@ -246,6 +246,8 @@ namespace Kuantech.Core
                 _targetManager.SetCurrentTarget(target);
             }
             
+            Actor.MotionVectorsHandler.SetTargetVector(attackDirection);
+            
             OnAttackStarted(attackDirection);
 
             float timeSinceLastAttack = _attackStartTime - _lastAttackTime;

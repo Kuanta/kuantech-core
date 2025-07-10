@@ -1,4 +1,5 @@
 ﻿using Kuantech.Rpg;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -16,6 +17,7 @@ namespace Kuantech.Core.Combat
         
         [Header("UI")] 
         [SerializeField] private Healthbar Healthbar;
+        [SerializeField] private bool ShowDamageText = false;
         
         //Events
         public UnityAction<HealthcareModule> OnHealthChanged;
@@ -59,9 +61,16 @@ namespace Kuantech.Core.Combat
         public void ReceiveDamage(DamageInfo damageInfo)
         {
             if (!Actor.IsAlive()) return; //Can't kill which is already dead
-            float healthAfterDamage = CalculateHealthAfterDamage(damageInfo);
+            DamageInfo reducedDamage = CalculateReducedDamageInfo(damageInfo);
+            float healthAfterDamage = CalculateHealthAfterDamage(reducedDamage);
             _statModule.SetResourceValue(HealthResourceAsset, healthAfterDamage);
             OnHealthChanged?.Invoke(this);
+
+            if (ShowDamageText)
+            {
+                CombatManager.ShowDamageText(Actor.transform.position, reducedDamage, Actor.FactionId == 0); //todo: Fix Friendly check
+            }
+            
             UpdateHealthbar();
             if (healthAfterDamage <= 0.0f)
             {
@@ -82,6 +91,12 @@ namespace Kuantech.Core.Combat
             if (Healthbar == null) return;
             float currentHealth = GetCurrentHealth();
             Healthbar.SetHealth(currentHealth, GetMaxHealth());
+        }
+
+        public DamageInfo CalculateReducedDamageInfo(DamageInfo damageInfo)
+        {
+            DamageInfo reducedDamageInfo = damageInfo;
+            return reducedDamageInfo;
         }
         
         public float CalculateHealthAfterDamage(DamageInfo damageInfo)

@@ -53,5 +53,10 @@ namespace Kuantech.Core
             PoolManager.PoolObject(CurrentActorVisual.gameObject);
             CurrentActorVisual = null;
         }
+
+        private void OnHit()
+        {
+            
+        }
     }
 }

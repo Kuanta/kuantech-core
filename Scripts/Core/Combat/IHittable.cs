@@ -3,6 +3,9 @@ using UnityEngine;
 
 namespace Kuantech.Core
 {
+    /// <summary>
+    /// If you make this class, check = operators for this
+    /// </summary>
     [Serializable]
     public struct DamageInfo
     {
