@@ -15,13 +15,12 @@ namespace Kuantech.Utils
         
         public virtual async UniTask Initialize(ConfigManager configManager)
         {
-            
         }
 
         public void CreateDictionary()
         {
             ConfigDataDictionary = new Dictionary<string, KtDataType>();
-            foreach (var configEntry in ConfigDataDictionary)
+            foreach (var configEntry in ConfigEntries)
             {
                 ConfigDataDictionary[configEntry.Key] = configEntry.Value;
             }

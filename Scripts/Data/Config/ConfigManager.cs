@@ -26,6 +26,7 @@ namespace Kuantech.Utils
             await base.Initialize(gameManager);
 
             List<UniTask> tasks = new List<UniTask>();
+            _configIdToSource = new Dictionary<string, ConfigSource>();
             if (ConfigSources != null)
             {
                 foreach(var configSource in ConfigSources)
@@ -39,6 +40,7 @@ namespace Kuantech.Utils
                 foreach(var configSource in ConfigSources)
                 {
                     if (configSource == null) continue;
+                    configSource.CreateDictionary();
                     foreach (var key in configSource.ConfigDataDictionary.Keys)
                     {
                         if (_configIdToSource.ContainsKey(key))

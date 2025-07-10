@@ -21,7 +21,6 @@ namespace Kuantech.Utils
         {
             await base.Initialize(configManager);
             await ReadConfigsFromSheet();
-            CreateDictionary();
         }
         
         [Button("Update Design Assets")]
@@ -35,12 +34,13 @@ namespace Kuantech.Utils
         private void OnConfigSheetRead(JObject sheetData)
         {
             JArray array = (JArray) sheetData["values"];
-            for (int i = 0; i < array.Count; ++i)
+            JArray headerRow = array[0] as JArray;
+            JArray valuesRow = array[1] as JArray;
+            
+            for (int i = 0; i < headerRow.Count; ++i)
             {
-                JToken headerRow = array[0];
-                JToken row = array[1];
                 string configKey = headerRow[i].ToString();
-                string value = row[i].ToString();
+                string value = valuesRow[i].ToString();
                 
                 //Update ConfigEntries list
                 for(int j=0;j<ConfigEntries.Count; ++j)

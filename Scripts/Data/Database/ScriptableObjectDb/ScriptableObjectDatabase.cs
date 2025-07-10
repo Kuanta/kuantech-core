@@ -11,6 +11,7 @@ namespace Kuantech.Core.Database
         
         public override async UniTask Initialize()
         {
+            await base.Initialize();
             _tablesLookup = new Dictionary<string, DataTable>();
             foreach (var table in Tables)
             {

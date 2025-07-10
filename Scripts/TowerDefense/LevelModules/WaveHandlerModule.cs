@@ -139,14 +139,13 @@ namespace Kuantech.TowerDefense
  
         public void SpawnNextWaveElement()
         {
-            if(Time.time - _lastSpawnTime < GetCurrentWaveData().WaveSpawnDelay)
-            {
-                return;
-            }
+           
 
-            WaveEntry nextEntry = GetNextWaveEntry();
+            WaveEntry nextEntry = PeekNextWaveEntry();
+            if (!CanSpawnEnemy(nextEntry)) return;
             if (nextEntry.SpawnableIndex < 0) return;
 
+            nextEntry = GetNextWaveEntry(); // Can summon, now pop from queue
             ActorSummoner summoner = GetSummoner(nextEntry.SpawnerIndex);
             ActorBlueprint actorBlueprint = GetActorTemplate(nextEntry.SpawnableIndex);
             if (actorBlueprint == null) return;
@@ -154,6 +153,22 @@ namespace Kuantech.TowerDefense
             if (spawned == null) return;
             _lastSpawnTime = Time.time;
             OnEnemySpawned?.Invoke(spawned);
+        }
+
+        public bool CanSpawnEnemy(WaveEntry waveEntry)
+        {
+            if (waveEntry.SpawnableIndex < 0) return false;
+            if(Time.time - _lastSpawnTime < GetCurrentWaveData().WaveSpawnDelay)
+            {
+                return false;
+            }
+
+            if (_unitManager != null)
+            {
+                return _unitManager.CanSpawnActor(GetActorTemplate(waveEntry.SpawnableIndex));
+            }
+
+            return true;
         }
         public ActorSummoner GetSummoner(int index)
         {
@@ -205,6 +220,19 @@ namespace Kuantech.TowerDefense
             }
 
             return _waveQueue.Dequeue();
+        }
+
+        public WaveEntry PeekNextWaveEntry()
+        {
+            if (_waveQueue.IsNullOrEmpty())
+            {
+                return new WaveEntry()
+                {
+                    SpawnableIndex = -1,
+                };
+            }
+
+            return _waveQueue.Peek();
         }
         #endregion
 

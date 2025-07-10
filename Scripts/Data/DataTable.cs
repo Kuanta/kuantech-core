@@ -83,7 +83,7 @@ namespace Kuantech.Core.Database
             if (_rowLookup.IsNullOrEmpty() || !_rowLookup.ContainsKey(rowId)) return null;
             return _rowLookup[rowId];
         }
-
+        
         public KtDataType GetDataEntry(string rowId, string entryKey)
         {
             RowData rowData = GetRow(rowId);
