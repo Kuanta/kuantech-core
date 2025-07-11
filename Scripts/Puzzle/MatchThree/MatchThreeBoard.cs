@@ -419,13 +419,13 @@ namespace Kuantech.Puzzle.MatchThree
         public void DestroyElement(MatchThreeElement element)
         {
             if(element == null || element.Indestructible) return;
-            Tiles[element.AnchorLayer][element.AnchorRow, element.AnchorColumn] = null;
+            Tiles[element.GetAnchorLayer()][element.GetAnchorRow(), element.GetAnchorColumn()] = null;
             element.Despawn();
         }
 
         public void SwapElements(MatchThreeElement element1, MatchThreeElement element2, int layer=0)
         {
-            Vector2Int element1Position = new Vector2Int(element1.AnchorColumn, element1.AnchorRow); 
+            Vector2Int element1Position = new Vector2Int(element1.GetAnchorColumn(), element1.GetAnchorRow()); 
             Vector2Int element2Position = new Vector2Int(element2.AnchorColumn, element2.AnchorRow);
             
             //Swap references
@@ -433,10 +433,9 @@ namespace Kuantech.Puzzle.MatchThree
             Tiles[layer][element2Position.y, element2Position.x] = element1;
             
             //Swap Row & Col fields 
-            element1.AnchorRow = element2Position.y;
-            element1.AnchorColumn = element2Position.x;
-            element2.AnchorRow = element1Position.y;
-            element2.AnchorColumn = element1Position.x;
+            GridTileCoordinate element2Coord = element2.CurrentCoordinate as GridTileCoordinate;
+            element2.CurrentCoordinate = element1.CurrentCoordinate;
+            element1.CurrentCoordinate = element2Coord;
 
             element1.MoveToRowCol(element2Position.y, element2Position.x, TileSpeed);
             element2.MoveToRowCol(element1Position.y, element1Position.x, TileSpeed);

@@ -63,7 +63,7 @@ namespace Kuantech.Utils
         /// <returns></returns>
         private ConfigSource GetConfigSourceFromConfigKey(string configKey)
         {
-            if (_configIdToSource.IsNullOrEmpty()) return null;
+            if (_configIdToSource.IsNullOrEmpty() || !_configIdToSource.ContainsKey(configKey)) return null;
             return _configIdToSource[configKey];
         } 
 

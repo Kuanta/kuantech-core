@@ -24,15 +24,14 @@ namespace Kuantech.Core.FX
 
         [Header("Animations")]
         public Animator Animator;
-
+        public AnimationData AnimationData;
+        
         [Header("Shader Effect")] 
         [Tooltip("If set to true, renderers will be detected")] public bool DetectAllRenderers = true;
         public ShaderEffect ShaderEffect;
         public string ShaderEffectId;
         [NonSerialized] public ShaderEffect PlayedShaderEffect;
 
-
-        private static readonly int Play1 = Animator.StringToHash("Play");
 
         //If an effect is under the protection of effects library, it can't be destroyed with timed calls
         [NonSerialized] public bool SpawnedFromPool = false; //This is used to determine if the effect was spawned from the pool or not. 
@@ -111,7 +110,10 @@ namespace Kuantech.Core.FX
             if (Vfx != null) Vfx.Play(playSettings);
             
             //Animation
-            if(Animator != null) Animator.SetTrigger(Play1);
+            if (Animator != null)
+            {
+                AnimationData.SetParameters(Animator);
+            }
             
             //Shader Effect
             if (ShaderEffect != null)

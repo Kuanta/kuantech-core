@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Kuantech.Core;
+using Kuantech.Core.FX;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -45,6 +46,9 @@ namespace Kuantech.Utils
         
         [Header("UI Draggable")]
         [SerializeField] private RectTransform RectTransform;
+        
+        [Header("Effects")]
+        [SerializeField] private EffectPlayer DropEffect;
         
         //Runtime
         [NonSerialized] public Draggable ProxyDraggable;
@@ -470,8 +474,18 @@ namespace Kuantech.Utils
             OnSuccesfullDropEvent?.Invoke(dropInformation);
             if (ProxyDraggable != null)
             {
+                ProxyDraggable.PlayDroppedEffect();
                 ProxyDraggable.OnSuccesfullDropAsProxyDraggable(dropInformation);
             }
+            else
+            {
+                PlayDroppedEffect();
+            }
+        }
+
+        protected virtual void PlayDroppedEffect()
+        {
+            DropEffect.PlayEffectAtPosition(transform.position, Quaternion.identity);
         }
         
         /// <summary>

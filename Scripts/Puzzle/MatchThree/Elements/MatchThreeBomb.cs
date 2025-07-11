@@ -57,7 +57,7 @@ namespace Kuantech.Puzzle.MatchThree
                 for (int c = -1; c < 2; ++c)
                 {
                     if (r == 0 && c == 0) continue;
-                    MatchThreeElement element = ParentMatchThreeBoard.GetMatchThreeElement(AnchorRow - r, AnchorColumn - c);
+                    MatchThreeElement element = ParentMatchThreeBoard.GetMatchThreeElement(GetAnchorRow() - r, GetAnchorColumn() - c);
                     if(element == null) continue;
                     elements.Add(element);
                 }
@@ -70,7 +70,7 @@ namespace Kuantech.Puzzle.MatchThree
             List<MatchThreeElement> elements = new List<MatchThreeElement>();
             for (int c = 0; c < ParentMatchThreeBoard.ColumnCount; ++c)
             {
-                MatchThreeElement element = ParentMatchThreeBoard.GetMatchThreeElement(AnchorRow, c);
+                MatchThreeElement element = ParentMatchThreeBoard.GetMatchThreeElement(GetAnchorRow(), c);
                 if(element == null) continue;
                 elements.Add(element);
             }
@@ -82,7 +82,7 @@ namespace Kuantech.Puzzle.MatchThree
             List<MatchThreeElement> elements = new List<MatchThreeElement>();
             for (int r = 0; r < ParentMatchThreeBoard.RowCount; ++r)
             {
-                MatchThreeElement element = ParentMatchThreeBoard.GetMatchThreeElement(r, AnchorColumn);
+                MatchThreeElement element = ParentMatchThreeBoard.GetMatchThreeElement(r, GetAnchorColumn());
                 if (element == null) continue;
                 elements.Add(element);
             }
