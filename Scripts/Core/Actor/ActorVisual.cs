@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Kuantech.Core.FX;
 using Kuantech.Rpg.Inventory;
 using Kuantech.Utils;
@@ -50,7 +51,7 @@ namespace Kuantech.Core
         public List<InPlaceItemEntry> InPlaceItemsList;
 
         [Header("Shader Effects")] 
-        public ShaderEffect HitShaderEffect;
+        public List<ShaderEffect> ShaderEffects;
         
         //Runtime
         public Actor ParentActor;
@@ -185,6 +186,25 @@ namespace Kuantech.Core
             
             //Toggles the default visual part
             ToggleVisualPartForSlot(slotType, true);
+        }
+        #endregion
+
+        #region Shader Effects
+
+        public void AddShaderEffect(ShaderEffect effect)
+        {
+            if (effect == null) return;
+            ShaderEffects.Add(effect);
+            effect.DetectAllRenderers(gameObject);
+        }
+
+        public void DetectShaderEffects()
+        {
+            ShaderEffects = GetComponentsInChildren<ShaderEffect>().ToList();
+            foreach (var shaderEffect in ShaderEffects)
+            {
+                shaderEffect.DetectAllRenderers(gameObject);
+            }
         }
         #endregion
         

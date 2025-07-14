@@ -4,50 +4,57 @@ using UnityEngine;
 
 namespace Kuantech.Core.Combat
 {
-    [Serializable]
+    /// <summary>
+    /// Stores parameters for status effect
+    /// </summary>
     public class StatusEffectData
     {
-        public EffectPlayer EffectPlayer;
-        public MetadataAsset MetaData;
+        public float TickPeriod;
         public float Duration;
-        public bool Stackable;
-        [Tooltip("For non stackable status effects, the existing one will be refreshed")] public bool RefreshOnApply;
     }
-
+    
     [Serializable]
-    public abstract class StatusEffect
+    public class StatusEffect
     {
         public Actor Target;
-        public float TickPeriod;
         
         public float ApplyTime;
         public float LastTickTime;
         public bool ToBeRemoved;
         
-        public StatusEffectData StatusEffectData;
-
+        //Runtime
+        public StatusEffectAsset StatusEffectAsset;
+        public StatusEffectData ApplyData;
+        public int Rank;
+        
         [NonSerialized] public Effect StatusFx; //The effect that is played when the status effect is applied
 
-        public string GetId()
+        public virtual void Initialize(StatusEffectAsset asset, StatusEffectData applyData)
         {
-            return StatusEffectData.MetaData.GetId();
+            StatusEffectAsset = asset;
+            ApplyData = applyData;
         }
         
-        public virtual void Init(StatusEffectData statusEffectData)
+        public string GetId()
         {
-            StatusEffectData = statusEffectData;
+            return StatusEffectAsset.GetId();
         }
 
+        public virtual void SetRank(int rank)
+        {
+            Rank = rank;
+        }
+        
         public virtual void OnAdd(Actor targetActor)
         {
             Target = targetActor;
             ApplyTime = Time.time;
             LastTickTime = Time.time;
 
-            if (!StatusEffectData.EffectPlayer.IsNull())
+            if (!StatusEffectAsset.EffectPlayer.IsNull())
             {
                 EffectPlaySettings settings = EffectPlaySettings.GetPlayAtObjectSettings(Target.transform, Vector3.zero, Quaternion.identity);
-                StatusFx = StatusEffectData.EffectPlayer.PlayEffect(settings);
+                StatusFx = StatusEffectAsset.EffectPlayer.PlayEffect(settings);
             }
         }
         
@@ -56,17 +63,23 @@ namespace Kuantech.Core.Combat
             
         }
 
+        #region Getters
+
         public float GetDuration()
         {
-            if (StatusEffectData == null) return -1;
-            return StatusEffectData.Duration;
+            return ApplyData.Duration;
         }
 
         public float GetElapsedTime()
         {
             return Time.time - ApplyTime;
         }
-        
+
+        public float GetTickRate()
+        {
+            return ApplyData.TickPeriod;
+        }
+                
         /// <summary>
         /// Returns the remaining time
         /// </summary>
@@ -90,6 +103,9 @@ namespace Kuantech.Core.Combat
             float elapsed = GetElapsedTime();
             return Mathf.Clamp01(elapsed / duration);
         }
+        #endregion
+ 
+
         
         /// <summary>
         /// Checks if effect is expired

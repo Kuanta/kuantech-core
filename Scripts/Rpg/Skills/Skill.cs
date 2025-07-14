@@ -21,6 +21,7 @@ namespace Kuantech.Rpg.Skills
         private Dictionary<string, SkillVariable> _skillVariables;
         
         //Runtime
+        [NonSerialized] public int SkillRank;
         [NonSerialized] public SpellBook ParentSpellBook;
         [NonSerialized] public SkillCastData CurrentSkillCastData;
         [NonSerialized] public int CurrentSkilLBehaviourIndex;
@@ -57,6 +58,11 @@ namespace Kuantech.Rpg.Skills
             Reset();
         }
 
+        public void SetSkillRank(int rank)
+        {
+            SkillRank = rank;
+        }
+
         #region Checks
 
         public bool IsCasting()
@@ -78,8 +84,6 @@ namespace Kuantech.Rpg.Skills
         }
         #endregion
 
-
-        
         #region Lifecycle
         public bool Cast(SkillCastData castData)
         {
@@ -141,7 +145,6 @@ namespace Kuantech.Rpg.Skills
         }
 
         #endregion
-
   
         #region SkillVariables
         
@@ -164,7 +167,7 @@ namespace Kuantech.Rpg.Skills
         {
             SkillVariable variable = GetSkillVariable(variableId);
             if (variable == null) return defaultValue;
-            return variable.GetValue();
+            return variable.GetValue(SkillRank);
         }
         #endregion
 

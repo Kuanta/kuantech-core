@@ -50,6 +50,11 @@ public class TrajectoryFollower : MonoBehaviour
         _totalDistance = Vector3.Distance(_startPosition, _endPosition);
     }
 
+    public bool IsMoving()
+    {
+        return _isMoving;
+    }
+    
     private void Update()
     {
         if (!_isMoving) return;
@@ -60,8 +65,13 @@ public class TrajectoryFollower : MonoBehaviour
 
         // Evaluate speed and height from curves
         float speed = SpeedCurve.Evaluate(progress) * Speed;
+       
         float heightSpeed = HeightCurve.Evaluate(progress) * RiseSpeed;
-
+        if (progress >= 1.0f)
+        {
+            heightSpeed = 0.0f;
+        }
+        
         Vector3 towardsEndPoint = (_endPosition - transform.position).normalized;
         
         Vector3 finalVelocity = towardsEndPoint * speed + heightSpeed * OffsetVector;

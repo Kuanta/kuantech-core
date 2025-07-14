@@ -48,7 +48,7 @@ namespace Kuantech.Core.Combat
                     continue;
                 }
 
-                if (effect.TickPeriod > 0 && Time.time - effect.LastTickTime >= effect.TickPeriod)
+                if (effect.GetTickRate() > 0 && Time.time - effect.LastTickTime >= effect.GetTickRate())
                 {
                     effect.OnTick();
                     effect.LastTickTime = Time.time;
@@ -79,7 +79,7 @@ namespace Kuantech.Core.Combat
         {
             if (_statusEffectsMap == null) _statusEffectsMap = new Dictionary<string, List<StatusEffect>>();
             string effectId = effect.GetId();
-            bool stackable = effect.StatusEffectData.Stackable;
+            bool stackable = effect.StatusEffectAsset.Stackable;
             
             //Is status effect exists
             if (!_statusEffectsMap.ContainsKey(effectId))
@@ -95,7 +95,7 @@ namespace Kuantech.Core.Combat
             }
             
             //there are already status effects of the same type and its not stackable
-            if (effect.StatusEffectData.RefreshOnApply)
+            if (effect.StatusEffectAsset.RefreshOnApply)
             {
                 //Don't add but refresh the existing one
                 _statusEffectsMap[effectId][0].Refresh();

@@ -24,13 +24,13 @@ namespace Kuantech.Rpg.Skills
         }
         
         #region Skill Management
-
-        public void AddSkill(SkillDataAsset skillAsset)
+        public Skill AddSkill(SkillDataAsset skillAsset)
         {
-            if (HasSkill(skillAsset)) return;
+            if (HasSkill(skillAsset)) return null;
             Skill skill = new Skill();
             skill.Initialize(this, skillAsset);
             _skills[skillAsset.SkillId] = skill;
+            return skill;
         }
 
         public bool HasSkill(SkillDataAsset skilLDataAsset)

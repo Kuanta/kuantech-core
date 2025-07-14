@@ -14,32 +14,22 @@ namespace Kuantech.Rpg.Skills
     }
     
     /// <summary>
-    /// Numeric, scalable numeric variable that can be used in skills.
+    /// Numeric, scalable numeric variable that can be used in skills. Skill variables also scale with attributes.
     /// </summary>
     public class SkillVariable
     {
         public SkillVariableData SkillVariableData;
-        public int CurrentRank;
 
         [NonSerialized] public Skill ParentSkill;
-
-        public SkillVariable()
-        {
-            CurrentRank = 0;
-        }
 
         public SkillVariable(SkillVariableData data)
         {
             SkillVariableData = data;
         }
 
-        public void SetRank(int rank)
+        public float GetValue(int rank = 0)
         {
-            CurrentRank = rank;
-        }
-        public float GetValue()
-        {
-            return GetValueByRank(CurrentRank);
+            return GetValueByRank(rank);
         }
 
         public float GetValueByRank(int rank)

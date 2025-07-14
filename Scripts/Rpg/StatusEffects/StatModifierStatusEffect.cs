@@ -10,21 +10,29 @@ namespace Kuantech.Core.Combat
         public StatModifierData StatModifierData;
     }
     
+    [Serializable]
     public class StatModifierStatusEffect : StatusEffect
     {
         public StatModifier Modifier;
 
-        public override void Init(StatusEffectData data)
+        public override void Initialize(StatusEffectAsset statusEffectAsset, StatusEffectData applyData)
         {
-            base.Init(data);
-            if (data is StatModifierStatusEffectData modifierData)
+            base.Initialize(statusEffectAsset, applyData);
+            if (applyData is StatModifierStatusEffectData modifierData)
             {
                 Modifier = new StatModifier(modifierData.StatModifierData);
             }
             else
             {
-                Debug.LogError($"Invalid StatusEffectData type: {data.GetType().Name}. Expected ModifierStatusEffectData.");
+                Debug.LogError($"Invalid StatusEffectData type. Expected ModifierStatusEffectData.");
             }    
+        }
+
+        public override void SetRank(int rank)
+        {
+            base.SetRank(rank);
+            if (Modifier == null) return;
+            Modifier.Level = rank;
         }
         
         public override void OnAdd(Actor targetActor)
