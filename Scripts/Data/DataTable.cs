@@ -25,7 +25,6 @@ namespace Kuantech.Core.Database
             public KtDataType Data;
         }
         
-        
         [Serializable]
         public class CellData
         {

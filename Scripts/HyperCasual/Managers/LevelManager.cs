@@ -8,9 +8,7 @@ using Kuantech.Puzzle;
 
 namespace Kuantech.Core
 {
-
     [Serializable]
-    public class LevelDictionary : SerializableDictionary<int, Level>{}
     public class LevelManager : SubManager
     {
         [Header("Properties")] [SerializeField]
@@ -18,8 +16,11 @@ namespace Kuantech.Core
         
         [Header("Levels List")] 
         public List<Level> LevelDictionary = new List<Level>();
+        public List<WorldDataAsset> Worlds = new List<WorldDataAsset>();
         public Level CurrentLevel;
+        
         public int CurrentLevelIndex;
+        public int CurrentWorldIndex;
         public int RepeatLastLevels = 0;
         public int MaxPowerLevel = -1;
 
@@ -27,17 +28,6 @@ namespace Kuantech.Core
         public EventHandler<LevelStateChangeData> StateChangeEvent;
         public EventHandler<int> LevelSetEvent;
         public EventHandler<Level> LevelCompletedEvent;
-
-        // public override void OnSubmanagersInitialized()
-        // {
-        //     int levelIndex = 0;
-        //     
-        //     //Load data for this
-        //     GameStateManager.LoadData(this);
-        //     
-        //     SetLevel(levelIndex);
-        //     //ChangeCurrentState(LevelState.Waiting);
-        // }
         
         public static LevelState GetCurrentState()
         {
@@ -58,7 +48,70 @@ namespace Kuantech.Core
             return GetContext<LevelManager>().CurrentLevelIndex;
         }
 
-        public virtual Level GetLevel(int levelIndex)
+        public int GetWorldIndex(int worldIndex)
+        {
+            int worldArrayIndex = worldIndex;                                                                
+            if (Worlds.Count <= worldArrayIndex)                                                             
+            {                                                                                                
+                if (RepeatLastLevels > 0)                                                                    
+                {                                                                                            
+                    RepeatLastLevels = Mathf.Min(RepeatLastLevels, Worlds.Count);                            
+                    int modulus = RepeatLastLevels - (worldArrayIndex + 1 - Worlds.Count) % RepeatLastLevels;
+                    worldArrayIndex = Worlds.Count - 1 - modulus;                                            
+                }                                                                                            
+                else                                                                                         
+                {                                                                                            
+                    worldArrayIndex = Worlds.Count - 1;                                                      
+                }                                                                                            
+            }                                                                                                
+                                                                                                 
+            return Mathf.Clamp(worldArrayIndex, 0, Worlds.Count - 1);                             
+        }
+        public virtual WorldDataAsset GetWorld(int worldIndex)
+        {
+            int worldArrayIndex = GetWorldIndex(worldIndex);
+            WorldDataAsset worldAsset = Worlds[worldArrayIndex];
+            return worldAsset;
+        }
+
+        #region World Levels
+
+        public Level GetWorldLevelPrefab(int worldIndex, int levelIndex)
+        {
+            WorldDataAsset worldDataAsset = GetWorld(worldIndex);
+            if (worldDataAsset == null) return null;
+            Level levelPrefab = worldDataAsset.GetLevelPrefab(levelIndex);
+            if(levelPrefab == null) return null;
+            return levelPrefab;
+        }
+        
+        [Button("Set World Level")]
+        public void SetWorldLevel(int worldIndex, int levelIndex)
+        {
+            CurrentWorldIndex = GetWorldIndex(worldIndex);
+            WorldDataAsset worldDataAsset = GetWorld(worldIndex);
+            levelIndex = Mathf.Clamp(levelIndex, 0, worldDataAsset.Levels.Count);
+            CurrentLevelIndex = levelIndex;
+            if (CurrentLevel != null && CurrentLevel.WorldIndex == worldIndex && CurrentLevelIndex == levelIndex) return;
+            if (CurrentLevel != null)
+            {
+                ClearCurrentLevel();
+            }
+            Level levelPrefab = worldDataAsset.GetLevelPrefab(levelIndex);
+            Level level = InstantiateLevel(levelPrefab);
+            CurrentLevel = level;
+            CurrentLevel.WorldIndex = worldIndex;
+            CurrentLevel.WorldDataAsset = worldDataAsset;
+            CurrentLevel.LevelNumber = levelIndex;
+            CurrentLevel.OnLevelSet();
+            CurrentLevel.SetupLevel();    
+        }
+        
+        #endregion
+        
+        #region Flat Levels List
+
+        public virtual Level GetLevelPrefab(int levelIndex)
         {
             int levelArrayIndex = levelIndex;
             if (LevelDictionary.Count <= levelIndex)
@@ -75,18 +128,9 @@ namespace Kuantech.Core
             }
 
             levelArrayIndex = Mathf.Clamp(levelArrayIndex, 0, LevelDictionary.Count - 1);
-            Level level = Instantiate(LevelDictionary[levelArrayIndex].gameObject).GetComponent<Level>();
-            level.transform.position = Vector3.zero;
-            level.transform.rotation = Quaternion.identity;
-            
-            //Usefull for repeting last x levels. If there are 20 levels, and we are trying to get 41th level,
-            //this value will be the index of the corresponding repeated level in the levels array
-            level.LevelIndex = levelArrayIndex; 
-            level.LevelNumber = levelIndex;
-            level.PowerLevel = levelIndex;
-            return level;
+            return LevelDictionary[levelArrayIndex];
         }
-
+        
         /// <summary>
         /// Sets the level with the given index
         /// </summary>
@@ -99,11 +143,16 @@ namespace Kuantech.Core
             if (CurrentLevel != null && levelIndex == CurrentLevel.LevelNumber) return; //Don't destroy and create the same level
             if (CurrentLevel != null && CurrentLevel.LevelNumber != levelIndex)
             {
-                CurrentLevel.ClearLevel();
-                CurrentLevel.DestroyLevel();
-                CurrentLevel = null;
+                ClearCurrentLevel();
             }
-            CurrentLevel = GetLevel(CurrentLevelIndex);
+
+            Level levelPrefab = GetLevelPrefab(levelIndex);
+            Level level = InstantiateLevel(levelPrefab);
+            
+            //Usefull for repeting last x levels. If there are 20 levels, and we are trying to get 41th level,
+            //this value will be the index of the corresponding repeated level in the levels array
+            level.LevelNumber = levelIndex;
+            CurrentLevel = level;
 
             //Set power level
             int powerLevel = levelIndex;
@@ -114,26 +163,33 @@ namespace Kuantech.Core
             UpdateLevelIndex();
         }
         
-        public void SetStage(int stageIndex)
+        /// <summary>
+        /// Instantiates and positions a level
+        /// </summary>
+        /// <param name="levelPrefab"></param>
+        public Level InstantiateLevel(Level levelPrefab)
         {
-            if (CurrentLevel is PuzzleLevel puzzleLevel)
-            {
-                puzzleLevel.SetStage(stageIndex);
-            }
+            Level level = Instantiate(levelPrefab.gameObject).GetComponent<Level>();  
+            level.transform.position = Vector3.zero;                
+            level.transform.rotation = Quaternion.identity;
+            return level;
         }
         
+        public void ClearCurrentLevel()
+        {
+            if (CurrentLevel == null) return;
+            CurrentLevel.ClearLevel();
+            CurrentLevel.DestroyLevel();
+            CurrentLevel = null;
+        }
+        #endregion
+
         [ConsoleMethod("setLevel", "Sets the level")]
         public static void SetLevelCC(int levelIndex)
         {
             GetContext<LevelManager>().SetLevel(levelIndex, true);
         }
-        
-        [ConsoleMethod("setStage", "Sets the stage")]
-        public static void SetStageCC(int stageIndex)
-        {
-            GetContext<LevelManager>().SetStage(stageIndex);
-        }
-        
+
         [ConsoleMethod("resetLevel", "Resets the level")]
         public static void ResetLevelCC()
         {
@@ -142,7 +198,7 @@ namespace Kuantech.Core
             context.CurrentLevel.RestartLevel();
         }
         
-        #region Lifecycle
+        #region Level - Lifecycle
         public virtual void ChangeCurrentState(LevelState newState)
         {
             if (CurrentLevel == null) return;

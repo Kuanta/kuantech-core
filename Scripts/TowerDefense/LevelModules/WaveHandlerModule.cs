@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Kuantech.Core;
 using Kuantech.RealTimeStrategy;
+using Kuantech.Rpg;
 using Kuantech.Utils;
 using UnityEngine;
 using UnityEngine.Events;
@@ -14,6 +15,7 @@ namespace Kuantech.TowerDefense
         [Header("Properties")]
         public int EnemyFactionId = 1;
         public float WaveCompletedDelay = 0.5f;
+        public bool UseLevelPowerAsActorLevel = true;
         
         [Header("Summoners")]
         public List<ActorSummoner> ActorSummoners;
@@ -139,8 +141,6 @@ namespace Kuantech.TowerDefense
  
         public void SpawnNextWaveElement()
         {
-           
-
             WaveEntry nextEntry = PeekNextWaveEntry();
             if (!CanSpawnEnemy(nextEntry)) return;
             if (nextEntry.SpawnableIndex < 0) return;
@@ -150,6 +150,12 @@ namespace Kuantech.TowerDefense
             ActorBlueprint actorBlueprint = GetActorTemplate(nextEntry.SpawnableIndex);
             if (actorBlueprint == null) return;
             Actor spawned = summoner.SpawnActor(actorBlueprint);
+            StatsModule sm = spawned.GetModule<StatsModule>();
+            if (sm != null && UseLevelPowerAsActorLevel)
+            {
+                sm.SetLevel(ParentLevel.GetPowerLevel());
+            }
+            
             if (spawned == null) return;
             _lastSpawnTime = Time.time;
             OnEnemySpawned?.Invoke(spawned);

@@ -29,7 +29,7 @@ namespace Kuantech.Midcore
                 Debug.LogWarning("Level manager is null");
                 return;
             }
-            lm.SetLevel(levelIndex); //todo(levels): Implement world index
+            lm.SetWorldLevel(worldIndex, levelIndex); //todo(levels): Implement world index
         }
 
         public static string GetMenuSceneName()

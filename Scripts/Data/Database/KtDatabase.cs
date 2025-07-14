@@ -8,15 +8,30 @@ using UnityEngine;
 
 namespace Kuantech.Core.Database
 {
-    public abstract class KtDatabase : MonoBehaviour
+    public class KtDatabase : MonoBehaviour
     {
         [SerializeField] private string Name;
 
         [SerializeField] private DatabaseSheetReader SheetReader;
         
+        public List<DataTable> Tables;
+        
+        private Dictionary<string, DataTable> _tablesLookup;
+        
         public virtual async UniTask Initialize()
         {
             await UpdateDatabase();
+            _tablesLookup = new Dictionary<string, DataTable>();
+            foreach (var table in Tables)
+            {
+                if (_tablesLookup.ContainsKey(table.TableName))
+                {
+                    Debug.LogError("Duplicate table name found: " + table.TableName + ". Please ensure all table names are unique.");
+                    continue;
+                }
+                _tablesLookup[table.TableName] = table;
+                table.BuildTable();
+            }
         }
         
         [Button("Update Database")]
@@ -39,12 +54,23 @@ namespace Kuantech.Core.Database
         /// <returns></returns>
         public virtual KtDataType GetEntry(string table, string entryId, string key)
         {
-            throw new NotImplementedException();
+            if (!_tablesLookup.ContainsKey(table))
+            {
+                Debug.LogError($"Table '{table}' not found in database.");
+                return null;
+            }
+
+            var dbTable = _tablesLookup[table];
+            if (dbTable == null) return null;
+            return dbTable.GetDataEntry(entryId, key);
         }
 
         #region Database Info
 
-        public abstract List<DataTable> GetTables();
+        public virtual List<DataTable> GetTables()
+        {
+            return Tables;
+        }
 
         #endregion
         
@@ -105,6 +131,24 @@ namespace Kuantech.Core.Database
             }
 
             return defaultValue;
+        }
+
+        public List<DataTable.RowData> Query(string tableName, Predicate<DataTable.RowData> predicate)
+        {
+            if (!_tablesLookup.TryGetValue(tableName, out var table))
+            {
+                return null;
+            }
+            return table.Rows.FindAll(predicate);
+        }
+
+        public DataTable.RowData FindRowData(string tableName, Predicate<DataTable.RowData> predicate)
+        {
+            if (!_tablesLookup.TryGetValue(tableName, out var table))
+            {
+                return null;
+            }
+            return table.Rows.Find(predicate);
         }
         #endregion
 

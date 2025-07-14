@@ -38,11 +38,14 @@ namespace Kuantech.Core
         
         //Runtime
         public LevelPhaseSystem PhaseSystem;
-        [NonSerialized] public int LevelIndex;
         [NonSerialized] public int LevelNumber;
         [NonSerialized] public int PowerLevel;
         private LevelState _levelState;
         public LevelUI LevelUI;
+        
+        //World Data
+        [NonSerialized] public WorldDataAsset WorldDataAsset = null;
+        [NonSerialized] public int WorldIndex;
         
         //Spawnables
         public HashSet<ISpawnable> SpawnedActors = new HashSet<ISpawnable>();
@@ -273,11 +276,6 @@ namespace Kuantech.Core
         }
         #endregion
         
-
-        public virtual float GetCurrentScore()
-        {
-            return 0f;
-        }
         #endregion
 
         #region Spawnables
@@ -321,5 +319,22 @@ namespace Kuantech.Core
             return null;
         }
         #endregion
+        
+        #region Level Info
+        public virtual float GetCurrentScore()
+        {
+            return 0f;
+        }
+
+        public virtual int GetPowerLevel()
+        {
+            if (WorldDataAsset != null)
+            {
+                return WorldDataAsset.GetPowerLevel(WorldIndex, LevelNumber);
+            }
+            return PowerLevel;
+        }
+        #endregion
+
     }
 }

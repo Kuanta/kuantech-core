@@ -93,28 +93,28 @@ namespace Kuantech.Core.HyperCasual.Runner
         
         [FormerlySerializedAs("_levelDesigns")] public LevelDesigns LevelDesigns;
 
-        public override Level GetLevel(int levelIndex)
-        {
-            //Instantiate empty level prefab
-            RunnerLevel runnerLevel = null;
-            if (GeneratedLevels)
-            {
-                runnerLevel = GenerateLevel(levelIndex);
-            }
-            else
-            {
-                var levelPrefab = LevelDictionary.Count <= levelIndex ? LevelDictionary[LevelDictionary.Count - 1].gameObject : //Get Last element
-                    LevelDictionary[levelIndex].gameObject;
-                runnerLevel = Instantiate(levelPrefab).GetComponent<RunnerLevel>();
-                runnerLevel.transform.position = Vector3.zero;
-                runnerLevel.transform.rotation = Quaternion.identity;
-                runnerLevel.LevelNumber = levelIndex;
-            }
-            if (runnerLevel == null) throw new Exception("Level is null!");
-            //todo(gameplay): Get power level and chunk count
-            runnerLevel.SetupLevel();
-            return runnerLevel;
-        }
+        // public override Level GetLevel(int levelIndex)
+        // {
+        //     //Instantiate empty level prefab
+        //     RunnerLevel runnerLevel = null;
+        //     if (GeneratedLevels)
+        //     {
+        //         runnerLevel = GenerateLevel(levelIndex);
+        //     }
+        //     else
+        //     {
+        //         var levelPrefab = LevelDictionary.Count <= levelIndex ? LevelDictionary[LevelDictionary.Count - 1].gameObject : //Get Last element
+        //             LevelDictionary[levelIndex].gameObject;
+        //         runnerLevel = Instantiate(levelPrefab).GetComponent<RunnerLevel>();
+        //         runnerLevel.transform.position = Vector3.zero;
+        //         runnerLevel.transform.rotation = Quaternion.identity;
+        //         runnerLevel.LevelNumber = levelIndex;
+        //     }
+        //     if (runnerLevel == null) throw new Exception("Level is null!");
+        //     //todo(gameplay): Get power level and chunk count
+        //     runnerLevel.SetupLevel();
+        //     return runnerLevel;
+        // }
 
         private int GetChunkCount(int levelIndex)
         {
