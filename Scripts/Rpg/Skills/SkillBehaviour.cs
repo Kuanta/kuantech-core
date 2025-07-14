@@ -77,13 +77,13 @@ namespace Kuantech.Rpg.Skills
         
         #region Lifecycle
 
-        public void Initialize(Skill parentSkill, SkillBehaviourData behaviourData)
+        public virtual void Initialize(Skill parentSkill, SkillBehaviourData behaviourData)
         {
             ParentSkill = parentSkill;
             BehaviourData = behaviourData;
         }
 
-        public void StartBehaviour(SkillCastData skillCastData)
+        public virtual void StartBehaviour(SkillCastData skillCastData)
         {
             PlayedEffects.Clear();
             CurrentSkillCastData = skillCastData;
@@ -214,14 +214,18 @@ namespace Kuantech.Rpg.Skills
             {
                 playRot = Quaternion.LookRotation(effectDir);
             }
-            EffectPlaySettings playSettings = EffectPlaySettings.GetPlayAtPositionSettings(effectPos, playRot);
+            Quaternion localRot =
+                Quaternion.Inverse(ParentSkill.ParentSpellBook.Actor.transform.rotation) * playRot;
+        
+            Vector3 localPos = effectPos - ParentSkill.ParentSpellBook.Actor.transform.position;
+            EffectPlaySettings playSettings = EffectPlaySettings.GetPlayAtObjectSettings(ParentSkill.ParentSpellBook.Actor.transform, localPos, localRot);
 
             //Try to play the effect on actor effect module if possible
             EffectsModule effectModule = ParentSkill.ParentSpellBook.Actor.GetModule<EffectsModule>();
             Effect effect;
             if (effectModule != null)
             {
-                effect = effectModule.PlayEffectOnActor(effectPlayer);
+                effect = effectModule.PlayEffectOnActor(effectPlayer, localPos, localRot);
                 if (effect == null)
                 {
                     return null;

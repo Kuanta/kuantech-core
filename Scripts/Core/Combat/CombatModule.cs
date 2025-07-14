@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using Kuantech.Core.Combat;
 using Kuantech.Core.Utils;
 using Kuantech.Rpg;
+using Kuantech.Rpg.Skills;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -17,6 +19,10 @@ namespace Kuantech.Core
         RangedRaycast, //For raycast based attacks
         Target,
         TargetProjectile,
+        Linear2D,
+        Arc2D,
+        Circle2D,
+        SkillCast, //Casts a skill, given in the attack pattern
     }
     
     /// <summary>
@@ -41,6 +47,8 @@ namespace Kuantech.Core
         public float WindupTime;
         public float AttackTime;
         public float Cooldown;
+        public float AttackEndTime; //How many seconds does attack last since start. 
+        public bool Continious; //Continious will attack every 'attack time' during the attack
         
         [Header("Knosckback")]
         public float Knockback;
@@ -48,9 +56,13 @@ namespace Kuantech.Core
         
         [Header("Projectile")]
         public Projectile ProjectilePrefab;
+
+        [Header("Skill")] 
+        public SkillDataAsset SkillToCast;
         
         [Header("Animation")]
         public AnimationData AttackAnimationData;
+        
         
         public DamageInfo GetDamageInfo()
         {
@@ -98,10 +110,13 @@ namespace Kuantech.Core
         private bool _isAttacking = false;
         private bool _attackWindupCompleted = false;
         private bool _attacked = false;
-        private float _lastAttackTime;
+        private float _lastAttackImplementationTime; //Last time an attack implementation has been called. Useful for continious attacks
+        private float _lastAttackCompleteTime;
         private int _attackIndex = 0;
         private Vector3 _attackDirection = Vector3.forward;
         private int _currentComboIndex;
+        
+        public HashSet<int> FactionFilter = new HashSet<int>(); //Faction filter for the attack, if empty, all actors are valid targets
 
         public override void OnModulesInitialized()
         {
@@ -121,27 +136,10 @@ namespace Kuantech.Core
             {
                 OnAttackWindupCompleted();
             }
-            if (elapsedTime >= currentPattern.AttackTime && !_attacked)
+            if (elapsedTime >= currentPattern.AttackTime && !_attacked || 
+                (currentPattern.Continious &&  (Time.time - _lastAttackImplementationTime) >= currentPattern.AttackTime))
             {
-                _attacked = true;
-                switch (currentPattern.AttackType)
-                {
-                    case AttackTypes.None:
-                        break;
-                    case AttackTypes.Arc:
-                        break;
-                    case AttackTypes.Linear:
-                        break;
-                    case AttackTypes.Circle:
-                        break;
-                    case AttackTypes.Target:
-                        TargetAttack();
-                        break;
-                    case AttackTypes.RangedProjectile:
-                        RangedProjectileAttack();
-                        break;
-                }
-                AttackedEvent?.Invoke(this);
+                RunAttackImplementation();
             }
 
             if (elapsedTime > GetCurrentAttackPattern().Cooldown)
@@ -163,6 +161,7 @@ namespace Kuantech.Core
 
 
         #endregion
+        
         #region AttackPositions
 
         public Vector3 GetAttackPosition()
@@ -173,13 +172,69 @@ namespace Kuantech.Core
         #endregion
         
         #region Attack Implementations
-                
+
+        private void RunAttackImplementation()
+        {
+            _attacked = true;
+            switch (GetCurrentAttackPattern().AttackType)
+            {
+                case AttackTypes.None:
+                    break;
+                case AttackTypes.Arc:
+                    ArcAttack();
+                    break;
+                case AttackTypes.Arc2D:
+                    ArcAttack2D();
+                    break;
+                case AttackTypes.Linear:
+                    break;
+                case AttackTypes.Circle:
+                    break;
+                case AttackTypes.Target:
+                    TargetAttack();
+                    break;
+                case AttackTypes.RangedProjectile:
+                    RangedProjectileAttack();
+                    break;
+                case AttackTypes.SkillCast:
+                    SkillCastAttack();
+                    break;
+            }
+
+            _lastAttackImplementationTime = Time.time;
+            AttackedEvent?.Invoke(this); //Maybe we shouldn't call this here
+        }
+
+        public void ArcAttack()
+        {
+            AttackPattern currPattern = GetCurrentAttackPattern();
+            Vector3 attackPoint = GetAttackPosition();
+            Vector3 forward = _attackDirection.normalized;
+            float range = currPattern.Range;
+            float angle = currPattern.Angle;
+            
+        }
+
+        public void ArcAttack2D()
+        {
+            AttackPattern currPattern = GetCurrentAttackPattern();
+            Vector3 attackPoint = GetAttackPosition();
+            Vector3 forward = _attackDirection.normalized;
+            float range = currPattern.Range;
+            float angle = currPattern.Angle;
+            List<Actor> actors = CombatUtilities.GetActorsInArc2D(attackPoint, forward, range, angle, Targets, FactionFilter);
+
+            foreach (var actor in actors)
+            {
+                DamageActor(actor);
+            }
+        }
+        
         /// <summary>
         /// Damages the target if in range
         /// </summary>
         public void TargetAttack()
         {
-            DamageInfo damage = GetDamage();
             Actor currentTarget = GetCurrentTarget();
             if (currentTarget == null ||
                 !currentTarget.IsAlive()) return;
@@ -189,15 +244,7 @@ namespace Kuantech.Core
                 return;
             }
             
-            HitInfo hitInfo = new HitInfo()
-            {
-                Hitter = gameObject,
-                DamageInfo = damage,
-                HitDirection = _attackDirection,
-                KnockbackForce = GetCurrentAttackPattern().Knockback,
-                KnockbackDuration = GetCurrentAttackPattern().KnockbackTime
-            };
-             currentTarget.OnHit(hitInfo);
+            DamageActor(currentTarget);
         }
 
         public void RangedProjectileAttack()
@@ -221,6 +268,40 @@ namespace Kuantech.Core
                 projectile.Shoot(this, null, GetAttackPosition(), _attackDirection, null);
             }
             
+        }
+        
+        /// <summary>
+        /// Hits the actor with current damage parameters
+        /// </summary>
+        /// <param name="actor"></param>
+        private void DamageActor(Actor actor)
+        {
+            DamageInfo damage = GetDamage();
+            if (actor == null || !actor.IsAlive()) return;
+            HitInfo hitInfo = new HitInfo()
+            {
+                Hitter = gameObject,
+                DamageInfo = damage,
+                HitDirection = _attackDirection,
+                KnockbackForce = GetCurrentAttackPattern().Knockback,
+                KnockbackDuration = GetCurrentAttackPattern().KnockbackTime
+            };
+            actor.OnHit(hitInfo);
+        }
+
+        private void SkillCastAttack()
+        {
+            AttackPattern currPattern = GetCurrentAttackPattern();
+            if (currPattern.SkillToCast == null) return;
+            SpellBook spellBook = Actor.GetModule<SpellBook>();
+            if (spellBook == null) return;
+            SkillCastData skillCastData = new SkillCastData()
+            {
+                CastDirection = _attackDirection,
+                CastPosition = GetAttackPosition(),
+                CastTarget = GetCurrentTarget(),
+            };
+            spellBook.CastSkill(currPattern.SkillToCast, skillCastData);
         }
         #endregion
 
@@ -250,7 +331,7 @@ namespace Kuantech.Core
             
             OnAttackStarted(attackDirection);
 
-            float timeSinceLastAttack = _attackStartTime - _lastAttackTime;
+            float timeSinceLastAttack = _attackStartTime - _lastAttackCompleteTime;
             if (timeSinceLastAttack < ComboRefreshTime)
             {
                 _currentComboIndex++;
@@ -359,7 +440,7 @@ namespace Kuantech.Core
         private void OnAttackCompleted()
         {
             _isAttacking = false;
-            _lastAttackTime = Time.time;
+            _lastAttackCompleteTime = Time.time;
             AttackCompletedEvent?.Invoke(this);
         }
         #endregion

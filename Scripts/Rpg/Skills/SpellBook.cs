@@ -66,6 +66,13 @@ namespace Kuantech.Rpg.Skills
             if (!HasSkill(skillDataAsset)) return false;
             return true;
         }
+
+        public override void Cleanup()
+        {
+            base.Cleanup();
+            _skills.Clear();
+        }
+        
         #endregion
 
         #region Events

@@ -24,7 +24,7 @@ namespace Kuantech.Core.Combat
         /// </summary>
         public void DetectTargets()
         {
-            List<Actor> actors = CombatUtilities.GetActorsInRange(transform.position, DetectionRadius, TargetLayerMask);
+            List<Actor> actors = CombatUtilities.GetActorsInCircle2D(transform.position, DetectionRadius, TargetLayerMask);
             DetectedAllies = new List<Actor>();
             DetectedEnemies = new List<Actor>();
             foreach (var actor in actors)

@@ -49,13 +49,13 @@ namespace Kuantech.Core.FX
         }
 
         public static EffectPlaySettings GetPlayAtObjectSettings(Transform target, Vector3 localPos,
-            Quaternion rotation)
+            Quaternion localRotation)
         {
             EffectPlaySettings settings = GetDefaultSettings();
             settings.SetPosition = true;
             settings.LocalPlayPosition = localPos;
             settings.EffectParent = target;
-            settings.LocalPlayRotation = rotation;
+            settings.LocalPlayRotation = localRotation;
             return settings;
         }
     }

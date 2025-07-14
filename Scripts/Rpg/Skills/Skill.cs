@@ -167,7 +167,7 @@ namespace Kuantech.Rpg.Skills
         {
             SkillVariable variable = GetSkillVariable(variableId);
             if (variable == null) return defaultValue;
-            return variable.GetValue(SkillRank);
+            return variable.GetValueByRank(SkillRank);
         }
         #endregion
 

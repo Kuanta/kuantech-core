@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Kuantech.Core.Combat
 {
-
+    [CreateAssetMenu(fileName = "Status Effect Assset", menuName = "Kuantech/Rpg/Status Effect Asset")]
     public class StatusEffectAsset : MetadataAsset
     {
         public EffectPlayer EffectPlayer;

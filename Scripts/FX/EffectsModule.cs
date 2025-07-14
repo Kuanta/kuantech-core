@@ -184,9 +184,9 @@ namespace Kuantech.Core.FX
         /// Plays an effect on the actor
         /// </summary>
         /// <param name="effectPlayer"></param>
-        public Effect PlayEffectOnActor(EffectPlayer effectPlayer)
+        public Effect PlayEffectOnActor(EffectPlayer effectPlayer, Vector3 localPos, Quaternion effectRotation)
         {
-            EffectPlaySettings playSettings = EffectPlaySettings.GetPlayAtObjectSettings(Actor.transform, Vector3.zero, Quaternion.identity);
+            EffectPlaySettings playSettings = EffectPlaySettings.GetPlayAtObjectSettings(Actor.transform, localPos, effectRotation);
             
             //Does the effect is already on the actor?
             Effect existingEffect = GetExistingEffect(effectPlayer.GetEffectId());

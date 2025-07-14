@@ -27,11 +27,12 @@ namespace Kuantech.Rpg.Skills
             SkillVariableData = data;
         }
 
-        public float GetValue(int rank = 0)
+        public float GetValue()
         {
+            int rank = ParentSkill.SkillRank;
             return GetValueByRank(rank);
         }
-
+        
         public float GetValueByRank(int rank)
         {
             return SkillVariableData.BaseValue + SkillVariableData.ValuePerRank * rank
