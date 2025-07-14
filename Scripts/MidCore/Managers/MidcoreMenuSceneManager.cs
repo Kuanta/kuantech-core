@@ -6,12 +6,10 @@ namespace Kuantech.Midcore
     {
         public int CurrentWorldIndex;
         public int CurrentLevelIndex;
-
         
         public string GameSceneName = "GameScene";
         
         #region Level
-
         public static int GetCurrentWorldIndex()
         {
             var ctx = GetContext<MidcoreMenuSceneManager>();
