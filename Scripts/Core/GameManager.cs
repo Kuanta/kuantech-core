@@ -28,8 +28,16 @@ namespace Kuantech.Core
         private SubManager[] _subManagers;
         private SubManager[] _sceneSubManagers;
 
+        private bool _startedGame = false;
         protected virtual void Awake()
         {
+            if (_instance != null && _instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            _instance = this;
             DontDestroyOnLoad(gameObject);
             if (LoadingScreen != null)
             {
@@ -44,6 +52,8 @@ namespace Kuantech.Core
 
         protected async void StartGame()
         {
+            if (_startedGame) return;
+            _startedGame = true;
             //Get and initialize persistent submanagers
             _subManagers = GetComponentsInChildren<SubManager>();
             SceneManager.sceneLoaded += OnSceneLoaded;
@@ -140,9 +150,15 @@ namespace Kuantech.Core
             {
                 foreach(var sceneSubManager in ctx._sceneSubManagers)
                 {
-                    sceneSubManager.OnSceneLeave();
+                    sceneSubManager.Cleanup();
                 }
                 ctx._sceneSubManagers = null;
+            }
+            
+            //Call scene leave for global managers
+            foreach (var manager in ctx._subManagers)
+            {
+                manager.OnSceneLeave();
             }
             
             //Change scene

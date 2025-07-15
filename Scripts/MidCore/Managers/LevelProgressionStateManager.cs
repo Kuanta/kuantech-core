@@ -7,6 +7,12 @@ namespace Kuantech.Midcore
     /// </summary>
     public class LevelProgressionStateManager : SubManager
     {
+        public struct LevelProgressionData
+        {
+            public int LastCompletedWorld;
+            public int LastCompletedLevel;
+        }
+        
         [SaveableField] public int LastCompletedWorld;
         [SaveableField] public int LastCompletedLevelIndex;
         
@@ -31,6 +37,22 @@ namespace Kuantech.Midcore
                 ctx.LastCompletedLevelIndex = level.LevelNumber;
             }
             ctx.SaveState();
+        }
+
+        public static LevelProgressionData GetLevelProgressionData()
+        {
+            var ctx = GetContext<LevelProgressionStateManager>();
+            if (ctx == null) return new LevelProgressionData()
+            {
+                LastCompletedLevel = -1,
+                LastCompletedWorld = -1,
+            };
+
+            return new LevelProgressionData()
+            {
+                LastCompletedWorld = ctx.LastCompletedWorld,
+                LastCompletedLevel = ctx.LastCompletedLevelIndex,
+            };
         }
     }
 }

@@ -163,6 +163,13 @@ namespace Kuantech.Core
             {
                 module.Cleanup();
             }
+            
+            //Cleanup events
+            OnDeathEvent = null;
+            OnActorStateChanged = null;
+            OnSpawnedEvent = null;
+            OnDeathEvent = null;
+            OnDespawnedEvent = null;
         }
         
         /// <summary>

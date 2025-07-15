@@ -38,6 +38,12 @@ namespace Kuantech.Midcore
             if (ctx == null) return "MenuScene";
             return ctx.MenuSceneName;
         }
+
+        public static void GoToMenuScene()
+        {
+            string menuSceneName = GetMenuSceneName();
+            GameManager.ChangeScene(menuSceneName);
+        }
    
     }
 }

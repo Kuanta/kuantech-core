@@ -2,6 +2,7 @@
 using Kuantech.Rpg;
 using Kuantech.Rpg.UI;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Kuantech.Midcore.UI
 {
@@ -9,7 +10,7 @@ namespace Kuantech.Midcore.UI
     {
         [Header("Componentes")] 
         public LevelableFloatIndicator PlayerLevelBar;
-
+        
         public override void Initialize()
         {
             base.Initialize();

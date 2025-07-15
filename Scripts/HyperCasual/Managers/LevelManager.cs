@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using IngameDebugConsole;
 using Sirenix.OdinInspector;
 using UnityEngine;
-using Kuantech.Core.HyperCasual;
-using Kuantech.Puzzle;
 
 namespace Kuantech.Core
 {
@@ -28,7 +26,16 @@ namespace Kuantech.Core
         public EventHandler<LevelStateChangeData> StateChangeEvent;
         public EventHandler<int> LevelSetEvent;
         public EventHandler<Level> LevelCompletedEvent;
-        
+
+        #region Submanager OVerrides
+
+        public override void OnSceneLeave()
+        {
+            base.OnSceneLeave();
+            ClearCurrentLevel(); //Clear current level
+        }
+
+        #endregion
         public static LevelState GetCurrentState()
         {
             LevelManager context = LevelManager.GetContext<LevelManager>();
@@ -69,6 +76,7 @@ namespace Kuantech.Core
         }
         public virtual WorldDataAsset GetWorld(int worldIndex)
         {
+            if (worldIndex < 0) worldIndex = 0;
             int worldArrayIndex = GetWorldIndex(worldIndex);
             WorldDataAsset worldAsset = Worlds[worldArrayIndex];
             return worldAsset;
@@ -257,12 +265,18 @@ namespace Kuantech.Core
         {
             ChangeCurrentState(LevelState.Failed);
         }
+        
         public virtual void LeaveLevel()
         {
             CurrentLevel.ClearLevel();
             ChangeCurrentState(LevelState.Waiting);
         }
-        
+
+
+        public override void Cleanup()
+        {
+            ClearCurrentLevel();
+        }
         #endregion
     }
 }

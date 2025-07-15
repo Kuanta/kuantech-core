@@ -33,9 +33,9 @@ namespace Kuantech.Core
         /// <summary>
         /// Called for scene specific submanagers, when the gamemanager leaves current scene.
         /// </summary>
-        public void OnSceneLeave()
+        public virtual void OnSceneLeave()
         {
-            Cleanup();
+            
         }
 
         /// <summary>

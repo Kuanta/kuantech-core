@@ -1,5 +1,4 @@
-﻿using Kuantech.Core;
-using Kuantech.Core.UI;
+﻿using Kuantech.Core.UI;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -21,7 +20,7 @@ namespace Kuantech.Midcore.UI
 
         private void OnContinueButtonClicked()
         {
-            GameManager.ChangeScene(MidcoreGameSceneManager.GetMenuSceneName());
+            MidcoreGameSceneManager.GoToMenuScene();
         }
     }
 }

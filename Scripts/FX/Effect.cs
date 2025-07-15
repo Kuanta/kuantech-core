@@ -244,6 +244,7 @@ namespace Kuantech.Core.FX
                     StartCoroutine(_despawnRoutine);
                 }
                 _despawnRoutine = DespawnRoutine();
+                if (!gameObject.activeInHierarchy) return;
                 StartCoroutine(_despawnRoutine);
             }
         }

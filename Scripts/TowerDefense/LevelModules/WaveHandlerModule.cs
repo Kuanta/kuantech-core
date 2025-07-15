@@ -5,6 +5,7 @@ using Kuantech.Core;
 using Kuantech.RealTimeStrategy;
 using Kuantech.Rpg;
 using Kuantech.Utils;
+using Unity.Transforms;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -247,6 +248,11 @@ namespace Kuantech.TowerDefense
 
         public void CompleteWave()
         {
+            if (this == null || ParentLevel == null)
+            {
+                Debug.LogError("WE GOT IM");
+                return;
+            }
             StartCoroutine(CompleteWaveRoutine());
         }
 
