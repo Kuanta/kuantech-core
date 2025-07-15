@@ -8,7 +8,18 @@ namespace Kuantech.Core.Combat
 {
     public static class CombatUtilities
     {
-        /// <summary>
+
+        #region Projectiles
+
+        public static void ShootProjectile(Projectile projectile, Vector3 shootPosition, Vector3 shootDirection, Transform target, Actor shooter)
+        {
+            projectile.Shoot(shooter, null, shootPosition, shootDirection, target);
+        }
+
+        #endregion
+
+        #region Cast Overlap attacks
+ /// <summary>
         /// Gets actors in 2d circle
         /// </summary>
         /// <param name="position"></param>
@@ -82,6 +93,24 @@ namespace Kuantech.Core.Combat
         }
 
 
+        public static void HidActorsInCircle2D(Vector3 center, float range,
+            LayerMask layerMask, HitInfo hitInfo, HashSet<int> factionFilter = null, UnityAction<Actor> damageHandler = null)
+        {
+            Collider2D[] results = Physics2D.OverlapCircleAll(center, range, layerMask.value);
+            foreach (var result in results)
+            {
+                if(result == null) continue;
+                if(!result.TryGetComponent(out Actor actor)) continue;
+                if(!actor.IsAlive()) continue;
+                int actorFaction = actor.FactionId;
+                if(!factionFilter.IsNullOrEmpty() && !factionFilter.Contains(actorFaction)) continue;
+                actor.OnHit(hitInfo);
+                if (damageHandler != null)
+                {
+                    damageHandler(actor);
+                }
+            }
+        }
         public static void HitActorsInArc2D(Vector3 center, Vector3 direction, float range, float angle,
             LayerMask layerMask, HitInfo hitInfo, HashSet<int> factionFilter = null, UnityAction<Actor> damageHandler = null)
         {
@@ -107,5 +136,9 @@ namespace Kuantech.Core.Combat
                 }
             }
         }
+        
+
+        #endregion
+       
     }
 }

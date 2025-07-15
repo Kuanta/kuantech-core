@@ -28,10 +28,10 @@ namespace Kuantech.Rpg
         /// <param name="direction"></param>
         /// <param name="acceleration"></param>
         /// <param name="initialHeight"></param>
-        public void Throw(CombatModule combatModule, Weapon shotFrom, Vector3 shootPosition, Vector3 shootDirection, float horizontalDistance, float horizontalSpeed, Vector2 direction,
+        public void Throw(Actor shooter, Weapon shotFrom, Vector3 shootPosition, Vector3 shootDirection, float horizontalDistance, float horizontalSpeed, Vector2 direction,
             float acceleration = -9.8f, float initialHeight = 0f)
         {
-            Shoot(combatModule, shotFrom, shootPosition, shootDirection);
+            Shoot(shooter, shotFrom, shootPosition, shootDirection);
             _throwLifetime = throwableRigidbody.SetTrajectoryWithHorizontalSpeed(horizontalDistance, horizontalSpeed, direction, acceleration, initialHeight);
             _thrownTime = Time.time;
             _thrown = true;

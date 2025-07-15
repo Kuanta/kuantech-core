@@ -207,7 +207,7 @@ namespace Kuantech.Rpg.Skills
         public Effect PlayEffectOnCaster(EffectPlayer effectPlayer)
         {
             if (effectPlayer.IsNull()) return null;
-            Vector3 effectPos = CurrentSkillCastData.CastPosition;
+            Vector3 effectPos = CurrentSkillCastData.CastStartPosition;
             Vector3 effectDir = CurrentSkillCastData.CastDirection;
             Quaternion playRot = Quaternion.identity;
             if (effectDir.sqrMagnitude >= 0.001f)

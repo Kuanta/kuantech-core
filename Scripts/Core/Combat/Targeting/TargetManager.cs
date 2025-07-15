@@ -88,5 +88,16 @@ namespace Kuantech.Core
                 Target = CurrentTarget.GetHitPoint(),
             };
         }
+
+        public override void Reset()
+        {
+            base.Reset();
+            CurrentTarget = null;
+            if (CurrentTargetSlot != null && CurrentTargetSlot.OccupyingActor == Actor)
+            {
+                CurrentTargetSlot.OccupyingActor = null;
+            }
+            CurrentTargetSlot = null;
+        }
     }
 }

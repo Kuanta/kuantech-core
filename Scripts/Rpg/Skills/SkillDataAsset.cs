@@ -9,7 +9,14 @@ namespace Kuantech.Rpg.Skills
         public string SkillId;
         public string SkillName;
         public string SkillDescription;
+        
+        [Header("Behaviours")]
         public List<SkillBehaviourData> SkillBehaviours;
+        
+        [SerializeReference]
+        public SkillCastChecker SkillCastChecker;
+        
+        [Header("Skill Variables")]
         public List<SkillVariableData> SkillVariableDatas;
         public float SkillCooldown;
     }

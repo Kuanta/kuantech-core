@@ -9,9 +9,17 @@ namespace Kuantech.Rpg.Skills
     [Serializable]
     public struct SkillCastData
     {
+        public Actor Caster;
+        public Vector3 CastStartPosition;
         public Vector3 CastDirection;
         public Vector3 CastPosition;
         public Actor CastTarget;
+
+        public Vector3 GetCastPoint()
+        {
+            if (CastTarget != null) return CastTarget.transform.position;
+            return CastPosition;
+        }
     }
     
     public class Skill
@@ -80,7 +88,12 @@ namespace Kuantech.Rpg.Skills
             float elapsedTime = Time.time - _lastCastTime;
             
             //todo(skill): Check skill resource here
-            return elapsedTime >= _skillDataAsset.SkillCooldown;
+            if (elapsedTime < _skillDataAsset.SkillCooldown) return false;
+
+            if (_skillDataAsset.SkillCastChecker != null &&
+                !_skillDataAsset.SkillCastChecker.CanBeCast(this, castData)) return false;
+
+            return true;
         }
         #endregion
 

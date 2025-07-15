@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Kuantech.Core;
 using Kuantech.Utils;
 using UnityEngine;
@@ -7,9 +8,10 @@ namespace Kuantech.Rpg.Skills
 {
     public class SpellBook : ActorModule
     {
-        public Skill CurrentlyCastedSkill;
+        //public Skill CurrentlyCastedSkill;
         public float GlobalCooldown;
         private Dictionary<string, Skill> _skills = new Dictionary<string, Skill>();
+        private List<Skill> _activeSkills = new(); 
         
         //Runtime
         private float _lastSkillCastTime;
@@ -17,13 +19,30 @@ namespace Kuantech.Rpg.Skills
         public override void ModuleUpdate()
         {
             base.ModuleUpdate();
-            if (CurrentlyCastedSkill != null && CurrentlyCastedSkill.IsCasting())
+            if (!Actor.IsAlive()) return;
+
+            for (int i = _activeSkills.Count - 1; i >= 0; i--)
             {
-                CurrentlyCastedSkill.UpdateSkill(Time.deltaTime);
-            }    
+                Skill skill = _activeSkills[i];
+                if (skill.IsCasting())
+                {
+                    skill.UpdateSkill(Time.deltaTime);
+                }
+                else
+                {
+                    _activeSkills.RemoveAt(i);
+                }
+            }
         }
+
         
         #region Skill Management
+
+        public Skill[] GetSkills()
+        {
+            return _skills.Values.ToArray();
+        }
+        
         public Skill AddSkill(SkillDataAsset skillAsset)
         {
             if (HasSkill(skillAsset)) return null;
@@ -56,9 +75,8 @@ namespace Kuantech.Rpg.Skills
             if (!CanCastSkill(skillDataAsset)) return false;
             Skill skillToCast = GetSkillByDataAsset(skillDataAsset);
             if (skillToCast == null) return false;
-            if (!skillToCast.CanBeCast(skillCastData)) return false;
-            skillToCast.Cast(skillCastData);
-            return true;
+            _activeSkills.Add(skillToCast);
+            return skillToCast.Cast(skillCastData);
         }
 
         public bool CanCastSkill(SkillDataAsset skillDataAsset)
@@ -77,9 +95,9 @@ namespace Kuantech.Rpg.Skills
 
         #region Events
 
-        public void OnSkillCastStarted(Skill skill)
+        public virtual void OnSkillCastStarted(Skill skill)
         {
-            CurrentlyCastedSkill = skill;
+            //CurrentlyCastedSkill = skill;
         }
 
         public void OnSkillBehaviourStarted(SkillBehaviour skillBehaviour)
@@ -87,9 +105,9 @@ namespace Kuantech.Rpg.Skills
             
         }
 
-        public void OnSkillCastEnded(Skill skill)
+        public virtual void OnSkillCastEnded(Skill skill)
         {
-            CurrentlyCastedSkill = null;
+            //CurrentlyCastedSkill = null;
         }
         #endregion
     }

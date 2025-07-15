@@ -31,6 +31,9 @@ namespace Kuantech.Core
     [Serializable]
     public class AttackPattern
     {
+        [Header("Attack Point")] 
+        public string AttackPointSlotName = "AttackPoint";
+        
         [Header("Attack Shape")]
         public AttackTypes AttackType;
         public float Angle;
@@ -104,6 +107,7 @@ namespace Kuantech.Core
         private StatsModule _statModule;
         private TargetManager _targetManager;
         private AnimationModule _animationModule;
+        private ActorSlotsHandler _slotsHandler;
         
         //Runtime
         private float _attackStartTime;
@@ -125,6 +129,7 @@ namespace Kuantech.Core
             _statModule = Actor.GetModule<StatsModule>();
             _animationModule = Actor.GetModule<AnimationModule>();
             _targetManager = Actor.GetModule<TargetManager>();
+            _slotsHandler = Actor.GetModule<ActorSlotsHandler>();
         }
 
         private void Update()
@@ -166,6 +171,15 @@ namespace Kuantech.Core
 
         public Vector3 GetAttackPosition()
         {
+            string slotName = GetCurrentAttackPattern().AttackPointSlotName;
+            if (_slotsHandler != null)
+            {
+                Transform slot = _slotsHandler.GetSlot(slotName);
+                if (slot != null)
+                {
+                    return slot.position;
+                }
+            }
             return transform.position;
         }
 
@@ -257,15 +271,22 @@ namespace Kuantech.Core
             Actor currentTarget = GetCurrentTarget();
             Projectile projectile = PoolManager.GetObjectFromPool(GetCurrentAttackPattern().ProjectilePrefab.gameObject).GetComponent<Projectile>();
             if (projectile == null) return;
+            
+            //Apply projectileproperties
+            projectile.Damage = GetDamage();
+            projectile.Range = GetCurrentAttackPattern().Range;
+            projectile.Knockback = GetCurrentAttackPattern().Knockback;
+            projectile.KnockbackTime = GetCurrentAttackPattern().KnockbackTime;
+            
             if (currentTarget != null)
             {
                 Vector3 targetOffset = currentTarget.GetHitPoint().position - currentTarget.transform.position;
-                projectile.Shoot(this, null, GetAttackPosition(), _attackDirection, currentTarget.transform);
+                projectile.Shoot(Actor, null, GetAttackPosition(), _attackDirection, currentTarget.transform);
                 projectile.SetTargetOffset(targetOffset);
             }
             else
             {
-                projectile.Shoot(this, null, GetAttackPosition(), _attackDirection, null);
+                projectile.Shoot(Actor, null, GetAttackPosition(), _attackDirection, null);
             }
             
         }
@@ -298,7 +319,7 @@ namespace Kuantech.Core
             SkillCastData skillCastData = new SkillCastData()
             {
                 CastDirection = _attackDirection,
-                CastPosition = GetAttackPosition(),
+                CastStartPosition = GetAttackPosition(),
                 CastTarget = GetCurrentTarget(),
             };
             spellBook.CastSkill(currPattern.SkillToCast, skillCastData);

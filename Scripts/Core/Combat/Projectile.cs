@@ -35,7 +35,7 @@ namespace Kuantech.Core
         public float MaxLifetime = 20f; //Maximum duration a projectile can be alive, even targeted
 
         public bool RawDamage = false;
-        public CombatModule CastBy;
+        public Actor CastBy;
         public Weapon ShotFrom = null;
         public bool DestroyOnImpact = true;
         public LayerMask Targets;
@@ -91,7 +91,7 @@ namespace Kuantech.Core
         /// <param name="shotFrom">Weapon that this projectile is shot from. If null, damage will be calculated from default attack pattern or projectile properties</param>
         /// <param name="target">Target transform. If set to non-null, proectile will follow the target</param>
         /// <param name="riseHeight">To act as pseudo throwable. Projectile will rise to this height and falls down in a sinudoidal fasion.</param>
-        public virtual void Shoot(CombatModule castBy, Weapon shotFrom, Vector3 shootPosition, Vector3 shootDirection, Transform target = null, float relativeSpeed = 0.0f)
+        public virtual void Shoot(Actor castBy, Weapon shotFrom, Vector3 shootPosition, Vector3 shootDirection, Transform target = null, float relativeSpeed = 0.0f)
         {
             //Set pos and rot
             Reset();
@@ -111,14 +111,14 @@ namespace Kuantech.Core
             DestroyOnImpact = true;
             CurrentSpeed = Speed + relativeSpeed;
             
-            if (castBy != null)
-            {
-                Targets = castBy.Targets;
-                Range = castBy.GetCurrentAttackPattern().Range;
-                Knockback = castBy.GetCurrentAttackPattern().Knockback;
-                KnockbackTime = castBy.GetCurrentAttackPattern().KnockbackTime;
-                Damage = castBy.GetDamage();
-            }
+            // if (castBy != null)
+            // {
+            //     Targets = castBy.Targets;
+            //     Range = castBy.GetCurrentAttackPattern().Range;
+            //     Knockback = castBy.GetCurrentAttackPattern().Knockback;
+            //     KnockbackTime = castBy.GetCurrentAttackPattern().KnockbackTime;
+            //     Damage = castBy.GetDamage();
+            // }
 
             StartEffect.PlayEffectAtPosition(transform.position, Quaternion.identity);
             
@@ -336,7 +336,7 @@ namespace Kuantech.Core
                 (!targetActor.IsAlive())) return; //Don't attack actor with same faction
             
             //Check factions Ids
-            if (CastBy.Actor is Character casterCharacter && targetActor is Character targetCharacter)
+            if (CastBy is Character casterCharacter && targetActor is Character targetCharacter)
             {
                 if (casterCharacter.FactionId == targetCharacter.FactionId) return; //Don't damage actor of same faction
             }
