@@ -4,8 +4,8 @@ namespace Kuantech.Midcore
 {
     public class MidcoreMenuSceneManager : SubManager
     {
-        public int CurrentWorldIndex;
-        public int CurrentLevelIndex;
+        [SaveableField] public int CurrentWorldIndex;
+        [SaveableField] public int CurrentLevelIndex;
         
         public string GameSceneName = "GameScene";
         
