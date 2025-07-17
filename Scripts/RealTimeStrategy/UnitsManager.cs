@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Kuantech.Core;
 using Kuantech.Utils;
 using UnityEngine;
@@ -6,6 +7,7 @@ using UnityEngine.Events;
 
 namespace Kuantech.RealTimeStrategy
 {
+    [Serializable]
     public struct MaxUnitPerFactionEntry
     {
         public int FactionId;

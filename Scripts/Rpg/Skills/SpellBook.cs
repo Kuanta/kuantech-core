@@ -75,7 +75,10 @@ namespace Kuantech.Rpg.Skills
             if (!CanCastSkill(skillDataAsset)) return false;
             Skill skillToCast = GetSkillByDataAsset(skillDataAsset);
             if (skillToCast == null) return false;
-            _activeSkills.Add(skillToCast);
+            if (!_activeSkills.Contains(skillToCast))
+            {
+                _activeSkills.Add(skillToCast);
+            }
             return skillToCast.Cast(skillCastData);
         }
 

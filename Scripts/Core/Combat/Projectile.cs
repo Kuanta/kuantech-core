@@ -1,9 +1,11 @@
 ﻿using System.Collections.Generic;
+using Kuantech.Core.Combat;
 using Kuantech.Core.FX;
 using Kuantech.Rpg.Inventory;
 using Kuantech.Utils;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Serialization;
 
 namespace Kuantech.Core
 {
@@ -52,10 +54,13 @@ namespace Kuantech.Core
         public delegate void ImpactOverrideDelegate(Projectile proj, Actor target, GameObject gameObjects);
 
         public ImpactOverrideDelegate ImpactOverride;
+        
         // Behaviour flags
         public DamageInfo Damage;
-        public float splashRadius = 0f; // 0 means no splash
+        public float SplashRadius = 0f; // 0 means no splash
+        public float SplashDamage = 0.0f;
         
+        //Runtime
         protected float _age = 0f; // Age of the projectile in terms of seconds
         protected float _lifeTime = 0f;
         protected float CurrentSpeed;
@@ -83,6 +88,7 @@ namespace Kuantech.Core
         private Vector3 _shotPosition;
         private Vector3 _direction;
         private Vector3 _targetOffset;
+        public HashSet<int> FactionFilter;
         
         /// <summary>
         /// Initializes and shoots the projectile
@@ -100,6 +106,7 @@ namespace Kuantech.Core
             transform.position = shootPosition;
             Quaternion rot = GetForwardRotation(_direction);
             transform.rotation = rot;
+            
             if (Visual != null)
             {
                 Visual.transform.localScale = Vector3.one;
@@ -110,7 +117,7 @@ namespace Kuantech.Core
             ImpactOverride = null;
             DestroyOnImpact = true;
             CurrentSpeed = Speed + relativeSpeed;
-            
+
             // if (castBy != null)
             // {
             //     Targets = castBy.Targets;
@@ -174,6 +181,7 @@ namespace Kuantech.Core
         }
         protected Quaternion GetForwardRotation(Vector3 direction)
         {
+            
             return Helpers.GetRotationFromWorldForward(direction, WorldUp, WorldForward);
         }
         
@@ -336,9 +344,9 @@ namespace Kuantech.Core
                 (!targetActor.IsAlive())) return; //Don't attack actor with same faction
             
             //Check factions Ids
-            if (CastBy is Character casterCharacter && targetActor is Character targetCharacter)
+            if (CastBy.FactionId == targetActor.FactionId)
             {
-                if (casterCharacter.FactionId == targetCharacter.FactionId) return; //Don't damage actor of same faction
+                return; //Don't damage actor of same faction
             }
             
             ImpactEffect.PlayEffectAtPosition(transform.position, Quaternion.identity);
@@ -350,22 +358,29 @@ namespace Kuantech.Core
                 return;
             }
             
-            if (splashRadius > 0)
+            if (SplashRadius > 0)
             {
                 Vector3 origin = transform.position;
-
+                DamageInfo splashDamage = new DamageInfo()
+                {
+                    DamageAmount = SplashDamage,
+                };
+                HitInfo hitInfo = new HitInfo()
+                {
+                    DamageInfo = splashDamage,
+                    Hitter = CastBy != null ? CastBy.gameObject : null,
+                    HitDirection = _direction,
+                    KnockbackDuration = KnockbackTime,
+                    KnockbackForce = Knockback,
+                };
                 if (Is2D)
                 {
-                    Collider2D[] colliders2D = UnityEngine.Physics2D.OverlapCircleAll(origin, splashRadius);
-                    foreach (Collider2D coll in colliders2D)
-                    {
-                        Impact(coll.gameObject);
-                    }
+                    CombatUtilities.HidActorsInCircle2D(origin, SplashRadius, Targets, hitInfo, FactionFilter);
                 }
                 else
                 {
                     // 3D
-                    Collider[] colliders3D = UnityEngine.Physics.OverlapSphere(origin, splashRadius);
+                    Collider[] colliders3D = UnityEngine.Physics.OverlapSphere(origin, SplashRadius);
                     foreach (Collider coll in colliders3D)
                     {
                         Impact(coll.gameObject);
@@ -384,8 +399,6 @@ namespace Kuantech.Core
             }
         }
         #endregion
-        
-       
         
         protected virtual void Impact(GameObject impacted)
         {

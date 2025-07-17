@@ -25,7 +25,7 @@ namespace Kuantech.Core
             {
                 Animator.SetTrigger(ShowHash);
             }
-            Text.text = damageInfo.DamageAmount.Stringfy();
+            Text.text = damageInfo.DamageAmount.Stringfy(true);
 
             if (AdjustColors)
             {

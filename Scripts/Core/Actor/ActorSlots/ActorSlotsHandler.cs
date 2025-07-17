@@ -20,6 +20,8 @@ namespace Kuantech.Core
         public List<ActorSlotEntry> ActorSlots = new List<ActorSlotEntry>();
         private Dictionary<string, Transform> _slots;
 
+        private ActorVisualHandler _actorVisualHandler;
+        
         public override void Initialize()
         {
             base.Initialize();
@@ -30,11 +32,49 @@ namespace Kuantech.Core
                 _slots[entry.SlotName] = entry.Slot;
             }
         }
+        
+        public override void OnModulesInitialized()
+        {
+            base.OnModulesInitialized();
+            _actorVisualHandler = Actor.GetModule<ActorVisualHandler>();
+            if (_actorVisualHandler != null)
+            {
+                _actorVisualHandler.OnActorVisualSet += OnActorVisualSet;
+            }
+        }
+        
 
         public Transform GetSlot(string slotName)
         {
             if (!_slots.ContainsKey(slotName)) return null;
             return _slots[slotName];
+        }
+
+        public void OnActorVisualSet(ActorVisual actorVisual)
+        {
+            if (_slots == null) _slots = new Dictionary<string, Transform>();
+            //Check last slots
+            if (_actorVisualHandler.CurrentActorVisual != null)
+            {
+                ActorSlot[] slotsFromOld = _actorVisualHandler.CurrentActorVisual.GetComponentsInChildren<ActorSlot>();
+                if (!slotsFromOld.IsNullOrEmpty())
+                {
+                    foreach (var oldSlot in slotsFromOld)
+                    {
+                        if (_slots.ContainsKey(oldSlot.ActorSlotName))
+                        {
+                            _slots.Remove(oldSlot.ActorSlotName);
+                        }
+                    }
+                }
+            }
+            ActorSlot[] slots = actorVisual.GetComponentsInChildren<ActorSlot>();
+            if (slots.IsNullOrEmpty()) return;
+            foreach (var slot in slots)
+            {
+                if(slot.ActorSlotName.IsNullOrEmpty()) continue;
+                _slots[slot.ActorSlotName] = slot.transform;
+            }
         }
     }
 }

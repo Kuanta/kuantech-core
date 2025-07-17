@@ -143,15 +143,16 @@ namespace Kuantech.Rpg.Skills
             if (_isCompleted) return;
             float duration = GetDuration();
             
+                  
+            //Behaviour
+            BehaviourImplementation();
+            
             //ıf duration is less than 0, it means the behaviour is infinite
             if (GetElapsedTime() >= duration && duration >= 0)
             {
                 CompleteBehaviour();
                 return;
             }
-            
-            //Behaviour
-            BehaviourImplementation();
         }
 
         protected virtual void BehaviourImplementation()

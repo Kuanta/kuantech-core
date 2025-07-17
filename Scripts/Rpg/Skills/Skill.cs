@@ -24,7 +24,7 @@ namespace Kuantech.Rpg.Skills
     
     public class Skill
     {
-        private SkillDataAsset _skillDataAsset;
+        public SkillDataAsset SkillDataAsset;
         private List<SkillBehaviour> _skillBehaviours;
         private Dictionary<string, SkillVariable> _skillVariables;
         
@@ -39,7 +39,7 @@ namespace Kuantech.Rpg.Skills
         
         public void Initialize(SpellBook spellBook, SkillDataAsset skillDataAsset)
         {
-            _skillDataAsset = skillDataAsset;
+            SkillDataAsset = skillDataAsset;
             ParentSpellBook = spellBook;
 
             _skillBehaviours = new List<SkillBehaviour>();
@@ -84,14 +84,14 @@ namespace Kuantech.Rpg.Skills
         /// <returns></returns>
         public virtual bool CanBeCast(SkillCastData castData)
         {
-            if (_skillDataAsset == null || _isCasting) return false;
+            if (SkillDataAsset == null || _isCasting) return false;
             float elapsedTime = Time.time - _lastCastTime;
             
             //todo(skill): Check skill resource here
-            if (elapsedTime < _skillDataAsset.SkillCooldown) return false;
+            if (elapsedTime < SkillDataAsset.SkillCooldown) return false;
 
-            if (_skillDataAsset.SkillCastChecker != null &&
-                !_skillDataAsset.SkillCastChecker.CanBeCast(this, castData)) return false;
+            if (SkillDataAsset.SkillCastChecker != null &&
+                !SkillDataAsset.SkillCastChecker.CanBeCast(this, castData)) return false;
 
             return true;
         }

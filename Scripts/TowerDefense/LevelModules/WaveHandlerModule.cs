@@ -64,6 +64,7 @@ namespace Kuantech.TowerDefense
         {
             base.OnReset();
             CurrentWaveIndex = -1;
+            _waveCompleteRoutine = null;
         }
         
         private void Update()
@@ -135,6 +136,8 @@ namespace Kuantech.TowerDefense
             {
                 um.SetMaxUnitPerFaction(waveData.EnemyFactionId, waveData.MaxEnemyCount);
             }
+
+            _waveCompleteRoutine = null;
         }
 
         #endregion
@@ -246,20 +249,24 @@ namespace Kuantech.TowerDefense
         
         #region Wave Completion
 
+        private IEnumerator _waveCompleteRoutine = null;
         public void CompleteWave()
         {
+            if (_waveCompleteRoutine != null) return;
             if (this == null || ParentLevel == null)
             {
-                Debug.LogError("WE GOT IM");
                 return;
             }
-            StartCoroutine(CompleteWaveRoutine());
+
+            _waveCompleteRoutine = CompleteWaveRoutine();
+            StartCoroutine(_waveCompleteRoutine);
         }
 
         private IEnumerator CompleteWaveRoutine()
         {
             yield return new WaitForSeconds(WaveCompletedDelay);
             OnWaveCompleted?.Invoke();
+            _waveCompleteRoutine = null;
         }
         #endregion
 

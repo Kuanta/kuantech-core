@@ -10,10 +10,15 @@ namespace Kuantech.Core.Combat
     /// </summary>
     public class HealthcareModule : ActorModule
     {
+        [Header("Resources")]
         public ResourceAsset HealthResourceAsset;
-
+        
         public bool DespawnAfterDeath = true;
         [Tooltip("Delay that despawns the actor after death")] public float DespawnDelay = 1f;
+
+        [Header("Resistance")] 
+        public AttributeAsset ArmorAttribute;
+        public DamageReductionFormula DamageReductionFormula;
         
         [Header("UI")] 
         [SerializeField] private Healthbar Healthbar;
@@ -95,7 +100,14 @@ namespace Kuantech.Core.Combat
 
         public DamageInfo CalculateReducedDamageInfo(DamageInfo damageInfo)
         {
+            float reducedDamage = damageInfo.DamageAmount;
+            if (DamageReductionFormula != null && _statModule != null && ArmorAttribute != null)
+            {
+                float armor = _statModule.GetAttributeValue(ArmorAttribute);
+                reducedDamage *= DamageReductionFormula.GetDamageMultiplier(armor);
+            }
             DamageInfo reducedDamageInfo = damageInfo;
+            reducedDamageInfo.DamageAmount = reducedDamage;
             return reducedDamageInfo;
         }
         

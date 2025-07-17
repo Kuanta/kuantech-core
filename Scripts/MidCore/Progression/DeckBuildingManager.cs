@@ -140,7 +140,7 @@ namespace Kuantech.Midcore
                     return true;
                 }
 
-                if (ctx.CurrentDeck[i] == null)
+                if (ctx.CurrentDeck[i] == null || ctx.CurrentDeck[i].Id.IsNullOrEmpty())
                 {
                     ctx.CurrentDeck[i] = new ProgressibleData(collectible);
                     ctx._equippedCollectiblesById[collectible.GetId()] = collectible;
