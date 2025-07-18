@@ -9,6 +9,7 @@ namespace Kuantech.TowerDefense
         public int ActorFactionId = 0;
         public Transform SpawnPoint;
         public bool Toggled = true;
+        public Vector3 TargetVector;
         
         private UnitsManager _unitsManager;
         public override void OnPrePlayLevel()
@@ -25,6 +26,10 @@ namespace Kuantech.TowerDefense
             createdActor.Spawn();
             createdActor.FactionId = ActorFactionId;
             createdActor.transform.position = SpawnPoint.position;
+            if (TargetVector.sqrMagnitude > 0.1f)
+            {
+                createdActor.MotionVectorsHandler.SetTargetVector(TargetVector);
+            }
             return createdActor;
         }
     }
