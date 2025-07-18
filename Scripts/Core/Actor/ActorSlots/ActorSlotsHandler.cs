@@ -25,8 +25,13 @@ namespace Kuantech.Core
         public override void Initialize()
         {
             base.Initialize();
-            if (ActorSlots.IsNullOrEmpty()) return;
-            _slots = new Dictionary<string, Transform>();
+            SetExistingActorSlots();
+        }
+
+        private void SetExistingActorSlots()
+        {
+            if(_slots == null) _slots = new Dictionary<string, Transform>();
+            if(ActorSlots.IsNullOrEmpty()) return;
             foreach (var entry in ActorSlots)
             {
                 _slots[entry.SlotName] = entry.Slot;
@@ -40,6 +45,7 @@ namespace Kuantech.Core
             if (_actorVisualHandler != null)
             {
                 _actorVisualHandler.OnActorVisualSet += OnActorVisualSet;
+                _actorVisualHandler.OnActorVisualRemoved += OnActorVisualRemoved;
             }
         }
         
@@ -75,6 +81,12 @@ namespace Kuantech.Core
                 if(slot.ActorSlotName.IsNullOrEmpty()) continue;
                 _slots[slot.ActorSlotName] = slot.transform;
             }
+        }
+
+        public void OnActorVisualRemoved(ActorVisual actorVisual)
+        {
+            _slots.Clear();
+            SetExistingActorSlots();
         }
     }
 }

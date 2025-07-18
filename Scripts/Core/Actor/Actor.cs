@@ -23,10 +23,7 @@ namespace Kuantech.Core
         [Header("Identifier")] 
         public string Id;
         public int FactionId = 0; //Since faction Id is used frequently, it is stated in Actor class
-        
-        [Tooltip("If set, attacks will target this point")] 
-        public Transform HitPoint;
-        
+
         [Header("Modules")]
         protected List<ActorModule> ActorModulesList;
         protected Dictionary<Type, List<ActorModule>> Modules = new Dictionary<Type, List<ActorModule>>();
@@ -384,8 +381,11 @@ namespace Kuantech.Core
 
         public Transform GetHitPoint()
         {
-            if (HitPoint == null) return transform;
-            return HitPoint;
+            ActorSlotsHandler actorSlotsHandler = GetModule<ActorSlotsHandler>();
+            if (actorSlotsHandler == null) return transform;
+            Transform hitPoint = actorSlotsHandler.GetSlot("HitPoint");
+            if (hitPoint != null) return hitPoint;
+            return transform;
         }
 
         public void OnHit(HitInfo hitInfo)

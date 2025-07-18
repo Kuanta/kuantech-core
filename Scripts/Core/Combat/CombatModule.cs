@@ -162,11 +162,7 @@ namespace Kuantech.Core
         }
         #endregion
         
-        #region Attack Pattern Manupilation
-
-
-        #endregion
-        
+       
         #region AttackPositions
 
         public Vector3 GetAttackPosition()
