@@ -375,7 +375,7 @@ namespace Kuantech.Core
                 };
                 if (Is2D)
                 {
-                    CombatUtilities.HidActorsInCircle2D(origin, SplashRadius, Targets, hitInfo, FactionFilter);
+                    CombatUtilities.HitActorsInCircle2D(origin, SplashRadius, Targets, hitInfo, FactionFilter);
                 }
                 else
                 {

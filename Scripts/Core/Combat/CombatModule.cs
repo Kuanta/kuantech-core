@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Kuantech.Core.Combat;
+using Kuantech.Core.FX;
 using Kuantech.Core.Utils;
 using Kuantech.Rpg;
 using Kuantech.Rpg.Skills;
@@ -49,8 +50,8 @@ namespace Kuantech.Core
         public float MovementSlow; //Factor between 0-1, movement speed while attacking will be MovementSpeed * (1-MovementSlow)
         public float WindupTime;
         public float AttackTime;
+        public float EffectPlayTime;
         public float Cooldown;
-        public float AttackEndTime; //How many seconds does attack last since start. 
         public bool Continious; //Continious will attack every 'attack time' during the attack
         
         [Header("Knosckback")]
@@ -65,7 +66,11 @@ namespace Kuantech.Core
         
         [Header("Animation")]
         public AnimationData AttackAnimationData;
-        
+
+        [Header("FX")] 
+        public EffectPlayer AttackFx = null;
+
+        public EffectPlayer HitEffect = null;
         
         public DamageInfo GetDamageInfo()
         {
@@ -116,6 +121,7 @@ namespace Kuantech.Core
         private bool _attacked = false;
         private float _lastAttackImplementationTime; //Last time an attack implementation has been called. Useful for continious attacks
         private float _lastAttackCompleteTime;
+        private bool _effectPlayed;
         private int _attackIndex = 0;
         private Vector3 _attackDirection = Vector3.forward;
         private int _currentComboIndex;
@@ -141,6 +147,11 @@ namespace Kuantech.Core
             {
                 OnAttackWindupCompleted();
             }
+
+            if (elapsedTime >= currentPattern.EffectPlayTime && !_effectPlayed)
+            {
+                
+            }
             if (elapsedTime >= currentPattern.AttackTime && !_attacked || 
                 (currentPattern.Continious &&  (Time.time - _lastAttackImplementationTime) >= currentPattern.AttackTime))
             {
@@ -155,6 +166,10 @@ namespace Kuantech.Core
 
         #region Target
         
+        /// <summary>
+        /// Returns the targeted actor
+        /// </summary>
+        /// <returns></returns>
         public Actor GetCurrentTarget()
         {
             if (_targetManager == null) return null;
@@ -164,7 +179,11 @@ namespace Kuantech.Core
         
        
         #region AttackPositions
-
+        
+        /// <summary>
+        /// Returns the center position of attack. Projectiles will be cast from this, overlap attacks will center around this
+        /// </summary>
+        /// <returns></returns>
         public Vector3 GetAttackPosition()
         {
             string slotName = GetCurrentAttackPattern().AttackPointSlotName;
@@ -303,6 +322,12 @@ namespace Kuantech.Core
                 KnockbackForce = GetCurrentAttackPattern().Knockback,
                 KnockbackDuration = GetCurrentAttackPattern().KnockbackTime
             };
+            //Play hit effect
+            EffectPlayer hitEffect = GetCurrentAttackPattern().HitEffect;
+            if (hitEffect != null)
+            {
+                hitEffect.PlayEffectAtPosition(actor.GetHitPoint().position, Quaternion.LookRotation(_attackDirection));
+            }
             actor.OnHit(hitInfo);
         }
 
@@ -460,6 +485,21 @@ namespace Kuantech.Core
             _lastAttackCompleteTime = Time.time;
             AttackCompletedEvent?.Invoke(this);
         }
+        #endregion
+
+        #region Fx
+
+        public void PlayAttackFx()
+        {
+            if (_effectPlayed) return;
+            _effectPlayed = true;
+            Vector3 attackDirection = _attackDirection;
+            Vector3 attackPosition = GetAttackPosition();
+            EffectPlayer attackEffect = GetCurrentAttackPattern().AttackFx;
+            if (attackEffect == null) return;
+            attackEffect.PlayEffectAtPosition(attackPosition, Quaternion.LookRotation(attackDirection));
+        }
+        
         #endregion
         
     }

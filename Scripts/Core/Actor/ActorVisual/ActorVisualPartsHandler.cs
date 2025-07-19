@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using Kuantech.Rpg.Inventory;
 using Kuantech.Utils;
-using Unity.VisualScripting;
 
 namespace Kuantech.Core
 {

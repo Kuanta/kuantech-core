@@ -53,18 +53,26 @@ namespace Kuantech.Core
         [Header("Shader Effects")] 
         public List<ShaderEffect> ShaderEffects;
         
+        //Actor visual Modules
+        public ModuleHandler<ActorVisualModule> ModuleHandler;
+        
         //Runtime
-        public Actor ParentActor;
+        [NonSerialized] public bool Initialized;
+        [NonSerialized] public Actor ParentActor;
         private Dictionary<string, InPlaceItemEntry> _inPlaceItemsMap;
 
         //Equipment Slot Types To Bone Slots
         private Dictionary<EquipmentSlotType, ItemSocket> _slotsToBoneSlots;
-        
+
+        #region Lifecycle
+
         /// <summary>
         /// Initializes the actor visual
         /// </summary>
         public void Initialize()
         {
+            if (Initialized) return;
+            Initialized = true;
             _inPlaceItemsMap = new Dictionary<string, InPlaceItemEntry>();
             foreach (var inplace in InPlaceItemsList)
             {
@@ -72,8 +80,39 @@ namespace Kuantech.Core
                 inplace.Visual.IsInPlace = true;
             }
             VisualPartsHandler.Initialize();
+
+            ModuleHandler = new ModuleHandler<ActorVisualModule>();
+            ActorVisualModule[] actorVisualModules = GetComponentsInChildren<ActorVisualModule>();
+            foreach (var module in actorVisualModules)
+            {
+                ModuleHandler.AddModule(module);
+                module.Initialize(this);
+            }
         }
-        
+
+        public void OnAttachedToActor(Actor actor)
+        {
+            Initialize(); //Initialize if not
+            foreach (var module in ModuleHandler.GetAllModules())
+            {
+                module.OnActorVisualSet(actor);
+            }
+        }
+
+        public void OnRemovedFromActor(Actor actor)
+        {
+            
+        }
+        #endregion
+
+        #region Actor Visual Modules
+
+        public T GetModule<T>() where T : ActorVisualModule
+        {
+            return ModuleHandler.GetModule<T>() as T;
+        }
+
+        #endregion
 
         #region Item Slotting
         public bool HasSlotFor(EquipmentSlotType slotType)
@@ -207,6 +246,16 @@ namespace Kuantech.Core
             }
         }
         #endregion
-        
+
+        #region Events
+
+        public void OnActorStateChanged(ActorState oldState, ActorState newState)
+        {
+            foreach (var module in ModuleHandler.GetAllModules())
+            {
+                module.OnActorStateChanged(oldState, newState);
+            }
+        }
+        #endregion
     }
 }

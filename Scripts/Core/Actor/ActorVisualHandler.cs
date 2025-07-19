@@ -40,7 +40,7 @@ namespace Kuantech.Core
             ClearCurrentVisual();
             CurrentActorVisual = visual;
             CurrentActorVisual.gameObject.AttachToParent(ActorVisualSlot != null ? ActorVisualSlot : transform);
-            CurrentActorVisual.Initialize();
+            CurrentActorVisual.OnAttachedToActor(Actor);
             CurrentActorVisual.ParentActor = Actor;
             OnActorVisualSet?.Invoke(CurrentActorVisual);
             visual.gameObject.SetActive(true);
@@ -49,14 +49,17 @@ namespace Kuantech.Core
         public void ClearCurrentVisual()
         {
             if (CurrentActorVisual == null) return;
+            CurrentActorVisual.OnRemovedFromActor(Actor);
             OnActorVisualRemoved?.Invoke(CurrentActorVisual);
             PoolManager.PoolObject(CurrentActorVisual.gameObject);
             CurrentActorVisual = null;
         }
-
-        private void OnHit()
+        
+        public override void OnActorStateChanged(ActorState oldState, ActorState newState)
         {
-            
+            base.OnActorStateChanged(oldState, newState);
+            if(CurrentActorVisual == null) return;
+            CurrentActorVisual.OnActorStateChanged(oldState, newState);
         }
     }
 }

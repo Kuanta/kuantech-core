@@ -17,7 +17,7 @@ namespace Kuantech.Rpg.Skills
     }
 
     [Serializable]
-    public struct SkillBehaviorFxData
+    public struct FxPlayData
     {
         public enum SkillBehaviourFxPlayType
         {
@@ -47,7 +47,7 @@ namespace Kuantech.Rpg.Skills
         public float Duration;
 
         [Header("Effects")] 
-        public List<SkillBehaviorFxData> SkillBehaviourFxDatas;
+        public List<FxPlayData> SkillBehaviourFxDatas;
         
         //Animation data
         public AnimationData BehaviourStartAnimationData;
@@ -116,13 +116,13 @@ namespace Kuantech.Rpg.Skills
                 Effect effect = null;
                 switch(fx.PlayType)
                 {
-                    case SkillBehaviorFxData.SkillBehaviourFxPlayType.OnCaster:
+                    case FxPlayData.SkillBehaviourFxPlayType.OnCaster:
                         effect = PlayEffectOnCaster(fx.EffectPlayer);
                         break;
-                    case SkillBehaviorFxData.SkillBehaviourFxPlayType.AtCaster:
+                    case FxPlayData.SkillBehaviourFxPlayType.AtCaster:
                         effect  = PlayEffectAtCasterPosition(fx.EffectPlayer);
                         break;
-                    case SkillBehaviorFxData.SkillBehaviourFxPlayType.AtCastPoint:
+                    case FxPlayData.SkillBehaviourFxPlayType.AtCastPoint:
                         effect = PlayEffectAtCastPosition(fx.EffectPlayer);
                         break;
                 }

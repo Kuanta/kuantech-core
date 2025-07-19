@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Kuantech.Utils;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Kuantech.Core.FX
 {
@@ -10,21 +11,25 @@ namespace Kuantech.Core.FX
     /// </summary>
     public class EffectsModule : ActorModule
     {
-        [Header("Efffects")]
+        [Header("Pre-defined Effects")]
         public Effect DamageReceiveEffect;
         public Effect JumpEffect;
         public Effect DodgeEffect;
         public Effect DeathEffect;
         private Effect _impact;
-        
+
+        [Header("Existing Effects")]
         public List<Effect> ExistingEffects;
         private Dictionary<string, Effect> _effectsById;
+        
+        [Header("Existing Effect Players")]
+        public List<EffectPlayerComponent> ExistingEffectPlayerComponents;
+        private Dictionary<int, EffectPlayerComponent> _effectPlayerComponentsByTag;
 
         [Header("Shader Effects")]
         public List<ShaderEffect> ExistingShaderEffects;
         public HashSet<ShaderEffect> ShaderEffects = new HashSet<ShaderEffect>();
         private Dictionary<string, ShaderEffect> _shaderEffectsById = new Dictionary<string, ShaderEffect>();
-        
         [NonSerialized] public HashSet<Effect> ActiveEffects = new HashSet<Effect>();
 
         public override void Initialize()
@@ -32,12 +37,12 @@ namespace Kuantech.Core.FX
             base.Initialize();
             Actor.OnHitEvent += OnReceiveDamage;
             _effectsById = new Dictionary<string, Effect>();
-            foreach(var effectPlayer in ExistingEffects)
+            foreach(var effect in ExistingEffects)
             {
-                string effectId = effectPlayer.EffectId;
+                string effectId = effect.EffectId;
                 if (!effectId.IsNullOrEmpty())
                 {
-                    _effectsById.Add(effectId, effectPlayer);
+                    _effectsById.Add(effectId, effect);
                 }
                 else
                 {
@@ -47,6 +52,8 @@ namespace Kuantech.Core.FX
                 }
             }
             
+            SetEffectPlayers();
+            
             //Set shader effects
             foreach (var shaderEffect in ExistingShaderEffects)
             {
@@ -54,6 +61,14 @@ namespace Kuantech.Core.FX
             }
         }
 
+        private void SetEffectPlayers()
+        {
+            _effectPlayerComponentsByTag = new Dictionary<int, EffectPlayerComponent>();
+            foreach (var effectPlayerComponent in ExistingEffectPlayerComponents)
+            {
+                _effectPlayerComponentsByTag[effectPlayerComponent.EffectPlayer.EffectTag] = effectPlayerComponent;
+            }
+        }
         public override void OnModulesInitialized()
         {
             base.OnModulesInitialized();
@@ -73,6 +88,12 @@ namespace Kuantech.Core.FX
         public void OnActorVisualSet(ActorVisual actorVisual)
         {
             UpdateShaderEffectRenderers(actorVisual.gameObject);
+            ActorVisualEffectsModule actorVisualEffectsModule = actorVisual.GetModule<ActorVisualEffectsModule>();
+            if (actorVisualEffectsModule == null) return;
+            foreach (var effectComp in actorVisualEffectsModule.EffectPlayersComponents)
+            {
+                _effectPlayerComponentsByTag[effectComp.EffectPlayer.EffectTag] = effectComp;
+            }
         }
 
         
@@ -121,6 +142,22 @@ namespace Kuantech.Core.FX
             if (effectId.IsNullOrEmpty()) return null;
             if (_effectsById.ContainsKey(effectId)) return _effectsById[effectId];
             return null;
+        }
+        
+        /// <summary>
+        /// Returns an effect player by tag
+        /// </summary>
+        /// <param name="tag"></param>
+        /// <returns></returns>
+        public EffectPlayerComponent GetEffectPlayerByTag(int tag)
+        {
+            if(_effectPlayerComponentsByTag.TryGetValue(tag, out var value)) return value;
+            return null;
+        }
+
+        public void PlayEffectByTag(int tag)
+        {
+            GetEffectPlayerByTag(tag)?.PlayEffect(Actor);
         }
         #endregion
 
@@ -234,6 +271,15 @@ namespace Kuantech.Core.FX
             if (ActiveEffects.IsNullOrEmpty() || !ActiveEffects.Contains(effect)) return;
             ActiveEffects.Remove(effect);
             effect.Stop();
+        }
+
+        public void StopActiveEffects()
+        {
+            foreach (var activeFx in ActiveEffects)
+            {
+                activeFx.Stop();
+            }
+            ActiveEffects.Clear();
         }
         #endregion
     }

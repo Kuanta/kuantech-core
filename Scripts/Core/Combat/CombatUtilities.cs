@@ -92,7 +92,7 @@ namespace Kuantech.Core.Combat
         }
 
 
-        public static void HidActorsInCircle2D(Vector3 center, float range,
+        public static void HitActorsInCircle2D(Vector3 center, float range,
             LayerMask layerMask, HitInfo hitInfo, HashSet<int> factionFilter = null, UnityAction<Actor> damageHandler = null)
         {
             Collider2D[] results = Physics2D.OverlapCircleAll(center, range, layerMask.value);
@@ -135,8 +135,35 @@ namespace Kuantech.Core.Combat
                 }
             }
         }
-        
 
+
+        public static void HitActorsInBox2D(Vector3 startPosition, Vector3 direction, float width, float length, LayerMask layerMask,
+            HitInfo hitInfo, HashSet<int> factionFilter = null, UnityAction<Actor> damageHandler = null)
+        {
+            direction.z = 0;
+            direction.Normalize();
+            Vector3 boxCenter = startPosition + direction * length * 0.5f;
+            // Get angle for the box rotation (only Z needed)
+            float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+
+            // Size of the box (length along direction, width perpendicular)
+            Vector2 boxSize = new Vector2(length, width);
+
+            // Perform the box overlap
+            Collider2D[] hits = Physics2D.OverlapBoxAll(boxCenter, boxSize, angle, layerMask);
+
+            foreach (var hit in hits)
+            {
+                if (hit == null) continue;
+                if (!hit.TryGetComponent(out Actor actor)) continue;
+                if (!actor.IsAlive()) continue;
+                if (!factionFilter.IsNullOrEmpty() && !factionFilter.Contains(actor.FactionId)) continue;
+                
+                actor.OnHit(hitInfo);
+                // You can do something with hitInfo here if needed (like filling in contact point, etc.)
+                damageHandler?.Invoke(actor);
+            }
+        }
         #endregion
        
     }

@@ -10,9 +10,11 @@ namespace Kuantech.Core.FX
     [Serializable]
     public class EffectPlayer
     {
+        [KTTag("EffectTags")]
+        public int EffectTag;
+        public string EffectId;
         public Effect Effect;
         public Effect EffectPrefab;
-        public string EffectId;
 
         public string GetEffectId()
         {

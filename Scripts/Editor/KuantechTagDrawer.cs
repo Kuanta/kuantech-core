@@ -7,7 +7,7 @@ namespace Kuantech.Editor
     [CustomPropertyDrawer(typeof(KTTagAttribute))]
     public class KuantechTagDrawer: PropertyDrawer {
 
-        public const string TagsListPath = "Assets/Kuantech/Data/KTTags.asset";
+        public const string TagsListPath = "Assets/Kuantech/Settings/KTTags.asset";
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label) {
 
             if (property.propertyType == SerializedPropertyType.Integer)
