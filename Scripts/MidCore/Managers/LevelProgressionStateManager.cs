@@ -27,15 +27,23 @@ namespace Kuantech.Midcore
         {
             var ctx = GetContext<LevelProgressionStateManager>();
             if (ctx == null) return;
+            
+            if (ctx.LastCompletedLevelIndex < level.LevelNumber )
+            {
+                ctx.LastCompletedLevelIndex = level.LevelNumber;
+            }
+
+            if (ctx.LastCompletedWorld < level.WorldIndex)
+            {
+                ctx.LastCompletedLevelIndex = level.LevelNumber;
+            }
+            
             if (ctx.LastCompletedWorld < level.WorldIndex)
             {
                 ctx.LastCompletedWorld = level.WorldIndex;
             }
 
-            if (ctx.LastCompletedLevelIndex < level.LevelNumber)
-            {
-                ctx.LastCompletedLevelIndex = level.LevelNumber;
-            }
+          
             ctx.SaveState();
         }
 
