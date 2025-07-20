@@ -150,7 +150,7 @@ namespace Kuantech.Core
 
             if (elapsedTime >= currentPattern.EffectPlayTime && !_effectPlayed)
             {
-                
+                PlayAttackFx();
             }
             if (elapsedTime >= currentPattern.AttackTime && !_attacked || 
                 (currentPattern.Continious &&  (Time.time - _lastAttackImplementationTime) >= currentPattern.AttackTime))
@@ -439,7 +439,7 @@ namespace Kuantech.Core
             _attackWindupCompleted = false;
             _attackStartTime = Time.time;
             _attackDirection = attackDirection;
-            
+            _effectPlayed = false;
             if(_animationModule != null)
             {
                 _animationModule.PlayAnimation(GetCurrentAttackPattern().AttackAnimationData);

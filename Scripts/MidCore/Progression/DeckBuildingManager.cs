@@ -40,6 +40,11 @@ namespace Kuantech.Midcore
         public override void SetDefaultState()
         {
             base.SetDefaultState();
+            CurrentDeck.Clear();
+            for (int i = 0; i < DeckSize; ++i)
+            {
+                CurrentDeck.Add(null);
+            }
             for (int i = 0; i < DefaultDeck.Count; ++i)
             {
                 if(i>= DeckSize) break;
