@@ -33,13 +33,13 @@ namespace Kuantech.Core.UI
         public override void Open()
         {
             base.Open();
-            GameManager.Instance.PauseGame();
+            GameManager.PauseGame();
         }
 
         public override void Close()
         {
             base.Close();
-            GameManager.Instance.ResumeGame();
+            GameManager.ResumeGame();
         }
         
         public void SetConfirmListener(UnityAction handler)

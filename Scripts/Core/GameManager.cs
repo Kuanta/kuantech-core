@@ -72,14 +72,16 @@ namespace Kuantech.Core
             if (GameManager.Instance == null) return false;
             return GameManager.Instance.GameIsPaused;
         }
-        public void PauseGame()
+        public static void PauseGame()
         {
             Time.timeScale = 0f;
+           Instance.GameIsPaused = true;
         }
 
-        public void ResumeGame()
+        public static void ResumeGame()
         {
             Time.timeScale = 1f;
+            Instance.GameIsPaused = false;
         }
 
         #endregion

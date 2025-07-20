@@ -179,7 +179,6 @@ namespace Kuantech.Rpg
         {
             if(attributeAsset == null)
             {
-                Debug.LogError("Trying to get a null attribute");
                 return 0f;
             }
             return GetAttributeValue(attributeAsset.Id);

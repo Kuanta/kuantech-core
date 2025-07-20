@@ -7,6 +7,7 @@ using Kuantech.Rpg;
 using Kuantech.Rpg.Skills;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Serialization;
 
 namespace Kuantech.Core
 {
@@ -46,14 +47,17 @@ namespace Kuantech.Core
         public AttributeAsset AttributeToScaleDamage;
         public float AttributeScaleFactor = 0f; //How much the attribute value scales the damage, 1 means 1:1 scaling
         
-        [Header("Timings")]
-        public float MovementSlow; //Factor between 0-1, movement speed while attacking will be MovementSpeed * (1-MovementSlow)
-        public float WindupTime;
-        public float AttackTime;
+        [Header("Timings")] 
+        public float AttackImplementationTime;
         public float EffectPlayTime;
-        public float Cooldown;
+        public float ContinuousAttackMaxTime;
+        public bool ScaleAttackImplementationTimeWithAttackSpeed = true;
+        public float AttackDuration;
         public bool Continious; //Continious will attack every 'attack time' during the attack
         
+        [Header("Movement Manupilation")]
+        public float MovementSlow; //Factor between 0-1, movement speed while attacking will be MovementSpeed * (1-MovementSlow)
+
         [Header("Knosckback")]
         public float Knockback;
         public float KnockbackTime;
@@ -80,6 +84,13 @@ namespace Kuantech.Core
 
     public class CombatModule: ActorModule
     {
+        [Header("Timings")] 
+        public AttributeAsset AttackSpeedAttribute;
+        public float MinAttackSpeed = 100.0f;
+        public float MaxAttackSpeed = 1000.0f;
+        public float MinAttackTime = 0.1f;
+        public float MaxAttackTime = 50.0f;
+        
         [Header("Attack Pattern")]
         public AttackPattern DefaultAttackPattern;
         private AttackPattern _currentAttackPattern;
@@ -117,7 +128,6 @@ namespace Kuantech.Core
         //Runtime
         private float _attackStartTime;
         private bool _isAttacking = false;
-        private bool _attackWindupCompleted = false;
         private bool _attacked = false;
         private float _lastAttackImplementationTime; //Last time an attack implementation has been called. Useful for continious attacks
         private float _lastAttackCompleteTime;
@@ -138,27 +148,27 @@ namespace Kuantech.Core
             _slotsHandler = Actor.GetModule<ActorSlotsHandler>();
         }
 
+
         private void Update()
         {
             if (!_isAttacking) return;
             float elapsedTime = Time.time - _attackStartTime;
             AttackPattern currentPattern = GetCurrentAttackPattern();
-            if(elapsedTime > GetCurrentAttackPattern().WindupTime && !_attackWindupCompleted)
-            {
-                OnAttackWindupCompleted();
-            }
 
-            if (elapsedTime >= currentPattern.EffectPlayTime && !_effectPlayed)
+            if (elapsedTime >= _effectPlayTime && !_effectPlayed)
             {
                 PlayAttackFx();
             }
-            if (elapsedTime >= currentPattern.AttackTime && !_attacked || 
-                (currentPattern.Continious &&  (Time.time - _lastAttackImplementationTime) >= currentPattern.AttackTime))
+            if (elapsedTime >= _attackImplementationTime && !_attacked || 
+                (currentPattern.Continious &&  (Time.time - _lastAttackImplementationTime) >= _attackImplementationTime))
             {
-                RunAttackImplementation();
+                if (elapsedTime <= _maxContinuousAttackTime || !currentPattern.Continious)
+                {
+                    RunAttackImplementation();
+                }
             }
 
-            if (elapsedTime > GetCurrentAttackPattern().Cooldown)
+            if (elapsedTime > _attackDuration)
             {
                 OnAttackCompleted();
             }
@@ -176,7 +186,94 @@ namespace Kuantech.Core
             return _targetManager.GetCurrentTarget();
         }
         #endregion
+
+        #region Timings
+
+        /// <summary>
+        /// Returns the base attack time. 
+        /// </summary>
+        /// <returns></returns>
+        public float GetBaseAttackTime()
+        {
+            return GetCurrentAttackPattern().AttackDuration;
+        }
         
+        /// <summary>
+        /// Returns the attack speed
+        /// </summary>
+        /// <returns></returns>
+        public virtual float GetAttackSpeed()
+        {
+            if (_statModule == null) return MinAttackSpeed;
+            float attackSpeed = _statModule.GetAttributeValue(AttackSpeedAttribute);
+            return Mathf.Clamp(attackSpeed, MinAttackSpeed, MaxAttackSpeed);
+        }
+        
+        /// <summary>
+        /// Returns the final attack duration. Formula is AttackSpeed/(100 x BaseAttackSpeed)
+        /// </summary>
+        /// <returns></returns>
+        public float GetAttackDuration()
+        {
+            float attackSpeed = GetAttackSpeed();
+            float bat = GetBaseAttackTime();
+            float attackRate = attackSpeed / (100 * bat);
+            float attackDuration = Mathf.Clamp(1 / attackRate, MinAttackTime, MaxAttackTime);
+            return attackDuration;
+        }
+                
+        /// <summary>
+        /// Returns the multiplier calculated from BaseAttackTime/FinalAttackTime.
+        /// Final attack time is calculated from GetAttackDuration.
+        /// </summary>
+        /// <returns></returns>
+        public float GetAttackSpeedMultiplier()
+        {
+            float baseAttack = GetBaseAttackTime();
+            float finalAttack = GetAttackDuration();
+            return baseAttack / finalAttack;
+        }
+
+        /// <summary>
+        /// Returns the attack fx play time
+        /// </summary>
+        /// <returns></returns>
+        public float GetAttackFxPlayTime()
+        {
+            AttackPattern currPattern = GetCurrentAttackPattern();
+            if (currPattern.ScaleAttackImplementationTimeWithAttackSpeed)
+            {
+                return GetCurrentAttackPattern().EffectPlayTime / GetAttackSpeedMultiplier();  
+            }
+            return GetCurrentAttackPattern().EffectPlayTime;
+        }
+
+        public float GetContinuousAttackMaxTime()
+        {
+            AttackPattern currPattern = GetCurrentAttackPattern();
+            if (currPattern.ScaleAttackImplementationTimeWithAttackSpeed)
+            {
+                return currPattern.ContinuousAttackMaxTime / GetAttackSpeedMultiplier();    
+            }
+
+            return currPattern.ContinuousAttackMaxTime;
+        }
+        
+        /// <summary>
+        /// Returns the attack implementation time
+        /// </summary>
+        /// <returns></returns>
+        public float GetAttackImplementationTime()
+        {
+            AttackPattern currPattern = GetCurrentAttackPattern();
+            if (currPattern.ScaleAttackImplementationTimeWithAttackSpeed)
+            {
+                return currPattern.AttackImplementationTime / GetAttackSpeedMultiplier();    
+            }
+
+            return currPattern.AttackImplementationTime;
+        }
+        #endregion
        
         #region AttackPositions
         
@@ -425,24 +522,35 @@ namespace Kuantech.Core
 
         public void SetCurrentAttackPattern(AttackPattern attackPattern)
         {
-            if (attackPattern.Cooldown < attackPattern.AttackTime) attackPattern.Cooldown = attackPattern.AttackTime;
+            if (attackPattern.AttackDuration < attackPattern.AttackImplementationTime) attackPattern.AttackDuration = attackPattern.AttackImplementationTime;
             _currentAttackPattern = attackPattern;
         }
         #endregion
         
         #region Attack Lifecycle
+        private float _effectPlayTime;
+        private float _attackDuration;
+        private float _attackImplementationTime;
+        private float _maxContinuousAttackTime;
 
         private void OnAttackStarted(Vector3 attackDirection)
         {
+            AttackPattern currPattern = GetCurrentAttackPattern();
+            //Set timings
+            _attackDuration = GetAttackDuration();
+            float timeMultiplier = GetAttackSpeedMultiplier();
+            _effectPlayTime = GetAttackFxPlayTime();
+            _attackImplementationTime = GetAttackImplementationTime();
+            _maxContinuousAttackTime = GetContinuousAttackMaxTime();
+            
             _isAttacking = true;
             _attacked = false;
-            _attackWindupCompleted = false;
             _attackStartTime = Time.time;
             _attackDirection = attackDirection;
             _effectPlayed = false;
             if(_animationModule != null)
             {
-                _animationModule.PlayAnimation(GetCurrentAttackPattern().AttackAnimationData);
+                _animationModule.PlayAnimation(currPattern.AttackAnimationData, timeMultiplier);
             }
             else
             {
@@ -473,18 +581,13 @@ namespace Kuantech.Core
             AttackStartedEvent?.Invoke(this);
         }
 
-        private void OnAttackWindupCompleted()
-        {
-            _attackWindupCompleted = true;
-            //If collider based melee, toggle weapon colliders
-        }
-        
         private void OnAttackCompleted()
         {
             _isAttacking = false;
             _lastAttackCompleteTime = Time.time;
             AttackCompletedEvent?.Invoke(this);
         }
+        
         #endregion
 
         #region Fx
