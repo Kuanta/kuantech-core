@@ -75,7 +75,17 @@ namespace Kuantech.TowerDefense
                 SpawnNextWaveElement();
             }
         }
-        
+
+        #region Queries
+        /// <summary>
+        /// Checks if all wave are completed
+        /// </summary>
+        /// <returns></returns>
+        public bool AreAllWavesCompleted()
+        {
+            return CurrentWaveIndex >= WaveDatas.Count - 1;
+        }
+
         /// <summary>
         /// Checks if the current wave is completed.
         /// </summary>
@@ -88,17 +98,49 @@ namespace Kuantech.TowerDefense
             return remainingEnemies + aliveEnemies <= 0;
         }
         
+        /// <summary>
+        /// Checks if level is in wave phase
+        /// </summary>
+        /// <returns></returns>
         public bool IsLevelInWavePhase()
         {
             return ParentLevel.GetCurrentPhase() is WavePhase;
         }
-
-        #region Wave Control
-        public bool AreAllWavesCompleted()
+        
+        /// <summary>
+        /// Gets current wave index
+        /// </summary>
+        /// <returns></returns>
+        public int GetCurrentWaveIndex()
         {
-            return CurrentWaveIndex >= WaveDatas.Count - 1;
+            return Mathf.Max(CurrentWaveIndex, 0); //return 0 if its -1 too
         }
         
+        /// <summary>
+        /// Returns the number of total waves
+        /// </summary>
+        /// <returns></returns>
+        public int GetWaveCount()
+        {
+            return WaveDatas.Count;
+        }
+        
+        /// <summary>
+        /// Gets current wave data
+        /// </summary>
+        /// <param name="waveIndex"></param>
+        /// <returns></returns>
+        public WaveData GetWaveDataForWave(int waveIndex)
+        {
+            waveIndex = Mathf.Clamp(waveIndex, 0, WaveDatas.Count-1);
+            return WaveDatas[waveIndex];
+        }
+
+        #endregion
+       
+        
+        #region Wave Control
+    
         public void SetNextWave()
         {
             SetWave(CurrentWaveIndex+1);
@@ -141,6 +183,7 @@ namespace Kuantech.TowerDefense
         }
 
         #endregion
+        
         #region Summoners
  
         public void SpawnNextWaveElement()
@@ -212,11 +255,15 @@ namespace Kuantech.TowerDefense
             return _waveQueue.Count;
         }
 
+        public int GetMaxEnemyCountForWave(int waveIndex)
+        {
+            WaveData waveData = GetWaveDataForWave(waveIndex);
+            return waveData.GetEnemyCount();
+        }
+        
         public int GetMaxEnemyCount()
         {
-            WaveData waveData = GetCurrentWaveData();
-            if (waveData == null) return 0;
-            return waveData.GetEnemyCount();    
+            return GetMaxEnemyCountForWave(CurrentWaveIndex);
         }
 
         public WaveEntry GetNextWaveEntry()
