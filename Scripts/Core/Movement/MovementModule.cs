@@ -42,6 +42,7 @@ namespace Kuantech.Core
         /// <returns></returns>
         public virtual float GetSpeed()
         {
+            if (IsMovementLocked()) return 0f;
             StatsModule sm = Actor.GetModule<StatsModule>();
             if (sm == null) return Speed;
             Attribute speedAtt = sm.GetAttribute(SpeedAttribute);
@@ -51,13 +52,23 @@ namespace Kuantech.Core
         #endregion
         
         #region Locks
+
+        public bool IsMovementLocked()
+        {
+            if (MovementLock != null && MovementLock.IsLocked()) return true;
+            return false;
+        }
         
         /// <summary>
         /// Locks the movement
         /// </summary>
         /// <param name="locker"></param>
-        public void Lock(string locker)
+        public void Lock(object locker)
         {
+            if (MovementLock == null)
+            {
+                MovementLock = new LockVariable();
+            }
             MovementLock.Lock(locker);
             if (MovementLock.IsLocked())
             {
@@ -69,8 +80,9 @@ namespace Kuantech.Core
         /// Unlocks the movement
         /// </summary>
         /// <param name="locker"></param>
-        public void Unlock(string locker)
+        public void Unlock(object locker)
         {
+            if (!IsMovementLocked()) return;
             bool alreadyUnlocked = !MovementLock.IsLocked();
             if (alreadyUnlocked) return;
             

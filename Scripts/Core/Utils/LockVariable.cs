@@ -6,14 +6,15 @@ namespace Kuantech.Core.Utils
     {
         private float _lastLockTime;
         
-        private HashSet<string> _lockingSources = new HashSet<string>();
+        private HashSet<object> _lockingSources = new HashSet<object>();
         
-        public void Lock(string locker)
+        public void Lock(object locker)
         {
+            if (_lockingSources.Contains(locker)) return;
             _lockingSources.Add(locker);
         }
 
-        public void Unlock(string locker)
+        public void Unlock(object locker)
         {
             _lockingSources.Remove(locker);
         }
