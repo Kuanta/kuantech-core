@@ -33,6 +33,7 @@ namespace Kuantech.Utils
         
         private void OnConfigSheetRead(JObject sheetData)
         {
+            if (sheetData == null) return;
             JArray array = (JArray) sheetData["values"];
             JArray headerRow = array[0] as JArray;
             JArray valuesRow = array[1] as JArray;
