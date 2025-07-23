@@ -86,11 +86,16 @@ namespace Kuantech.Core
             }
                 
             //Sets blueprint comps
+            ApplyComponentsToActor(actor);
+            return actor;
+        }
+
+        public void ApplyComponentsToActor(Actor actor)
+        {
             foreach(var blueprintComp in ActorBlueprintComponents)
             {
                 blueprintComp.OnActorCreated(this, actor);
             }
-            return actor;
         }
     }
 }

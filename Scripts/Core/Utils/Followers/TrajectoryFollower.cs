@@ -1,7 +1,6 @@
 ﻿using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.Serialization;
 
 
 public class TrajectoryFollower : MonoBehaviour
@@ -48,6 +47,7 @@ public class TrajectoryFollower : MonoBehaviour
         _elapsedTime = 0f;
         _isMoving = true;
         _totalDistance = Vector3.Distance(_startPosition, _endPosition);
+        transform.localScale = Vector3.one;
     }
 
     public bool IsMoving()

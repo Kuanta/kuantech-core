@@ -58,7 +58,7 @@ namespace Kuantech.Core
         // Behaviour flags
         public DamageInfo Damage;
         public float SplashRadius = 0f; // 0 means no splash
-        public float SplashDamage = 0.0f;
+        public DamageInfo SplashDamage;
         
         //Runtime
         protected float _age = 0f; // Age of the projectile in terms of seconds
@@ -361,10 +361,7 @@ namespace Kuantech.Core
             if (SplashRadius > 0)
             {
                 Vector3 origin = transform.position;
-                DamageInfo splashDamage = new DamageInfo()
-                {
-                    DamageAmount = SplashDamage,
-                };
+                DamageInfo splashDamage = SplashDamage;
                 HitInfo hitInfo = new HitInfo()
                 {
                     DamageInfo = splashDamage,
