@@ -39,7 +39,7 @@ public class TrajectoryFollower : MonoBehaviour
     private float _totalDistance;
     private bool _isMoving = false;
 
-    private Vector3 _targetScale;
+    private Vector3 _targetScale = Vector3.one;
 
     public UnityAction OnReachedTarget;
 
@@ -63,8 +63,12 @@ public class TrajectoryFollower : MonoBehaviour
     
     private void Update()
     {
+        if (!_isMoving)
+        {
+            transform.localScale = Vector3.one;
+            return;
+        }
         transform.localScale = Vector3.Lerp(transform.localScale, _targetScale,Time.deltaTime * ScaleLerpFactor);
-        if (!_isMoving) return;
 
         _elapsedTime += Time.deltaTime;
 
