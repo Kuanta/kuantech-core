@@ -27,6 +27,10 @@ public class TrajectoryFollower : MonoBehaviour
     [Header("Rotation Settings")]
     public bool RotateTowardsTarget = true;
 
+    [Header("Scale")] 
+    public float RiseScale = 1.2f;
+    public float ScaleLerpFactor = 50;
+
     private Vector3 _startPosition;
     private Vector3 _endPosition;
     private Vector3 _targetPosition;
@@ -34,7 +38,8 @@ public class TrajectoryFollower : MonoBehaviour
     private float _elapsedTime = 0f;
     private float _totalDistance;
     private bool _isMoving = false;
-    
+
+    private Vector3 _targetScale;
 
     public UnityAction OnReachedTarget;
 
@@ -48,6 +53,7 @@ public class TrajectoryFollower : MonoBehaviour
         _isMoving = true;
         _totalDistance = Vector3.Distance(_startPosition, _endPosition);
         transform.localScale = Vector3.one;
+        _targetScale = Vector3.one;
     }
 
     public bool IsMoving()
@@ -57,6 +63,7 @@ public class TrajectoryFollower : MonoBehaviour
     
     private void Update()
     {
+        transform.localScale = Vector3.Lerp(transform.localScale, _targetScale,Time.deltaTime * ScaleLerpFactor);
         if (!_isMoving) return;
 
         _elapsedTime += Time.deltaTime;
@@ -65,8 +72,10 @@ public class TrajectoryFollower : MonoBehaviour
 
         // Evaluate speed and height from curves
         float speed = SpeedCurve.Evaluate(progress) * Speed;
-       
-        float heightSpeed = HeightCurve.Evaluate(progress) * RiseSpeed;
+
+        float heightCurveValue = HeightCurve.Evaluate(progress);
+        float heightSpeed = heightCurveValue * RiseSpeed;
+        _targetScale = Vector3.one * (1+(heightCurveValue * RiseScale));
         if (progress >= 1.0f)
         {
             heightSpeed = 0.0f;
@@ -96,18 +105,13 @@ public class TrajectoryFollower : MonoBehaviour
             _isMoving = false;
             transform.position = _endPosition;
             OnReachedTarget?.Invoke();
+            _targetScale = Vector3.one;
         }
-    }
-    
-    [Button("Test")]
-    public void Test(Vector3 target)
-    {
-        transform.position = new Vector3(-5, -2, 0);
-        GoToPoint(target);
     }
 
     public void Stop()
     {
         _isMoving = false;
+        _targetScale = Vector3.one;
     }
 }
