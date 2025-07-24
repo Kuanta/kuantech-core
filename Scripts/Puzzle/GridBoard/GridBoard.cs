@@ -605,9 +605,10 @@ namespace Kuantech.Puzzle
             return emptyTiles;
         }
 
-        public List<GridTile> Get4Neighs(int row, int col, int layer=0)
+        public BoardTile[] Get4Neighs(int row, int col, int layer=0)
         {
-            List<GridTile> neighs = new List<GridTile>();
+            BoardTile[] neighs = new BoardTile[4];
+            int counter = 0;
             for (int i = -1; i < 2; ++i)
             {
                 for (int j = -1; j < 2; ++j)
@@ -615,7 +616,8 @@ namespace Kuantech.Puzzle
                     if(i==j || (i != 0 && j != 0)) continue; //4 neighs condition
                     GridTile tile = GetTile(row + i, col + j, layer);
                     if(tile == null) continue;
-                    neighs.Add(tile);
+                    neighs[counter] = tile;
+                    counter++;
                 }
             }
 

@@ -228,5 +228,11 @@ namespace Kuantech.Puzzle
         {
             return ParentBoard as GridBoard;
         }
+
+        public BoardTile[] Get4Neighs()
+        {
+            if (ParentBoard == null) return null;
+            return (ParentBoard as GridBoard)?.Get4Neighs(AnchorRow, AnchorColumn, 0);
+        }
     }
 }
