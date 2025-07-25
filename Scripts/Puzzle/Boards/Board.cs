@@ -32,7 +32,7 @@ namespace Kuantech.Puzzle
         public List<GameObject> ExistingLayers;
         
         //Events
-        public UnityAction<BoardTile> OnTilePlacedToBoard;
+        public UnityAction<BoardTile> OnTilePlacedToBoardEvent;
         
         //Editor
         [Header("Editor Background")] 
@@ -131,6 +131,7 @@ namespace Kuantech.Puzzle
             {
                 //Merge with the first one
                 tilesThatCanBeMerged[0].MergeWith(tile);
+                OnTileMerged(tilesThatCanBeMerged[0]);
                 return true;
             }
             
@@ -143,10 +144,20 @@ namespace Kuantech.Puzzle
             {
                 PositionTileAtCoordinate(tile, coordinate);
             }
-            OnTilePlacedToBoard?.Invoke(tile);
+            OnTileSetToBoard(tile);
             return true;
         }
 
+        protected virtual void OnTileMerged(BoardTile tile)
+        {
+            
+        }
+        
+        protected virtual void OnTileSetToBoard(BoardTile tile)
+        {
+            OnTilePlacedToBoardEvent?.Invoke(tile);
+        }
+        
         public virtual void PositionTileAtCoordinate(BoardTile tile, BoardTileCoordinate coordinate)
         {
             throw new System.NotImplementedException();
@@ -165,7 +176,9 @@ namespace Kuantech.Puzzle
         }
         
         public abstract BoardTile GetTile(BoardTileCoordinate qbertTileCoordinate);
-
+        
+        public abstract List<T> GetTiles<T>() where T : BoardTile;
+        
         /// <summary>
         /// Saves the tile. Every board must have its own implementation
         /// </summary>

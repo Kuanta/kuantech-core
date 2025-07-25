@@ -713,6 +713,22 @@ namespace Kuantech.Puzzle
             return GetTile(qbertTileCoordinate.Row, qbertTileCoordinate.Column, 0);
         }
 
+        public override List<T> GetTiles<T>()
+        {
+            List<T> tilesOfType = new List<T>();
+            for(int r=0;r<RowCount;++r)
+            {
+                for(int c=0;c<ColumnCount;++c)
+                {
+                    BoardTile tile = GetTile(r, c, 0);
+                    if(tile == null || !(tile is T) ) continue;
+                    tilesOfType.Add((T)tile);
+                }
+            }
+
+            return tilesOfType;
+        }
+        
         #region Core Set & Clear
         /// <summary>
         /// Saves tile to given coordinate
@@ -766,7 +782,7 @@ namespace Kuantech.Puzzle
                 }
             }
         }
-
+        
         /// <summary>
         /// Returns the flattened coordinates from row and col
         /// </summary>
