@@ -13,8 +13,8 @@ namespace Kuantech.Midcore
         [Tooltip("Progressable that corresponds to actor level")] 
         public ProgressableDataAsset ActorProgressableAsset;
         
-        [Tooltip("List of progressables that corresponds to stat modifiers")]
-        public List<TraitUpgradeProgressable> ModifierUpgrades;
+        // [Tooltip("List of progressables that corresponds to stat modifiers")]
+        // public List<TraitUpgradeProgressable> ModifierUpgrades;
 
         private StatsModule _statsModule;
 
@@ -28,7 +28,7 @@ namespace Kuantech.Midcore
             _statsModule.SetLevel(GetActorLevel());
             
             //Set upgrades
-            SetTraitUpgrades();
+            //SetTraitUpgrades();
             
             //todo: Implement passives and spells
         }
@@ -44,20 +44,20 @@ namespace Kuantech.Midcore
             return level;
         }
         
-        /// <summary>
-        /// Sets the modifiers from progressables
-        /// </summary>
-        private void SetTraitUpgrades()
-        {
-            if(ModifierUpgrades.IsNullOrEmpty()) return;
-            foreach (var entry in ModifierUpgrades)
-            {
-                int rank = ProgressionManager.GetCurrentRank(entry);
-                if(rank < 0) continue;
-                StatModifier modifier = new StatModifier(entry.ModifierData);
-                modifier.Level = rank;
-                _statsModule.AddModifier(modifier);
-            }
-        }
+        // /// <summary>
+        // /// Sets the modifiers from progressables
+        // /// </summary>
+        // private void SetTraitUpgrades()
+        // {
+        //     if(ModifierUpgrades.IsNullOrEmpty()) return;
+        //     foreach (var entry in ModifierUpgrades)
+        //     {
+        //         int rank = ProgressionManager.GetCurrentRank(entry);
+        //         if(rank < 0) continue;
+        //         StatModifier modifier = new StatModifier(entry.ModifierData);
+        //         modifier.Level = rank;
+        //         _statsModule.AddModifier(modifier);
+        //     }
+        // }
     }
 }
