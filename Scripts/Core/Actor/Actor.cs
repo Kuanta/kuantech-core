@@ -23,7 +23,8 @@ namespace Kuantech.Core
         [Header("Identifier")] 
         public string Id;
         public int FactionId = 0; //Since faction Id is used frequently, it is stated in Actor class
-
+        public int ActorRank = 0;
+        
         [Header("Modules")]
         protected List<ActorModule> ActorModulesList;
         protected Dictionary<Type, List<ActorModule>> Modules = new Dictionary<Type, List<ActorModule>>();
@@ -54,8 +55,8 @@ namespace Kuantech.Core
         public UnityAction<Actor> OnSpawnedEvent;
         public UnityAction<Actor> OnDeathEvent;
         public UnityAction<Actor> OnDespawnedEvent;
-
         public UnityAction<HitInfo> OnHitEvent;
+        public UnityAction<int> OnRankSetEvent;
 
         #region Lifecycle
         private void Start()
@@ -196,6 +197,29 @@ namespace Kuantech.Core
             }
             PoolManager.PoolObject(gameObject);
             _despawnCoroutine = null;
+        }
+        #endregion
+
+        #region ActorRank
+
+        public void SetActorRank(int rank)
+        {
+            ActorRank = rank;
+            OnRankSetEvent?.Invoke(rank);
+            foreach (var module in ActorModulesList)
+            {
+                module.OnActorRankSet(rank);
+            }
+        }
+
+        public int GetActorRank()
+        {
+            return ActorRank;
+        }
+
+        public void IncreaseActorRank()
+        {
+            SetActorRank(GetActorRank()+1);
         }
         #endregion
 

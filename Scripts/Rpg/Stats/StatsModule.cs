@@ -525,5 +525,15 @@ namespace Kuantech.Rpg
                 pair.Value.Rank = 0;
             }
         }
+
+        #region Event Handlers
+        public override void OnActorRankSet(int rank)
+        {
+            foreach (var attribute in _statMap.Values)
+            {
+                attribute.Rank = rank;
+            }
+        }
+        #endregion
     }
 }

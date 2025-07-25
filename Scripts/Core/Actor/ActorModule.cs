@@ -42,7 +42,11 @@ namespace Kuantech.Core
         {
             
         }
-        
+
+        public virtual void OnActorRankSet(int rank)
+        {
+            
+        }
         public virtual void Reset(){}
 
         public virtual void Cleanup(){}

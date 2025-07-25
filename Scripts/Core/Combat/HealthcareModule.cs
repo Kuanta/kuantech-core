@@ -1,4 +1,5 @@
-﻿using Kuantech.Rpg;
+﻿using System.Collections;
+using Kuantech.Rpg;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
@@ -38,6 +39,11 @@ namespace Kuantech.Core.Combat
         public override void Reset()
         {
             base.Reset();
+            Refresh();
+        }
+
+        public void Refresh()
+        {
             if(_statModule != null) _statModule.RefreshResourceValue(HealthResourceAsset);
             UpdateHealthbar();
         }
@@ -47,12 +53,18 @@ namespace Kuantech.Core.Combat
             base.OnModulesInitialized();
             _statModule = Actor.GetModule<StatsModule>();
         }
-        
-        #region Lifecycle
 
-        
+        public override void OnActorRankSet(int rank)
+        {
+            //Wait a frame. Because stats module needs to handle this callback as well
+            StartCoroutine(RefreshAfterFrame());
+        }
 
-        #endregion
+        private IEnumerator RefreshAfterFrame()
+        {
+            yield return new WaitForNextFrameUnit();
+            Refresh();
+        }
         
         private void OnHit(HitInfo hitInfo)
         {
