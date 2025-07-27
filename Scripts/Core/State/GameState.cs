@@ -79,5 +79,11 @@ namespace Kuantech.Core
                 Dirtied = true;
             }
         }
+
+        public void ClearAllData()
+        {
+            _loadedData.Clear();
+            Dirtied = true;
+        }
     }
 }

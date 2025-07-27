@@ -27,7 +27,7 @@ namespace Kuantech.Midcore.UI
             UnitToSpawn = blueprint;
             if (Icon != null)
             {
-                Icon.sprite = blueprint.ProgressableDataAsset.Icon;
+                Icon.sprite = blueprint.ProgressableDataAsset.GetIcon();
             }
         }
         

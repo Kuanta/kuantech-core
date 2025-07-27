@@ -75,6 +75,11 @@ namespace Kuantech.Midcore.UI
                 card.UpdatePreviewCard();
                 card.ToggleClickMeIndicator(false);
             }
+
+            foreach (var deckCard in DeckCards)
+            {
+                deckCard.UpdatePreviewCard();
+            }
             
             //Sort collectibles
             AllCollectiblesPanel.transform.SortChildren(SortCards);
@@ -100,12 +105,22 @@ namespace Kuantech.Midcore.UI
             }
             
             //Compare their names
-            return string.Compare(cardA.CollectibleDataAsset.Name, cardB.CollectibleDataAsset.Name, System.StringComparison.Ordinal);
+            return string.Compare(cardA.CollectibleDataAsset.GetName(), cardB.CollectibleDataAsset.GetName(), System.StringComparison.Ordinal);
         }
         public void OnPreviewCardClicked(CollectiblePreviewCard card)
         {
-            if (CurrentlySelectedCard == card) return;
-            DeselectCard();
+            //Is unlocked
+            if (card.CollectibleDataAsset == null ||
+                !ProgressionManager.IsProgressibleUnlocked(card.CollectibleDataAsset))
+            {
+                return;
+            }
+            
+            if (CurrentlySelectedCard != card)
+            {
+                DeselectCard();
+            }
+            
             if (CardToEquip == null)
             {
                 if (card.IsDeckCard)

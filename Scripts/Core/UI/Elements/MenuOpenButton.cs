@@ -8,10 +8,12 @@ namespace Kuantech.Core.UI
         [SerializeField] private MenuGroup MenuGroup;
         [SerializeField] private UIMenu MenuToOpen;
         [SerializeField] private string MenuIDToOpen;
-
-        [Header("Menu States")] [SerializeField]
-        private GameObject OpenedStateVisual;
+        [Header("Menu States")] 
+        [SerializeField] private GameObject OpenedStateVisual;
         [SerializeField] private GameObject ClosedStateVisual;
+        [SerializeField] private Animator Animator;
+        private static readonly int Opened = Animator.StringToHash("Opened");
+
         private void Start()
         {
             if (MenuGroup != null)
@@ -87,12 +89,14 @@ namespace Kuantech.Core.UI
         {
             if(OpenedStateVisual != null) OpenedStateVisual.SetActive(true);
             if(ClosedStateVisual != null) ClosedStateVisual.SetActive(false);
+            if(Animator != null) Animator.SetBool(Opened, true);
         }
 
         private void SetClosedVisual()
         {
             if(OpenedStateVisual != null) OpenedStateVisual.SetActive(false);
             if(ClosedStateVisual != null) ClosedStateVisual.SetActive(true);
+            if(Animator != null) Animator.SetBool(Opened, false);
         }
     }
 }

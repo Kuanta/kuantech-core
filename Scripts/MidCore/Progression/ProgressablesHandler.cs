@@ -4,6 +4,7 @@ using Kuantech.Core;
 using Kuantech.Core.HyperCasual;
 using Kuantech.Rpg;
 using Kuantech.Utils;
+using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Kuantech.Midcore
@@ -270,7 +271,7 @@ namespace Kuantech.Midcore
             ProgressibleData data = GetProgressibleData(asset);
             if (data == null)
             {
-                return BuyRank(asset, 1); //This unlocks
+                return BuyRank(asset, 0); //This unlocks
             }
 
             return BuyRank(asset, data.GetRankValue()+1);
@@ -367,6 +368,10 @@ namespace Kuantech.Midcore
         {
             _progressibleDatas.Clear();
         }
+
+        #region Serialize & Deserialize
+
+        
         public byte[] Serialize()
         {
             return null;
@@ -376,5 +381,49 @@ namespace Kuantech.Midcore
         {
             
         }
+        #endregion
+
+        
+        
+        #region Helpers
+        
+        /// <summary>
+        /// Creates a linear tree
+        /// </summary>
+        /// <param name="assets"></param>
+        /// <param name="maxRank"></param>
+        [Button("Create Repeating Dependency Tree")]
+        public void CreateRepeatingDependencyTree(List<ProgressableDataAsset> assets, int maxRank)
+        {
+            UpgradeDependencies = new List<ProgressableDependencyEntry>();
+            ProgressableDataAsset previous = null;
+            int previousRank = -1;
+            for (int i = 0; i < maxRank; ++i)
+            {
+                for (int j = 0; j < assets.Count; ++j)
+                {
+                    if (previous != null)
+                    {
+                        ProgressableDependencyEntry entry = new ProgressableDependencyEntry()
+                        {
+                            UnlockConditions = new List<ProgressableUnlockCondition>(),
+                            AssetToUpgrade = assets[j],
+                            RankToUpgrade = i,
+                        };
+                        entry.UnlockConditions.Add(new ProgressableUnlockCondition()
+                        {
+                            DependingAsset = previous,
+                            DependingProgressionRank = previousRank,
+                        });
+                        UpgradeDependencies.Add(entry);
+                    }
+
+                    previous = assets[j];
+                    previousRank = i;
+                }
+            }
+        }
+
+        #endregion
     }
 }

@@ -22,6 +22,9 @@ namespace Kuantech.Midcore.UI
         public ProgressableDataAsset UpgradeDataAsset;
         public int Rank;
 
+        [Header("Purchase Button")] [SerializeField]
+        private UpgradeButtonPanel UpgradeButtonPanel;
+        
         [Header("Common Visuals")] 
         [SerializeField] private Image Icon;
         [SerializeField] private TMP_Text Name;
@@ -29,7 +32,7 @@ namespace Kuantech.Midcore.UI
         
         [Header("Connection")] 
         [SerializeField] private ConnectorUILine LineRenderer;
-        [SerializeField] private UpgradeTreeButton DependsOn;
+        public UpgradeTreeButton DependsOn;
         [SerializeField] private List<RectTransform> ConnectorControlPoints;
         
         [Header("Visual States")]
@@ -37,17 +40,29 @@ namespace Kuantech.Midcore.UI
         [SerializeField] private GameObject PurchasableState;
         [SerializeField] private GameObject UnlockedState;
 
+        [Header("Lines")] 
+        [SerializeField] private GameObject LockedLine;
+        [SerializeField] private GameObject PurchasableLine;
+        [SerializeField] private GameObject UnlockedLine;
+
         [Header("Effects & Anims")] [SerializeField]
         private Animator Animator;
         [KTTag("AudioTag")] [SerializeField] private int SkillPurchasedSfx;
         [KTTag("AudioTag")] [SerializeField] private int NotAffordableSfx;
+        
         private static readonly int Purchased = Animator.StringToHash("Purchased");
 
-        public void Initialize()
+        private static readonly int Selected = Animator.StringToHash("Selected");
+        
+        //Runtime 
+        [NonSerialized] public TraitUpgradesMenu ParentMenu;
+        
+        public override void Initialize()
         {
+            base.Initialize();
             if (UpgradeDataAsset == null) return;
-            if (Icon != null) Icon.sprite = UpgradeDataAsset.Icon;
-            if(Name != null) Name.text = UpgradeDataAsset.Name;
+            if (Icon != null) Icon.sprite = UpgradeDataAsset.GetIcon();
+            if(Name != null) Name.text = UpgradeDataAsset.GetName();
             if (PriceTag != null)
             {
                 BuyableInfo bi = UpgradeDataAsset.BuyableInfo;
@@ -61,7 +76,15 @@ namespace Kuantech.Midcore.UI
                     PriceTag.SetPriceInfo(bi, Rank,Rank-1);
                 }
             }
+
+            if (UpgradeButtonPanel != null)
+            {
+                UpgradeButtonPanel.Initialize(this);
+                UpgradeButtonPanel.SetProgressable(UpgradeDataAsset, Rank);
+            }
+            UpdateVisualState();
         }
+        
         private void OnEnable()
         {
             UpdateVisualState();
@@ -69,10 +92,16 @@ namespace Kuantech.Midcore.UI
     
         public void OnClick()
         {
-            if (CurrentState != UnlockableStates.Purchasable) return;
+            if (CurrentState == UnlockableStates.Locked) return;
             if(UpgradeDataAsset == null) return;
+
+            if (UpgradeButtonPanel != null)
+            {
+                ParentMenu.SelectButton(this);
+                return;
+            }
             
-            //Try to buy the progression
+            //No upgrade panel, just buy
             if (!ProgressionManager.BuyRank(UpgradeDataAsset, Rank))
             {
                 AudioLibrary.PlaySoundByTag(NotAffordableSfx);
@@ -82,7 +111,7 @@ namespace Kuantech.Midcore.UI
             OnRankPurchased();
         }
 
-        private void OnRankPurchased()
+        public void OnRankPurchased()
         {
             UpdateVisualState();
             AudioLibrary.PlaySoundByTag(SkillPurchasedSfx);
@@ -90,7 +119,10 @@ namespace Kuantech.Midcore.UI
             {
                 Animator.SetTrigger(Purchased);
             }
+            ParentMenu.DeselectButton();
         }
+
+        #region Visuals
 
         private void UpdateConnectorLine()
         {
@@ -133,8 +165,38 @@ namespace Kuantech.Midcore.UI
             if(LockedState != null) LockedState.SetActive(!rankPurchased && !conditionsMet);
             if(UnlockedState != null) UnlockedState.SetActive(rankPurchased);
             if(PurchasableState != null) PurchasableState.SetActive(!rankPurchased && conditionsMet);
+
+            if (UpgradeButtonPanel != null)
+            {
+                if(rankPurchased) UpgradeButtonPanel.SetPurchasedState();
+                else UpgradeButtonPanel.SetPurchasableState();
+            }
+            
+            UpdateLineVisuals();
         }
-        
+
+        private void UpdateLineVisuals()
+        {
+            if(LockedLine != null) LockedLine.SetActive(false);
+            if(PurchasableLine != null) PurchasableLine.SetActive(false);
+            if(UnlockedLine != null) UnlockedLine.SetActive(false);
+
+            switch (CurrentState)
+            {
+                case UnlockableStates.Unlocked:
+                    if (UnlockedLine != null) UnlockedLine.SetActive(true);
+                    break;
+                case UnlockableStates.Purchasable:
+                    if(PurchasableLine != null) PurchasableLine.SetActive(true);
+                    break;
+                case UnlockableStates.Locked:
+                    if (LockedLine != null) LockedLine.SetActive(true);
+                    break;
+            }
+        }
+        #endregion
+
+        #region Connections
         /// <summary>
         /// Connects to another button
         /// </summary>
@@ -146,5 +208,31 @@ namespace Kuantech.Midcore.UI
             DependsOn = button;
             UpdateConnectorLine();
         }
+        #endregion
+
+        #region Events
+
+        public void OnSelected()
+        {
+            if (UpgradeButtonPanel != null)
+            {
+                UpgradeButtonPanel.Open();
+            }
+
+            if (Animator != null)
+            {
+                Animator.SetTrigger(Selected);
+            }
+        }
+
+        public void OnDeselected()
+        {
+            if (UpgradeButtonPanel != null)
+            {
+                UpgradeButtonPanel.Close();
+            }
+        }
+
+        #endregion
     }
 }

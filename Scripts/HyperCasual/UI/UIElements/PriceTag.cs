@@ -52,7 +52,7 @@ namespace Kuantech.HyperCasual.UI
             CurrencyId = currencyAsset.GetId();
             if (CurrencyIcon != null)
             {
-                CurrencyIcon.sprite = currencyAsset.Icon;
+                CurrencyIcon.sprite = currencyAsset.GetIcon();
             }
         }
     }

@@ -1,6 +1,5 @@
 using Cysharp.Threading.Tasks;
 using Kuantech.Core;
-using Kuantech.Core.FX;
 using UnityEngine;
 
 public class GameStateManager : SubManager
@@ -67,6 +66,11 @@ public class GameStateManager : SubManager
         return true;
     }
 
+    public override void ClearState()
+    {
+        var ctx = GetContext<GameStateManager>();
+        ctx.GameState.ClearAllData();
+    }
     public static void ClearSaveData(ISaveable saveable)
     {
         string id = GetSaveableId(saveable);

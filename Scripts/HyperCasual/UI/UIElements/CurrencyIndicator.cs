@@ -34,7 +34,7 @@ namespace Kuantech.HyperCasual.UI
         {
             if(currencyAsset == null) return;
             this.CurrencyAsset = currencyAsset;
-            Sprite currIcon = this.CurrencyAsset.Icon;
+            Sprite currIcon = this.CurrencyAsset.GetIcon();
             if (currIcon != null && CurrencyIcon != null)
             {
                 CurrencyIcon.sprite = currIcon;

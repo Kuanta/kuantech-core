@@ -9,14 +9,29 @@ namespace Kuantech.Core
     public class MetadataAsset : ScriptableObject
     {
         [SerializeField] protected string Id;
-        public string Name;
-        public string Description;
-        public Sprite Icon;
+        [SerializeField] protected string Name;
+        [SerializeField] protected string Description;
+        [SerializeField] protected Sprite Icon;
         public Color MainColor;
 
         public virtual string GetId()
         {
             return Id;
+        }
+
+        public virtual string GetName()
+        {
+            return Name;
+        }
+        
+        public virtual string GetDescription()
+        {
+            return Description;
+        }
+
+        public Sprite GetIcon()
+        {
+            return Icon;
         }
     }
 }

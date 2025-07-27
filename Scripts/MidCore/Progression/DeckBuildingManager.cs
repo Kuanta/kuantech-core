@@ -70,7 +70,7 @@ namespace Kuantech.Midcore
             var ctx = DeckBuildingManager.GetContext<DeckBuildingManager>();
             if (ctx == null) return null;
             if (string.IsNullOrEmpty(id)) return null;
-            if (ctx._collectiblesById.ContainsKey(id)) return null;
+            if (!ctx._collectiblesById.ContainsKey(id)) return null;
             return ctx._collectiblesById[id];
         }
         

@@ -40,7 +40,7 @@ namespace Kuantech.Midcore.UI
             int price = buyableInfo.GetPrice(currencyAsset.GetId(), currentRank + 1, currentRank);
             if (CurrencyIcon != null)
             {
-                CurrencyIcon.sprite = currencyAsset.Icon;
+                CurrencyIcon.sprite = currencyAsset.GetIcon();
             }
 
             if (PriceText != null)

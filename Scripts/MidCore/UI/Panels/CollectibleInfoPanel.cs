@@ -24,11 +24,11 @@ namespace Kuantech.Midcore.UI
         public virtual void UpdateInfoPanel(DeckCollectableAsset dataAsset)
         {
             if(dataAsset == null) return;
-            if (Name != null) Name.text = dataAsset.Name;
-            if(Description != null) Description.text = dataAsset.Description;
+            if (Name != null) Name.text = dataAsset.GetName();
+            if(Description != null) Description.text = dataAsset.GetDescription();
             if (Icon != null)
             {
-                Icon.sprite = dataAsset.Icon;
+                Icon.sprite = dataAsset.GetIcon();
             }
             
             UpgradeButton.SetProgressable(dataAsset);
@@ -42,19 +42,20 @@ namespace Kuantech.Midcore.UI
             {
                 foreach (var attributeIndicator in AttributeIndicators)
                 {
+                    if(attributeIndicator == null) continue;
                     _attributeIndicatorsById[attributeIndicator.AttributeAsset.Id] = attributeIndicator;
                 }
             }
             ActorBlueprint actorBlueprint = deckCollectableAsset.ActorBlueprint;
             int collectableLevel = ProgressionManager.GetCurrentRank(deckCollectableAsset);
 
-            StatsLoaderActorBlueprintComponent statsLoader =
-                actorBlueprint.GetActorBlueprintComponent<StatsLoaderActorBlueprintComponent>();
-            if (statsLoader == null) return;
+            StatsSetterComponent statsSetter =
+                actorBlueprint.GetActorBlueprintComponent<StatsSetterComponent>();
+            if (statsSetter == null) return;
 
             foreach (var indicator in AttributeIndicators)
             {
-                AttributeDefinition definition = statsLoader.GetAttributeDefinition(actorBlueprint.GetId(), indicator.AttributeAsset);
+                AttributeDefinition definition = statsSetter.GetAttributeDefinition(indicator.AttributeAsset);
                 indicator.SetAttribute(definition, collectableLevel);
             }
         }

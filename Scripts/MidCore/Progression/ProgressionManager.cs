@@ -42,10 +42,13 @@ namespace Kuantech.Midcore
         
         [Header("Upgrades")] 
         [SaveableField] 
-        [SerializeField] private ProgressablesHandler ProgressiblesHandler;
+        public ProgressablesHandler ProgressiblesHandler;
         
         [Header("Level Progression")] 
-        [SaveableField] public Dictionary<(int, int), LevelProgressionData> LevelProgressionDatas; 
+        [SaveableField] public Dictionary<(int, int), LevelProgressionData> LevelProgressionDatas;
+
+        [Header("Traits")] 
+        [SerializeField] private List<TraitUpgradeProgressable> TraitUpgrades;
         
         [Header("Default Values")]
         public List<DefaultProgressableData> DefaultProgressables;
@@ -364,5 +367,22 @@ namespace Kuantech.Midcore
         }
 
         #endregion
+
+        #region Trait Upgrades
+
+        public static void ApplyTraitUpgradesToActor(Actor actor)
+        {
+            var ctx = GetContext<ProgressionManager>();
+            if (ctx == null) return;
+            if (ctx.TraitUpgrades == null || ctx.TraitUpgrades.Count == 0) return;
+
+            foreach (var traitUpgrade in ctx.TraitUpgrades)
+            {
+                if (traitUpgrade == null) continue;
+                traitUpgrade.ApplyToActor(actor);
+            }            
+        }
+        #endregion
+
     }
 }

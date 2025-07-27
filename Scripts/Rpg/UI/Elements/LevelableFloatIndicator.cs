@@ -10,6 +10,8 @@ namespace Kuantech.Rpg.UI
         
         [SerializeField] private Fillbar Fillbar;
         [SerializeField] private TMP_Text LevelText;
+        [SerializeField] private string LevelTextPrefix = "";
+        [SerializeField] private int LevelOffset = 0;
 
         public void UpdateValue(LevelVariable value)
         {
@@ -26,7 +28,9 @@ namespace Kuantech.Rpg.UI
                 float fillAmount = percentage;
                 Fillbar.SetFill(fillAmount, earnidThisLevel, RequiredExp);
             }
-            if(LevelText != null) LevelText.text = value.CurrentLevel.Stringfy();
+
+            int level = value.CurrentLevel + LevelOffset;
+            if (LevelText != null) LevelText.text = $"{LevelTextPrefix}{level.Stringfy()}";
         }
     }
 }

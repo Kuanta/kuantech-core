@@ -71,8 +71,8 @@ namespace Kuantech.Midcore.UI
         private void SetWorldTheme(WorldDataAsset worldDataAsset)
         {
             if (worldDataAsset == null) return;
-            if (WorldNameText != null) WorldNameText.text = worldDataAsset.Name;
-            if (WorldThemeImage != null) WorldThemeImage.sprite = worldDataAsset.Icon;
+            if (WorldNameText != null) WorldNameText.text = worldDataAsset.GetName();
+            if (WorldThemeImage != null) WorldThemeImage.sprite = worldDataAsset.GetIcon();
         }
         
         #region Handlers

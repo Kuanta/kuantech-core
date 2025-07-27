@@ -18,7 +18,7 @@ namespace Kuantech.Midcore.UI
 
             if (Icon != null)
             {
-                Icon.sprite = metadataAsset.Icon;
+                Icon.sprite = metadataAsset.GetIcon();
             }
 
             if (ColorTintImage != null)

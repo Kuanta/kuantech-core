@@ -24,6 +24,7 @@ namespace Kuantech.Midcore.UI
         
         [Header("Selected Panel")]
         [SerializeField] private GameObject SelectedPanel;
+        [SerializeField] private GameObject ContentsParent;
 
         [Header("Buttons")] 
         [SerializeField] private KtButton InfoButton;
@@ -59,7 +60,7 @@ namespace Kuantech.Midcore.UI
         public void SetCollectible(DeckCollectableAsset dataAsset)
         {
             CollectibleDataAsset = dataAsset;
-            if(CollectibleDataAsset != null && CollectibleIcon != null) CollectibleIcon.sprite = dataAsset.Icon;
+            if(CollectibleDataAsset != null && CollectibleIcon != null) CollectibleIcon.sprite = dataAsset.GetIcon();
         }
         
         /// <summary>
@@ -69,12 +70,14 @@ namespace Kuantech.Midcore.UI
         {
             if(!Initialized) Initialize();
             
+            ContentsParent.gameObject.SetActive(CollectibleDataAsset != null);
+
             if (CollectibleDataAsset == null)
             {
                 VisualStateHandler.SetVisual(UnlockableStates.Empty);
                 return;
             }
-
+            
             bool equipped = DeckBuildingManager.IsEquipped(CollectibleDataAsset);
             
             if(EquippedIndicator != null)
@@ -83,6 +86,8 @@ namespace Kuantech.Midcore.UI
             }
     
             bool isUnlocked = ProgressionManager.IsProgressibleUnlocked(CollectibleDataAsset);
+            if(ContentsParent != null) ContentsParent.SetActive(isUnlocked);
+            
             var state = isUnlocked ? UnlockableStates.Unlocked : UnlockableStates.Locked;
             VisualStateHandler.SetVisual(state);
             
@@ -93,7 +98,7 @@ namespace Kuantech.Midcore.UI
                 return;
             }
             if(LevelableFloatIndicator != null) LevelableFloatIndicator.UpdateValue(data.GetRank());
-            if(Name != null) Name.text = CollectibleDataAsset.Name;
+            if(Name != null) Name.text = CollectibleDataAsset.GetName();
         }
         
         public virtual void OnClick()
