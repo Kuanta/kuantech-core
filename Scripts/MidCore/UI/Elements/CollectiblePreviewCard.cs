@@ -80,7 +80,7 @@ namespace Kuantech.Midcore.UI
             
             bool equipped = DeckBuildingManager.IsEquipped(CollectibleDataAsset);
             
-            if(EquippedIndicator != null)
+            if(EquippedIndicator != null && !IsDeckCard)
             {
                 EquippedIndicator.SetActive(equipped);
             }
@@ -94,7 +94,6 @@ namespace Kuantech.Midcore.UI
             var data = ProgressionManager.GetProgressibleData(CollectibleDataAsset);
             if (data == null)
             {
-                if(isUnlocked) Debug.Log("How?");
                 return;
             }
             if(LevelableFloatIndicator != null) LevelableFloatIndicator.UpdateValue(data.GetRank());

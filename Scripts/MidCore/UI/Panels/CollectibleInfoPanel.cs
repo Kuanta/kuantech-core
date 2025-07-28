@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Kuantech.Core;
 using Kuantech.Core.UI;
 using Kuantech.Rpg;
@@ -21,9 +22,21 @@ namespace Kuantech.Midcore.UI
         
         public List<AttributeIndicator> AttributeIndicators;
         private Dictionary<string, AttributeIndicator> _attributeIndicatorsById = new Dictionary<string, AttributeIndicator>();
+        
+        [NonSerialized] public DeckCollectableAsset CurrentDataAsset;
+        [NonSerialized] public DeckSelectionMenu ParentDeckSelectionMenu;
+        
+        public override void Initialize()
+        {
+            if (Initialized) return;
+            base.Initialize();
+            UpgradeButton.OnUpgradePurchased += OnUpgradePurchased;
+        }
+        
         public virtual void UpdateInfoPanel(DeckCollectableAsset dataAsset)
         {
             if(dataAsset == null) return;
+            CurrentDataAsset = dataAsset;
             if (Name != null) Name.text = dataAsset.GetName();
             if(Description != null) Description.text = dataAsset.GetDescription();
             if (Icon != null)
@@ -34,6 +47,11 @@ namespace Kuantech.Midcore.UI
             UpgradeButton.SetProgressable(dataAsset);
             
             UpdateStats(dataAsset);
+
+            if (CollectibleLevelIndicator != null)
+            {
+                CollectibleLevelIndicator.UpdateValue(ProgressionManager.GetCurrentRank(dataAsset));
+            }
         }
 
         public virtual void UpdateStats(DeckCollectableAsset deckCollectableAsset)
@@ -58,6 +76,19 @@ namespace Kuantech.Midcore.UI
                 AttributeDefinition definition = statsSetter.GetAttributeDefinition(indicator.AttributeAsset);
                 indicator.SetAttribute(definition, collectableLevel);
             }
+        }
+
+        private void OnUpgradePurchased()
+        {
+            //Do effects
+            UpdateStats(CurrentDataAsset);
+
+            if (CollectibleLevelIndicator != null)
+            {
+                CollectibleLevelIndicator.UpdateValue(ProgressionManager.GetCurrentRank(CurrentDataAsset));
+            }
+            
+            ParentDeckSelectionMenu.UpdateCards();
         }
     }
 }

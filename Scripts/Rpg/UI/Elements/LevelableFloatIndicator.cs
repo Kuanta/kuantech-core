@@ -32,5 +32,11 @@ namespace Kuantech.Rpg.UI
             int level = value.CurrentLevel + LevelOffset;
             if (LevelText != null) LevelText.text = $"{LevelTextPrefix}{level.Stringfy()}";
         }
+
+        public void UpdateValue(int level)
+        {
+            level += LevelOffset;
+            if (LevelText != null) LevelText.text = $"{LevelTextPrefix}{level.Stringfy()}";
+        }
     }
 }

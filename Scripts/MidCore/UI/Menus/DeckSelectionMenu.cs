@@ -66,6 +66,8 @@ namespace Kuantech.Midcore.UI
             
             CancelEquipButton.onClick.AddListener(ClearCardToEquip);
             CancelEquipButton.gameObject.SetActive(false);
+
+            CollectibleInfoPanel.ParentDeckSelectionMenu = this;
         }
 
         public override void Open()
@@ -75,20 +77,13 @@ namespace Kuantech.Midcore.UI
             UpdateCards();
         }
         
-        private void UpdateCards()
+        public void UpdateCards()
         {
             foreach (var card in CollectiblePreviewCards.Values)
             {
                 card.UpdatePreviewCard();
                 card.ToggleClickMeIndicator(false);
             }
-            
-            // //Update deck cards
-            // foreach (var deckCard in DeckCards)
-            // {
-            //     deckCard.UpdatePreviewCard();
-            // }
-            //
             
             //Equipped
             int deckSize = DeckBuildingManager.GetDeckSize();
@@ -106,6 +101,10 @@ namespace Kuantech.Midcore.UI
                 if (card.CollectibleDataAsset != dataAsset)
                 {
                     card.SetCollectableAsset(dataAsset);
+                }
+                else
+                {
+                    card.UpdatePreviewCard();
                 }
             }
             
