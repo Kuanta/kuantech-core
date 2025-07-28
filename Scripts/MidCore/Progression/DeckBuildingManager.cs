@@ -30,13 +30,25 @@ namespace Kuantech.Midcore
             {
                 CurrentDeck.Add(null);
             }
-
+            
+            
             foreach (var collectible in DeckCollectibles)
             {
                 _collectiblesById[collectible.GetId()] = collectible;
             }
         }
 
+        public override void OnSubmanagersInitialized()
+        {
+            base.OnSubmanagersInitialized();
+                        
+            foreach (var equipped in CurrentDeck)
+            {
+                if(equipped == null || equipped.Id.IsNullOrEmpty()) continue;
+                _equippedCollectiblesById[equipped.Id] = GetCollectible(equipped.Id);
+            }
+        }
+        
         public override void SetDefaultState()
         {
             base.SetDefaultState();
@@ -131,6 +143,7 @@ namespace Kuantech.Midcore
         /// <param name="collectible"></param>
         public static bool EquipCollectible(DeckCollectableAsset collectible)
         {
+            if (IsEquipped(collectible)) return false;
             var ctx = DeckBuildingManager.GetContext<DeckBuildingManager>();
             if (ctx == null || collectible == null) return false;
             

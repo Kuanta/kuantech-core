@@ -71,7 +71,7 @@ namespace Kuantech.Core
                 SetDefaultState();
             }
         }
-        
+
         [Button("Save State")]
         public void SaveState()
         {
