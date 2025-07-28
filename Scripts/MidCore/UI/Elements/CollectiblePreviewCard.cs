@@ -16,11 +16,13 @@ namespace Kuantech.Midcore.UI
         [SerializeField] private TMP_Text Name;
         [SerializeField] private LevelableFloatIndicator LevelableFloatIndicator;
         [SerializeField] private Image CollectibleIcon;
+        [SerializeField] private Image LockedCollectibleIcon;
         [SerializeField] private UnlockableUIElementVisualHandler VisualStateHandler;
         
         [Header("Indicators")]
         [SerializeField] private GameObject ClickMeIndicator;
         [SerializeField] private GameObject EquippedIndicator;
+        [SerializeField] private LevelRequirementIndicator LevelRequirementIndicator;
         
         [Header("Selected Panel")]
         [SerializeField] private GameObject SelectedPanel;
@@ -47,6 +49,7 @@ namespace Kuantech.Midcore.UI
             _parentMenu = deckSelectionMenu;
             if(InfoButton != null) InfoButton.onClick.AddListener(OnInfoButtonClicked);
             if(EquipButton != null) EquipButton.onClick.AddListener(OnEquipButtonClicked);
+ 
         }
         
         public void SetCollectableAsset(DeckCollectableAsset dataAsset)
@@ -54,6 +57,10 @@ namespace Kuantech.Midcore.UI
             CollectibleDataAsset = dataAsset;
             VisualStateHandler.SetVisuals();
             SetCollectible(dataAsset);
+            if(LevelRequirementIndicator != null)
+            {
+                LevelRequirementIndicator.SetProgressable(dataAsset, 0);
+            }
             UpdatePreviewCard();
         }
 
@@ -61,6 +68,8 @@ namespace Kuantech.Midcore.UI
         {
             CollectibleDataAsset = dataAsset;
             if(CollectibleDataAsset != null && CollectibleIcon != null) CollectibleIcon.sprite = dataAsset.GetIcon();
+            if (CollectibleDataAsset != null && LockedCollectibleIcon != null)
+                LockedCollectibleIcon.sprite = dataAsset.GetIcon();
         }
         
         /// <summary>

@@ -139,9 +139,9 @@ namespace Kuantech.Midcore
             ProgressableDependencyEntry dependencyEntry = GetUpgradeDependencyEntry(asset, rank);
             if (dependencyEntry == null) return true;
             
-            // //Check player level
-            // int playerLevel = ProgressionManager.GetPlayerLevel().CurrentLevel;
-            // if(dependencyEntry.RequiredPlayerRank > playerLevel) return false;
+            //Check player level
+            int playerLevel = ProgressionManager.GetPlayerLevel().CurrentLevel;
+            if(dependencyEntry.RequiredPlayerRank > playerLevel) return false;
             
             //Check other conditions
             if (!dependencyEntry.UnlockConditions.IsNullOrEmpty())

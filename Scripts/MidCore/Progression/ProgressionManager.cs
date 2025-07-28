@@ -184,6 +184,19 @@ namespace Kuantech.Midcore
         }
         
         /// <summary>
+        /// Returns unlock conditions for a progression asset
+        /// </summary>
+        /// <param name="asset"></param>
+        /// <param name="rank"></param>
+        /// <returns></returns>
+        public static ProgressableDependencyEntry GetUnlockConditions(ProgressableDataAsset asset, int rank = 0)
+        {
+            var ctx = GetContext<ProgressionManager>();
+            if (ctx == null) return null;
+            return ctx.ProgressiblesHandler.GetUpgradeDependencyEntry(asset, rank);
+        }
+        
+        /// <summary>
         /// Checks if progression in unlocked
         /// </summary>
         /// <param name="asset"></param>
