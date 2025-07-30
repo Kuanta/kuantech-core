@@ -23,7 +23,13 @@ namespace Kuantech.Core.HyperCasual
         public int GetPrice(int rank=0, int startRank=-1)
         {
             if (rank < startRank) return 0;
-            return GetPriceForRank(rank) - GetPriceForRank(startRank);
+            int price = 0;
+            for (int i = startRank; i <= rank; ++i)
+            {
+                price += GetPriceForRank(i);
+            }
+
+            return price - GetPriceForRank(startRank);
         }
         
         /// <summary>

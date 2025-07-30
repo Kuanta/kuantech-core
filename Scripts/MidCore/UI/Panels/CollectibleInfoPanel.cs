@@ -23,7 +23,7 @@ namespace Kuantech.Midcore.UI
         public List<AttributeIndicator> AttributeIndicators;
         private Dictionary<string, AttributeIndicator> _attributeIndicatorsById = new Dictionary<string, AttributeIndicator>();
         
-        [NonSerialized] public DeckCollectableAsset CurrentDataAsset;
+        [NonSerialized] public CollectableAsset CurrentDataAsset;
         [NonSerialized] public DeckSelectionMenu ParentDeckSelectionMenu;
         
         public override void Initialize()
@@ -33,7 +33,7 @@ namespace Kuantech.Midcore.UI
             UpgradeButton.OnUpgradePurchased += OnUpgradePurchased;
         }
         
-        public virtual void UpdateInfoPanel(DeckCollectableAsset dataAsset)
+        public virtual void UpdateInfoPanel(CollectableAsset dataAsset)
         {
             if(dataAsset == null) return;
             CurrentDataAsset = dataAsset;
@@ -54,7 +54,7 @@ namespace Kuantech.Midcore.UI
             }
         }
 
-        public virtual void UpdateStats(DeckCollectableAsset deckCollectableAsset)
+        public virtual void UpdateStats(CollectableAsset collectableAsset)
         {
             if (_attributeIndicatorsById.IsNullOrEmpty())
             {
@@ -64,8 +64,8 @@ namespace Kuantech.Midcore.UI
                     _attributeIndicatorsById[attributeIndicator.AttributeAsset.Id] = attributeIndicator;
                 }
             }
-            ActorBlueprint actorBlueprint = deckCollectableAsset.ActorBlueprint;
-            int collectableLevel = ProgressionManager.GetCurrentRank(deckCollectableAsset);
+            ActorBlueprint actorBlueprint = collectableAsset.ActorBlueprint;
+            int collectableLevel = ProgressionManager.GetCurrentRank(collectableAsset);
 
             StatsSetterComponent statsSetter =
                 actorBlueprint.GetActorBlueprintComponent<StatsSetterComponent>();

@@ -1,14 +1,11 @@
-﻿using System.Collections.Generic;
-using Kuantech.Core;
+﻿using Kuantech.Core;
 using Kuantech.Rpg;
-using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Midcore
 {
-
     
-    public class ProgressionHandler : ActorModule
+    public class ProgressionHandlerActorModule : ActorModule
     {
         [Tooltip("Progressable that corresponds to actor level")] 
         public ProgressableDataAsset ActorProgressableAsset;

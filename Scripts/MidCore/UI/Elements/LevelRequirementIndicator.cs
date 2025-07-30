@@ -12,13 +12,13 @@ namespace Kuantech.Midcore.UI
         [SerializeField] private string Prefix = "Level ";
         [SerializeField] private int LevelOffset = 1;
 
-        public void SetProgressable(ProgressableDataAsset asset, int rank)
+        public void SetProgressable(CollectableAsset asset, int rank)
         {
-            ProgressableDependencyEntry unlockConditions = ProgressionManager.GetUnlockConditions(asset, rank);
-            if (unlockConditions != null && unlockConditions.RequiredPlayerRank > 0)
+            if (asset == null) return;
+            if (asset.RequiredLevel > 0)
             {
                 RequirementText.gameObject.SetActive(true);
-                RequirementText.text = $"{Prefix}{unlockConditions.RequiredPlayerRank + LevelOffset}";
+                RequirementText.text = $"{Prefix}{asset.RequiredLevel + LevelOffset}";
             }
             else
             {

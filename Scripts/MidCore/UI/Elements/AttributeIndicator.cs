@@ -24,7 +24,15 @@ namespace Kuantech.Midcore.UI
             ValueText.text = ShowBonusSeperately ? baseValue.Stringfy() : (baseValue + bonusValue).Stringfy();
             if (BonusValueText != null)
             {
-                BonusValueText.text = bonusValue.Stringfy();
+                if (bonusValue > 0)
+                {
+                    BonusValueText.gameObject.SetActive(true);
+                    BonusValueText.text = $"+{bonusValue.Stringfy()}";
+                }
+                else
+                {
+                    BonusValueText.gameObject.SetActive(false);
+                }
             }
         }
     }

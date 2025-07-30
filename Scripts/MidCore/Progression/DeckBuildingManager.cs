@@ -12,16 +12,16 @@ namespace Kuantech.Midcore
         public int DeckSize = 4;
         
         [Header("Deck Collectibles")]
-        public List<DeckCollectableAsset> DeckCollectibles;
+        public List<CollectableAsset> DeckCollectibles;
         
         [Header("Default Deck")]
-        public List<DeckCollectableAsset> DefaultDeck;
+        public List<CollectableAsset> DefaultDeck;
 
         //Current Deck
         [SaveableField] public List<ProgressibleData> CurrentDeck;
         
-        private Dictionary<string, DeckCollectableAsset> _collectiblesById = new Dictionary<string, DeckCollectableAsset>();
-        private Dictionary<string, DeckCollectableAsset> _equippedCollectiblesById = new Dictionary<string, DeckCollectableAsset>();
+        private Dictionary<string, CollectableAsset> _collectiblesById = new Dictionary<string, CollectableAsset>();
+        private Dictionary<string, CollectableAsset> _equippedCollectiblesById = new Dictionary<string, CollectableAsset>();
 
         public override async UniTask Initialize(GameManager gameManager)
         {
@@ -53,6 +53,15 @@ namespace Kuantech.Midcore
         {
             base.SetDefaultState();
             CurrentDeck.Clear();
+
+            foreach (var collectable in DeckCollectibles)
+            {
+                if (collectable.RequiredLevel <= 0)
+                {
+                    ProgressionManager.SetRank(collectable, 0);
+                }
+            }
+            
             for (int i = 0; i < DeckSize; ++i)
             {
                 CurrentDeck.Add(null);
@@ -77,7 +86,7 @@ namespace Kuantech.Midcore
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        public static DeckCollectableAsset GetProgressibleDataAssetById(string id)
+        public static CollectableAsset GetProgressibleDataAssetById(string id)
         {
             var ctx = DeckBuildingManager.GetContext<DeckBuildingManager>();
             if (ctx == null) return null;
@@ -90,14 +99,14 @@ namespace Kuantech.Midcore
         /// Returns all collectibles
         /// </summary>
         /// <returns></returns>
-        public static List<DeckCollectableAsset> GetCollectibles()
+        public static List<CollectableAsset> GetCollectibles()
         {
             var ctx = DeckBuildingManager.GetContext<DeckBuildingManager>();
             if (ctx == null) return null;
             return ctx.DeckCollectibles;
         }
 
-        public static DeckCollectableAsset GetCollectible(string collectibleId)
+        public static CollectableAsset GetCollectible(string collectibleId)
         {
             var ctx = DeckBuildingManager.GetContext<DeckBuildingManager>();
             if (ctx == null || collectibleId == null) return null;
@@ -116,21 +125,21 @@ namespace Kuantech.Midcore
         /// Returns a list of currently equipped collectable assets
         /// </summary>
         /// <returns></returns>
-        public static List<DeckCollectableAsset> GetCurrentCollectableAssets()
+        public static List<CollectableAsset> GetCurrentCollectableAssets()
         {
             var ctx = DeckBuildingManager.GetContext<DeckBuildingManager>();
             if (ctx == null) return null;
-            List<DeckCollectableAsset> equippedAssets = new List<DeckCollectableAsset>();
+            List<CollectableAsset> equippedAssets = new List<CollectableAsset>();
             foreach (var data in ctx.CurrentDeck)
             {
                 if(data == null || data.Id.IsNullOrEmpty()) continue;
-                DeckCollectableAsset asset = GetCollectible(data.Id);
+                CollectableAsset asset = GetCollectible(data.Id);
                 if(asset != null) equippedAssets.Add(asset);
             }
             return equippedAssets;
         }
         
-        public static bool IsEquipped(DeckCollectableAsset asset)
+        public static bool IsEquipped(CollectableAsset asset)
         {
             var ctx = GetContext<DeckBuildingManager>();
             if (ctx == null || asset == null) return false;
@@ -141,7 +150,7 @@ namespace Kuantech.Midcore
         /// Equips collectable to a suitable slot in the current deck.
         /// </summary>
         /// <param name="collectible"></param>
-        public static bool EquipCollectible(DeckCollectableAsset collectible)
+        public static bool EquipCollectible(CollectableAsset collectible)
         {
             if (IsEquipped(collectible)) return false;
             var ctx = DeckBuildingManager.GetContext<DeckBuildingManager>();
@@ -174,7 +183,7 @@ namespace Kuantech.Midcore
         /// Unequips a collectible
         /// </summary>
         /// <param name="collectible"></param>
-        public static bool UnequipCollectible(DeckCollectableAsset collectible)
+        public static bool UnequipCollectible(CollectableAsset collectible)
         {
             var ctx = DeckBuildingManager.GetContext<DeckBuildingManager>();
             if (ctx == null) return false;
@@ -196,7 +205,7 @@ namespace Kuantech.Midcore
             return false;
         }
 
-        public static void ReplaceCollectible(DeckCollectableAsset oldAsset, DeckCollectableAsset newAsset)
+        public static void ReplaceCollectible(CollectableAsset oldAsset, CollectableAsset newAsset)
         {
             if (UnequipCollectible(oldAsset))
             {

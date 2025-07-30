@@ -34,7 +34,7 @@ namespace Kuantech.Midcore.UI
         
         //Runtime
         [NonSerialized] public bool IsDeckCard; //If its a deck card, clicking on it will open the info panel
-        public DeckCollectableAsset CollectibleDataAsset;
+        public CollectableAsset CollectibleDataAsset;
         private DeckSelectionMenu _parentMenu;
         private bool _selected = false;
 
@@ -52,7 +52,7 @@ namespace Kuantech.Midcore.UI
  
         }
         
-        public void SetCollectableAsset(DeckCollectableAsset dataAsset)
+        public void SetCollectableAsset(CollectableAsset dataAsset)
         {
             CollectibleDataAsset = dataAsset;
             VisualStateHandler.SetVisuals();
@@ -64,7 +64,7 @@ namespace Kuantech.Midcore.UI
             UpdatePreviewCard();
         }
 
-        public void SetCollectible(DeckCollectableAsset dataAsset)
+        public void SetCollectible(CollectableAsset dataAsset)
         {
             CollectibleDataAsset = dataAsset;
             if(CollectibleDataAsset != null && CollectibleIcon != null) CollectibleIcon.sprite = dataAsset.GetIcon();

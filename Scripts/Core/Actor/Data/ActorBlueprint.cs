@@ -72,10 +72,10 @@ namespace Kuantech.Core
             if (ProgressableDataAsset != null)
             {
                 //Set progressibles 
-                ProgressionHandler progressionHandler = actor.GetComponentInChildren<ProgressionHandler>();
-                if (progressionHandler != null) //Check if not null
+                ProgressionHandlerActorModule progressionHandlerActorModule = actor.GetComponentInChildren<ProgressionHandlerActorModule>();
+                if (progressionHandlerActorModule != null) //Check if not null
                 {
-                    progressionHandler.ActorProgressableAsset = ProgressableDataAsset;
+                    progressionHandlerActorModule.ActorProgressableAsset = ProgressableDataAsset;
                 }
             }
 

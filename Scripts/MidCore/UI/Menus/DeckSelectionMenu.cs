@@ -34,7 +34,7 @@ namespace Kuantech.Midcore.UI
             base.Initialize();
             DeckCards = new List<CollectiblePreviewCard>();
             
-            List<DeckCollectableAsset> collectibleDataAssets = DeckBuildingManager.GetCollectibles();
+            List<CollectableAsset> collectibleDataAssets = DeckBuildingManager.GetCollectibles();
             
             //Create preview cards for all collectibles
             foreach(var dataAsset in collectibleDataAssets)
@@ -56,7 +56,7 @@ namespace Kuantech.Midcore.UI
                 DeckCards.Add(card);
                 card.transform.SetParent(EquippedCardsPanel);
 
-                DeckCollectableAsset dataAsset = null;
+                CollectableAsset dataAsset = null;
                 if (currentDeck.IsValidIndex(i) && currentDeck[i] != null)
                 {
                     dataAsset = DeckBuildingManager.GetProgressibleDataAssetById(currentDeck[i].Id);
@@ -93,7 +93,7 @@ namespace Kuantech.Midcore.UI
             {
                 CollectiblePreviewCard card = DeckCards[i];
 
-                DeckCollectableAsset dataAsset = null;
+                CollectableAsset dataAsset = null;
                 if (currentDeck.IsValidIndex(i) && currentDeck[i] != null)
                 {
                     dataAsset = DeckBuildingManager.GetProgressibleDataAssetById(currentDeck[i].Id);
@@ -132,13 +132,25 @@ namespace Kuantech.Midcore.UI
                 return 1;
             }
             
+            //Both locked, compare their required levels
+            if (!aUnlocked && !bUnlocked)
+            {
+                if (cardA.CollectibleDataAsset.RequiredLevel > cardB.CollectibleDataAsset.RequiredLevel)
+                {
+                    return 1;
+                }else if (cardA.CollectibleDataAsset.RequiredLevel < cardB.CollectibleDataAsset.RequiredLevel)
+                {
+                    return -1;
+                }
+            }
+            
             //Compare their names
             return string.Compare(cardA.CollectibleDataAsset.GetName(), cardB.CollectibleDataAsset.GetName(), System.StringComparison.Ordinal);
         }
         public void OnPreviewCardClicked(CollectiblePreviewCard card)
         {
             //Is unlocked
-            if (card.IsDeckCard && (card.CollectibleDataAsset == null ||
+            if (!card.IsDeckCard && (card.CollectibleDataAsset == null ||
                 !ProgressionManager.IsProgressibleUnlocked(card.CollectibleDataAsset)))
             {
                 ClearCardToEquip();
@@ -230,7 +242,7 @@ namespace Kuantech.Midcore.UI
         {
             if (CollectibleInfoPanel == null) return;
             DeselectCard();
-            if (dataAsset is DeckCollectableAsset deckCollectableAsset)
+            if (dataAsset is CollectableAsset deckCollectableAsset)
             {
                 CollectibleInfoPanel.Open();
                 CollectibleInfoPanel.UpdateInfoPanel(deckCollectableAsset);

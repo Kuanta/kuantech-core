@@ -91,7 +91,13 @@ namespace Kuantech.Core.Database
             if (cellData == null) return null;
             return cellData.Value;
         }
-
+        
+        public T GetValue<T>(string rowId, string entryKey)
+        {
+            KtDataType entry = GetDataEntry(rowId, entryKey);
+            if (entry == null) return default;
+            return entry.Get<T>();
+        }
         #endregion
 
         #region Write

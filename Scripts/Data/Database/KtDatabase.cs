@@ -65,6 +65,12 @@ namespace Kuantech.Core.Database
             return dbTable.GetDataEntry(entryId, key);
         }
 
+        public DataTable GetDataTable(string table)
+        {
+            if (_tablesLookup.ContainsKey(table)) return _tablesLookup[table];
+            return null;
+        }
+        
         #region Database Info
 
         public virtual List<DataTable> GetTables()

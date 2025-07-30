@@ -395,6 +395,20 @@ namespace Kuantech.Midcore
                 traitUpgrade.ApplyToActor(actor);
             }            
         }
+
+        public static TraitUpgradeProgressable GetTraitUpgradeProgressable(string id)
+        {
+            var ctx = GetContext<ProgressionManager>();
+            if (ctx == null) return null;
+            if (ctx.TraitUpgrades == null || ctx.TraitUpgrades.Count == 0) return null;
+
+            foreach (var traitUpgrade in ctx.TraitUpgrades)
+            {
+                if (traitUpgrade == null) continue;
+                if (traitUpgrade.GetId() == id) return traitUpgrade;
+            }
+            return null;
+        }
         #endregion
 
     }
