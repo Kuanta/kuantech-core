@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using Kuantech.Utils;
 using UnityEngine;
 
@@ -31,11 +32,14 @@ namespace Kuantech.Core.FX
         public ShaderEffect ShaderEffect;
         public string ShaderEffectId;
         [NonSerialized] public ShaderEffect PlayedShaderEffect;
-
+        
+        [Header("Effect Behaviours")]
+        [SerializeField] private List<FxBehaviour> _effectBehaviours = new List<FxBehaviour>();
 
         //If an effect is under the protection of effects library, it can't be destroyed with timed calls
         [NonSerialized] public bool SpawnedFromPool = false; //This is used to determine if the effect was spawned from the pool or not. 
-
+        [NonSerialized] public Actor OwnerActor; //Effects may be owned by actors
+        [NonSerialized] public EffectPlaySettings EffectPlaySettings; //This is used to store the settings used to play the effect
         
         /// <summary>
         /// To simply play
@@ -52,6 +56,7 @@ namespace Kuantech.Core.FX
         /// <param name="settings"></param>
         public void Play(EffectPlaySettings settings)
         {
+            EffectPlaySettings = settings;
             if (settings.SetPosition)
             {
                 if (settings.EffectParent != null)
@@ -138,6 +143,14 @@ namespace Kuantech.Core.FX
                     }
                 }
             }
+
+            if (!_effectBehaviours.IsNullOrEmpty())
+            {
+                foreach (var behaviour in _effectBehaviours)
+                {
+                    behaviour.OnFxStarted(this);
+                }
+            }
             
             EffectsLibrary.SetLastPlayedTime(EffectId);
         }
@@ -205,6 +218,15 @@ namespace Kuantech.Core.FX
             {
                 PlayedShaderEffect.StopShaderEffect();
             }
+            
+            if (!_effectBehaviours.IsNullOrEmpty())
+            {
+                foreach (var behaviour in _effectBehaviours)
+                {
+                    behaviour.OnFxEnded();
+                }
+            }
+            
             if (SpawnedFromPool)
             {
                 Despawn();
@@ -227,11 +249,8 @@ namespace Kuantech.Core.FX
                 duration = Vfx.GetDuration();
             }
             yield return new WaitForSeconds(duration);
-            
-            if(Vfx != null) Vfx.Stop();
-            if(Sfx != null) Sfx.Stop();
-            if(PlayedShaderEffect != null) PlayedShaderEffect.StopShaderEffect();
-            Despawn();
+
+            Stop();
         }
 
         private IEnumerator _despawnRoutine;

@@ -1,4 +1,5 @@
 using System;
+using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Core.FX
@@ -6,6 +7,8 @@ namespace Kuantech.Core.FX
     [Serializable]
     public struct EffectPlaySettings
     {
+        public Actor Caster; //If effect is casted by an actor, this is the caster
+        
         public float Duration;
         public float EffectCooldown;
         public bool DespawnAfterPlay;
@@ -22,7 +25,10 @@ namespace Kuantech.Core.FX
         //Play at position
         public Vector3 PlayPosition;
         public Quaternion PlayRotation;
-
+        
+        //End position. For beam like effects where an end position is needed
+        public WorldPoint EndPoint;
+        
         public static EffectPlaySettings GetDefaultSettings()
         {
             return new EffectPlaySettings()

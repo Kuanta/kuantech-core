@@ -5,6 +5,7 @@ using Kuantech.Core.FX;
 using Kuantech.Core.Utils;
 using Kuantech.Rpg;
 using Kuantech.Rpg.Skills;
+using Kuantech.Utils;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Serialization;
@@ -25,6 +26,7 @@ namespace Kuantech.Core
         Arc2D,
         Circle2D,
         SkillCast, //Casts a skill, given in the attack pattern
+        Beam,
     }
     
     /// <summary>
@@ -591,13 +593,16 @@ namespace Kuantech.Core
         #endregion
 
         #region Fx
-
+        
+        /// <summary>
+        /// Plays a simple attack fx
+        /// </summary>
         public void PlayAttackFx()
         {
             if (_effectPlayed) return;
             _effectPlayed = true;
             Vector3 attackDirection = _attackDirection;
-            Vector3 attackPosition = GetAttackPosition();
+            Vector3 attackPosition = GetAttackPosition(); //Position where attack is starterd, casted
             EffectPlayer attackEffect = GetCurrentAttackPattern().AttackFx;
             if (attackEffect == null) return;
             attackEffect.PlayEffectAtPosition(attackPosition, Quaternion.LookRotation(attackDirection));
