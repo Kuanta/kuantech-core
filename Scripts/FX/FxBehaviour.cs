@@ -4,14 +4,14 @@ namespace Kuantech.Core.FX
 {
     public class FxBehaviour : MonoBehaviour
     {
-        private Effect _parentFx;
+        protected Effect ParentFx;
         
         public virtual void OnFxStarted(Effect parentFx)
         {
-            _parentFx = parentFx;
+            ParentFx = parentFx;
             
         }
-
+        
         public virtual void OnFxEnded()
         {
             

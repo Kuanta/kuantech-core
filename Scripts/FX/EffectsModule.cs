@@ -16,6 +16,7 @@ namespace Kuantech.Core.FX
         public Effect JumpEffect;
         public Effect DodgeEffect;
         public Effect DeathEffect;
+        public EffectPlayer AttackEffect;
         private Effect _impact;
 
         [Header("Existing Effects")]
@@ -31,6 +32,8 @@ namespace Kuantech.Core.FX
         public HashSet<ShaderEffect> ShaderEffects = new HashSet<ShaderEffect>();
         private Dictionary<string, ShaderEffect> _shaderEffectsById = new Dictionary<string, ShaderEffect>();
         [NonSerialized] public HashSet<Effect> ActiveEffects = new HashSet<Effect>();
+
+        private CombatModule _combatModule;
 
         public override void Initialize()
         {
@@ -59,6 +62,13 @@ namespace Kuantech.Core.FX
             {
                 AddShaderEffect(shaderEffect);
             }
+            
+            _combatModule = Actor.GetModule<CombatModule>();
+            if(_combatModule != null)
+            {
+                _combatModule.AttackStartedEvent += AttackStartedEvent;
+                _combatModule.AttackCompletedEvent += AttackEndedEvent;
+            }
         }
 
         private void SetEffectPlayers()
@@ -72,6 +82,7 @@ namespace Kuantech.Core.FX
         public override void OnModulesInitialized()
         {
             base.OnModulesInitialized();
+            if(Actor.VisualHandler == null) return;
             ActorVisual actorVisual = Actor.VisualHandler.GetActorVisual();
             if (actorVisual != null)
             {
@@ -85,6 +96,24 @@ namespace Kuantech.Core.FX
             Actor.VisualHandler.OnActorVisualSet += OnActorVisualSet;
         }
 
+        #region Event Handlers
+        private Effect _attackEffect;
+        private void AttackStartedEvent(CombatModule cm)
+        {
+            EffectPlaySettings playSettings = EffectPlaySettings.GetPlayAtPositionSettings(cm.GetAttackPosition(), Quaternion.identity);
+            playSettings.Caster = Actor;
+            _attackEffect = AttackEffect.PlayEffect(playSettings);
+        }
+
+        private void AttackEndedEvent(CombatModule cm)
+        {
+            if(_attackEffect != null)
+            {
+                _attackEffect.Stop();
+                _attackEffect = null;
+            }   
+        }
+        #endregion
         public void OnActorVisualSet(ActorVisual actorVisual)
         {
             UpdateShaderEffectRenderers(actorVisual.gameObject);

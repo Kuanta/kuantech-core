@@ -53,6 +53,7 @@ namespace Kuantech.Midcore
         {
             base.SetDefaultState();
             CurrentDeck.Clear();
+            _equippedCollectiblesById = new Dictionary<string, CollectableAsset>();
 
             foreach (var collectable in DeckCollectibles)
             {

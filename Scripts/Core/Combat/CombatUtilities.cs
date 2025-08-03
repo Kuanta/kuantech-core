@@ -164,6 +164,43 @@ namespace Kuantech.Core.Combat
                 damageHandler?.Invoke(actor);
             }
         }
+
+        public static List<Actor> GetActorsInRaycast2D(Vector3 startPosition, Vector3 direction, float range,
+            LayerMask layerMask, HashSet<int> factionFilter = null,
+            UnityAction<Actor> damageHandler = null)
+        {
+            List<Actor> actors = new List<Actor>();
+            RaycastHit2D[] hits = Physics2D.RaycastAll(startPosition, direction, range, layerMask);
+
+            foreach (var hit in hits)
+            {
+                if (hit.collider == null) continue;
+                if (!hit.collider.TryGetComponent(out Actor actor)) continue;
+                if (!actor.IsAlive()) continue;
+                if (!factionFilter.IsNullOrEmpty() && !factionFilter.Contains(actor.FactionId)) continue;
+                actors.Add(actor);
+            }
+
+            return actors;
+        }
+        public static void HitActorsInRaycast2D(Vector3 startPosition, Vector3 direction, float range,
+            LayerMask layerMask, HitInfo hitInfo, HashSet<int> factionFilter = null,
+            UnityAction<Actor> damageHandler = null)
+        {
+
+            RaycastHit2D[] hits = Physics2D.RaycastAll(startPosition, direction, range, layerMask);
+
+            foreach (var hit in hits)
+            {
+                if (hit.collider == null) continue;
+                if (!hit.collider.TryGetComponent(out Actor actor)) continue;
+                if (!actor.IsAlive()) continue;
+                if (!factionFilter.IsNullOrEmpty() && !factionFilter.Contains(actor.FactionId)) continue;
+
+                actor.OnHit(hitInfo);
+                damageHandler?.Invoke(actor);
+            }
+        }
         #endregion
        
     }

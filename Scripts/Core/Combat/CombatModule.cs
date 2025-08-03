@@ -135,8 +135,9 @@ namespace Kuantech.Core
         private float _lastAttackCompleteTime;
         private bool _effectPlayed;
         private int _attackIndex = 0;
-        private Vector3 _attackDirection = Vector3.forward;
         private int _currentComboIndex;
+
+        private ActionCastData _currentCastData;
         
         public HashSet<int> FactionFilter = new HashSet<int>(); //Faction filter for the attack, if empty, all actors are valid targets
 
@@ -268,37 +269,17 @@ namespace Kuantech.Core
         public float GetAttackImplementationTime()
         {
             AttackPattern currPattern = GetCurrentAttackPattern();
-            if (currPattern.ScaleAttackImplementationTimeWithAttackSpeed)
+            float attackSpeedMultiplier = GetAttackSpeedMultiplier();
+            if (currPattern.ScaleAttackImplementationTimeWithAttackSpeed && attackSpeedMultiplier > 0)
             {
-                return currPattern.AttackImplementationTime / GetAttackSpeedMultiplier();    
+                return currPattern.AttackImplementationTime / attackSpeedMultiplier;    
             }
 
             return currPattern.AttackImplementationTime;
         }
         #endregion
-       
-        #region AttackPositions
-        
-        /// <summary>
-        /// Returns the center position of attack. Projectiles will be cast from this, overlap attacks will center around this
-        /// </summary>
-        /// <returns></returns>
-        public Vector3 GetAttackPosition()
-        {
-            string slotName = GetCurrentAttackPattern().AttackPointSlotName;
-            if (_slotsHandler != null)
-            {
-                Transform slot = _slotsHandler.GetSlot(slotName);
-                if (slot != null)
-                {
-                    return slot.position;
-                }
-            }
-            return transform.position;
-        }
 
-        #endregion
-        
+
         #region Attack Implementations
 
         private void RunAttackImplementation()
@@ -327,6 +308,9 @@ namespace Kuantech.Core
                 case AttackTypes.SkillCast:
                     SkillCastAttack();
                     break;
+                case AttackTypes.Beam:
+                    BeamAttack();
+                    break;
             }
 
             _lastAttackImplementationTime = Time.time;
@@ -337,7 +321,7 @@ namespace Kuantech.Core
         {
             AttackPattern currPattern = GetCurrentAttackPattern();
             Vector3 attackPoint = GetAttackPosition();
-            Vector3 forward = _attackDirection.normalized;
+            Vector3 forward = GetAttackDirection().normalized;
             float range = currPattern.Range;
             float angle = currPattern.Angle;
             
@@ -347,7 +331,7 @@ namespace Kuantech.Core
         {
             AttackPattern currPattern = GetCurrentAttackPattern();
             Vector3 attackPoint = GetAttackPosition();
-            Vector3 forward = _attackDirection.normalized;
+            Vector3 forward = GetAttackDirection().normalized;
             float range = currPattern.Range;
             float angle = currPattern.Angle;
             List<Actor> actors = CombatUtilities.GetActorsInArc2D(attackPoint, forward, range, angle, Targets, FactionFilter);
@@ -374,7 +358,20 @@ namespace Kuantech.Core
             
             DamageActor(currentTarget);
         }
-
+        
+        private void BeamAttack()
+        {
+            Vector3 startPoint = GetAttackPosition();
+            Vector3 direction = GetAttackDirection();
+            AttackPattern attackPattern = GetCurrentAttackPattern();
+            
+            List<Actor> actors = CombatUtilities.GetActorsInRaycast2D(startPoint, direction, attackPattern.Range, Targets, FactionFilter);
+            foreach (var actor in actors)
+            {
+                DamageActor(actor);
+            }
+        }
+        
         public void RangedProjectileAttack()
         {
             if (GetCurrentAttackPattern().ProjectilePrefab == null)
@@ -395,12 +392,12 @@ namespace Kuantech.Core
             if (currentTarget != null)
             {
                 Vector3 targetOffset = currentTarget.GetHitPoint().position - currentTarget.transform.position;
-                projectile.Shoot(Actor, null, GetAttackPosition(), _attackDirection, currentTarget.transform);
+                projectile.Shoot(Actor, null, GetAttackPosition(), GetAttackDirection(), currentTarget.transform);
                 projectile.SetTargetOffset(targetOffset);
             }
             else
             {
-                projectile.Shoot(Actor, null, GetAttackPosition(), _attackDirection, null);
+                projectile.Shoot(Actor, null, GetAttackPosition(), GetAttackDirection(), null);
             }
             
         }
@@ -417,7 +414,7 @@ namespace Kuantech.Core
             {
                 Hitter = gameObject,
                 DamageInfo = damage,
-                HitDirection = _attackDirection,
+                HitDirection = GetAttackDirection(),
                 KnockbackForce = GetCurrentAttackPattern().Knockback,
                 KnockbackDuration = GetCurrentAttackPattern().KnockbackTime
             };
@@ -425,7 +422,7 @@ namespace Kuantech.Core
             EffectPlayer hitEffect = GetCurrentAttackPattern().HitEffect;
             if (hitEffect != null)
             {
-                hitEffect.PlayEffectAtPosition(actor.GetHitPoint().position, Quaternion.LookRotation(_attackDirection));
+                hitEffect.PlayEffectAtPosition(actor.GetHitPoint().position, Quaternion.LookRotation(GetAttackDirection()));
             }
             actor.OnHit(hitInfo);
         }
@@ -438,12 +435,14 @@ namespace Kuantech.Core
             if (spellBook == null) return;
             SkillCastData skillCastData = new SkillCastData()
             {
-                CastDirection = _attackDirection,
+                CastDirection = GetAttackDirection(),
                 CastStartPosition = GetAttackPosition(),
                 CastTarget = GetCurrentTarget(),
             };
             spellBook.CastSkill(currPattern.SkillToCast, skillCastData);
         }
+
+  
         #endregion
 
         #region Attack Pattern Queries
@@ -460,17 +459,20 @@ namespace Kuantech.Core
         #endregion
 
         #region Attack Commands
-        public bool Attack(Vector3 attackDirection, Actor target = null)
+        public bool Attack(ActionCastData castData)
         {
             if (!CanAttack()) return false;
-            if (target != null && _targetManager != null)
+            _currentCastData = castData;
+            if (_currentCastData.Target != null && _targetManager != null)
             {
-                _targetManager.SetCurrentTarget(target);
+                _targetManager.SetCurrentTarget(_currentCastData.Target);
             }
+
+            _currentCastData.StartPosition = GetAttackPosition();
+
+            Actor.MotionVectorsHandler.SetTargetVector(_currentCastData.Direction);
             
-            Actor.MotionVectorsHandler.SetTargetVector(attackDirection);
-            
-            OnAttackStarted(attackDirection);
+            OnAttackStarted(castData);
 
             float timeSinceLastAttack = _attackStartTime - _lastAttackCompleteTime;
             if (timeSinceLastAttack < ComboRefreshTime)
@@ -485,13 +487,61 @@ namespace Kuantech.Core
             return true;
             //todo(networking): Notify clients
         }
-
+        
+        /// <summary>
+        /// Attacks to a target
+        /// </summary>
+        /// <param name="target"></param>
+        /// <returns></returns>
         public bool AttackToTarget(Actor target)
         {
             Vector3 direciton = (target.transform.position - transform.position).normalized;
-            return Attack(direciton, target);
+            ActionCastData castData = new ActionCastData
+            {
+                Caster = Actor,
+                StartPosition = GetAttackPosition(),
+                Direction = direciton,
+                Target = target,
+                TargetPosition = target.transform.position
+            };
+            
+            return Attack(castData);
+        }
+        
+        /// <summary>
+        /// Attacks to a position
+        /// </summary>
+        /// <param name="attackPosition"></param>
+        /// <returns></returns>
+        public bool AttackToPosition(Vector3 attackPosition)
+        {
+            Vector3 direciton = (attackPosition - transform.position).normalized;
+            ActionCastData castData = new ActionCastData
+            {
+                Caster = Actor,
+                StartPosition = GetAttackPosition(),
+                Direction = direciton,
+                Target = null,
+                TargetPosition = attackPosition
+            };
+            
+            return Attack(castData);
         }
 
+        public bool AttackToDirection(Vector3 attackDireciton)
+        {
+            Vector3 startPosition = GetAttackPosition();
+            attackDireciton = attackDireciton.normalized;
+            ActionCastData castData = new ActionCastData()
+            {
+                Caster = Actor,
+                StartPosition = startPosition,
+                Direction = attackDireciton.normalized,
+                Target = null,
+                TargetPosition = startPosition + attackDireciton * GetCurrentAttackPattern().Range,
+            };
+            return Attack(castData);
+        }
         #endregion
         
         #region Queries
@@ -535,7 +585,7 @@ namespace Kuantech.Core
         private float _attackImplementationTime;
         private float _maxContinuousAttackTime;
 
-        private void OnAttackStarted(Vector3 attackDirection)
+        private void OnAttackStarted(ActionCastData castData)
         {
             AttackPattern currPattern = GetCurrentAttackPattern();
             //Set timings
@@ -548,7 +598,6 @@ namespace Kuantech.Core
             _isAttacking = true;
             _attacked = false;
             _attackStartTime = Time.time;
-            _attackDirection = attackDirection;
             _effectPlayed = false;
             if(_animationModule != null)
             {
@@ -601,13 +650,64 @@ namespace Kuantech.Core
         {
             if (_effectPlayed) return;
             _effectPlayed = true;
-            Vector3 attackDirection = _attackDirection;
+            Vector3 attackDirection = GetAttackDirection();
             Vector3 attackPosition = GetAttackPosition(); //Position where attack is starterd, casted
             EffectPlayer attackEffect = GetCurrentAttackPattern().AttackFx;
             if (attackEffect == null) return;
             attackEffect.PlayEffectAtPosition(attackPosition, Quaternion.LookRotation(attackDirection));
         }
         
+        #endregion
+
+        #region CastData
+            
+        /// <summary>
+        /// Returns the current attack pattern
+        /// </summary>
+        /// <returns></returns>
+        public ActionCastData GetActionCastData()
+        {
+            return _currentCastData;
+        }
+        
+        public Vector3 GetAttackDirection()
+        {
+            Actor target = GetCurrentTarget();
+            if(target == null) return GetActionCastData().Direction;
+            Vector3 direction = target.transform.position - GetActionCastData().StartPosition;
+            return direction.normalized;
+        }
+        
+        /// <summary>
+        /// Returns the center position of attack. Projectiles will be cast from this, overlap attacks will center around this
+        /// </summary>
+        /// <returns></returns>
+        public Vector3 GetAttackPosition()
+        {
+            string slotName = GetCurrentAttackPattern().AttackPointSlotName;
+            if (_slotsHandler != null)
+            {
+                Transform slot = _slotsHandler.GetSlot(slotName);
+                if (slot != null)
+                {
+                   return slot.position;
+                }
+            }
+            return transform.position;
+        }
+
+        public Vector3 GetTargetPosition()
+        {
+            Actor getTarget = GetCurrentTarget();
+            Vector3 startPosition = GetAttackPosition();
+            Vector3 attackDireciton = GetAttackDirection();
+            if(getTarget != null)
+            {
+                return getTarget.GetHitPoint().position;
+            }
+
+            return startPosition + attackDireciton * GetCurrentAttackPattern().Range;
+        }
         #endregion
         
     }

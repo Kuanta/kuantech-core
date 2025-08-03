@@ -94,6 +94,7 @@ namespace Kuantech.Core
         {
             foreach(var blueprintComp in ActorBlueprintComponents)
             {
+                if(blueprintComp == null) continue;
                 blueprintComp.OnActorCreated(this, actor);
             }
         }

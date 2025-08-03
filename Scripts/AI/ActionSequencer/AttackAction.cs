@@ -51,7 +51,7 @@ namespace Kuantech.AI.ActionSequencer
             //Don't check target
             if (AttackWithoutTarget)
             {
-                CombatModule.Attack(CombatModule.Actor.GetActorDirection());
+                CombatModule.AttackToDirection(CombatModule.Actor.GetActorDirection());
                 return;
             }  
             
@@ -64,7 +64,7 @@ namespace Kuantech.AI.ActionSequencer
             
             if (CombatModule.IsInAttackRange(_target.transform))
             {
-                CombatModule.Attack(CombatModule.Actor.GetActorDirection());
+                CombatModule.AttackToTarget(_target);
             }
        
         }
