@@ -194,18 +194,23 @@ namespace Kuantech.TowerDefense
 
             nextEntry = GetNextWaveEntry(); // Can summon, now pop from queue
             ActorSummoner summoner = GetSummoner(nextEntry.SpawnerIndex);
-            ActorBlueprint actorBlueprint = GetActorTemplate(nextEntry.SpawnableIndex);
-            if (actorBlueprint == null) return;
-            Actor spawned = summoner.SpawnActor(actorBlueprint);
-            StatsModule sm = spawned.GetModule<StatsModule>();
-            if (sm != null && UseLevelPowerAsActorLevel)
+
+            for (int i = 0; i < nextEntry.Amount; ++i)
             {
-                sm.SetLevel(ParentLevel.GetPowerLevel());
-            }
+                ActorBlueprint actorBlueprint = GetActorTemplate(nextEntry.SpawnableIndex);
+                if (actorBlueprint == null) continue;
+                Actor spawned = summoner.SpawnActor(actorBlueprint, i);
+                StatsModule sm = spawned.GetModule<StatsModule>();
+                if (sm != null && UseLevelPowerAsActorLevel)
+                {
+                    sm.SetLevel(ParentLevel.GetPowerLevel());
+                }
             
-            if (spawned == null) return;
+                if (spawned == null) continue;
+                OnEnemySpawned?.Invoke(spawned);
+            }
             _lastSpawnTime = Time.time;
-            OnEnemySpawned?.Invoke(spawned);
+
         }
 
         public bool CanSpawnEnemy(WaveEntry waveEntry)

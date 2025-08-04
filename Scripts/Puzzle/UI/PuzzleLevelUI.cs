@@ -66,7 +66,7 @@ namespace Kuantech.Puzzle.UI
             CurrentLevel = level;
             if (LevelIndicator != null)
             {
-                LevelIndicator.SetLevelIndex(level.LevelNumber + 1);
+                LevelIndicator.SetLevelIndex(level.LevelIndex + 1);
             }
             level.OnStateChangeEvent += OnLevelStateChange;
             

@@ -108,8 +108,10 @@ namespace Kuantech.Core
             Level levelPrefab = worldDataAsset.GetLevelPrefab(levelIndex);
             Level level = InstantiateLevel(levelPrefab);
             CurrentLevel = level;
-            CurrentLevel.WorldIndex = worldIndex;
+            CurrentLevel.WorldIndex = CurrentWorldIndex;
+            CurrentLevel.WorldNumber = Mathf.Max(worldIndex, 0);
             CurrentLevel.WorldDataAsset = worldDataAsset;
+            CurrentLevel.LevelIndex = levelIndex;
             CurrentLevel.LevelNumber = levelIndex;
             CurrentLevel.OnLevelSet();
             CurrentLevel.SetupLevel();    
@@ -148,8 +150,8 @@ namespace Kuantech.Core
         {
             levelIndex = Mathf.Max(levelIndex, 0);
             CurrentLevelIndex = levelIndex;
-            if (CurrentLevel != null && levelIndex == CurrentLevel.LevelNumber) return; //Don't destroy and create the same level
-            if (CurrentLevel != null && CurrentLevel.LevelNumber != levelIndex)
+            if (CurrentLevel != null && levelIndex == CurrentLevel.LevelIndex) return; //Don't destroy and create the same level
+            if (CurrentLevel != null && CurrentLevel.LevelIndex != levelIndex)
             {
                 ClearCurrentLevel();
             }
@@ -159,12 +161,12 @@ namespace Kuantech.Core
             
             //Usefull for repeting last x levels. If there are 20 levels, and we are trying to get 41th level,
             //this value will be the index of the corresponding repeated level in the levels array
-            level.LevelNumber = levelIndex;
+            level.LevelIndex = levelIndex;
             CurrentLevel = level;
 
             //Set power level
             int powerLevel = levelIndex;
-            CurrentLevel.PowerLevel = MaxPowerLevel > 0 ? Mathf.Min(MaxPowerLevel, powerLevel) : powerLevel;
+            CurrentLevel.LevelNumber = MaxPowerLevel > 0 ? Mathf.Min(MaxPowerLevel, powerLevel) : powerLevel;
             LevelSetEvent?.Invoke(this, CurrentLevelIndex);
             if(clearLevelState) CurrentLevel.OnLevelSet();
             CurrentLevel.SetupLevel(); //todo(optimization): This may be unefficient

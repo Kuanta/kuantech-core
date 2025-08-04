@@ -34,7 +34,7 @@ namespace Kuantech.Puzzle.UI
         {
             foreach (var button in BoosterButtons)
             {
-                button.HandleLockedState(level.LevelNumber);
+                button.HandleLockedState(level.LevelIndex);
             }
         }
         

@@ -12,7 +12,7 @@ namespace Kuantech.Core.HyperCasual.Runner
         public PowerLevelArray<GameObject> ChunkElements;
         public override void Initialize(RunnerLevel parentLevel, bool isFinalChunk = false)
         {
-            SetChunkElements(parentLevel.PowerLevel);
+            SetChunkElements(parentLevel.LevelNumber);
             base.Initialize(parentLevel, isFinalChunk);
         }
 

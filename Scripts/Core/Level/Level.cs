@@ -38,14 +38,15 @@ namespace Kuantech.Core
         
         //Runtime
         public LevelPhaseSystem PhaseSystem;
+        [NonSerialized] public int LevelIndex;
         [NonSerialized] public int LevelNumber;
-        [NonSerialized] public int PowerLevel;
         private LevelState _levelState;
         public LevelUI LevelUI;
         
         //World Data
         [NonSerialized] public WorldDataAsset WorldDataAsset = null;
-        [NonSerialized] public int WorldIndex;
+        [NonSerialized] public int WorldIndex; //Index in the levels array. 
+        [NonSerialized] public int WorldNumber; //Actual world number. can be usedas power level
         
         //Spawnables
         public HashSet<ISpawnable> SpawnedActors = new HashSet<ISpawnable>();
@@ -330,9 +331,9 @@ namespace Kuantech.Core
         {
             if (WorldDataAsset != null)
             {
-                return WorldDataAsset.GetPowerLevel(WorldIndex, LevelNumber);
+                return WorldDataAsset.GetPowerLevel(WorldNumber, LevelNumber);
             }
-            return PowerLevel;
+            return LevelNumber;
         }
         #endregion
 

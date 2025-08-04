@@ -84,7 +84,7 @@ namespace Kuantech.Puzzle
         public virtual void FindLevelDesign()
         {
             if (!ShouldFindLevelDesign) return;
-            LevelDesignData data = LevelDesignManager.GetLevelDesignData(LevelNumber);
+            LevelDesignData data = LevelDesignManager.GetLevelDesignData(LevelIndex);
             if (data == null && LevelDesignAsset != null)
             {
                 //If data is null, try to read it from level design asset

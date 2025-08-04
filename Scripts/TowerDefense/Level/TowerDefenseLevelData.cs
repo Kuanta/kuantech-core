@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using Kuantech.Core.Utils;
-using UnityEngine.Serialization;
 
 namespace Kuantech.TowerDefense
 {
@@ -10,6 +9,7 @@ namespace Kuantech.TowerDefense
     {
         public int SpawnableIndex; //Index of the spawnable
         public int SpawnerIndex; //Which spawner to spawn from
+        public int Amount;
     }
 
     [Serializable]

@@ -15,7 +15,7 @@ namespace Kuantech.TowerDefense
         /// <summary>
         /// Spawns the actor
         /// </summary>
-        public override Actor SpawnActor(ActorBlueprint actorTemplate)
+        public override Actor SpawnActor(ActorBlueprint actorTemplate, int order = 0)
         {
             if (actorTemplate == null) return null;
             Actor createdActor = base.SpawnActor(actorTemplate);

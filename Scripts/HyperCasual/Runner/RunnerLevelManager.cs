@@ -123,7 +123,7 @@ namespace Kuantech.Core.HyperCasual.Runner
         public RunnerLevel GenerateLevel(int levelIndex)
         {
             RunnerLevel runnerLevel = Instantiate(EmptyLevelPrefab.gameObject).GetComponent<RunnerLevel>();
-            runnerLevel.LevelNumber = levelIndex;
+            runnerLevel.LevelIndex = levelIndex;
             runnerLevel.transform.position = Vector3.zero;
             runnerLevel.transform.rotation = Quaternion.identity;
             return runnerLevel;
