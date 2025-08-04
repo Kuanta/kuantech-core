@@ -10,6 +10,7 @@ namespace Kuantech.Core
     public struct DamageInfo
     {
         public float DamageAmount;
+        public bool IsCritical;
     }
     
     [Serializable]

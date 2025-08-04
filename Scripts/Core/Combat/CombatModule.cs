@@ -9,6 +9,7 @@ using Kuantech.Utils;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Serialization;
+using Random = System.Random;
 
 namespace Kuantech.Core
 {
@@ -48,6 +49,10 @@ namespace Kuantech.Core
         public DamageInfo DamageInfo;
         public AttributeAsset AttributeToScaleDamage;
         public float AttributeScaleFactor = 0f; //How much the attribute value scales the damage, 1 means 1:1 scaling
+
+        [Header("Critical")] 
+        public float CriticalChance = 0;
+        public float CriticalMultiplier = 1.5f;
         
         [Header("Timings")] 
         public float AttackImplementationTime;
@@ -96,6 +101,10 @@ namespace Kuantech.Core
         [Header("Attack Pattern")]
         public AttackPattern DefaultAttackPattern;
         private AttackPattern _currentAttackPattern;
+        
+        [Header("Attributes")]
+        public AttributeAsset CriticalChanceAttribute;
+        public AttributeAsset CriticalMultiplierAttribute;
 
         [Header("Collision")]
         private Collider[] _results = new Collider[32];
@@ -410,6 +419,7 @@ namespace Kuantech.Core
         {
             DamageInfo damage = GetDamage();
             if (actor == null || !actor.IsAlive()) return;
+            
             HitInfo hitInfo = new HitInfo()
             {
                 Hitter = gameObject,
@@ -427,6 +437,27 @@ namespace Kuantech.Core
             actor.OnHit(hitInfo);
         }
 
+        private float GetCriticalMultiplier()
+        {
+            AttackPattern currPattern = GetCurrentAttackPattern();
+            float criticalChance = currPattern .CriticalChance;
+            float criticalMultiplier = Mathf.Max(1, currPattern .CriticalMultiplier);
+            if (CriticalChanceAttribute != null)
+            {
+                criticalChance += _statModule.GetAttributeValue(CriticalChanceAttribute);
+            }
+
+            if (CriticalMultiplierAttribute != null)
+            {
+                criticalMultiplier += _statModule.GetAttributeValue(CriticalMultiplierAttribute);
+            }
+
+            criticalChance = Mathf.Clamp01(criticalChance);
+            bool crit = UnityEngine.Random.Range(0f, 1f) < criticalChance;
+            if (crit) return Mathf.Max(1, criticalMultiplier);
+            return 1;
+        }
+        
         private void SkillCastAttack()
         {
             AttackPattern currPattern = GetCurrentAttackPattern();
@@ -446,13 +477,16 @@ namespace Kuantech.Core
         #endregion
 
         #region Attack Pattern Queries
-
+        
         public DamageInfo GetDamage()
         {
+            float critMultiplier = GetCriticalMultiplier();
+            critMultiplier = Mathf.Max(1, critMultiplier); //Crit multiplier must be larger than 1
             AttackPattern attackPattern = GetCurrentAttackPattern();
             DamageInfo damageInfo = attackPattern.GetDamageInfo();
+            damageInfo.IsCritical = critMultiplier > 1;
             float statVariable = _statModule.GetAttributeValue(attackPattern.AttributeToScaleDamage);
-            damageInfo.DamageAmount += statVariable * attackPattern.AttributeScaleFactor;
+            damageInfo.DamageAmount += (statVariable * attackPattern.AttributeScaleFactor) * critMultiplier;
             return damageInfo;
         }
         

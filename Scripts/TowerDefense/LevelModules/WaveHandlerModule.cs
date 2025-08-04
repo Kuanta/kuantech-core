@@ -5,7 +5,6 @@ using Kuantech.Core;
 using Kuantech.RealTimeStrategy;
 using Kuantech.Rpg;
 using Kuantech.Utils;
-using Unity.Transforms;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -194,8 +193,8 @@ namespace Kuantech.TowerDefense
 
             nextEntry = GetNextWaveEntry(); // Can summon, now pop from queue
             ActorSummoner summoner = GetSummoner(nextEntry.SpawnerIndex);
-
-            for (int i = 0; i < nextEntry.Amount; ++i)
+            int amount = Mathf.Max(1, nextEntry.Amount);
+            for (int i = 0; i < amount; ++i)
             {
                 ActorBlueprint actorBlueprint = GetActorTemplate(nextEntry.SpawnableIndex);
                 if (actorBlueprint == null) continue;

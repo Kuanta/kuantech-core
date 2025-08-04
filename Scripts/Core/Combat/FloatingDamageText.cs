@@ -15,7 +15,15 @@ namespace Kuantech.Core
         [SerializeField] private bool AdjustColors;
         [SerializeField] private Color FriendlyColor;
         [SerializeField] private Color EnemyColor;
-        
+
+
+        [Header("Crit")] [SerializeField] private Color CritColor = Color.yellow;
+        [SerializeField] private GameObject CritIndicator;
+        [SerializeField] private float CritScale = 1.2f;
+
+        [Header("Offset")] 
+        [SerializeField] private Vector3 RandomOffsetMin = new Vector3(-0.1f, -0.1f, 0f);
+        [SerializeField] private Vector3 RandomOffsetMax = new Vector3(0.1f, 0.1f, 0f);
         private IEnumerator _routine;
         private static readonly int ShowHash = Animator.StringToHash("Show");
 
@@ -38,6 +46,21 @@ namespace Kuantech.Core
             }
         
             _routine = DespawnRoutine();
+            if (CritIndicator != null)
+            {
+                CritIndicator.SetActive(damageInfo.IsCritical);
+            }
+
+            transform.localScale = Vector3.one;
+            if (damageInfo.IsCritical)
+            {
+                transform.localScale = Vector3.one * CritScale;
+                Text.color = CritColor;
+            }
+            
+            //Add random offset 
+            transform.position += new Vector3(Random.Range(RandomOffsetMin.x, RandomOffsetMax.x),
+                Random.Range(RandomOffsetMin.y, RandomOffsetMax.y), Random.Range(RandomOffsetMin.z, RandomOffsetMax.z));
             StartCoroutine(_routine);
         }
 
