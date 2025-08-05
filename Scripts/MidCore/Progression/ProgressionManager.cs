@@ -102,7 +102,20 @@ namespace Kuantech.Midcore
             {
                 SetRank(ctx.PlayerLevelDataAsset, 0);
             }
+            else
+            {            
+                data.Rank.SetBaseRequirement(ctx.PlayerLevelDataAsset.LevelVariableData.BaseRequirement);
+                data.Rank.SetGrowthFactor(ctx.PlayerLevelDataAsset.LevelVariableData.GrowthFactor);
+            }
+
             return ctx.ProgressiblesHandler.GetProgressibleData(ctx.PlayerLevelDataAsset).GetRank();
+        }
+        
+        public static ProgressableDataAsset GetPlayerLevelDataAsset()
+        {
+            var ctx = GetContext<ProgressionManager>();
+            if (ctx == null) return null;
+            return ctx.PlayerLevelDataAsset;
         }
         
         [Button("Add Experience")]

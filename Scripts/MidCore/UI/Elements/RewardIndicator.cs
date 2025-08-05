@@ -11,7 +11,8 @@ namespace Kuantech.Midcore.UI
         [SerializeField] private Image ColorTintImage;
         [SerializeField] private Image Icon;
         [SerializeField] private TMP_Text AmountText;
-
+        [SerializeField] private TMP_Text NameText;
+        
         public void SetReward(Reward reward)
         {
             MetadataAsset metadataAsset = reward.GetMetadataAsset();
@@ -25,7 +26,12 @@ namespace Kuantech.Midcore.UI
             {
                 ColorTintImage.color = metadataAsset.MainColor;
             }
-
+            
+            if(NameText != null)
+            {
+                NameText.text = metadataAsset.GetName();
+            }
+            
             int amount = reward.GetAmount();
             if (AmountText != null)
             {
