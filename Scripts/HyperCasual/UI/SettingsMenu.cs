@@ -1,10 +1,8 @@
 ﻿using System;
 using Kuantech.Core.FX;
 using Kuantech.Core.UI;
-using Kuantech.UI;
 using Kuantech.Utils.Mobile;
 using UnityEngine;
-using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace Kuantech.Core.HyperCasual
@@ -15,38 +13,57 @@ namespace Kuantech.Core.HyperCasual
         [SerializeField] private Slider SfxVolume;
         [SerializeField] private ToggleButton ToggleMusicButton;
         [SerializeField] private ToggleButton ToggleSfxButton;
-        [FormerlySerializedAs("ToggleHaptics")] [SerializeField] private ToggleButton ToggleHapticsButton;
-        
-        private void Awake()
+        [SerializeField] private ToggleButton ToggleHapticsButton;
+ 
+        public override void Initialize()
         {
-            CloseButton.onClick.AddListener(Close);
+            if (Initialized) return;
+            base.Initialize();
+
+            if(SfxVolume != null) SfxVolume.onValueChanged.AddListener(OnSfxVolumeChange);
+            if(MusicVolume != null) MusicVolume.onValueChanged.AddListener(OnMusicVolumeChange);
+            if (ToggleMusicButton != null) ToggleMusicButton.OnToggle += OnMusicToggle;
+            if (ToggleSfxButton != null) ToggleSfxButton.OnToggle += OnSfxToggle;
+
+            UpdateElements();
+
+            if (ToggleHapticsButton != null)
+            {
+                ToggleHapticsButton.OnToggle += OnHapticsToggle;
+            }
+        }
+
+        private void UpdateElements()
+        {
             float musicVolume = PlayerPrefs.GetFloat("MusicVolume", defaultValue:1f);
             float sfxVolume = PlayerPrefs.GetFloat("SfxVolume", defaultValue: 1f);
             int toggleMusic = PlayerPrefs.GetInt("ToggleMusic", defaultValue:1);
             int toggleSfx = PlayerPrefs.GetInt("ToggleSfx", defaultValue: 1);
-            if(SfxVolume != null) SfxVolume.onValueChanged.AddListener(OnSfxVolumeChange);
-            if(MusicVolume != null) MusicVolume.onValueChanged.AddListener(OnMusicVolumeChange);
+            int toggleHaptics = PlayerPrefs.GetInt("ToggleHaptics", defaultValue: 1);
             
             if(ToggleSfxButton != null) ToggleSfxButton.SetState(Convert.ToBoolean(toggleSfx));
             if (ToggleMusicButton != null) ToggleMusicButton.SetState(Convert.ToBoolean(toggleMusic));
-            bool toggleSfxState = ToggleSfxButton != null ? ToggleSfxButton.State : true;
-            bool toggleMusicState = ToggleMusicButton != null ? ToggleMusicButton.State : true;
-            if (SfxVolume != null) SfxVolume.value = toggleSfxState ? sfxVolume : 0.0001f;
-            if (MusicVolume != null) MusicVolume.value = toggleMusicState ? musicVolume : 0.0001f;
-
-
-            if (ToggleMusicButton != null) ToggleMusicButton.OnToggle += OnMusicToggle;
-            if (ToggleSfxButton != null) ToggleSfxButton.OnToggle += OnSfxToggle;
-
-            int toggleHaptics = PlayerPrefs.GetInt("Togglehaptics", defaultValue: 1);
+            if (SfxVolume != null) SfxVolume.value = toggleSfx > 0 ? sfxVolume : 0.0001f;
+            if (MusicVolume != null) MusicVolume.value = toggleMusic > 0 ? musicVolume : 0.0001f;
             if (ToggleHapticsButton != null)
             {
                 ToggleHapticsButton.SetState(Convert.ToBoolean(toggleHaptics));
-                ToggleHapticsButton.OnToggle += OnHapticsToggle;
             }
-            MobileToolsManager.ToggleHaptics(Convert.ToBoolean(toggleHaptics));
+
+        }
+        public override void Show()
+        {
+            base.Show();
+            UpdateElements();
+            GameManager.PauseGame();
         }
 
+        public override void Hide()
+        {
+            base.Hide();
+            GameManager.ResumeGame();
+        }
+        
         #region Sound
 
         private void OnMusicVolumeChange(float value)
@@ -56,7 +73,9 @@ namespace Kuantech.Core.HyperCasual
             {
                 value = ToggleMusicButton.State ? value : 0.0001f;
             }
-            EffectsLibrary.GetContext<EffectsLibrary>().AudioLibrary.SetMusicVolume(value);
+            AudioLibrary al = EffectsLibrary.GetAudioLibrary();
+            if (al == null) return;
+            al.SetMusicVolume(value);
         }
 
         private void OnSfxVolumeChange(float value)
@@ -66,29 +85,36 @@ namespace Kuantech.Core.HyperCasual
             {
                 value = ToggleSfxButton.State ? value : 0.0001f;
             }
-            EffectsLibrary.GetContext<EffectsLibrary>().AudioLibrary.SetSfxVolume(value);
+
+            AudioLibrary al = EffectsLibrary.GetAudioLibrary();
+            if (al == null) return;
+            al.SetSfxVolume(value);
         }
 
         private void OnMusicToggle(bool toggle)
         {
             PlayerPrefs.SetInt("ToggleMusic", toggle ? 1 : 0 );
             float musicVol = MusicVolume != null ? MusicVolume.value : 1f;
-            EffectsLibrary.GetContext<EffectsLibrary>().AudioLibrary.SetMusicVolume(toggle ? musicVol : 0.0001f);
+            AudioLibrary al = EffectsLibrary.GetAudioLibrary();
+            if (al == null) return;
+            al.SetMusicVolume(toggle ? musicVol : 0.0001f);
         }
 
         private void OnSfxToggle(bool toggle)
         {
             PlayerPrefs.SetInt("ToggleSfx", toggle ? 1 : 0 );
             float sfxVol = MusicVolume != null ? SfxVolume.value : 1f;
-            EffectsLibrary.GetContext<EffectsLibrary>().AudioLibrary.SetSfxVolume(toggle ? sfxVol : 0.0001f);
+            AudioLibrary al = EffectsLibrary.GetAudioLibrary();
+            if (al == null) return;
+            al.SetSfxVolume(toggle ? sfxVol : 0.0001f);
         }
 
         #endregion
 
         private void OnHapticsToggle(bool toggle)
         {
-            MobileToolsManager.ToggleHaptics(toggle);
             PlayerPrefs.SetInt("ToggleHaptics", toggle ? 1:0);
+            MobileToolsManager.ToggleHaptics(toggle);
         }
     }
 }
