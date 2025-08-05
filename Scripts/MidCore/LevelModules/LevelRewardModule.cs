@@ -45,10 +45,14 @@ namespace Kuantech.Midcore
             }
         }
         
+        /// <summary>
+        /// Sets the rewards
+        /// </summary>
+        /// <param name="rewardsPanel"></param>
         private void SetRewardsUI(RewardsPanel rewardsPanel)
         {
             if (rewardsPanel == null) return;
-            rewardsPanel.ShowRewards(Rewards);
+            rewardsPanel.SetRewards(Rewards);
         }
 
         private RewardsPanel GetRewardsPanelFromCompletePanel()

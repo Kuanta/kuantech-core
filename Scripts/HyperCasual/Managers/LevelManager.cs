@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using IngameDebugConsole;
+using Kuantech.Midcore;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -115,6 +116,26 @@ namespace Kuantech.Core
             CurrentLevel.LevelNumber = levelIndex;
             CurrentLevel.OnLevelSet();
             CurrentLevel.SetupLevel();    
+        }
+
+        public LevelIndexData GetCorrectedLevelIndex(LevelIndexData levelIndexData)
+        {
+            int levelIndex = levelIndexData.LevelIndex;
+            int worldIndex = levelIndexData.WorldIndex;
+
+            worldIndex = GetWorldIndex(worldIndex);
+            WorldDataAsset worldDataAsset = GetWorld(worldIndex);
+            if (levelIndex >= worldDataAsset.Levels.Count)
+            {
+                levelIndex = 0;
+                worldIndex += 1;
+            }
+
+            return new LevelIndexData()
+            {
+                WorldIndex = worldIndex,
+                LevelIndex = levelIndex,
+            };
         }
         
         #endregion

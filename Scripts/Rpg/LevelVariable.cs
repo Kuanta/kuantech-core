@@ -28,6 +28,16 @@ namespace Kuantech.Rpg
             growthFactor = lvd.GrowthFactor;
         }
         
+        public void SetBaseRequirement(float newBaseRequirement)
+        {
+            baseRequirement = Mathf.Max(0f, newBaseRequirement);
+        }
+        
+        public void SetGrowthFactor(float newGrowthFactor)
+        {
+            growthFactor = Mathf.Max(0f, newGrowthFactor);
+        }
+        
         public void AddValue(float amount)
         {
             TotalValue = Mathf.Max(0f, TotalValue + amount);

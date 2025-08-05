@@ -26,6 +26,11 @@ namespace Kuantech.Midcore.UI
             base.Initialize();
             
             PlayButton.onClick.AddListener(OnPlayButtonClicked);
+
+            LevelProgressionStateManager lpm = LevelProgressionStateManager.GetContext<LevelProgressionStateManager>();
+            if (lpm == null) return;
+            lpm.CurrentLevelChanged -= OnCurrentLevelChanged;
+            lpm.CurrentLevelChanged += OnCurrentLevelChanged;
         }
 
         public override void Show()
@@ -36,19 +41,16 @@ namespace Kuantech.Midcore.UI
         
         private void SetCurrentWorldTheme()
         {
-            LevelProgressionStateManager.LevelProgressionData lastCompletedLevelData
+            LevelIndexData currentLevelData
                 = LevelProgressionStateManager.GetLevelProgressionData();
 
-            int lastCompletedWorld = lastCompletedLevelData.LastCompletedWorld;
-            int lastCompletedLevel = lastCompletedLevelData.LastCompletedLevel;
-
-            int worldToGet = lastCompletedWorld;
-            int levelToGet = lastCompletedLevel + 1;
+            int worldToGet = currentLevelData.WorldIndex;
+            int levelToGet = currentLevelData.LevelIndex;
             
             LevelManager lm = LevelManager.GetContext<LevelManager>();
             if (lm == null) return;
             
-            WorldDataAsset worldDataAsset = lm.GetWorld(lastCompletedWorld);
+            WorldDataAsset worldDataAsset = lm.GetWorld(worldToGet);
 
             if (worldDataAsset.Levels.Count <= levelToGet)
             {
@@ -89,6 +91,11 @@ namespace Kuantech.Midcore.UI
                 MidcoreMenuSceneManager.GetGameSceneName(),
                 transitionData
             );
+        }
+
+        private void OnCurrentLevelChanged(LevelIndexData currentLevelData)
+        {
+            SetCurrentWorldTheme();
         }
         #endregion
     }
