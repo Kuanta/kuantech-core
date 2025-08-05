@@ -32,6 +32,8 @@ namespace Kuantech.Core.FX
 
         [Header("Combo")] 
         public List<AudioClip> ComboSfxCollection;
+
+        [Header("Fire Rate")] public float FireRate = 0;
         
         [Header("Pitch Adjustments")]
         public float BasePitch = 1f;
@@ -53,7 +55,11 @@ namespace Kuantech.Core.FX
 
         [NonSerialized] public int ComboFromEffect = 0;
         private IEnumerator _fadeOutRoutine = null;
+
         
+        private Coroutine _fireRoutine;
+        private bool _isFiring;
+
         public void Play()
         {
             if (_fadeOutRoutine != null)
@@ -61,40 +67,98 @@ namespace Kuantech.Core.FX
                 StopCoroutine(_fadeOutRoutine);
                 _fadeOutRoutine = null;
             }
+
             if (PlayWithAudioLibrary)
             {
                 EffectsLibrary.PlayAudio(AudioTag);
                 return;
             }
+
             if (!SfxCollection.IsNullOrEmpty())
             {
                 AudioSource = SfxCollection.GetRandomElement();
             }
-            if(AudioSource == null) return;
-            
-            float pitch = AudioSource.pitch;
-            if(RandomizePitch)
-            {
-                pitch = BasePitch + UnityEngine.Random.Range(-1* PitchVariation, PitchVariation);
-            }
-            else if(AdjustPitch)
-            {
-                int comboCount = ComboFromEffect;
-                if (!UseComboFromEffect)
-                {
-                    comboCount = AudioLibrary.GetComboCount(this);
-                }
-                pitch = BasePitch + comboCount * PitchAdjustmentPerPlay;
 
+            if (AudioSource == null) return;
+
+            if (FireRate > 0f)
+            {
+                if (_fireRoutine == null)
+                {
+                    _fireRoutine = StartCoroutine(FireLoop());
+                }
             }
+            else
+            {
+                PlaySingleShot();
+            }
+        }
+
+        private void PlaySingleShot()
+        {
+            float pitch = BasePitch;
+
+            if (RandomizePitch)
+            {
+                pitch += UnityEngine.Random.Range(-1 * PitchVariation, PitchVariation);
+            }
+            else if (AdjustPitch)
+            {
+                int comboCount = UseComboFromEffect ? ComboFromEffect : AudioLibrary.GetComboCount(this);
+                pitch += comboCount * PitchAdjustmentPerPlay;
+            }
+
             pitch = Mathf.Clamp(pitch, MinPitch, MaxPitch);
             AudioSource.pitch = pitch;
             AudioSource.Play();
         }
 
+        private IEnumerator FireLoop()
+        {
+            _isFiring = true;
+
+            while (_isFiring)
+            {
+                if (AudioSource != null && AudioSource.clip != null)
+                {
+                    float pitch = BasePitch;
+
+                    if (RandomizePitch)
+                    {
+                        pitch += UnityEngine.Random.Range(-1 * PitchVariation, PitchVariation);
+                    }
+                    else if (AdjustPitch)
+                    {
+                        int comboCount = UseComboFromEffect ? ComboFromEffect : AudioLibrary.GetComboCount(this);
+                        pitch += comboCount * PitchAdjustmentPerPlay;
+                    }
+
+                    pitch = Mathf.Clamp(pitch, MinPitch, MaxPitch);
+                    AudioSource.pitch = pitch;
+                    AudioSource.PlayOneShot(AudioSource.clip);
+                }
+
+                yield return new WaitForSeconds(FireRate);
+            }
+
+            _fireRoutine = null;
+        }
+
+        // Dışarıdan durdurmak için (istenirse)
+        public void StopFiring()
+        {
+            _isFiring = false;
+            if (_fireRoutine != null)
+            {
+                StopCoroutine(_fireRoutine);
+                _fireRoutine = null;
+            }
+        }   
+
         public void PlayComboSfx(int comboIndex)
         {
             AudioSource.Stop();
+            StopFiring();
             comboIndex = Mathf.Clamp(comboIndex, 0, ComboSfxCollection.Count-1);
             AudioSource.clip = ComboSfxCollection[comboIndex];
             Play();
@@ -108,6 +172,7 @@ namespace Kuantech.Core.FX
         public void Stop(float fadeOutDuraiton=0f)
         {
             //todo(sfx): Implement fadeout
+            StopFiring();
             if(AudioSource == null || _fadeOutRoutine != null) return;
             if (fadeOutDuraiton > 0)
             {

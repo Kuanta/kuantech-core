@@ -78,9 +78,12 @@ namespace Kuantech.Core.FX
             if (settings.DespawnAfterPlay && Duration > 0)
             {
                 StartCoroutine(PoolRoutine(Duration));
+            }else if (Duration > 0)
+            {
+                StartCoroutine(StopRoutine());
             }
         }
-
+        
         
         public void _Play(EffectPlaySettings playSettings)
         {
@@ -93,6 +96,11 @@ namespace Kuantech.Core.FX
             PlayEffects(playSettings);
         }
 
+        private IEnumerator StopRoutine()
+        {
+            yield return new WaitForSeconds(Duration);
+            Stop();
+        }
         protected virtual void PlayEffects(EffectPlaySettings playSettings)
         {
             if(Sfx != null)

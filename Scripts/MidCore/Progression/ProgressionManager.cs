@@ -483,6 +483,8 @@ namespace Kuantech.Midcore
             {
                 FreshUnlockedCollectibles = new HashSet<CollectableAsset>();
             }
+
+            bool newUnlocks = false;
             foreach (var collectible in Collectibles)
             {
                 if(IsProgressibleUnlocked(collectible) || !collectible.UnlockAutomacically) continue;
@@ -490,8 +492,14 @@ namespace Kuantech.Midcore
                 {
                     //Unlock
                     SetRank(collectible, 0); //Don't check price for auto unlock collectibles
+                    newUnlocks = true;
                     if(!fromDefault) FreshUnlockedCollectibles.Add(collectible);
                 }
+            }
+
+            if (newUnlocks)
+            {
+                SaveState();
             }
         }
 
