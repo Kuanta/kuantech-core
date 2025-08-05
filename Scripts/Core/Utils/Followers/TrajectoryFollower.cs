@@ -1,5 +1,4 @@
-﻿using Sirenix.OdinInspector;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.Events;
 
 
@@ -65,7 +64,6 @@ public class TrajectoryFollower : MonoBehaviour
     {
         if (!_isMoving)
         {
-            transform.localScale = Vector3.one;
             return;
         }
         transform.localScale = Vector3.Lerp(transform.localScale, _targetScale,Time.deltaTime * ScaleLerpFactor);
