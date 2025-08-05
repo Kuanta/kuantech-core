@@ -11,5 +11,8 @@ namespace Kuantech.Midcore
 
         [Header("Unlock condition")] 
         public int RequiredLevel;
+        
+        [Tooltip("If set to true, it will be unlocked automatically when the player reaches the required level")]
+        public bool UnlockAutomacically = true;
     }
 }

@@ -4,6 +4,7 @@ using Cysharp.Threading.Tasks;
 using Kuantech.Core;
 using Kuantech.Core.HyperCasual;
 using Kuantech.Rpg;
+using Kuantech.Utils;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Assertions;
@@ -50,8 +51,15 @@ namespace Kuantech.Midcore
         [Header("Traits")] 
         [SerializeField] private List<TraitUpgradeProgressable> TraitUpgrades;
         
+        [Header("Collectibles")]
+        public List<CollectableAsset> Collectibles;
+        private Dictionary<string, CollectableAsset> _collectiblesById = new Dictionary<string, CollectableAsset>();
+        
         [Header("Default Values")]
         public List<DefaultProgressableData> DefaultProgressables;
+        
+        //Runtime
+        [NonSerialized] public HashSet<CollectableAsset> FreshUnlockedCollectibles;
         
         //Events
         public Action<ProgressibleData> OnUpgradeUnlocked;
@@ -63,7 +71,7 @@ namespace Kuantech.Midcore
         {
             await base.Initialize(gameManager);
            ProgressiblesHandler.Initilaze();
-           
+           SetCollectibles();
            SetDefaultProgressables(); //Unlocks defaults if they are not unlocked
         }
 
@@ -90,6 +98,7 @@ namespace Kuantech.Midcore
                     SetSubUpgradeRank(defaultProgressable.Asset, upgrade.SubUpgradeAsset, upgrade.StartRank, false);
                 }
             }
+            CheckUnlockedCollectibles(true);
         }
         
         #region Player Level
@@ -123,6 +132,7 @@ namespace Kuantech.Midcore
         {
             AddRankValue(PlayerLevelDataAsset, experience);
             OnPlayerEarnedExperience?.Invoke(GetPlayerLevel());
+            CheckUnlockedCollectibles(false);
             SaveState();
         }
         
@@ -131,6 +141,7 @@ namespace Kuantech.Midcore
         {
             SetRankValue(PlayerLevelDataAsset, experience);
             OnPlayerEarnedExperience?.Invoke(GetPlayerLevel());
+            CheckUnlockedCollectibles(false);
             SaveState();
         }
         
@@ -424,5 +435,79 @@ namespace Kuantech.Midcore
         }
         #endregion
 
+        #region Collectibles
+        
+        /// <summary>
+        /// Sets the collectibles by id dictionary
+        /// </summary>
+        private void SetCollectibles()
+        {
+            _collectiblesById = new Dictionary<string, CollectableAsset>();
+            foreach (var collectible in Collectibles)
+            {
+                _collectiblesById[collectible.GetId()] = collectible;
+            }
+        }
+        
+        /// <summary>
+        /// Returns collectible by id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public static CollectableAsset GetCollectibleById(string id)
+        {
+            var ctx = GetContext<ProgressionManager>();
+            if (ctx == null || id.IsNullOrEmpty()) return null;
+            if (ctx._collectiblesById.ContainsKey(id)) return ctx._collectiblesById[id];
+            return null;
+        }
+        
+        /// <summary>
+        /// Returns collectibles
+        /// </summary>
+        /// <returns></returns>
+        public static List<CollectableAsset> GetCollectibles()
+        {
+            var ctx = GetContext<ProgressionManager>();
+            if (ctx == null) return null;
+            return ctx.Collectibles;
+        }
+        
+        /// <summary>
+        /// Checks if any collectible need unlocking. Some collectibles may be flaged as auto unlocked.
+        /// This means, if player level condition is satisfied, the collectible must be unlocked
+        /// </summary>
+        public void CheckUnlockedCollectibles(bool fromDefault)
+        {
+            if (FreshUnlockedCollectibles == null)
+            {
+                FreshUnlockedCollectibles = new HashSet<CollectableAsset>();
+            }
+            foreach (var collectible in Collectibles)
+            {
+                if(IsProgressibleUnlocked(collectible) || !collectible.UnlockAutomacically) continue;
+                if (collectible.RequiredLevel <= GetPlayerLevel().CurrentLevel)
+                {
+                    //Unlock
+                    SetRank(collectible, 0); //Don't check price for auto unlock collectibles
+                    if(!fromDefault) FreshUnlockedCollectibles.Add(collectible);
+                }
+            }
+        }
+
+        public static HashSet<CollectableAsset> GetFreshCollectables()
+        {
+            var ctx = GetContext<ProgressionManager>();
+            if (ctx == null) return null;
+            return ctx.FreshUnlockedCollectibles;
+        }
+        
+        public static void ClearFreshCollectables()
+        {
+            var ctx = GetContext<ProgressionManager>();
+            if (ctx == null) return;
+            ctx.FreshUnlockedCollectibles.Clear();
+        }
+        #endregion
     }
 }

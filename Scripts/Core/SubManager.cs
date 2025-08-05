@@ -25,7 +25,7 @@ namespace Kuantech.Core
         /// <summary>
         /// Called for scene specific submanagers, when the gamemanager enters a new scene
         /// </summary>
-        public void OnSceneEntry()
+        public virtual void OnSceneEntry()
         {
 
         }

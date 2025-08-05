@@ -137,6 +137,7 @@ namespace Kuantech.Core.UI
         {
             if (_menuStack.IsNullOrEmpty() || _menuStack.Peek() != menu)
             {
+                menu.Hide();
                 return;
             }
             UIMenu menuToClose = _menuStack.Pop();
@@ -144,7 +145,7 @@ namespace Kuantech.Core.UI
             {
                 return;
             }
-            if(callClose) menuToClose.Close();
+            if(callClose) menuToClose.Hide();
             
             //If somehow stack is empty, push the default menu to stack
             if (_menuStack.IsNullOrEmpty())

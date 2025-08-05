@@ -1,4 +1,8 @@
-﻿using Kuantech.Core;
+﻿using System.Collections.Generic;
+using Kuantech.Core;
+using Kuantech.Midcore.UI;
+using Kuantech.Utils;
+using UnityEngine;
 
 namespace Kuantech.Midcore
 {
@@ -6,8 +10,28 @@ namespace Kuantech.Midcore
     {
         [SaveableField] public int CurrentWorldIndex;
         [SaveableField] public int CurrentLevelIndex;
-        
+
+        [Header("UI elements")] [SerializeField]
+        private FreshUnlocksPanel FreshUnlocksPanel;
         public string GameSceneName = "GameScene";
+
+        public override void OnSubmanagersInitialized()
+        {
+            if (FreshUnlocksPanel == null) return;
+            HashSet<CollectableAsset> freshCollectables = ProgressionManager.GetFreshCollectables();
+            if (freshCollectables.IsNullOrEmpty())
+            {
+                FreshUnlocksPanel.gameObject.SetActive(false);
+            }
+
+            {
+                FreshUnlocksPanel.Show();
+                FreshUnlocksPanel.ShowFreshUnlocks(freshCollectables);
+            }
+            
+            //Clear fresh collectibles after showing them
+            ProgressionManager.ClearFreshCollectables();
+        }
         
         #region Level
         public static int GetCurrentWorldIndex()
@@ -44,6 +68,7 @@ namespace Kuantech.Midcore
             if (ctx == null) return "GameScene";
             return ctx.GameSceneName;
         }
+        
         #endregion
     }
 }

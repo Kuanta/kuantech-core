@@ -10,17 +10,13 @@ namespace Kuantech.Midcore
     {
         [Header("Properties")] 
         public int DeckSize = 4;
-        
-        [Header("Deck Collectibles")]
-        public List<CollectableAsset> DeckCollectibles;
-        
+
         [Header("Default Deck")]
         public List<CollectableAsset> DefaultDeck;
 
         //Current Deck
         [SaveableField] public List<ProgressibleData> CurrentDeck;
-        
-        private Dictionary<string, CollectableAsset> _collectiblesById = new Dictionary<string, CollectableAsset>();
+
         private Dictionary<string, CollectableAsset> _equippedCollectiblesById = new Dictionary<string, CollectableAsset>();
 
         public override async UniTask Initialize(GameManager gameManager)
@@ -30,22 +26,16 @@ namespace Kuantech.Midcore
             {
                 CurrentDeck.Add(null);
             }
-            
-            
-            foreach (var collectible in DeckCollectibles)
-            {
-                _collectiblesById[collectible.GetId()] = collectible;
-            }
         }
 
         public override void OnSubmanagersInitialized()
         {
             base.OnSubmanagersInitialized();
-                        
+            
             foreach (var equipped in CurrentDeck)
             {
                 if(equipped == null || equipped.Id.IsNullOrEmpty()) continue;
-                _equippedCollectiblesById[equipped.Id] = GetCollectible(equipped.Id);
+                _equippedCollectiblesById[equipped.Id] = ProgressionManager.GetCollectibleById(equipped.Id);
             }
         }
         
@@ -54,14 +44,7 @@ namespace Kuantech.Midcore
             base.SetDefaultState();
             CurrentDeck.Clear();
             _equippedCollectiblesById = new Dictionary<string, CollectableAsset>();
-
-            foreach (var collectable in DeckCollectibles)
-            {
-                if (collectable.RequiredLevel <= 0)
-                {
-                    ProgressionManager.SetRank(collectable, 0);
-                }
-            }
+            
             
             for (int i = 0; i < DeckSize; ++i)
             {
@@ -82,38 +65,39 @@ namespace Kuantech.Midcore
             return ctx.DeckSize;
         }
         
-        /// <summary>
-        /// Returns a collectible by its ID.
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        public static CollectableAsset GetProgressibleDataAssetById(string id)
-        {
-            var ctx = DeckBuildingManager.GetContext<DeckBuildingManager>();
-            if (ctx == null) return null;
-            if (string.IsNullOrEmpty(id)) return null;
-            if (!ctx._collectiblesById.ContainsKey(id)) return null;
-            return ctx._collectiblesById[id];
-        }
+        // /// <summary>
+        // /// Returns a collectible by its ID.
+        // /// </summary>
+        // /// <param name="id"></param>
+        // /// <returns></returns>
+        // public static CollectableAsset GetProgressibleDataAssetById(string id)
+        // {
+        //     var ctx = DeckBuildingManager.GetContext<DeckBuildingManager>();
+        //     if (ctx == null) return null;
+        //     if (string.IsNullOrEmpty(id)) return null;
+        //     if (!ctx._collectiblesById.ContainsKey(id)) return null;
+        //     return ctx._collectiblesById[id];
+        // }
+        //
         
-        /// <summary>
-        /// Returns all collectibles
-        /// </summary>
-        /// <returns></returns>
-        public static List<CollectableAsset> GetCollectibles()
-        {
-            var ctx = DeckBuildingManager.GetContext<DeckBuildingManager>();
-            if (ctx == null) return null;
-            return ctx.DeckCollectibles;
-        }
+        // /// <summary>
+        // /// Returns all collectibles
+        // /// </summary>
+        // /// <returns></returns>
+        // public static List<CollectableAsset> GetCollectibles()
+        // {
+        //     var ctx = DeckBuildingManager.GetContext<DeckBuildingManager>();
+        //     if (ctx == null) return null;
+        //     return ctx.DeckCollectibles;
+        // }
 
-        public static CollectableAsset GetCollectible(string collectibleId)
-        {
-            var ctx = DeckBuildingManager.GetContext<DeckBuildingManager>();
-            if (ctx == null || collectibleId == null) return null;
-            if (ctx._collectiblesById.ContainsKey(collectibleId)) return ctx._collectiblesById[collectibleId];
-            return null;
-        }
+        // public static CollectableAsset GetCollectible(string collectibleId)
+        // {
+        //     var ctx = DeckBuildingManager.GetContext<DeckBuildingManager>();
+        //     if (ctx == null || collectibleId == null) return null;
+        //     if (ctx._collectiblesById.ContainsKey(collectibleId)) return ctx._collectiblesById[collectibleId];
+        //     return null;
+        // }
         
         public static List<ProgressibleData> GetCurrentDeck()
         {
@@ -134,7 +118,7 @@ namespace Kuantech.Midcore
             foreach (var data in ctx.CurrentDeck)
             {
                 if(data == null || data.Id.IsNullOrEmpty()) continue;
-                CollectableAsset asset = GetCollectible(data.Id);
+                CollectableAsset asset = ProgressionManager.GetCollectibleById(data.Id);
                 if(asset != null) equippedAssets.Add(asset);
             }
             return equippedAssets;

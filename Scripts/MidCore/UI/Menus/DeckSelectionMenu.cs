@@ -34,7 +34,7 @@ namespace Kuantech.Midcore.UI
             base.Initialize();
             DeckCards = new List<CollectiblePreviewCard>();
             
-            List<CollectableAsset> collectibleDataAssets = DeckBuildingManager.GetCollectibles();
+            List<CollectableAsset> collectibleDataAssets = ProgressionManager.GetCollectibles();
             
             //Create preview cards for all collectibles
             foreach(var dataAsset in collectibleDataAssets)
@@ -59,7 +59,7 @@ namespace Kuantech.Midcore.UI
                 CollectableAsset dataAsset = null;
                 if (currentDeck.IsValidIndex(i) && currentDeck[i] != null)
                 {
-                    dataAsset = DeckBuildingManager.GetProgressibleDataAssetById(currentDeck[i].Id);
+                    dataAsset = ProgressionManager.GetCollectibleById(currentDeck[i].Id);
                 }
                 card.SetCollectableAsset(dataAsset);
             }
@@ -96,7 +96,7 @@ namespace Kuantech.Midcore.UI
                 CollectableAsset dataAsset = null;
                 if (currentDeck.IsValidIndex(i) && currentDeck[i] != null)
                 {
-                    dataAsset = DeckBuildingManager.GetProgressibleDataAssetById(currentDeck[i].Id);
+                    dataAsset = ProgressionManager.GetCollectibleById(currentDeck[i].Id);
                 }
                 if (card.CollectibleDataAsset != dataAsset)
                 {
