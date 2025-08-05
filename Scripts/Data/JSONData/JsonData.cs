@@ -9,6 +9,7 @@ namespace Kuantech.Core.Data
     public class JsonData
     {
         [Header("Remote")] 
+        [SerializeField] private bool ReadFromRemote = true;
         [SerializeField] private string RemoteUrl;
         
         [Header("Local")]
@@ -31,7 +32,7 @@ namespace Kuantech.Core.Data
             string json = null;
 
             // 1️⃣ Remote URL
-            if (!string.IsNullOrEmpty(RemoteUrl))
+            if (!string.IsNullOrEmpty(RemoteUrl) && ReadFromRemote)
             {
                 try
                 {
