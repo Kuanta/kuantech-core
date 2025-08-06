@@ -11,6 +11,11 @@ namespace Kuantech.Core
     {
         
     }
+    
+    [AttributeUsage(AttributeTargets.Field)]
+    public class NonSaveableFieldAttribute : Attribute
+    {
+    }
 
     public static class SaveUtility
     {
@@ -33,7 +38,8 @@ namespace Kuantech.Core
 
             foreach (var field in fields)
             {
-                if (!System.Attribute.IsDefined(field, typeof(SaveableFieldAttribute))) continue;
+                if (!Attribute.IsDefined(field, typeof(SaveableFieldAttribute))) continue;
+                if (Attribute.IsDefined(field, typeof(NonSaveableFieldAttribute))) continue;
 
                 var value = field.GetValue(target);
                 byte[] serialized = SerializeFieldValue(value);

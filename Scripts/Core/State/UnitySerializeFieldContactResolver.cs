@@ -12,25 +12,23 @@
     {
         protected override IList<JsonProperty> CreateProperties(Type type, MemberSerialization memberSerialization)
         {
-            var flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+            var props = base.CreateProperties(type, memberSerialization);
 
-            // Public ve private field’ları al
-            var fields = type.GetFields(flags)
-                .Where(f =>
-                    f.IsPublic || f.GetCustomAttribute<SerializeField>() != null
-                );
+            props = props
+                .Where(p =>
+                {
+                    // Get the backing field or property
+                    var field = type.GetField(p.UnderlyingName,
+                        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 
-            var properties = new List<JsonProperty>();
+                    if (field == null) return true;
 
-            foreach (var field in fields)
-            {
-                var prop = base.CreateProperty(field, memberSerialization);
-                prop.Writable = true;
-                prop.Readable = true;
-                properties.Add(prop);
-            }
+                    // Skip if [NonSaveableField] is present
+                    return !Attribute.IsDefined(field, typeof(NonSaveableFieldAttribute));
+                })
+                .ToList();
 
-            return properties;
+            return props;
         }
     }
 

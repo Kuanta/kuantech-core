@@ -13,6 +13,7 @@ namespace Kuantech.Midcore
         public int DeckSize = 4;
         
         [Header("Default Deck")]
+        [NonSaveableField]
         public List<CollectableAsset> DefaultDeck;
         
         [SaveableField] public List<ProgressibleData> CurrentDeck;

@@ -199,7 +199,7 @@ namespace Kuantech.Midcore.UI
                         DeckBuildingManager.UnequipCollectible(card.CollectibleDataAsset);
                     }
                     DeckBuildingManager.EquipCollectible(CardToEquip.CollectibleDataAsset);
-                    card.SetCollectible(CardToEquip.CollectibleDataAsset);
+                    card.SetCollectableAsset(CardToEquip.CollectibleDataAsset);
                 }
                 ClearCardToEquip();
                 

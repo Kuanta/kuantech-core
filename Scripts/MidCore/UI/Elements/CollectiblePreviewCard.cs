@@ -64,7 +64,7 @@ namespace Kuantech.Midcore.UI
             UpdatePreviewCard();
         }
 
-        public void SetCollectible(CollectableAsset dataAsset)
+        private void SetCollectible(CollectableAsset dataAsset)
         {
             CollectibleDataAsset = dataAsset;
             if(CollectibleDataAsset != null && CollectibleIcon != null) CollectibleIcon.sprite = dataAsset.GetIcon();
