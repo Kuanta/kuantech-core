@@ -75,6 +75,12 @@ namespace Kuantech.Midcore
            SetDefaultProgressables(); //Unlocks defaults if they are not unlocked
         }
 
+        public override void OnSubmanagersInitialized()
+        {
+            base.OnSubmanagersInitialized();
+            CheckUnlockedCollectibles(true);
+        }
+        
         public override void SetDefaultState()
         {
             base.SetDefaultState();
@@ -98,7 +104,6 @@ namespace Kuantech.Midcore
                     SetSubUpgradeRank(defaultProgressable.Asset, upgrade.SubUpgradeAsset, upgrade.StartRank, false);
                 }
             }
-            CheckUnlockedCollectibles(true);
         }
         
         #region Player Level
@@ -471,6 +476,21 @@ namespace Kuantech.Midcore
             var ctx = GetContext<ProgressionManager>();
             if (ctx == null) return null;
             return ctx.Collectibles;
+        }
+
+        public static List<CollectableAsset> GetCollectiblesById(int id)
+        {
+            List<CollectableAsset> collectableAssets = new List<CollectableAsset>();
+            var ctx = GetContext<ProgressionManager>();
+            if (ctx == null) return null;
+            foreach (var asset in ctx.Collectibles)
+            {
+                if (asset.DeckIndex == id)
+                {
+                    collectableAssets.Add(asset);
+                }
+            }
+            return collectableAssets;
         }
         
         /// <summary>

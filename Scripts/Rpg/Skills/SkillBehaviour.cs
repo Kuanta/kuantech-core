@@ -24,12 +24,12 @@ namespace Kuantech.Rpg.Skills
             OnCaster, //Attached to caster
             AtCaster, //At casters position, without attaching to caster
             AtCastPoint, //At point of cast
-
         }
 
         public SkillBehaviourFxPlayType PlayType;
         public EffectPlayer EffectPlayer;
         public bool StopOnBehaviourEnd;
+        public string ActorSlotName; //If PlayType is AtSlot, this is the slot name to play the effect at
     }
     
     [Serializable]
@@ -114,18 +114,35 @@ namespace Kuantech.Rpg.Skills
             {
                 if(fx.EffectPlayer.IsNull()) continue;
                 Effect effect = null;
-                switch(fx.PlayType)
+                
+                //Can effet be played at slot
+                Actor playerActor = ParentSkill.ParentSpellBook.Actor;
+                ActorSlotsHandler slotsHandler = playerActor.GetModule<ActorSlotsHandler>();
+                if (slotsHandler != null)
                 {
-                    case FxPlayData.SkillBehaviourFxPlayType.OnCaster:
-                        effect = PlayEffectOnCaster(fx.EffectPlayer);
-                        break;
-                    case FxPlayData.SkillBehaviourFxPlayType.AtCaster:
-                        effect  = PlayEffectAtCasterPosition(fx.EffectPlayer);
-                        break;
-                    case FxPlayData.SkillBehaviourFxPlayType.AtCastPoint:
-                        effect = PlayEffectAtCastPosition(fx.EffectPlayer);
-                        break;
+                    Transform slot = slotsHandler.GetSlot(fx.ActorSlotName);
+                    if (slot != null)
+                    {
+                        effect = PlayEffectAtActorSlot(slot, fx.EffectPlayer);
+                    }
                 }
+
+                if (effect == null)
+                {
+                    switch(fx.PlayType)
+                    {
+                        case FxPlayData.SkillBehaviourFxPlayType.OnCaster:
+                            effect = PlayEffectOnCaster(fx.EffectPlayer);
+                            break;
+                        case FxPlayData.SkillBehaviourFxPlayType.AtCaster:
+                            effect  = PlayEffectAtCasterPosition(fx.EffectPlayer);
+                            break;
+                        case FxPlayData.SkillBehaviourFxPlayType.AtCastPoint:
+                            effect = PlayEffectAtCastPosition(fx.EffectPlayer);
+                            break;
+                    }
+                }
+          
 
                 if (effect != null && fx.StopOnBehaviourEnd)
                 {
@@ -188,6 +205,13 @@ namespace Kuantech.Rpg.Skills
                 
             }
             EffectPlaySettings playSettings = EffectPlaySettings.GetPlayAtPositionSettings(effectPos, playRot);
+            return effectPlayer.PlayEffect(playSettings);
+        }
+
+        public Effect PlayEffectAtActorSlot(Transform actorSlot, EffectPlayer effectPlayer)
+        {
+            if (effectPlayer.IsNull()) return null;
+            EffectPlaySettings playSettings = EffectPlaySettings.GetPlayAtObjectSettings(actorSlot, Vector3.zero, Quaternion.identity);
             return effectPlayer.PlayEffect(playSettings);
         }
         

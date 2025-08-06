@@ -1,4 +1,6 @@
+using Kuantech.Midcore;
 using Kuantech.Utils;
+using TMPro;
 using UnityEngine;
 
 namespace Kuantech.Core.UI
@@ -8,13 +10,19 @@ namespace Kuantech.Core.UI
         [SerializeField] private MenuGroup MenuGroup;
         [SerializeField] private UIMenu MenuToOpen;
         [SerializeField] private string MenuIDToOpen;
+        [SerializeField] private TMP_Text LevelRequirementText;
+        
         [Header("Menu States")] 
         [SerializeField] private GameObject OpenedStateVisual;
         [SerializeField] private GameObject ClosedStateVisual;
+        [SerializeField] private GameObject UnlockedContent;
+        [SerializeField] private GameObject LockedStateVisual;
         [SerializeField] private Animator Animator;
         private static readonly int Opened = Animator.StringToHash("Opened");
 
-        private void Start()
+        [SerializeField] private int PlayerLevelRequirement = 0;
+        
+        public void Initialize()
         {
             if (MenuGroup != null)
             {
@@ -41,10 +49,28 @@ namespace Kuantech.Core.UI
             {
                 SetClosedVisual();
             }
+
+            if (LevelRequirementText != null)
+            {
+                LevelRequirementText.text = $"Level {PlayerLevelRequirement+1}";
+            }
+        }
+
+        public void UpdateVisual()
+        {
+            SetLockedState(IsUnlocked());
+        }
+        
+        private bool IsUnlocked()
+        {
+            int playerLevel = ProgressionManager.GetPlayerLevel().CurrentLevel;
+            if (PlayerLevelRequirement > playerLevel) return false;
+            return true;
         }
         
         public void OnClick()
         {
+            if (!IsUnlocked()) return;
             if (MenuToOpen != null)
             {
                 if (MenuGroup != null)
@@ -85,6 +111,12 @@ namespace Kuantech.Core.UI
             }
         }
 
+        private void SetLockedState(bool locked)
+        {
+            if(LockedStateVisual != null) LockedStateVisual.SetActive(locked);
+            if(UnlockedContent != null) UnlockedContent.SetActive(!locked);
+        }
+        
         private void SetOpenedVisual()
         {
             if(OpenedStateVisual != null) OpenedStateVisual.SetActive(true);

@@ -63,7 +63,7 @@ namespace Kuantech.Core
             
         }
         
-        public void LoadState()
+        public virtual void LoadState()
         {
             if (this is GameStateManager) return;
             if (!GameStateManager.LoadData(this))

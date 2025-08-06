@@ -30,7 +30,7 @@ namespace Kuantech.Midcore.UI
         {
             if (Initialized) return;
             base.Initialize();
-            UpgradeButton.OnUpgradePurchased += OnUpgradePurchased;
+            if(UpgradeButton != null) UpgradeButton.OnUpgradePurchased += OnUpgradePurchased;
         }
         
         public virtual void UpdateInfoPanel(CollectableAsset dataAsset)
@@ -44,7 +44,7 @@ namespace Kuantech.Midcore.UI
                 Icon.sprite = dataAsset.GetIcon();
             }
             
-            UpgradeButton.SetProgressable(dataAsset);
+            if(UpgradeButton != null) UpgradeButton.SetProgressable(dataAsset);
             
             UpdateStats(dataAsset);
 

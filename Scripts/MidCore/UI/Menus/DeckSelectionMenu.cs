@@ -8,17 +8,17 @@ namespace Kuantech.Midcore.UI
 {
     public class DeckSelectionMenu : UIMenu
     {
+        public int DeckIndex = 0;
         public CollectiblePreviewCard CollectiblePreviewCardPrefab;
         public List<CollectiblePreviewCard> DeckCards;
-        
-        //All cards on the collectibles menu
-        public Dictionary<string, CollectiblePreviewCard> CollectiblePreviewCards = new Dictionary<string, CollectiblePreviewCard>();
+        public bool CanEquipCards = true;
 
         [Header("Comps")] 
         [SerializeField] private Button CancelEquipButton;
         
         [Header("Panels")] 
         [SerializeField] private CollectibleInfoPanel CollectibleInfoPanel;
+        [SerializeField] private List<CollectiblesShowcasePanel> CollectiblesShowcasePanels;
         
         [Header("Regions")] 
         [SerializeField] private RectTransform EquippedCardsPanel;
@@ -33,21 +33,27 @@ namespace Kuantech.Midcore.UI
             if (Initialized) return;
             base.Initialize();
             DeckCards = new List<CollectiblePreviewCard>();
+
+            foreach (var showcasePanels in CollectiblesShowcasePanels)
+            {
+                showcasePanels.SetCollectibles(this, CollectiblePreviewCardPrefab);
+            }
             
             List<CollectableAsset> collectibleDataAssets = ProgressionManager.GetCollectibles();
             
-            //Create preview cards for all collectibles
-            foreach(var dataAsset in collectibleDataAssets)
-            {
-                CollectiblePreviewCard card = Instantiate(CollectiblePreviewCardPrefab, AllCollectiblesPanel);
-                card.Initialize(this, false);
-                card.SetCollectableAsset(dataAsset);
-                CollectiblePreviewCards[dataAsset.GetId()] = card;
-            }
+            // //Create preview cards for all collectibles
+            // foreach(var dataAsset in collectibleDataAssets)
+            // {
+            //     if(dataAsset.DeckIndex != DeckIndex) continue;
+            //     CollectiblePreviewCard card = Instantiate(CollectiblePreviewCardPrefab, AllCollectiblesPanel);
+            //     card.Initialize(this, false);
+            //     card.SetCollectableAsset(dataAsset);
+            //     CollectiblePreviewCards[dataAsset.GetId()] = card;
+            // }
             
             //Equipped
-            int deckSize = DeckBuildingManager.GetDeckSize();
-            List<ProgressibleData> currentDeck = DeckBuildingManager.GetCurrentDeck();
+            int deckSize = DeckBuildingManager.GetDeckSize(DeckIndex);
+            List<ProgressibleData> currentDeck = DeckBuildingManager.GetCurrentDeck(DeckIndex);
             
             for(int i=0;i < deckSize; ++i)
             {
@@ -69,7 +75,7 @@ namespace Kuantech.Midcore.UI
 
             CollectibleInfoPanel.ParentDeckSelectionMenu = this;
         }
-
+        
         public override void Open()
         {
             base.Open();
@@ -79,15 +85,14 @@ namespace Kuantech.Midcore.UI
         
         public void UpdateCards()
         {
-            foreach (var card in CollectiblePreviewCards.Values)
+            foreach (var panel in CollectiblesShowcasePanels)
             {
-                card.UpdatePreviewCard();
-                card.ToggleClickMeIndicator(false);
+                panel.UpdateCards();
             }
             
             //Equipped
-            int deckSize = DeckBuildingManager.GetDeckSize();
-            List<ProgressibleData> currentDeck = DeckBuildingManager.GetCurrentDeck();
+            int deckSize = DeckBuildingManager.GetDeckSize(DeckIndex);
+            List<ProgressibleData> currentDeck = DeckBuildingManager.GetCurrentDeck(DeckIndex);
             
             for(int i=0;i < deckSize; ++i)
             {
@@ -149,6 +154,17 @@ namespace Kuantech.Midcore.UI
         }
         public void OnPreviewCardClicked(CollectiblePreviewCard card)
         {
+            if (!CanEquipCards)
+            {
+                if (card.CollectibleDataAsset == null ||
+                    !ProgressionManager.IsProgressibleUnlocked(card.CollectibleDataAsset))
+                {
+                    return;
+                }
+                OpenCollectibleInfoPanel(card.CollectibleDataAsset);
+                return;
+            }
+            
             //Is unlocked
             if (!card.IsDeckCard && (card.CollectibleDataAsset == null ||
                 !ProgressionManager.IsProgressibleUnlocked(card.CollectibleDataAsset)))
@@ -183,6 +199,7 @@ namespace Kuantech.Midcore.UI
                         DeckBuildingManager.UnequipCollectible(card.CollectibleDataAsset);
                     }
                     DeckBuildingManager.EquipCollectible(CardToEquip.CollectibleDataAsset);
+                    card.SetCollectible(CardToEquip.CollectibleDataAsset);
                 }
                 ClearCardToEquip();
                 

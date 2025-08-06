@@ -11,6 +11,9 @@ namespace Kuantech.Midcore
 
         [Header("Unlock condition")] 
         public int RequiredLevel;
+
+        [Header("Deck Index")] 
+        public int DeckIndex = 0;
         
         [Tooltip("If set to true, it will be unlocked automatically when the player reaches the required level")]
         public bool UnlockAutomacically = true;

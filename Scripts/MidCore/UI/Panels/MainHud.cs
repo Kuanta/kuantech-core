@@ -1,8 +1,9 @@
-﻿using Kuantech.Core.UI;
+﻿using System.Collections.Generic;
+using Kuantech.Core.UI;
 using Kuantech.Rpg;
 using Kuantech.Rpg.UI;
+using Kuantech.Utils;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Kuantech.Midcore.UI
 {
@@ -10,9 +11,10 @@ namespace Kuantech.Midcore.UI
     {
         [Header("Componentes")] 
         public LevelableFloatIndicator PlayerLevelBar;
-        
+        [SerializeField] private List<MenuOpenButton> MenuButtons;
         public override void Initialize()
         {
+            if (Initialized) return;
             base.Initialize();
             if (PlayerLevelBar != null)
             {
@@ -22,6 +24,12 @@ namespace Kuantech.Midcore.UI
                     pm.OnPlayerEarnedExperience += OnPlayerEarnedExperienceHandler;
                 }
                 UpdatePlayerLevelBar();
+            }
+
+            if (MenuButtons.IsNullOrEmpty()) return;
+            foreach (var button in MenuButtons)
+            {
+                button.Initialize();
             }
         }
 

@@ -180,6 +180,7 @@ namespace Kuantech.Core
             _sceneSubManagers = container.GetSubManagers();
             await InitializeSubManagers(_sceneSubManagers);
             container.ActivateManagerDependentSceneObjects();
+            ResumeGame();
         }
         
         /// <summary>
