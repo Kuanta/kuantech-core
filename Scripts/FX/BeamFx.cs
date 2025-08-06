@@ -38,12 +38,14 @@ namespace Kuantech.Core.FX
             {
                 MuzzleFx.transform.position = StartPoint.position;
                 MuzzleFx.transform.forward = StartPoint.forward;
+                MuzzleFx.Play();
             }
 
             if (ImpactFx != null && EndPoint != null)
             {
                 ImpactFx.transform.position = EndPoint.position;
                 ImpactFx.transform.forward = EndPoint.forward;
+                ImpactFx.Play();
             }
         }
     }

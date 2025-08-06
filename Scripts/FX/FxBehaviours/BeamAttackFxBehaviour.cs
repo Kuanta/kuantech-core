@@ -6,6 +6,7 @@ namespace Kuantech.Core.FX.FxBehaviours
     {
         [SerializeField] private GameObject BeamObject;
         [SerializeField] private Transform EndPoint;
+        [SerializeField] private BeamFx BeamFx;
         private CombatModule _caster = null;
 
         public override void OnFxStarted(Effect parentFx)

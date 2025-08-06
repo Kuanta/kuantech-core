@@ -3,6 +3,7 @@ using System.Collections;
 using Kuantech.Core.FX;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Serialization;
 
 namespace Kuantech.Core.UI
 {
@@ -11,7 +12,7 @@ namespace Kuantech.Core.UI
         [Header("UI Element")] 
         [SerializeField] private float CloseDelay = 0f;
 
-        [SerializeField] private Effect ShowEffect;
+        [SerializeField] private Effect OnShowEffect;
         
         //ANimations
         private Animator _animator;
@@ -52,7 +53,7 @@ namespace Kuantech.Core.UI
         {
             gameObject.SetActive(true);
             _shown = true;
-            if(ShowEffect != null) ShowEffect.Play();
+            if(OnShowEffect != null) OnShowEffect.Play();
             OnMenuOpened?.Invoke();
         }
 

@@ -162,7 +162,7 @@ namespace Kuantech.Core
             {
                 manager.OnSceneLeave();
             }
-            
+            if(ctx.LoadingScreen != null) ctx.LoadingScreen.SetActive(true);
             //Change scene
             SceneManager.LoadScene(sceneName);
         }
