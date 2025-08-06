@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Kuantech.Core;
 using Kuantech.Core.Store;
+using Kuantech.Core.Utils;
 using Kuantech.Midcore;
 using Kuantech.Utils;
 using UnityEngine;
@@ -208,10 +209,7 @@ namespace Kuantech.TowerDefense
             {
                 int enemyIndex = 0;
 
-                if (!GetCurrentWaveData().EnemyProbabilities.Elements.IsNullOrEmpty())
-                {
-                    enemyIndex = GetCurrentWaveData().EnemyProbabilities.Sample();
-                }
+              
                 //Generate Random
                 return new WaveEntry()
                 {

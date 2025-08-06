@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Kuantech.Core;
+using Kuantech.Core.Utils;
 using Kuantech.RealTimeStrategy;
 using Kuantech.Rpg;
 using Kuantech.Utils;
@@ -160,10 +161,27 @@ namespace Kuantech.TowerDefense
             {
                 _waveQueue.Enqueue(entry);
             }
-            
+
+            WeightedProbabilityArray<int> enemyProbs = new WeightedProbabilityArray<int>();
+            if (waveData.EnemyProbabilities.Values.IsNullOrEmpty() ||
+                waveData.EnemyProbabilities.Weights.IsNullOrEmpty())
+            {
+                enemyProbs.AddElement(0, 1);
+            }
+            else
+            {
+                for (int i = 0;
+                     i < Mathf.Min(waveData.EnemyProbabilities.Values.Count,
+                         waveData.EnemyProbabilities.Weights.Count);
+                     ++i)
+                {
+                    enemyProbs.AddElement(waveData.EnemyProbabilities.Values[i],
+                        waveData.EnemyProbabilities.Weights[i]);
+                }
+            }
             for(int i=0;i<waveData.GeneratedEnemyCount; i++)
             {
-                int spawnableIndex = waveData.EnemyProbabilities.Sample();
+                int spawnableIndex = enemyProbs.Sample();
                 _waveQueue.Enqueue(new WaveEntry
                 {
                     SpawnableIndex = spawnableIndex,
