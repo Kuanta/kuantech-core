@@ -1,6 +1,7 @@
 using System;
 using Kuantech.Utils;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Kuantech.Core.FX
 {
@@ -23,11 +24,11 @@ namespace Kuantech.Core.FX
         public Quaternion LocalPlayRotation;
 
         //Play at position
-        public Vector3 PlayPosition;
-        public Quaternion PlayRotation;
+        public Vector3 PlayStartPosition;
+        public Quaternion PlayStartRotation;
         
         //End position. For beam like effects where an end position is needed
-        public WorldPoint EndPoint;
+        public WorldPoint PlayEndPoint;
         
         public static EffectPlaySettings GetDefaultSettings()
         {
@@ -40,8 +41,8 @@ namespace Kuantech.Core.FX
                 EffectParent = null,
                 LocalPlayPosition = Vector3.zero,
                 LocalPlayRotation = Quaternion.identity,
-                PlayPosition = Vector3.zero,
-                PlayRotation = Quaternion.identity,
+                PlayStartPosition = Vector3.zero,
+                PlayStartRotation = Quaternion.identity,
             };
         }
 
@@ -49,8 +50,8 @@ namespace Kuantech.Core.FX
         {
             EffectPlaySettings settings = GetDefaultSettings();
             settings.SetPosition = true;
-            settings.PlayPosition = position;
-            settings.PlayRotation = rotation;
+            settings.PlayStartPosition = position;
+            settings.PlayStartRotation = rotation;
             return settings;
         }
 

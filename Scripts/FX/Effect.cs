@@ -67,8 +67,8 @@ namespace Kuantech.Core.FX
                 }
                 else
                 {
-                    transform.position = settings.PlayPosition;
-                    transform.rotation = settings.PlayRotation;
+                    transform.position = settings.PlayStartPosition;
+                    transform.rotation = settings.PlayStartRotation;
                 }
             }
 

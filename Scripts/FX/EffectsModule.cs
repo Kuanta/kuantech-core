@@ -107,11 +107,11 @@ namespace Kuantech.Core.FX
 
         private void AttackEndedEvent(CombatModule cm)
         {
-            if(_attackEffect != null)
+            if(_attackEffect != null && _attackEffect.Duration < 0) //If attack vfx is looping, we stop it
             {
                 _attackEffect.Stop();
-                _attackEffect = null;
-            }   
+            }
+            _attackEffect = null;
         }
         #endregion
         public void OnActorVisualSet(ActorVisual actorVisual)

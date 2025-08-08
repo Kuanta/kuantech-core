@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace Kuantech.Core.FX.FxBehaviours
+namespace Kuantech.Core.FX
 {
     public class BeamAttackFxBehaviour : FxBehaviour
     {
