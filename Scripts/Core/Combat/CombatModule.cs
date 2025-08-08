@@ -121,8 +121,6 @@ namespace Kuantech.Core
         //Locks & Cooldowns
         //public Cooldown GlobalCooldown;
         public LockVariable AttackLock = new LockVariable();
-        public LockVariable SkillLock = new LockVariable();
-        
     
         //Events
         public UnityAction<CombatModule> AttackStartedEvent;

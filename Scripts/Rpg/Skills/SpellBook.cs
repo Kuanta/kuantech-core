@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Kuantech.Core;
+using Kuantech.Core.Utils;
 using Kuantech.Utils;
 using UnityEngine;
 
@@ -13,6 +14,8 @@ namespace Kuantech.Rpg.Skills
         private Dictionary<string, Skill> _skills = new Dictionary<string, Skill>();
         private List<Skill> _activeSkills = new(); 
         
+        public LockVariable SkillLock = new LockVariable();
+
         //Runtime
         private float _lastSkillCastTime;
 
@@ -72,6 +75,7 @@ namespace Kuantech.Rpg.Skills
         
         public bool CastSkill(SkillDataAsset skillDataAsset, SkillCastData skillCastData)
         {
+            if (SkillLock.IsLocked()) return false;
             if (!CanCastSkill(skillDataAsset)) return false;
             Skill skillToCast = GetSkillByDataAsset(skillDataAsset);
             if (skillToCast == null) return false;

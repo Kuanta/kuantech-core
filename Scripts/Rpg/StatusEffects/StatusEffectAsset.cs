@@ -11,17 +11,26 @@ namespace Kuantech.Core.Combat
         public StatusEffectType StatusEffectType;
         
         [SerializeReference]
-        public StatusEffectData StatusEffectData;
+        public StatusEffectData DefaultStatusEffectData;
         
         public bool Stackable;
         [Tooltip("For non stackable status effects, the existing one will be refreshed")] 
         public bool RefreshOnApply;
 
-        public StatusEffect CreateStatusEffect()
+        public StatusEffect CreateStatusEffect(StatusEffectData applyData = null)
         {
             Type t = StatusEffectType.Type;
             StatusEffect statusEffect = (StatusEffect) Activator.CreateInstance(t);
-            statusEffect.Initialize(this, StatusEffectData);
+            StatusEffectData dataToApply = applyData ?? DefaultStatusEffectData;
+            statusEffect.Initialize(this, dataToApply);
+            return statusEffect;
+        }
+        
+        public T CreateStatusEffect<T>(StatusEffectData applyData = null) where T : StatusEffect, new()
+        {
+            T statusEffect = new T();
+            StatusEffectData dataToApply = applyData ?? DefaultStatusEffectData;
+            statusEffect.Initialize(this, dataToApply);
             return statusEffect;
         }
     }

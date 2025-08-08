@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Kuantech.Core;
 using Kuantech.Core.FX;
 using Kuantech.Utils;
+using Unity.Entities;
 using UnityEngine;
 
 namespace Kuantech.Rpg.Skills
@@ -193,6 +194,58 @@ namespace Kuantech.Rpg.Skills
 
         #region Effects
 
+        protected EffectPlaySettings GetEffectPlaySettings(FxPlayData.SkillBehaviourFxPlayType fxPlayType)
+        {
+            Actor caster = ParentSkill.ParentSpellBook.Actor;
+            EffectPlaySettings playSettings = EffectPlaySettings.GetDefaultSettings();
+            playSettings.Caster = caster;
+            playSettings.PlayEndPoint = GetSkillCastPoint();
+            
+            Vector3 effectStarPosition = CurrentSkillCastData.CastStartPosition;
+            Vector3 effectStartDir = CurrentSkillCastData.CastDirection;
+            
+            Quaternion playRot = Quaternion.identity;
+            if (effectStartDir.sqrMagnitude >= 0.001f)
+            {
+                playRot = Quaternion.LookRotation(effectStartDir);
+            }
+            Quaternion localRot =
+                Quaternion.Inverse(ParentSkill.ParentSpellBook.Actor.transform.rotation) * playRot;
+            
+            switch(fxPlayType)
+            {
+                case FxPlayData.SkillBehaviourFxPlayType.OnCaster:
+                    playSettings.EffectParent = caster.transform;
+                    playSettings.LocalPlayPosition = effectStarPosition - caster.transform.position;
+                    playSettings.LocalPlayRotation = localRot;
+                    playSettings.SetPosition = true;
+                    break;
+                case FxPlayData.SkillBehaviourFxPlayType.AtCaster:
+                    playSettings.SetPosition = true;
+                    playSettings.PlayStartPosition = caster.transform.position;
+                    playSettings.PlayStartRotation = playRot;
+                    break;
+                case FxPlayData.SkillBehaviourFxPlayType.AtCastPoint:
+                    playSettings.SetPosition = true;
+                    playSettings.PlayStartPosition = effectStarPosition;
+                    playSettings.PlayStartRotation = playRot;
+                    break;
+            }
+
+            return playSettings;
+        }
+
+        private WorldPoint GetSkillCastPoint()
+        {
+            WorldPoint castPoint = new WorldPoint
+            {
+                Position = CurrentSkillCastData.CastPosition,
+                Rotation = Quaternion.LookRotation(CurrentSkillCastData.CastDirection),
+                Target = CurrentSkillCastData.CastTarget != null ? CurrentSkillCastData.CastTarget.transform : null,
+            };
+
+            return castPoint;
+        }
         public Effect PlayEffectAtCastPosition(EffectPlayer effectPlayer)
         {
             if (effectPlayer.IsNull()) return null;
@@ -205,13 +258,15 @@ namespace Kuantech.Rpg.Skills
                 
             }
             EffectPlaySettings playSettings = EffectPlaySettings.GetPlayAtPositionSettings(effectPos, playRot);
+            playSettings.Caster = ParentSkill.ParentSpellBook.Actor;
             return effectPlayer.PlayEffect(playSettings);
         }
 
         public Effect PlayEffectAtActorSlot(Transform actorSlot, EffectPlayer effectPlayer)
         {
             if (effectPlayer.IsNull()) return null;
-            EffectPlaySettings playSettings = EffectPlaySettings.GetPlayAtObjectSettings(actorSlot, Vector3.zero, Quaternion.identity);
+            EffectPlaySettings playSettings = GetEffectPlaySettings(FxPlayData.SkillBehaviourFxPlayType.AtCaster);
+            playSettings.Caster = ParentSkill.ParentSpellBook.Actor;
             return effectPlayer.PlayEffect(playSettings);
         }
         
@@ -223,34 +278,22 @@ namespace Kuantech.Rpg.Skills
         public Effect PlayEffectAtCasterPosition(EffectPlayer effectPlayer)
         {
             if (effectPlayer.IsNull()) return null;
-            Vector3 effectPos = ParentSkill.ParentSpellBook.Actor.transform.position;
-            Quaternion playRot = ParentSkill.ParentSpellBook.Actor.transform.rotation;
-            EffectPlaySettings playSettings = EffectPlaySettings.GetPlayAtPositionSettings(effectPos, playRot);
+            EffectPlaySettings playSettings = GetEffectPlaySettings(FxPlayData.SkillBehaviourFxPlayType.AtCaster);
             return effectPlayer.PlayEffect(playSettings);
         }
 
         public Effect PlayEffectOnCaster(EffectPlayer effectPlayer)
         {
             if (effectPlayer.IsNull()) return null;
-            Vector3 effectPos = CurrentSkillCastData.CastStartPosition;
-            Vector3 effectDir = CurrentSkillCastData.CastDirection;
-            Quaternion playRot = Quaternion.identity;
-            if (effectDir.sqrMagnitude >= 0.001f)
-            {
-                playRot = Quaternion.LookRotation(effectDir);
-            }
-            Quaternion localRot =
-                Quaternion.Inverse(ParentSkill.ParentSpellBook.Actor.transform.rotation) * playRot;
-        
-            Vector3 localPos = effectPos - ParentSkill.ParentSpellBook.Actor.transform.position;
-            EffectPlaySettings playSettings = EffectPlaySettings.GetPlayAtObjectSettings(ParentSkill.ParentSpellBook.Actor.transform, localPos, localRot);
 
+            EffectPlaySettings playSettings = GetEffectPlaySettings(FxPlayData.SkillBehaviourFxPlayType.OnCaster);
+            playSettings.Caster = ParentSkill.ParentSpellBook.Actor;
             //Try to play the effect on actor effect module if possible
             EffectsModule effectModule = ParentSkill.ParentSpellBook.Actor.GetModule<EffectsModule>();
             Effect effect;
             if (effectModule != null)
             {
-                effect = effectModule.PlayEffectOnActor(effectPlayer, localPos, localRot);
+                effect = effectModule.PlayEffectOnActor(effectPlayer, playSettings.LocalPlayPosition, playSettings.LocalPlayRotation);
                 if (effect == null)
                 {
                     return null;

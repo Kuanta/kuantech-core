@@ -24,32 +24,18 @@ namespace Kuantech.Core.Combat
         /// <param name="position"></param>
         /// <param name="radius"></param>
         /// <param name="layerMask"></param>
-        /// <param name="allowedTags"></param>
+        /// <param name="factionFilter">Faction ids to filter Out</param>
         /// <returns></returns>
-        public static List<Actor> GetActorsInCircle2D(Vector3 position, float radius, LayerMask layerMask, string[] allowedTags = null)
+        public static List<Actor> GetActorsInCircle2D(Vector3 position, float radius, LayerMask layerMask, HashSet<int> factionFilter = null)
         {
             Collider2D[] hits = UnityEngine.Physics2D.OverlapCircleAll(position, radius, layerMask);
-           // Collider[] hits = UnityEngine.Physics.OverlapSphere(position, radius, layerMask);
             List<Actor> actors = new();
 
             foreach (var hit in hits)
             {
                 Actor actor = hit.GetComponentInParent<Actor>();
                 if (actor == null) continue;
-                if (allowedTags != null && allowedTags.Length > 0)
-                {
-                    bool tagMatch = false;
-                    foreach (string tag in allowedTags)
-                    {
-                        if (actor.CompareTag(tag))
-                        {
-                            tagMatch = true;
-                            break;
-                        }
-                    }
-                    if (!tagMatch) continue;
-                }
-
+                if(factionFilter != null && factionFilter.Contains(actor.FactionId)) continue;
                 actors.Add(actor);
             }
 

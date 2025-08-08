@@ -309,8 +309,7 @@ namespace Kuantech.Core
             CombatModule cm = Actor.GetModule<CombatModule>();
             if (cm != null)
             {
-                cm.AttackLock.Lock("MovementModule");
-                cm.SkillLock.Lock("MovementModule");
+                cm.AttackLock.Lock(this);
             }
        
             _movement = Vector2.zero;
@@ -323,8 +322,7 @@ namespace Kuantech.Core
             CombatModule cm = Actor.GetModule<CombatModule>();
             if (cm != null)
             {
-                cm.AttackLock.Unlock("MovementModule");
-                cm.SkillLock.Unlock("MovementModule");
+                cm.AttackLock.Unlock(this);
             }
         }
 

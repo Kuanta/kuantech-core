@@ -137,20 +137,6 @@ namespace Kuantech.Core
             return Actor.MotionVectorsHandler.ForceMoveVector;
         }
         #endregion
-        
-        #region Locks
-
-        public void LockMovement(string locker)
-        {
-            MovementLock.Lock(locker);
-        }
-
-        public void UnlockMovement(string locker)
-        {
-            MovementLock.Unlock(locker);
-        }
-
-        #endregion
 
         public override void Reset()
         {

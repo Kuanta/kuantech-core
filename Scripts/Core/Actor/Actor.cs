@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Kuantech.Core.Combat;
+using Kuantech.Core.Utils;
 using Kuantech.Utils;
 using Unity.VisualScripting;
 using UnityEngine;

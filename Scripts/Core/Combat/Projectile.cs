@@ -118,15 +118,6 @@ namespace Kuantech.Core
             DestroyOnImpact = true;
             CurrentSpeed = Speed + relativeSpeed;
 
-            // if (castBy != null)
-            // {
-            //     Targets = castBy.Targets;
-            //     Range = castBy.GetCurrentAttackPattern().Range;
-            //     Knockback = castBy.GetCurrentAttackPattern().Knockback;
-            //     KnockbackTime = castBy.GetCurrentAttackPattern().KnockbackTime;
-            //     Damage = castBy.GetDamage();
-            // }
-
             StartEffect.PlayEffectAtPosition(transform.position, Quaternion.identity);
             
             ShotEvent?.Invoke(this);
