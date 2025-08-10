@@ -81,6 +81,11 @@ namespace Kuantech.Midcore.UI
             base.Open();
             CardToEquip = null;
             UpdateCards();
+            DeselectCard();
+            foreach (var panel in CollectiblesShowcasePanels)
+            {
+                panel.DeselectCards();
+            }
         }
         
         public void UpdateCards()

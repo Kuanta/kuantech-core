@@ -38,7 +38,14 @@ namespace Kuantech.Midcore.UI
                 card.ToggleClickMeIndicator(false);
             }
         }
-        
+
+        public void DeselectCards()
+        {
+            foreach (var card in CollectiblePreviewCards.Values)
+            {
+                card.ToggleSelected(false);
+            }
+        }
         private int SortCards(Transform a, Transform b)
         {
             var cardA = a.gameObject.GetComponent<CollectiblePreviewCard>();

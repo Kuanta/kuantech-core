@@ -3,6 +3,7 @@ using Kuantech.Core.UI;
 using Kuantech.Rpg.UI;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace Kuantech.Midcore.UI
@@ -29,6 +30,8 @@ namespace Kuantech.Midcore.UI
         [SerializeField] private GameObject ContentsParent;
 
         [Header("Buttons")] 
+        [Tooltip("Button that selects the card")]
+        [SerializeField] private KtButton CardButton;
         [SerializeField] private KtButton InfoButton;
         [SerializeField] private KtButton EquipButton;
         
@@ -50,6 +53,11 @@ namespace Kuantech.Midcore.UI
             if(InfoButton != null) InfoButton.onClick.AddListener(OnInfoButtonClicked);
             if(EquipButton != null) EquipButton.onClick.AddListener(OnEquipButtonClicked);
  
+        }
+
+        public override void Show()
+        {
+            base.Show();
         }
         
         public void SetCollectableAsset(CollectableAsset dataAsset)
@@ -125,30 +133,26 @@ namespace Kuantech.Midcore.UI
             _parentMenu.SetCardToEquip(this);
         }
 
-        private Canvas _canvas;
-        private GraphicRaycaster _graphicRaycaster;
+        [FormerlySerializedAs("_canvas")] [SerializeField] private Canvas _selectedCanvas;
         public void ToggleSelected(bool toggle)
         {
             if (_selected && toggle) return;
-            //todo(animation): Do an animation here
             SelectedPanel.SetActive(toggle);
+            if (_selectedCanvas == null)
+            {
+                _selectedCanvas = gameObject.GetComponent<Canvas>();
+                
+            }
             if (toggle)
             {
-                _canvas = gameObject.AddComponent<Canvas>();
-                _canvas.overrideSorting = true;
-                _canvas.sortingOrder = 100; // Ensure this card is on top;
-                _graphicRaycaster = gameObject.AddComponent<GraphicRaycaster>();
-              
+                _selectedCanvas.overrideSorting = true;
+                _selectedCanvas.sortingOrder = 1; // Ensure this card is on top;
             }
             else
             {
-                if(_graphicRaycaster != null) Destroy(_graphicRaycaster);
-                _graphicRaycaster = null;
-                if(_canvas != null) Destroy(_canvas);
-                _canvas = null;
+                _selectedCanvas.overrideSorting = false;
             }
             _selected = toggle;
-
         }
         
         public void ToggleClickMeIndicator(bool show)
@@ -156,6 +160,20 @@ namespace Kuantech.Midcore.UI
             if (!IsDeckCard) show = false;
             if (ClickMeIndicator != null) ClickMeIndicator.SetActive(show);
         }
-        
+
+        public KtButton GetCardButton()
+        {
+            return CardButton;
+        }
+
+        public KtButton GetEquipButton()
+        {
+            return EquipButton;
+        }
+
+        public KtButton GetInfoButton()
+        {
+            return InfoButton;
+        }
     }
 }
