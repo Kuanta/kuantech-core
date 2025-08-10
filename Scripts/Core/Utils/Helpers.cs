@@ -213,7 +213,7 @@ namespace Kuantech.Utils
         public static bool IsValidIndex<T>(this List<T> list, int index)
         {
             if (list == null) return false;
-            if (list.Count > index) return true;
+            if (list.Count > index && index >= 0) return true;
             return false;
         }
         #endregion

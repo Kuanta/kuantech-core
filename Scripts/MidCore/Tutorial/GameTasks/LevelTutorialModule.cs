@@ -13,20 +13,16 @@ namespace Kuantech.Core.MidCore
 
         public void SetTutorial(int index)
         {
+            TaskManager.Tasks = null;
             if (Tutorials.IsValidIndex(index))
             {
                 Tutorials[index].SetTasks(TaskManager);
             }
         }
-        
-        // public void SetTasks(int tasksIndex)
-        // {
-        //     TaskManager.SetTasks(tasksIndex);
-        // }
-        //
+
         public override void OnLevelStateChange(LevelStateChangeData levelStateChangeData)
         {
-            if (levelStateChangeData.NewState == LevelState.Playing)
+            if (levelStateChangeData.NewState == LevelState.Playing && !TaskManager.Tasks.IsNullOrEmpty())
             {
                 TaskManager.StartTasks();
             }

@@ -54,6 +54,7 @@ namespace Kuantech.Core
         
         public virtual void StartTasks(int taskToStart=0)
         {
+            if (Tasks.IsNullOrEmpty()) return;
             StartCoroutine(_StartTasks(taskToStart));
         }
 
