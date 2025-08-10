@@ -6,6 +6,7 @@ namespace Kuantech.Midcore.UI
 {
     public class PlayButton : MonoBehaviour, KtButton.IUIButtonAction
     {
+        public GameObject ClickMeIndicator;
         public void OnClick()
         {
             //Change scene
@@ -19,6 +20,11 @@ namespace Kuantech.Midcore.UI
                 MidcoreMenuSceneManager.GetGameSceneName(),
                 transitionData
             );
+        }
+
+        public void ToggleClickMeIndicator(bool toggle)
+        {
+            ClickMeIndicator.SetActive(toggle);
         }
     }
 }

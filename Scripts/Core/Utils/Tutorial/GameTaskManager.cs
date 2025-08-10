@@ -38,6 +38,12 @@ namespace Kuantech.Core
             SetupTasks();
         }
         
+        public void SetTasks(List<GameTask> tasks)
+        {
+            Tasks = tasks;
+            SetupTasks();
+        }
+        
         public void SetupTasks()
         {
             foreach (var task in Tasks)

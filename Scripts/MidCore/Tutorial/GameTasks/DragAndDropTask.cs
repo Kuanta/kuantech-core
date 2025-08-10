@@ -16,9 +16,18 @@ namespace Kuantech.Core.MidCore
             TutorialHand = TutorialPanel != null ? TutorialPanel.GetTutorialHand() : null;
             if (TutorialHand != null)
             {
+                TutorialHand.gameObject.SetActive(true);
                 TutorialHand.DoSwipeMotionWorldToWorld(DragStart, DragEnd);
             }
             base.StartTask();
+        }
+        
+        public override void UpdateTask(float deltaTime)
+        {
+            base.UpdateTask(deltaTime);
+            if(TutorialHand == null) return;
+            TutorialHand.SetStartSwipePositionFromWorldPosition(GetStartPosition());
+            TutorialHand.SetEndSwipePositionFromWorldPosition(GetEndPosition());
         }
         
         public abstract Vector3 GetStartPosition();
@@ -29,6 +38,7 @@ namespace Kuantech.Core.MidCore
         {
             base.EndTask();
             if (TutorialHand == null) return;
+            TutorialHand.gameObject.SetActive(false);
         }
     }
 }

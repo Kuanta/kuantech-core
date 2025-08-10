@@ -1,20 +1,29 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using Kuantech.Midcore.Tutorial;
 using Kuantech.Utils;
 
 namespace Kuantech.Core.MidCore
 {
-    
-    
     public class LevelTutorialModule : LevelModule
     {
         public GameTaskManager TaskManager;
-   
-        public void SetTasks(int tasksIndex)
+
+        public List<Tutorial> Tutorials;
+
+
+        public void SetTutorial(int index)
         {
-            TaskManager.SetTasks(tasksIndex);
+            if (Tutorials.IsValidIndex(index))
+            {
+                Tutorials[index].SetTasks(TaskManager);
+            }
         }
         
+        // public void SetTasks(int tasksIndex)
+        // {
+        //     TaskManager.SetTasks(tasksIndex);
+        // }
+        //
         public override void OnLevelStateChange(LevelStateChangeData levelStateChangeData)
         {
             if (levelStateChangeData.NewState == LevelState.Playing)

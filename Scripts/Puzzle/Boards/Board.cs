@@ -33,6 +33,7 @@ namespace Kuantech.Puzzle
         
         //Events
         public UnityAction<BoardTile> OnTilePlacedToBoardEvent;
+        public UnityAction<BoardTile> OnTileMergedEvent;
         
         //Editor
         [Header("Editor Background")] 
@@ -150,7 +151,7 @@ namespace Kuantech.Puzzle
 
         protected virtual void OnTileMerged(BoardTile tile)
         {
-            
+            OnTileMergedEvent?.Invoke(tile);
         }
         
         protected virtual void OnTileSetToBoard(BoardTile tile)

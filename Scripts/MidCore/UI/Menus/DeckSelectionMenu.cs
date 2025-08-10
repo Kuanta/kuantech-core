@@ -203,8 +203,12 @@ namespace Kuantech.Midcore.UI
                     {
                         DeckBuildingManager.UnequipCollectible(card.CollectibleDataAsset);
                     }
-                    DeckBuildingManager.EquipCollectible(CardToEquip.CollectibleDataAsset);
-                    card.SetCollectableAsset(CardToEquip.CollectibleDataAsset);
+                    
+                    //If can equip, set the preview card
+                    if (DeckBuildingManager.EquipCollectible(CardToEquip.CollectibleDataAsset))
+                    {
+                        card.SetCollectableAsset(CardToEquip.CollectibleDataAsset);
+                    }
                 }
                 ClearCardToEquip();
                 
