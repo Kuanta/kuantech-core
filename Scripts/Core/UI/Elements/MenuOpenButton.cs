@@ -54,11 +54,12 @@ namespace Kuantech.Core.UI
             {
                 LevelRequirementText.text = $"Level {PlayerLevelRequirement+1}";
             }
+            UpdateVisual();
         }
 
         public void UpdateVisual()
         {
-            SetLockedState(IsUnlocked());
+            SetLockedState(!IsUnlocked());
         }
         
         private bool IsUnlocked()
@@ -109,6 +110,7 @@ namespace Kuantech.Core.UI
             {
                 SetClosedVisual();
             }
+            UpdateVisual();
         }
 
         private void SetLockedState(bool locked)
