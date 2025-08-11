@@ -495,7 +495,7 @@ namespace Kuantech.Core
         {
             if (!CanAttack()) return false;
             _currentCastData = castData;
-            if (_currentCastData.Target != null && _targetManager != null)
+            if (_currentCastData.Target != null && _targetManager != null && _currentCastData.Target.IsAlive())
             {
                 _targetManager.SetCurrentTarget(_currentCastData.Target);
             }

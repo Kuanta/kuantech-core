@@ -1,5 +1,6 @@
 using DG.Tweening;
 using Kuantech.Core.FX;
+using Kuantech.Utils;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -15,7 +16,8 @@ namespace Kuantech.Core.UI
         //Events
         public UnityAction<FlyingUIElement> OnTargetEventReached;
 
-        [Header("Effect")]
+        [Header("Effect")] 
+        [KTTag("AudioTag")] [SerializeField] private int ReachedAudioTag;
         [SerializeField] private EffectPlayer ScoreReachedEffect;
 
     
@@ -48,6 +50,7 @@ namespace Kuantech.Core.UI
         {
             OnTargetReachedHandler?.Invoke();
             OnTargetEventReached?.Invoke(this);
+            AudioLibrary.PlaySoundByTag(ReachedAudioTag);
         }
     }
 }

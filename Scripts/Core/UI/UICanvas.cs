@@ -33,6 +33,20 @@ namespace Kuantech.Core.UI
             flyingElement.Fly(screenPosition, screenTargetPosition, data, TargetReachedHandler);
         }
 
+        public void FlyTowardsUIElementInWorldSpace(FlyingUIElement flyingElement, Vector3 startPosition, RectTransform target, object data = null, UnityAction TargetReachedHandler = null )
+        {
+            Vector2 targetScreen = RectCenterToScreen(target);
+            var ray = GameCamera.ScreenPointToRay(targetScreen);
+            float depth = Vector3.Dot(startPosition - GameCamera.transform.position, GameCamera.transform.forward);
+            if (depth < 0.01f) depth = 0.01f; // kamera ile aynı noktada olmasın
+            Vector3 planePoint = GameCamera.transform.position + GameCamera.transform.forward * depth;
+            var plane = new Plane(GameCamera.transform.forward, planePoint);
+
+            Vector3 worldEnd = plane.Raycast(ray, out var enter)
+                ? ray.GetPoint(enter)
+                : (startPosition + GameCamera.transform.forward * 0.5f);
+            flyingElement.Fly(startPosition, worldEnd, data, TargetReachedHandler);
+        }
         #region Cameras
 
         public UnityEngine.Camera GetGameCamera()
@@ -72,17 +86,35 @@ namespace Kuantech.Core.UI
             // }
             return localPoint;
         }
-
+        
         public Vector2 ScreenPositionToAnchoredPosition(RectTransform rectTransform, Vector2 screenPos)
         {
             if (rectTransform == RectTransform) return screenPos;
             RectTransform uiElementParent = rectTransform.parent as RectTransform;
             if (uiElementParent == null) return screenPos;
             Vector2 localPoint;
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(uiElementParent, screenPos, CanvasCamera,
-                out localPoint);
+            if (Canvas.renderMode == RenderMode.ScreenSpaceOverlay)
+            {
+                RectTransformUtility.ScreenPointToLocalPointInRectangle(uiElementParent, screenPos, null,
+                    out localPoint);
+            }
+            else
+            {
+                RectTransformUtility.ScreenPointToLocalPointInRectangle(uiElementParent, screenPos, CanvasCamera,
+                    out localPoint);
+            }
 
             return localPoint;
+        }
+
+        public Vector3 RectCenterToScreen(RectTransform rt)
+        {
+            var eventCam =
+                Canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null :
+                    (GetCanvasCamera() ? GetCanvasCamera() : Canvas.worldCamera);
+
+            Vector3 worldCenter = rt.TransformPoint(rt.rect.center);
+            return RectTransformUtility.WorldToScreenPoint(eventCam, worldCenter);
         }
         #endregion
 

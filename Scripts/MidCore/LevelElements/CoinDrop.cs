@@ -78,7 +78,7 @@ namespace Kuantech.Midcore
             // HideWorldVisuals(true);
 
             // Şu anki world pozisyonundan UI’ya uç
-            levelUI.FlyUIElementFromWorldPosition(FlyingCurrency, transform.position, targetTransform);
+            levelUI.FlyTowardsUIElementInWorldSpace(FlyingCurrency, transform.position, targetTransform);
         }
 
         public virtual RectTransform GetCoinTarget()
