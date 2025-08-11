@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Core.FX
@@ -48,8 +49,10 @@ namespace Kuantech.Core.FX
 
         private void SetFlashAmount(float value)
         {
+            if (MaterialInstances.IsNullOrEmpty()) return;
             foreach (var mat in MaterialInstances)
             {
+                if (mat == null) return;
                 if (mat.HasProperty(FlashProperty))
                     mat.SetFloat(FlashProperty, value);
             }
