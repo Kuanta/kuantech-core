@@ -1,17 +1,17 @@
 ﻿using Kuantech.Core;
 using Kuantech.Core.Store;
+using Kuantech.Core.UI;
 using Kuantech.Utils;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace Kuantech.HyperCasual.UI
 {
-    public class CurrencyIndicator : MonoBehaviour
+    public class CurrencyIndicator : UIElement
     {
         public bool AutoUpdate = false;
-        [FormerlySerializedAs("currencyAsset")] public CurrencyAsset CurrencyAsset;
+        public CurrencyAsset CurrencyAsset;
 
         [SerializeField] private Image CurrencyIcon;
         [SerializeField] private TMP_Text CurrencyAmount;

@@ -1,5 +1,4 @@
 using DG.Tweening;
-using Kuantech.Core;
 using Kuantech.Core.FX;
 using UnityEngine;
 using UnityEngine.Events;
@@ -49,7 +48,6 @@ namespace Kuantech.Core.UI
         {
             OnTargetReachedHandler?.Invoke();
             OnTargetEventReached?.Invoke(this);
-
         }
     }
 }

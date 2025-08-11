@@ -102,7 +102,7 @@ namespace Kuantech.Midcore
         private void OnTargetReached(FlyingUIElement element)
         {
             // (Opsiyonel) HideWorldVisuals(false);
-            PoolManager.PoolObject(gameObject);
+            CurrencyManager.AddCurrency(CurrencyData.CurrencyId, CurrencyData.CurrencyAmount);
         }
 
         // ---------------------------
