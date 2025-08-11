@@ -97,7 +97,21 @@ namespace Kuantech.Core.UI
 
             return null;
         }
+        
+        public List<T> GetUIElementsByType<T>() where T : UIElement
+        {
+            List<T> elements = new List<T>();
+            if (UIElements.IsNullOrEmpty()) return elements;
+            foreach (var uiElement in UIElements)
+            {
+                if (uiElement is T)
+                {
+                    elements.Add(uiElement as T);
+                }
+            }
 
+            return elements;
+        }
         #endregion
         public virtual void Reset()
         {
