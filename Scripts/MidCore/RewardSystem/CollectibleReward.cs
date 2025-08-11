@@ -11,7 +11,7 @@ namespace Kuantech.Midcore
         {
             base.EarnReward();
             if (ProgressionManager.IsProgressibleUnlocked(CollectibleData)) return;
-            ProgressionManager.SetRank(CollectibleData, 0);
+            ProgressionManager.UnlockProgressible(CollectibleData);
         }
         
         public override int GetAmount()

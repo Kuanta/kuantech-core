@@ -19,6 +19,7 @@ namespace Kuantech.Core.UI
         [Header("Effect")]
         [SerializeField] private EffectPlayer ScoreReachedEffect;
 
+    
         public virtual void Fly(Vector3 startPosition, Vector3 endPosition, object data=null, UnityAction OnTargetReachedHandler = null)
         {
             startPosition += new Vector3(Random.Range(-StartNoise.x, StartNoise.x), Random.Range(-StartNoise.y, StartNoise.y), Random.Range(-StartNoise.z, StartNoise.z));

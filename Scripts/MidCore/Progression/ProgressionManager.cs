@@ -324,6 +324,19 @@ namespace Kuantech.Midcore
             return true;
         }
         
+        public static bool UnlockProgressible(ProgressableDataAsset asset, bool saveState = true)
+        {
+            if (IsProgressibleUnlocked(asset)) return false; //Already unlocked
+            if (ProgressionManager.SetRank(asset, 0, saveState) && asset is CollectableAsset collectableAsset)
+            {
+                var ctx = GetContext<ProgressionManager>();
+                ctx.FreshUnlockedCollectibles.Add(collectableAsset);
+                return true;
+            }
+
+            return false;
+        }
+        
         /// <summary>
         /// Sets the rank without any checks
         /// </summary>
