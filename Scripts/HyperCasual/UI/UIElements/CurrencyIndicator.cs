@@ -16,8 +16,6 @@ namespace Kuantech.HyperCasual.UI
         [SerializeField] private Image CurrencyIcon;
         [SerializeField] private TMP_Text CurrencyAmount;
 
-        protected bool Initialized = false;
-
         public bool CanGetCurrency()
         {
             if (!AutoUpdate || !GameManager.InstanceExists()) return false;
@@ -41,8 +39,10 @@ namespace Kuantech.HyperCasual.UI
             }
         }
         
-        protected virtual void Initialize()
+        public override void Initialize()
         {
+            if (Initialized) return;
+            base.Initialize();
             if (!CanGetCurrency()) return;
 
             if (!AutoUpdate) return;
@@ -51,7 +51,6 @@ namespace Kuantech.HyperCasual.UI
             cm.CurrencyUpdated += OnCurrencyChangeEvent;
             // gsm.CurrencyUpdatedEvent += OnCurrencyChangeEvent;
             UpdateValue();
-            Initialized = true;
         }
 
         /// <summary>

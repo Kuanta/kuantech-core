@@ -141,8 +141,8 @@ namespace Kuantech.Midcore.UI
             if (_selectedCanvas == null)
             {
                 _selectedCanvas = gameObject.GetComponent<Canvas>();
-                
             }
+            if (_selectedCanvas == null) return;
             if (toggle)
             {
                 _selectedCanvas.overrideSorting = true;

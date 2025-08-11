@@ -60,6 +60,7 @@ namespace Kuantech.Core.FX
             //Set shader effects
             foreach (var shaderEffect in ExistingShaderEffects)
             {
+                if(shaderEffect == null) continue;
                 AddShaderEffect(shaderEffect);
             }
             

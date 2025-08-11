@@ -24,7 +24,6 @@ namespace Kuantech.Midcore
         [SerializeField] private float HorizontalScatter = 0.6f; // yanal saçılma mesafesi (metre)
         
         [NonSerialized] public CurrencyData CurrencyData;
-        private CurrencyIndicator _currencyIndicator;
         private Coroutine _flyRoutine;
         private Coroutine _hopRoutine;
         private CurrencyAsset _targetCurrencyAsset;
@@ -92,7 +91,6 @@ namespace Kuantech.Midcore
             {
                 if (currencyIndicator && currencyIndicator.CurrencyAsset == _targetCurrencyAsset)
                 {
-                    _currencyIndicator = currencyIndicator;
                     return currencyIndicator.GetComponent<RectTransform>();
                 }
             }
