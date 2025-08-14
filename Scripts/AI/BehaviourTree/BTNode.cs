@@ -141,9 +141,9 @@ namespace Kuantech.AI
             foreach (var keyValuePair in nodeData.ActionClassVariables)
             {
                 FieldInfo fieldInfo = type.GetField(keyValuePair.Key, flags);
-                Type fieldType = fieldInfo.FieldType;
                 if (fieldInfo != null)
                 {
+                    Type fieldType = fieldInfo.FieldType;
                     if (fieldInfo.FieldType == typeof(int))
                     {
                         int value;
@@ -163,6 +163,17 @@ namespace Kuantech.AI
                     else if (fieldInfo.FieldType == typeof(string))
                     {
                         fieldInfo.SetValue(_leafAction, keyValuePair.Value);
+                    }else if (fieldInfo.FieldType == typeof(bool))
+                    {
+
+                        if (int.TryParse(keyValuePair.Value, out int value))
+                        {
+                            fieldInfo.SetValue(_leafAction, value > 0);
+                        }
+                        else
+                        {
+                            fieldInfo.SetValue(_leafAction, false);
+                        }
                     }
                     else if (fieldInfo.FieldType.IsEnum)  // Check if the property is an enum
                     {
