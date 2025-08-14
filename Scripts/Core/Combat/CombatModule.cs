@@ -699,8 +699,9 @@ namespace Kuantech.Core
             Vector3 attackPosition = GetAttackPosition(); //Position where attack is starterd, casted
             EffectPlayer attackEffect = GetCurrentAttackPattern().AttackFx;
             if (attackEffect == null) return;
-            EffectPlaySettings playSettings = EffectPlaySettings.GetPlayAtPositionSettings();
-            attackEffect.PlayEffectAtPosition(attackPosition, Quaternion.LookRotation(attackDirection));
+            EffectPlaySettings playSettings = EffectPlaySettings.GetPlayAtPositionSettings(attackPosition, Quaternion.LookRotation(attackDirection));
+            playSettings.Caster = Actor;
+            attackEffect.PlayEffect(playSettings);
         }
         
         #endregion

@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Kuantech.Core.Combat;
 using Kuantech.Utils;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace Kuantech.Core.FX
 {
@@ -14,6 +14,7 @@ namespace Kuantech.Core.FX
     {
         [Header("Pre-defined Effects")]
         public Effect DamageReceiveEffect;
+        public Effect HealEffect;
         public Effect JumpEffect;
         public Effect DodgeEffect;
         public Effect DeathEffect;
@@ -34,6 +35,7 @@ namespace Kuantech.Core.FX
         private Dictionary<string, ShaderEffect> _shaderEffectsById = new Dictionary<string, ShaderEffect>();
         [NonSerialized] public HashSet<Effect> ActiveEffects = new HashSet<Effect>();
 
+        private HealthcareModule _healthcareModule;
         private CombatModule _combatModule;
 
         public override void Initialize()
@@ -66,10 +68,16 @@ namespace Kuantech.Core.FX
             }
             
             _combatModule = Actor.GetModule<CombatModule>();
+            _healthcareModule = Actor.GetModule<HealthcareModule>();
             if(_combatModule != null)
             {
                 _combatModule.AttackStartedEvent += AttackStartedEvent;
                 _combatModule.AttackCompletedEvent += AttackEndedEvent;
+            }
+
+            if (_healthcareModule != null)
+            {
+                _healthcareModule.OnHealReceived += OnHealReceived;
             }
         }
 
@@ -138,6 +146,13 @@ namespace Kuantech.Core.FX
             }
         }
 
+        private void OnHealReceived(DamageInfo damageInfo)
+        {
+            if (HealEffect != null)
+            {
+                HealEffect.Play();
+            }
+        }
         private void OnDodge(object sender, EventArgs args)
         {
             if (DodgeEffect != null)

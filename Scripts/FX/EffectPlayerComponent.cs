@@ -10,6 +10,7 @@ namespace Kuantech.Core.FX
     {
         public EffectPlayer EffectPlayer;
         public bool AdjustPosition = true; //If true, the effect will be played at the position of the actor
+        public bool AdjustRotation = true;
         [Header("Play On Actor")]
         public string SlotToPlay;
 
@@ -19,17 +20,8 @@ namespace Kuantech.Core.FX
         [Button("Play Effect")]
         public Effect PlayEffect(EffectPlaySettings playSettings)
         {
-            Vector3 playPosition = transform.position;
-            Quaternion playRotation = transform.rotation;
-            // if (plactor != null)
-            // {
-            //     ActorSlotsHandler slotHandler = actor.GetModule<ActorSlotsHandler>();
-            //     if (slotHandler != null)
-            //     {
-            //         
-            //     }
-            // }
             playSettings.SetPosition = AdjustPosition;
+            playSettings.SetRotation = AdjustRotation;
             return EffectPlayer.PlayEffect(playSettings);
         }
         

@@ -30,8 +30,9 @@ namespace Kuantech.Core.Combat
             foreach (var actor in actors)
             {
                 if(actor == Actor || !actor.IsAlive()) continue;
-                if (actor.IsAlly(Actor))
+                if (actor.IsAlly(Actor) && actor != Actor) 
                 {
+                    //Is ally and not self
                     DetectedAllies.Add(actor);
                 }
                 else

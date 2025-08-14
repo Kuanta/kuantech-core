@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using Kuantech.Core.FX;
 using Kuantech.Rpg;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -24,9 +25,13 @@ namespace Kuantech.Core.Combat
         [Header("UI")] 
         [SerializeField] private Healthbar Healthbar;
         [SerializeField] private bool ShowDamageText = false;
+
+        [Header("Effects")]
+        [SerializeField] private Effect HealEffect;
         
         //Events
         public UnityAction<HealthcareModule> OnHealthChanged;
+        public UnityAction<DamageInfo> OnHealReceived;
         
         //Runtime 
         private StatsModule _statModule;
@@ -118,6 +123,7 @@ namespace Kuantech.Core.Combat
             }
             
             UpdateHealthbar();
+            OnHealReceived?.Invoke(heal);
         }
 
         public void UpdateHealthbar()

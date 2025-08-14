@@ -9,6 +9,9 @@ namespace Kuantech.Core.FX
         [Header("Sprite Flash Settings")]
         public string FlashProperty = "_FlashAmount";
         public float FlashInDuration = 0.05f;
+        public string FlashColorProperty = "_FlashColor";
+        [ColorUsageAttribute(true,true,0f,8f,-5.0f,5.0f)]
+        public Color FlashColor = Color.white;
         public float FlashOutDuration = 0.2f;
         public float MaxFlashAmount = 1.0f;
 
@@ -53,9 +56,16 @@ namespace Kuantech.Core.FX
             foreach (var mat in MaterialInstances)
             {
                 if (mat == null) return;
+                SetFlashColor(mat);
                 if (mat.HasProperty(FlashProperty))
                     mat.SetFloat(FlashProperty, value);
             }
+        }
+
+        private void SetFlashColor(Material matInstance)
+        {
+            if (matInstance == null) return;
+            matInstance.SetColor(FlashColorProperty, FlashColor);
         }
     }
 }

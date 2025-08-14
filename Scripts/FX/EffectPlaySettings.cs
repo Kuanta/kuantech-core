@@ -19,6 +19,7 @@ namespace Kuantech.Core.FX
         
         //Play under parent
         public bool SetPosition; //If true, the position will be set
+        public bool SetRotation;
         public Transform EffectParent;
         public Vector3 LocalPlayPosition;
         public Quaternion LocalPlayRotation;
@@ -38,6 +39,7 @@ namespace Kuantech.Core.FX
                 EffectCooldown = -1,
                 DespawnAfterPlay = false,
                 SetPosition = false,
+                SetRotation = false,
                 EffectParent = null,
                 LocalPlayPosition = Vector3.zero,
                 LocalPlayRotation = Quaternion.identity,
@@ -49,9 +51,10 @@ namespace Kuantech.Core.FX
         public static EffectPlaySettings GetPlayAtPositionSettings(Vector3 position, Quaternion rotation)
         {
             EffectPlaySettings settings = GetDefaultSettings();
-            settings.SetPosition = true;
             settings.PlayStartPosition = position;
             settings.PlayStartRotation = rotation;
+            settings.SetPosition = true;
+            settings.SetRotation = true;
             return settings;
         }
 
@@ -60,6 +63,7 @@ namespace Kuantech.Core.FX
         {
             EffectPlaySettings settings = GetDefaultSettings();
             settings.SetPosition = true;
+            settings.SetRotation = true;
             settings.LocalPlayPosition = localPos;
             settings.EffectParent = target;
             settings.LocalPlayRotation = localRotation;

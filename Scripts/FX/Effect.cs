@@ -49,6 +49,8 @@ namespace Kuantech.Core.FX
             EffectPlaySettings.GetDefaultSettings();
             Play(EffectPlaySettings.GetDefaultSettings());
         }
+
+        private IEnumerator _stopRoutine = null;
         
         /// <summary>
         /// Plays the effect using the settings
@@ -57,30 +59,40 @@ namespace Kuantech.Core.FX
         public void Play(EffectPlaySettings settings)
         {
             EffectPlaySettings = settings;
-            if (settings.SetPosition)
+            if (settings.EffectParent != null)
             {
-                if (settings.EffectParent != null)
-                {
-                    transform.SetParent(settings.EffectParent);
-                    transform.localPosition = settings.LocalPlayPosition;
-                    transform.localRotation = settings.LocalPlayRotation;
-                }
-                else
+                transform.SetParent(settings.EffectParent);
+                transform.localPosition = settings.LocalPlayPosition;
+                transform.localRotation = settings.LocalPlayRotation;
+            }
+            else
+            {
+                if (settings.SetPosition)
                 {
                     transform.position = settings.PlayStartPosition;
+                }
+
+                if (settings.SetRotation)
+                {
                     transform.rotation = settings.PlayStartRotation;
                 }
             }
 
             _Play(settings);
-            
+
+            if (_stopRoutine != null)
+            {
+                StopCoroutine(_stopRoutine);
+            }
             //If duration is set, pool it
             if (settings.DespawnAfterPlay && Duration > 0)
             {
-                StartCoroutine(PoolRoutine(Duration));
+                _stopRoutine = PoolRoutine(Duration);
+                StartCoroutine(_stopRoutine);
             }else if (Duration > 0)
             {
-                StartCoroutine(StopRoutine());
+                _stopRoutine = StopRoutine();
+                StartCoroutine(_stopRoutine);
             }
         }
         
@@ -257,7 +269,7 @@ namespace Kuantech.Core.FX
                 duration = Vfx.GetDuration();
             }
             yield return new WaitForSeconds(duration);
-
+            _stopRoutine = null;
             Stop();
         }
 
@@ -279,6 +291,7 @@ namespace Kuantech.Core.FX
         private IEnumerator DespawnRoutine()
         {
             yield return new WaitForSeconds(DespawnDelay);
+            _stopRoutine = null;
             _despawnRoutine = null;
             EffectsLibrary.GetContext<EffectsLibrary>().EffectsPool.PoolObject(gameObject);
         }

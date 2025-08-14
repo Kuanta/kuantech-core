@@ -84,6 +84,7 @@ namespace Kuantech.Midcore
         #region Queries
         public ProgressibleData GetProgressibleData(ProgressableDataAsset asset)
         {
+            if (asset == null) return null;
             return GetProgessibleDataById(asset.GetId());
         }
 

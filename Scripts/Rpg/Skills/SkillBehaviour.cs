@@ -25,6 +25,7 @@ namespace Kuantech.Rpg.Skills
             OnCaster, //Attached to caster
             AtCaster, //At casters position, without attaching to caster
             AtCastPoint, //At point of cast
+            OnTarget, //On top of the target
         }
 
         public SkillBehaviourFxPlayType PlayType;
@@ -137,6 +138,9 @@ namespace Kuantech.Rpg.Skills
                             break;
                         case FxPlayData.SkillBehaviourFxPlayType.AtCaster:
                             effect  = PlayEffectAtCasterPosition(fx.EffectPlayer);
+                            break;
+                        case FxPlayData.SkillBehaviourFxPlayType.OnTarget:
+                            effect = PlayEffectAtTarget(fx.EffectPlayer);
                             break;
                         case FxPlayData.SkillBehaviourFxPlayType.AtCastPoint:
                             effect = PlayEffectAtCastPosition(fx.EffectPlayer);
@@ -259,6 +263,18 @@ namespace Kuantech.Rpg.Skills
             }
             EffectPlaySettings playSettings = EffectPlaySettings.GetPlayAtPositionSettings(effectPos, playRot);
             playSettings.Caster = ParentSkill.ParentSpellBook.Actor;
+            return effectPlayer.PlayEffect(playSettings);
+        }
+
+        public Effect PlayEffectAtTarget(EffectPlayer effectPlayer)
+        {
+            if (effectPlayer.IsNull()) return null;
+            Transform target = CurrentSkillCastData.CastTarget != null 
+                ? CurrentSkillCastData.CastTarget.transform 
+                : null;
+            if (target == null) return PlayEffectAtCastPosition(effectPlayer);
+            EffectPlaySettings playSettings =
+                EffectPlaySettings.GetPlayAtObjectSettings(target, Vector3.zero, Quaternion.identity);
             return effectPlayer.PlayEffect(playSettings);
         }
 

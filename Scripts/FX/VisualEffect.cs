@@ -18,8 +18,8 @@ namespace Kuantech.Core.FX
             if(Emit)
             {
                 ParticleSystem.EmitParams emitParams = new ParticleSystem.EmitParams();
-                emitParams.position = settings.PlayStartPosition;
-                emitParams.rotation3D = settings.PlayStartRotation.eulerAngles;
+                // emitParams.position = settings.PlayStartPosition;
+                // emitParams.rotation3D = settings.PlayStartRotation.eulerAngles;
                 if (ChildEmitters != null)
                 {
                     foreach (var childEmitter in ChildEmitters)

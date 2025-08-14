@@ -16,10 +16,6 @@ namespace Kuantech.Core.FX
         public Effect Effect;
         public Effect EffectPrefab;
 
-        [Header("Effect Play Settings")] 
-        public bool SetPosition;
-        public bool SetRotation;
-
         public string GetEffectId()
         {
             if (EffectPrefab != null)
