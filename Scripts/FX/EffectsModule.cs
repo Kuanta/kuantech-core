@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Kuantech.Utils;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -75,6 +76,7 @@ namespace Kuantech.Core.FX
         private void SetEffectPlayers()
         {
             _effectPlayerComponentsByTag = new Dictionary<int, EffectPlayerComponent>();
+            ExistingEffectPlayerComponents = Actor.transform.GetComponentsInChildren<EffectPlayerComponent>().ToList();
             foreach (var effectPlayerComponent in ExistingEffectPlayerComponents)
             {
                 _effectPlayerComponentsByTag[effectPlayerComponent.EffectPlayer.EffectTag] = effectPlayerComponent;
@@ -117,6 +119,7 @@ namespace Kuantech.Core.FX
         #endregion
         public void OnActorVisualSet(ActorVisual actorVisual)
         {
+            SetEffectPlayers();
             UpdateShaderEffectRenderers(actorVisual.gameObject);
             ActorVisualEffectsModule actorVisualEffectsModule = actorVisual.GetModule<ActorVisualEffectsModule>();
             if (actorVisualEffectsModule == null) return;
@@ -185,9 +188,9 @@ namespace Kuantech.Core.FX
             return null;
         }
 
-        public void PlayEffectByTag(int tag)
+        public void PlayEffectByTag(int tag, EffectPlaySettings settings)
         {
-            GetEffectPlayerByTag(tag)?.PlayEffect(Actor);
+            GetEffectPlayerByTag(tag)?.PlayEffect(settings);
         }
         #endregion
 

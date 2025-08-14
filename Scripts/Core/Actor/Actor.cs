@@ -445,5 +445,14 @@ namespace Kuantech.Core
             return mm.GetForwardVector();
         }
         #endregion
+
+        #region Factions
+
+        public bool IsAlly(Actor otherActor)
+        {
+            return FactionId == otherActor.FactionId;
+        }
+
+        #endregion
     }
 }

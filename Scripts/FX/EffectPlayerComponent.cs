@@ -9,7 +9,7 @@ namespace Kuantech.Core.FX
     public class EffectPlayerComponent : MonoBehaviour
     {
         public EffectPlayer EffectPlayer;
-        
+        public bool AdjustPosition = true; //If true, the effect will be played at the position of the actor
         [Header("Play On Actor")]
         public string SlotToPlay;
 
@@ -17,19 +17,20 @@ namespace Kuantech.Core.FX
         /// Plays the effect
         /// </summary>
         [Button("Play Effect")]
-        public void PlayEffect(Actor actor=null)
+        public Effect PlayEffect(EffectPlaySettings playSettings)
         {
             Vector3 playPosition = transform.position;
             Quaternion playRotation = transform.rotation;
-            if (actor != null)
-            {
-                ActorSlotsHandler slotHandler = actor.GetModule<ActorSlotsHandler>();
-                if (slotHandler != null)
-                {
-                    
-                }
-            }
-            EffectPlayer.PlayEffectAtPosition(transform.position, transform.rotation);
+            // if (plactor != null)
+            // {
+            //     ActorSlotsHandler slotHandler = actor.GetModule<ActorSlotsHandler>();
+            //     if (slotHandler != null)
+            //     {
+            //         
+            //     }
+            // }
+            playSettings.SetPosition = AdjustPosition;
+            return EffectPlayer.PlayEffect(playSettings);
         }
         
     }

@@ -103,6 +103,23 @@ namespace Kuantech.Core.Combat
             }
         }
 
+        public void ReceiveHeal(DamageInfo heal)
+        {
+            if (!Actor.IsAlive()) return; //Can't heal the dead
+            float health = GetCurrentHealth();
+            float maxHealth = GetMaxHealth();
+            heal.DamageAmount = Mathf.Clamp(health + heal.DamageAmount, 0, maxHealth);
+            _statModule.SetResourceValue(HealthResourceAsset, heal.DamageAmount);
+            OnHealthChanged?.Invoke(this);
+            
+            if (ShowDamageText)
+            {
+                CombatManager.ShowDamageText(Actor.transform.position, heal, Actor.FactionId == 0); //todo: Fix Friendly check
+            }
+            
+            UpdateHealthbar();
+        }
+
         public void UpdateHealthbar()
         {
             if (Healthbar == null) return;

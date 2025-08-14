@@ -62,6 +62,28 @@ namespace Kuantech.Core.FX
             return effect;
         }
 
+        public static Effect PlayEffectByTag(int effectTag, EffectPlaySettings settings)
+        {
+            EffectsLibrary context = GetContext<EffectsLibrary>();
+            if(context == null) return null;
+            Effect effect = null;
+            if (settings.Caster != null)
+            {
+                EffectsModule em = settings.Caster.GetModule<EffectsModule>();
+                if (em != null)
+                {
+                    EffectPlayerComponent effectPlayerComponent = em.GetEffectPlayerByTag(effectTag);
+                    if(effectPlayerComponent != null)
+                    {
+                        return effectPlayerComponent.PlayEffect(settings);
+                    }
+                }
+            }
+            effect = context.GetEffectByTag(effectTag);
+            if(effect == null) return null;
+            effect.Play(settings);
+            return effect;
+        }
         public static Effect PlayEffectPrefab(Effect effectPrefab, EffectPlaySettings settings)
         {
             EffectsLibrary context = GetContext<EffectsLibrary>();

@@ -16,6 +16,10 @@ namespace Kuantech.Core.FX
         public Effect Effect;
         public Effect EffectPrefab;
 
+        [Header("Effect Play Settings")] 
+        public bool SetPosition;
+        public bool SetRotation;
+
         public string GetEffectId()
         {
             if (EffectPrefab != null)
@@ -46,12 +50,12 @@ namespace Kuantech.Core.FX
             {
                 settings.DespawnAfterPlay = true; //Initialized prefabs should be despawned. They won't be despawned if they are bound to effects library so have no fear
                 return EffectsLibrary.PlayEffectPrefab(EffectPrefab, settings);
-            }else
+            }
             if(!EffectId.IsNullOrEmpty())
             {
                 return EffectsLibrary.PlayEffect(EffectId, settings);
             }
-            return null;
+            return EffectsLibrary.PlayEffectByTag(EffectTag, settings);
         }
         public Effect PlayEffectAtPosition(Vector3 position, Quaternion rotation)
         {

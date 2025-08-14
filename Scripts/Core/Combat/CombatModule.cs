@@ -41,6 +41,7 @@ namespace Kuantech.Core
         
         [Header("Attack Shape")]
         public AttackTypes AttackType;
+        public bool IsMelee;
         public float Angle;
         public float Width;
         public float Range;
@@ -577,6 +578,18 @@ namespace Kuantech.Core
         #endregion
         
         #region Queries
+        
+        /// <summary>
+        /// Checks if attack pattern is melee
+        /// </summary>
+        /// <returns></returns>
+        public bool IsMelee()
+        {
+            AttackTypes attackType = GetCurrentAttackPattern().AttackType;
+            if (attackType == AttackTypes.RangedProjectile || attackType == AttackTypes.RangedRaycast) return false;
+            return GetCurrentAttackPattern().IsMelee;
+        }
+        
         /// <summary>
         /// Checks whether the actor can attack or not
         /// </summary>
@@ -686,6 +699,7 @@ namespace Kuantech.Core
             Vector3 attackPosition = GetAttackPosition(); //Position where attack is starterd, casted
             EffectPlayer attackEffect = GetCurrentAttackPattern().AttackFx;
             if (attackEffect == null) return;
+            EffectPlaySettings playSettings = EffectPlaySettings.GetPlayAtPositionSettings();
             attackEffect.PlayEffectAtPosition(attackPosition, Quaternion.LookRotation(attackDirection));
         }
         

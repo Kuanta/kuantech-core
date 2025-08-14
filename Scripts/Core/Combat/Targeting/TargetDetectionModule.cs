@@ -30,7 +30,7 @@ namespace Kuantech.Core.Combat
             foreach (var actor in actors)
             {
                 if(actor == Actor || !actor.IsAlive()) continue;
-                if (actor.FactionId == Actor.FactionId)
+                if (actor.IsAlly(Actor))
                 {
                     DetectedAllies.Add(actor);
                 }
