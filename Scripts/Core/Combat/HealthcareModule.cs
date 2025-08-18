@@ -113,8 +113,9 @@ namespace Kuantech.Core.Combat
             if (!Actor.IsAlive()) return; //Can't heal the dead
             float health = GetCurrentHealth();
             float maxHealth = GetMaxHealth();
-            heal.DamageAmount = Mathf.Clamp(health + heal.DamageAmount, 0, maxHealth);
-            _statModule.SetResourceValue(HealthResourceAsset, heal.DamageAmount);
+            float newHealth  = Mathf.Clamp(health + heal.DamageAmount, 0, maxHealth);
+            
+            _statModule.SetResourceValue(HealthResourceAsset, newHealth);
             OnHealthChanged?.Invoke(this);
             
             if (ShowDamageText)

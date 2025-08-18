@@ -31,47 +31,66 @@ namespace Kuantech.Rpg
 
         private bool _backAnimInProgress;
 
+        private float _lastTargetFill = 1f;
+
         public void SetHealth(float current, float max)
         {
             current = Mathf.Clamp(current, 0, max);
-            if (CurrentHealthText != null)
+
+            if (CurrentHealthText) CurrentHealthText.text = current.Stringfy();
+            if (MaxHealthText)     MaxHealthText.text     = max.Stringfy(); // <-- BUG düzeltme: current değil max
+
+            if (!FrontBar || !BackBar) return;
+
+            var newTarget = max > 0 ? Mathf.Clamp01(current / max) : 0f;
+
+            // Full ise gizleme
+            if (HideOnFullHealth && newTarget >= 1f && HideParent)
             {
-                CurrentHealthText.text = current.Stringfy();
+                FrontBar.value = 1f;
+                BackBar.value  = 1f;
+                _backAnimInProgress = false;
+                _backBarDelayTimer  = 0f;
+                ToggleVisual(ShowAlways);
+                _targetFill     = 1f;
+                _lastTargetFill = 1f;
+                return;
             }
 
-            if (MaxHealthText != null)
+            ToggleVisual(true);
+
+            // Ön bar anında gerçek sağlığa gider
+            FrontBar.value = newTarget;
+
+            bool isHeal = newTarget > _lastTargetFill + Mathf.Epsilon;
+
+            if (isHeal)
             {
-                MaxHealthText.text = current.Stringfy();
+                // HEAL: trailing bar'ı anında yeni hedefe çek, animasyonu iptal et
+                BackBar.value        = newTarget;
+                _backAnimInProgress  = false;
+                _backBarDelayTimer   = 0f;
             }
-
-            //Handle Bars
-            if (FrontBar != null && BackBar != null)
+            else
             {
-                if (HideOnFullHealth && current >= max && HideParent != null)
+                // DAMAGE: gecikmeli düşür
+                if (BackBar.value <= newTarget)
                 {
-                    FrontBar.value = 1;
-                    BackBar.value = 1;
-                    ToggleVisual(ShowAlways);
-                    return;
-                }
-                _targetFill = Mathf.Clamp01(current / max);
-                if (FrontBar != null)
-                    FrontBar.value = _targetFill;
-
-                if (BackBar == null) return;
-            
-                //If back bar is already smaller, set it instantly
-                if (BackBar.value <= _targetFill)
-                {
-                    BackBar.value = _targetFill;
+                    // edge-case güvenlik
+                    BackBar.value       = newTarget;
+                    _backAnimInProgress = false;
+                    _backBarDelayTimer  = 0f;
                 }
                 else
                 {
-                    _backBarDelayTimer = BackBarDelay;
-                    _backAnimInProgress = true;
+                    _targetFill          = newTarget;
+                    _backBarDelayTimer   = BackBarDelay;
+                    _backAnimInProgress  = true;
                 }
-                ToggleVisual(true);
             }
+
+            _targetFill     = newTarget;
+            _lastTargetFill = newTarget;
         }
 
         public void ToggleVisual(bool toggle)
@@ -90,22 +109,17 @@ namespace Kuantech.Rpg
         {
             if (!_backAnimInProgress || BackBar == null) return;
 
-            // Zamanlayıcıyı çalıştır
             if (_backBarDelayTimer > 0f)
             {
                 _backBarDelayTimer -= Time.deltaTime;
                 return;
             }
 
-            // Lerp ile arkadaki bar'ı düşür
-            float current = BackBar.value;
-            current = Mathf.MoveTowards(current, _targetFill, Time.deltaTime * BackBarLerpSpeed);
-            BackBar.value = current;
+            float v = Mathf.MoveTowards(BackBar.value, _targetFill, Time.deltaTime * BackBarLerpSpeed);
+            BackBar.value = v;
 
-            if (Mathf.Approximately(current, _targetFill))
-            {
+            if (Mathf.Approximately(v, _targetFill))
                 _backAnimInProgress = false;
-            }
         }
 
         public void Reset()
