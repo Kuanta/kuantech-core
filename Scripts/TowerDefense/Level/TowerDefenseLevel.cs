@@ -150,7 +150,7 @@ namespace Kuantech.TowerDefense
         }
         public bool IsActorEnemy(Actor actor)
         {
-            return actor.FactionId > 0;
+            return actor.FactionHandler.GetFactionRelation(actor) == FactionHandler.FactionType.Enemy;
         }
 
         public void SpawnNextWaveElement()
@@ -306,7 +306,7 @@ namespace Kuantech.TowerDefense
         
         public void OnActorReachedEnd(Actor actor)
         {
-            if (actor.FactionId > 0)
+            if (actor.GetFactionId() > 0)
             {
                 ReceiveTowerDamage(1);
             }

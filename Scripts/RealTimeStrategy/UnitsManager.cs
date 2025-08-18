@@ -81,7 +81,7 @@ namespace Kuantech.RealTimeStrategy
         /// <param name="actor"></param>
         private bool AddActor(Actor actor)
         {
-            int factionId = actor.FactionId;
+            int factionId = actor.GetFactionId();
             if(_actorsByFaction == null)
                 _actorsByFaction = new Dictionary<int, HashSet<Actor>>();
             if (!_actorsByFaction.ContainsKey(factionId))
@@ -105,7 +105,7 @@ namespace Kuantech.RealTimeStrategy
         /// <param name="actor"></param>
         public void RemoveActor(Actor actor)
         {
-            int factionId = actor.FactionId;
+            int factionId = actor.GetFactionId();
             if (_actorsByFaction == null || !_actorsByFaction.ContainsKey(factionId))
                 return;
             if(SpawnedActors != null && SpawnedActors.Contains(actor))
@@ -116,7 +116,7 @@ namespace Kuantech.RealTimeStrategy
 
         private void UnregisterActor(Actor actor)
         {
-            int factionId = actor.FactionId;
+            int factionId = actor.GetFactionId();
             if (_actorsByFaction.ContainsKey(factionId) && _actorsByFaction[factionId].Contains(actor))
             {
                 _actorsByFaction[factionId].Remove(actor);
@@ -136,23 +136,41 @@ namespace Kuantech.RealTimeStrategy
         }
         
         /// <summary>
-        /// Gets all enemy actors
+        /// Returns actors by faction Ids
         /// </summary>
-        /// <param name="factionId"></param>
+        /// <param name="factionIds"></param>
         /// <returns></returns>
-        public HashSet<Actor> GetEnemyActors(int factionId)
+        public HashSet<Actor> GetActorsByFactions(List<int> factionIds)
         {
-            //For now, get all actors that are not in the faction
-            HashSet<Actor> enemyActors = new HashSet<Actor>();
-            foreach (var kvp in _actorsByFaction)
+            HashSet<Actor> actors = new HashSet<Actor>();
+            foreach (var factionId in factionIds)
             {
-                if (kvp.Key != factionId)
-                {
-                    enemyActors.UnionWith(kvp.Value);
-                }
+                if (_actorsByFaction == null || !_actorsByFaction.ContainsKey(factionId))
+                    continue;
+                actors.UnionWith(_actorsByFaction[factionId]);
             }
-            return enemyActors;
+
+            return actors;
         }
+        
+        // /// <summary>
+        // /// Gets all enemy actors
+        // /// </summary>
+        // /// <param name="factionId"></param>
+        // /// <returns></returns>
+        // public HashSet<Actor> GetEnemyActors(HashSet<int> enemyFactionIds)
+        // {
+        //     //For now, get all actors that are not in the faction
+        //     HashSet<Actor> enemyActors = new HashSet<Actor>();
+        //     foreach (var kvp in _actorsByFaction)
+        //     {
+        //         if (kvp.Key != factionId)
+        //         {
+        //             enemyActors.UnionWith(kvp.Value);
+        //         }
+        //     }
+        //     return enemyActors;
+        // }
         
         /// <summary>
         /// Clears all spawned actors. Spawned ac

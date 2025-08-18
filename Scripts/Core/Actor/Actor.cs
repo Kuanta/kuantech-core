@@ -23,8 +23,11 @@ namespace Kuantech.Core
     {
         [Header("Identifier")] 
         public string Id;
-        public int FactionId = 0; //Since faction Id is used frequently, it is stated in Actor class
         public int ActorRank = 0;
+            
+        [Header("Factions")]
+       // public int FactionId = 0; //Since faction Id is used frequently, it is stated in Actor class
+        public FactionHandler FactionHandler;
         
         [Header("Modules")]
         protected List<ActorModule> ActorModulesList;
@@ -447,12 +450,45 @@ namespace Kuantech.Core
         #endregion
 
         #region Factions
-
+        
+        /// <summary>
+        /// Sets the faction Id
+        /// </summary>
+        /// <param name="factionId"></param>
+        public void SetFactionId(int factionId)
+        {
+            if (FactionHandler == null)
+            {
+                Debug.LogWarning("Faction Handler is null");
+                FactionHandler = new FactionHandler();
+            }
+            FactionHandler.BelongingFaction = factionId;
+        }
+        
+        /// <summary>
+        /// Returns faction Id
+        /// </summary>
+        /// <returns></returns>
+        public int GetFactionId()
+        {
+            if (FactionHandler == null)
+            {
+                Debug.LogWarning("Faction Handler is null");
+                return 0;
+            }
+            return FactionHandler.BelongingFaction;
+        }
         public bool IsAlly(Actor otherActor)
         {
-            return FactionId == otherActor.FactionId;
+            FactionHandler.FactionType relationType = FactionHandler.GetFactionRelation(otherActor);
+            return relationType == FactionHandler.FactionType.Ally || relationType == FactionHandler.FactionType.Same;
         }
-
+        
+        public bool IsEnemy(Actor otherActor)
+        {
+            return FactionHandler.GetFactionRelation(otherActor) == FactionHandler.FactionType.Enemy;
+        }
+        
         #endregion
     }
 }

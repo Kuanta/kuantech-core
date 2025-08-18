@@ -90,7 +90,7 @@ namespace Kuantech.Core.Combat
 
             if (ShowDamageText)
             {
-                CombatManager.ShowDamageText(Actor.transform.position, reducedDamage, Actor.FactionId == 0); //todo: Fix Friendly check
+                CombatManager.ShowDamageText(Actor.transform.position, reducedDamage, Actor.GetFactionId() == 0); //todo: Fix Friendly check
             }
             
             UpdateHealthbar();
@@ -119,7 +119,7 @@ namespace Kuantech.Core.Combat
             
             if (ShowDamageText)
             {
-                CombatManager.ShowHealText(Actor.transform.position, heal, Actor.FactionId == 0); //todo: Fix Friendly check
+                CombatManager.ShowHealText(Actor.transform.position, heal, Actor.GetFactionId() == 0); //todo: Fix Friendly check
             }
             
             UpdateHealthbar();
@@ -157,7 +157,14 @@ namespace Kuantech.Core.Combat
         {
             return _statModule.GetResourceValue(HealthResourceAsset);
         }
-
+        
+        public float GetCurrenctPercentageHealth()
+        {
+            float currentHealth = GetCurrentHealth();
+            float maxHealth = GetMaxHealth();
+            return maxHealth > 0 ? currentHealth / maxHealth : 0f;
+        }
+        
         public float GetMaxHealth()
         {
             return _statModule.GetResourceMaxValue(HealthResourceAsset);

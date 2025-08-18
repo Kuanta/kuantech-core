@@ -10,7 +10,7 @@ namespace Kuantech.Core
         
         public override void OnActorCreated(ActorBlueprint blueprint, Actor actor)
         {
-            actor.FactionId = FactionId;
+            actor.SetFactionId(FactionId);
             CoinDropModule coinDropModule = actor.GetModule<CoinDropModule>();
             //Set drop currency
             if(coinDropModule != null)

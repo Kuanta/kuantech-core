@@ -335,7 +335,7 @@ namespace Kuantech.Core
                 (!targetActor.IsAlive())) return; //Don't attack actor with same faction
             
             //Check factions Ids
-            if (CastBy.FactionId == targetActor.FactionId)
+            if (CastBy.IsAlly(targetActor))
             {
                 return; //Don't damage actor of same faction
             }

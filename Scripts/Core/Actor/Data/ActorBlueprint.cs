@@ -67,7 +67,7 @@ namespace Kuantech.Core
             Actor actor = PoolManager.GetObjectFromPool(ActorPrefab.gameObject).GetComponent<Actor>();
             if (actor == null) return null;
             actor.Id = GetId();
-            actor.FactionId = FactionId;
+            actor.FactionHandler.BelongingFaction = FactionId;
 
             if (ProgressableDataAsset != null)
             {
