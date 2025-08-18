@@ -125,6 +125,7 @@ namespace Kuantech.Core.FX
             _attackEffect = null;
         }
         #endregion
+        
         public void OnActorVisualSet(ActorVisual actorVisual)
         {
             SetEffectPlayers();
@@ -137,12 +138,22 @@ namespace Kuantech.Core.FX
             }
         }
 
-        
+
+        private EffectPlaySettings GetEffectPlaySettings()
+        {
+            EffectPlaySettings settings = EffectPlaySettings.GetDefaultSettings();
+            if (Actor.VisualHandler.GetActorVisual() != null)
+            {
+                settings.EffectParent = Actor.VisualHandler.GetActorVisual().transform;
+            }
+
+            return settings;
+        }
         private void OnReceiveDamage(HitInfo hitInfo)
         {
             if (DamageReceiveEffect != null)
             {
-                DamageReceiveEffect.Play();
+                DamageReceiveEffect.Play(GetEffectPlaySettings());
             }
         }
 
@@ -150,7 +161,7 @@ namespace Kuantech.Core.FX
         {
             if (HealEffect != null)
             {
-                HealEffect.Play();
+                HealEffect.Play(GetEffectPlaySettings());
             }
         }
         private void OnDodge(object sender, EventArgs args)
