@@ -182,7 +182,7 @@ namespace Kuantech.Utils
             if (abs - Mathf.Floor(abs) == 0) roundToInteger = true; //If no value after decimal point, to integer
             if (roundToInteger)
             {
-                abs = (int) abs;
+                abs = Mathf.Ceil(abs);
                 numberString = abs.ToString(CultureInfo.InvariantCulture);
             }
             else

@@ -126,6 +126,15 @@ namespace Kuantech.Core.FX
         }
         #endregion
         
+        public override void OnActorStateChanged(ActorState oldState, ActorState newState)
+        {
+            base.OnActorStateChanged(oldState, newState);
+            if (newState == ActorState.Dead)
+            {
+                OnDeath();
+            }
+        }
+        
         public void OnActorVisualSet(ActorVisual actorVisual)
         {
             SetEffectPlayers();
@@ -142,7 +151,7 @@ namespace Kuantech.Core.FX
         private EffectPlaySettings GetEffectPlaySettings()
         {
             EffectPlaySettings settings = EffectPlaySettings.GetDefaultSettings();
-            if (Actor.VisualHandler.GetActorVisual() != null)
+            if (Actor.VisualHandler != null && Actor.VisualHandler.GetActorVisual() != null)
             {
                 settings.EffectParent = Actor.VisualHandler.GetActorVisual().transform;
             }
@@ -179,7 +188,7 @@ namespace Kuantech.Core.FX
             }
         }
         
-        private void OnDeath(object sender, EventArgs empty)
+        private void OnDeath()
         {
             if (DeathEffect != null)
             {

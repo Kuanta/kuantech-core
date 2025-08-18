@@ -282,7 +282,7 @@ namespace Kuantech.TowerDefense
             WaveData waveData = GetWaveDataForWave(waveIndex);
             return waveData.GetEnemyCount();
         }
-        
+
         public int GetMaxEnemyCount()
         {
             return GetMaxEnemyCountForWave(CurrentWaveIndex);
