@@ -119,7 +119,7 @@ namespace Kuantech.Core.Combat
             
             if (ShowDamageText)
             {
-                CombatManager.ShowDamageText(Actor.transform.position, heal, Actor.FactionId == 0); //todo: Fix Friendly check
+                CombatManager.ShowHealText(Actor.transform.position, heal, Actor.FactionId == 0); //todo: Fix Friendly check
             }
             
             UpdateHealthbar();
