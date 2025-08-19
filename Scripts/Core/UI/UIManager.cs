@@ -109,10 +109,10 @@ namespace Kuantech.Core.UI
             if (_menuStack.Count > 0 && _menuStack.Peek() == menu)
                 return;
 
-            if (!StaticMenusList.Contains(menu))
-            {
-                Debug.LogWarning("Trying to push a menu that's not in static set.");
-            }
+            // if (!StaticMenusList.Contains(menu))
+            // {
+            //     Debug.LogWarning("Trying to push a menu that's not in static set.");
+            // }
 
             if (menu.ClearStackOnOpen)
             {

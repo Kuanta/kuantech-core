@@ -499,7 +499,10 @@ namespace Kuantech.Utils
 
         protected virtual void PlayDroppedEffect()
         {
-            DropEffect.PlayEffectAtPosition(transform.position, Quaternion.identity);
+            if(gameObject.activeInHierarchy && DropEffect != null)
+            {
+                DropEffect.PlayEffectAtPosition(transform.position, Quaternion.identity);
+            }
         }
         
         /// <summary>

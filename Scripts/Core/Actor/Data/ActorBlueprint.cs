@@ -33,6 +33,31 @@ namespace Kuantech.Core
         
         private Dictionary<Type, ActorBlueprintComponent> _componentLookup;
 
+
+        public override string GetId()
+        {
+            if (ProgressableDataAsset != null) return ProgressableDataAsset.GetId();
+            return base.GetId();
+        }
+        
+        public override string GetName()
+        {
+            if (ProgressableDataAsset != null) return ProgressableDataAsset.GetName();
+            return base.GetName();
+        }
+        
+        public override string GetDescription()
+        {
+            if (ProgressableDataAsset != null) return ProgressableDataAsset.GetDescription();
+            return base.GetDescription();
+        }
+
+        public override Sprite GetIcon()
+        {
+            if (ProgressableDataAsset != null) return ProgressableDataAsset.GetIcon();
+            return base.GetIcon();
+        }
+        
         private void EnsureComponentLookupBuilt()
         {
             if (_componentLookup != null)

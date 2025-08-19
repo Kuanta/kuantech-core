@@ -21,11 +21,11 @@ namespace Kuantech.Midcore
             if (changeData.NewState == LevelState.Completed)
             {
                 EarnRewards();
-                SetRewardsUI(GetRewardsPanelFromCompletePanel());
+                SetRewardsUI(GetRewardsPanelFromCompletePanel(), Rewards);
             }else if (changeData.NewState == LevelState.Failed)
             {
                 EarnFailedRewards();
-                SetRewardsUI(GetRewardsPanelFromFailedPanel());
+                SetRewardsUI(GetRewardsPanelFromFailedPanel(), FailedRewards);
             }
         }
 
@@ -49,10 +49,10 @@ namespace Kuantech.Midcore
         /// Sets the rewards
         /// </summary>
         /// <param name="rewardsPanel"></param>
-        private void SetRewardsUI(RewardsPanel rewardsPanel)
+        private void SetRewardsUI(RewardsPanel rewardsPanel, List<Reward> rewards)
         {
             if (rewardsPanel == null) return;
-            rewardsPanel.SetRewards(Rewards);
+            rewardsPanel.SetRewards(rewards);
         }
 
         private RewardsPanel GetRewardsPanelFromCompletePanel()

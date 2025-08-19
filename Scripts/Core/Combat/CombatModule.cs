@@ -50,7 +50,14 @@ namespace Kuantech.Core
         public DamageInfo DamageInfo;
         public AttributeAsset AttributeToScaleDamage;
         public float AttributeScaleFactor = 0f; //How much the attribute value scales the damage, 1 means 1:1 scaling
+        
+        [Header("Splash Damage")]
+        public DamageInfo SplashDamage;
+        public AttributeAsset AttributeToScaleSplashDamage;
 
+        public float SplashRadius;
+        public AttributeAsset AttributeToScaleSplashRadius;
+        
         [Header("Critical")] 
         public float CriticalChance = 0;
         public float CriticalMultiplier = 1.5f;
@@ -62,6 +69,9 @@ namespace Kuantech.Core
         public bool ScaleAttackImplementationTimeWithAttackSpeed = true;
         public float AttackDuration;
         public bool Continious; //Continious will attack every 'attack time' during the attack
+
+        [Header("Attack Modifiers")] 
+        public List<StatusEffectAsset> StatusEffectsToApply;
         
         [Header("Movement Manupilation")]
         public float MovementSlow; //Factor between 0-1, movement speed while attacking will be MovementSpeed * (1-MovementSlow)
@@ -81,6 +91,8 @@ namespace Kuantech.Core
 
         [Header("FX")] 
         public EffectPlayer AttackFx = null;
+        public bool SetAttackFxPosition = true;
+        public bool SetAttackFxRotation = true;
 
         public EffectPlayer HitEffect = null;
         
@@ -148,7 +160,8 @@ namespace Kuantech.Core
         private ActionCastData _currentCastData;
         
         public HashSet<int> FactionFilter = new HashSet<int>(); //Faction filter for the attack, if empty, all actors are valid targets
-
+        
+        #region Lifecycle
         public override void OnModulesInitialized()
         {
             base.OnModulesInitialized();
@@ -158,11 +171,11 @@ namespace Kuantech.Core
             _targetManager = Actor.GetModule<TargetManager>();
             _slotsHandler = Actor.GetModule<ActorSlotsHandler>();
         }
-
+        
 
         private void Update()
         {
-            if (!_isAttacking) return;
+            if (!_isAttacking || AttackLock.IsLocked()) return;
             float elapsedTime = Time.time - _attackStartTime;
             AttackPattern currentPattern = GetCurrentAttackPattern();
 
@@ -184,6 +197,12 @@ namespace Kuantech.Core
                 OnAttackCompleted();
             }
         }
+
+        public override void Cleanup()
+        {
+            CancelAttack();
+        }
+        #endregion
 
         #region Target
         
@@ -393,9 +412,12 @@ namespace Kuantech.Core
             
             //Apply projectileproperties
             projectile.Damage = GetDamage();
+            projectile.SplashDamage = GetSplashDamage();
+            projectile.SplashRadius = GetSplashDamageRadius();
             projectile.Range = GetCurrentAttackPattern().Range;
             projectile.Knockback = GetCurrentAttackPattern().Knockback;
             projectile.KnockbackTime = GetCurrentAttackPattern().KnockbackTime;
+            
             
             if (currentTarget != null)
             {
@@ -427,6 +449,22 @@ namespace Kuantech.Core
                 KnockbackForce = GetCurrentAttackPattern().Knockback,
                 KnockbackDuration = GetCurrentAttackPattern().KnockbackTime
             };
+            
+            //Apply status effects
+            List<StatusEffectAsset> statusEffectDatas = GetCurrentAttackPattern().StatusEffectsToApply;
+            if (!statusEffectDatas.IsNullOrEmpty())
+            {
+                StatusEffectHandler seh = actor.GetModule<StatusEffectHandler>();
+                if (seh != null)
+                {
+                    foreach (var statusEffectData in statusEffectDatas)
+                    {
+                        StatusEffect statusEffect = statusEffectData.CreateStatusEffect();
+                        seh.AddStatusEffect(statusEffect);
+                    }
+                }
+            }
+            
             //Play hit effect
             EffectPlayer hitEffect = GetCurrentAttackPattern().HitEffect;
             if (hitEffect != null)
@@ -453,7 +491,10 @@ namespace Kuantech.Core
 
             criticalChance = Mathf.Clamp01(criticalChance);
             bool crit = UnityEngine.Random.Range(0f, 1f) < criticalChance;
-            if (crit) return Mathf.Max(1, criticalMultiplier);
+            if (crit)
+            {
+                return Mathf.Max(1, criticalMultiplier);
+            }
             return 1;
         }
         
@@ -476,11 +517,10 @@ namespace Kuantech.Core
         #endregion
 
         #region Attack Pattern Queries
-        
+
         public DamageInfo GetDamage()
         {
             float critMultiplier = GetCriticalMultiplier();
-            critMultiplier = Mathf.Max(1, critMultiplier); //Crit multiplier must be larger than 1
             AttackPattern attackPattern = GetCurrentAttackPattern();
             DamageInfo damageInfo = attackPattern.GetDamageInfo();
             damageInfo.IsCritical = critMultiplier > 1;
@@ -488,7 +528,21 @@ namespace Kuantech.Core
             damageInfo.DamageAmount += (statVariable * attackPattern.AttributeScaleFactor) * critMultiplier;
             return damageInfo;
         }
-        
+
+        public DamageInfo GetSplashDamage()
+        {
+            float critMultiplier = GetCriticalMultiplier();
+            AttackPattern attackPattern = GetCurrentAttackPattern();
+            float statVariable = _statModule.GetAttributeValue(attackPattern.AttributeToScaleSplashDamage);
+            DamageInfo damageInfo = attackPattern.SplashDamage;
+            damageInfo.DamageAmount += (statVariable * attackPattern.AttributeScaleFactor) * critMultiplier;
+            return damageInfo;
+        }
+
+        public float GetSplashDamageRadius()
+        {
+            return GetCurrentAttackPattern().SplashRadius;
+        }
         #endregion
 
         #region Attack Commands
@@ -519,6 +573,12 @@ namespace Kuantech.Core
 
             return true;
             //todo(networking): Notify clients
+        }
+
+        public void CancelAttack()
+        {
+            _isAttacking = false;
+            OnAttackCompleted();
         }
         
         /// <summary>
@@ -648,10 +708,7 @@ namespace Kuantech.Core
             {
                 _animationModule.PlayAnimation(currPattern.AttackAnimationData, timeMultiplier);
             }
-            else
-            {
-                Debug.LogWarning("CombatModule: AnimationModule is null, cannot set attack animation.");            
-            }
+  
             //todo(networking): Check server auth
 
             if (Actor.GetModule<RigidbodyMovementModule>())
@@ -700,6 +757,8 @@ namespace Kuantech.Core
             EffectPlayer attackEffect = GetCurrentAttackPattern().AttackFx;
             if (attackEffect == null) return;
             EffectPlaySettings playSettings = EffectPlaySettings.GetPlayAtPositionSettings(attackPosition, Quaternion.LookRotation(attackDirection));
+            playSettings.SetPosition = GetCurrentAttackPattern().SetAttackFxPosition;
+            playSettings.SetRotation = GetCurrentAttackPattern().SetAttackFxRotation;
             playSettings.Caster = Actor;
             attackEffect.PlayEffect(playSettings);
         }

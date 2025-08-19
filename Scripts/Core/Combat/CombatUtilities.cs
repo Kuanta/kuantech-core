@@ -50,31 +50,59 @@ namespace Kuantech.Core.Combat
         /// <param name="range"></param>
         /// <param name="angle"></param>
         /// <param name="layerMask"></param>
+        /// <param name="backOffset">Back offset to consider actors that are very close to center</param>
         /// <param name="factionFilter"></param>
         /// <returns></returns>
-        public static List<Actor> GetActorsInArc2D(Vector3 center, Vector3 direction, float range, float angle,
-            LayerMask layerMask, HashSet<int> factionFilter = null)
+        public static List<Actor> GetActorsInArc2D(
+            Vector2 center,
+            Vector2 direction,
+            float range,
+            float angle,
+            LayerMask layerMask,
+            HashSet<int> factionFilter = null,
+            float backOffset = 0.5f, 
+            float forwardGuard = 0f,
+            bool useClosestPoint = true)
         {
-            List<Actor> detectedActors = new List<Actor>();
-            Collider2D[] results = Physics2D.OverlapCircleAll(center, range, layerMask);
-            foreach (var result in results)
+            var detected = new List<Actor>();
+
+            // Yönü normalize et, boşsa default ver
+            var dir = direction.sqrMagnitude < 1e-6f ? Vector2.right : direction.normalized;
+
+            // Açı eşiği (yarım açı kosinüsü)
+            float cosHalf = Mathf.Cos(0.5f * angle * Mathf.Deg2Rad);
+            float rangeSqr = range * range;
+
+            // Açı testinin yapılacağı "apex"i biraz geriye taşı
+            Vector2 apex = center - dir * backOffset;
+
+            // Adayları kaçırmamak için arama yarıçapını biraz genişlet
+            var results = Physics2D.OverlapCircleAll(apex, range + backOffset, layerMask);
+
+            foreach (var col in results)
             {
-                if(result == null) continue;
-                if(!result.TryGetComponent(out Actor actor)) continue;
-                if(!actor.IsAlive()) continue;
-                int actorFaction = actor.GetFactionId();
-                if(!factionFilter.IsNullOrEmpty() && factionFilter.Contains(actorFaction)) continue;
-                
-                //Check angle
-                Vector3 toTarget = actor.transform.position - center;
-                float angleTo = Vector2.Angle(direction, toTarget);
-                if (angleTo <= angle * 0.5f)
-                {
-                    detectedActors.Add(actor);
-                }
+                if (!col || !col.TryGetComponent(out Actor actor)) continue;
+                if (!actor.IsAlive()) continue;
+                int f = actor.GetFactionId();
+                if (factionFilter != null && factionFilter.Contains(f)) continue;
+
+                // Test noktası: collider'ın merkezi yerine en yakın nokta daha güvenilir
+                Vector2 p = useClosestPoint ? col.ClosestPoint(center) : (Vector2)actor.transform.position;
+
+                // "Önde mi?" koruması (orijinal merkez referansıyla)
+                float proj = Vector2.Dot(p - center, dir);
+                if (proj < forwardGuard) continue;
+
+                // Açı/distance testi apex'e göre
+                Vector2 v = p - apex;
+                if (v.sqrMagnitude > rangeSqr) continue;
+
+                float dot = Vector2.Dot(dir, v.normalized); // cos(theta)
+                if (dot >= cosHalf)
+                    detected.Add(actor);
             }
 
-            return detectedActors;
+            return detected;
         }
 
 

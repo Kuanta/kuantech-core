@@ -958,6 +958,10 @@ namespace Kuantech.Puzzle
             GridTileBackground bgObj = GetBackground(coord);
             if (bgObj == null) return;
             bgObj.Highlight();
+            if (_highlightedTiles == null)
+            {
+                _highlightedTiles = new HashSet<GridTileBackground>();
+            }
             _highlightedTiles.Add(bgObj);
         }
         #endregion

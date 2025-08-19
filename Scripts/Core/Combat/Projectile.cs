@@ -191,6 +191,10 @@ namespace Kuantech.Core
                 Despawn();
                 return;
             }
+            //Act like targeted throwable. For actual throwable, see throwable class
+            float throwbleHeightAddition = GetThrowableHeightAddition();
+            _newPosition += _direction * Time.deltaTime * CurrentSpeed;
+            SetHeightScale(GetNormalizedHeight());
 
             if (_targeted)
             {
@@ -212,7 +216,7 @@ namespace Kuantech.Core
                     if (sqrMag > (ReachThreshold*ReachThreshold))
                     {
                         //moveDirection = dist.normalized;
-                        Quaternion targetRot = GetForwardRotation(diffToTarget);
+                        Quaternion targetRot = GetForwardRotation(_newPosition + WorldUp * throwbleHeightAddition - transform.position);
                         Quaternion currentRot = Quaternion.Slerp(transform.rotation, targetRot,
                             Time.deltaTime * TargetFollowSlerpFactor);
                         transform.rotation = currentRot;
@@ -221,11 +225,9 @@ namespace Kuantech.Core
                 }
             }
             
-            //Act like targeted throwable. For actual throwable, see throwable class
-            float throwbleHeightAddition = GetThrowableHeightAddition();
-            _newPosition += _direction * Time.deltaTime * CurrentSpeed;
-            SetHeightScale(GetNormalizedHeight());
             transform.position = _newPosition + WorldUp * throwbleHeightAddition;
+
+     
             CheckLifetime();
         }
         
