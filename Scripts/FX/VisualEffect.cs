@@ -36,6 +36,7 @@ namespace Kuantech.Core.FX
       
         public void Stop()
         {
+            if (ParticleEffect == null) return;
             ParticleEffect.Stop();
         }
 
