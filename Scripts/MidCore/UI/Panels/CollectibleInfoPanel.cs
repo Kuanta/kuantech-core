@@ -67,14 +67,17 @@ namespace Kuantech.Midcore.UI
             ActorBlueprint actorBlueprint = collectableAsset.ActorBlueprint;
             int collectableLevel = ProgressionManager.GetCurrentRank(collectableAsset);
 
-            StatsSetterComponent statsSetter =
-                actorBlueprint.GetActorBlueprintComponent<StatsSetterComponent>();
-            if (statsSetter == null) return;
-
-            foreach (var indicator in AttributeIndicators)
+            if (actorBlueprint != null)
             {
-                AttributeDefinition definition = statsSetter.GetAttributeDefinition(indicator.AttributeAsset);
-                indicator.SetAttribute(definition, collectableLevel);
+                StatsSetterComponent statsSetter =
+                    actorBlueprint.GetActorBlueprintComponent<StatsSetterComponent>();
+                if (statsSetter == null) return;
+
+                foreach (var indicator in AttributeIndicators)
+                {
+                    AttributeDefinition definition = statsSetter.GetAttributeDefinition(indicator.AttributeAsset);
+                    indicator.SetAttribute(definition, collectableLevel);
+                }
             }
         }
 
