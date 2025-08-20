@@ -89,6 +89,13 @@ namespace Kuantech.Midcore
             SetRank(PlayerLevelDataAsset, 0);
             SetDefaultProgressables();
         }
+        
+        public override void LoadState()
+        {
+            base.LoadState();
+            //Justin Case
+            SetDefaultProgressables();
+        }
 
         private void SetDefaultProgressables()
         {
