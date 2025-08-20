@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Kuantech.Core;
+using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Midcore
@@ -29,6 +30,16 @@ namespace Kuantech.Midcore
             {
                 deck.SetEquippedCollectibles();
             }
+        }
+
+        public override void LoadState()
+        {
+            base.LoadState();
+            if (Decks.IsNullOrEmpty()) return;
+            foreach (var deck in Decks)
+            {
+                deck.CheckDeckIntegrity();
+            }    
         }
         
         public override void SetDefaultState()
