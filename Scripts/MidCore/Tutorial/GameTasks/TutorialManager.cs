@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Kuantech.Midcore.Tutorial;
 using Kuantech.Utils;
+using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Kuantech.Core.MidCore
@@ -73,7 +74,8 @@ namespace Kuantech.Core.MidCore
             }
             tutorialManager.SaveState();
         }
-
+        
+        [Button("Start Tutorial")]
         public static void StartTutorial(Tutorial tutorial)
         {
             var tutorialManager = GetContext<TutorialManager>();

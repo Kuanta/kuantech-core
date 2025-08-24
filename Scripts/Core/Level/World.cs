@@ -23,7 +23,10 @@ namespace Kuantech.Core
         /// <returns></returns>
         public int GetPowerLevel(int worldIndex, int levelIndex)
         {
-            return worldIndex;
+            int rankUpPerWorld = ConfigManager.GetIntConfig("RankUpPerWorld");
+            if (rankUpPerWorld == 0) return worldIndex;
+            int powerLevel = Mathf.FloorToInt((float)worldIndex / rankUpPerWorld);
+            return powerLevel;
         }
     }
 }
