@@ -217,6 +217,28 @@ namespace Kuantech.Core.FX
         }
 
         #region Music
+
+        public void PlayMusicById(string musicId)
+        {
+            if (musicId.IsNullOrEmpty()) return;
+            StopMusic();
+            if (MusicPlayer == null) return;
+            Music music = GetMusicById(musicId);
+            PlayMusic(music);
+        }
+
+        public Music GetMusicById(string musicId)
+        {
+            foreach (var music in Musics)
+            {
+                if (string.Equals(music.Id, musicId))
+                {
+                    return music;
+                }
+            }
+
+            return null;
+        }
         public void PlayMusic(Music music)
         {
             if(music == null) return;
