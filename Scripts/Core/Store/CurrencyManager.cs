@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+using IngameDebugConsole;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Events;
@@ -100,7 +101,8 @@ namespace Kuantech.Core.Store
             if (currencyAsset == null) return;
             AddCurrency(currencyAsset.GetId(), amount);
         }
-
+        
+        [ConsoleMethod("addCurrency", "Adds Currency")]
         public static void AddCurrency(string currencyId, int amount)
         {
             int currAmount = GetCurrencyAmount(currencyId);
@@ -120,13 +122,13 @@ namespace Kuantech.Core.Store
             int currAmount = GetCurrencyAmount(currencyId);
             SetCurrency(currencyId,currAmount - amount);
         }
-        
+        [Button("Set Currency")]
         public static void SetCurrency(CurrencyAsset currencyAsset, int amount)
         {
             SetCurrency(currencyAsset.GetId(), amount);
         }
         
-        [Button("Set Currency")]
+        [ConsoleMethod("setCurrency", "Sets Currency")]
         public static void SetCurrency(string currencyId, int amount)
         {
             var ctx = GetContext<CurrencyManager>();
