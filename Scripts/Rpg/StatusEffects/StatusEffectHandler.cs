@@ -136,6 +136,12 @@ namespace Kuantech.Core.Combat
             }
         }
 
+        public override void Cleanup()
+        {
+            base.Cleanup();
+            ClearStatusEffects();
+        }
+
         public override void Reset()
         {
             base.Reset();

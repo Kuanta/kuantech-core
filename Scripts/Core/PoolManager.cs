@@ -58,6 +58,11 @@ namespace Kuantech.Core
             Pool.PoolObject(objToPool);
             handler?.Invoke();
         }
-
+        
+        private void LateUpdate()
+        {
+            if (Pool == null) return;
+            Pool.LateUpdate();
+        }
     }
 }

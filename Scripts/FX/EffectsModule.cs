@@ -33,7 +33,7 @@ namespace Kuantech.Core.FX
         public List<ShaderEffect> ExistingShaderEffects;
         public HashSet<ShaderEffect> ShaderEffects = new HashSet<ShaderEffect>();
         private Dictionary<string, ShaderEffect> _shaderEffectsById = new Dictionary<string, ShaderEffect>();
-        [NonSerialized] public HashSet<Effect> ActiveEffects = new HashSet<Effect>();
+        public List<Effect> ActiveEffects = new List<Effect>();
 
         private HealthcareModule _healthcareModule;
         private CombatModule _combatModule;
@@ -202,8 +202,17 @@ namespace Kuantech.Core.FX
             if(DeathEffect != null) DeathEffect.Stop();
             if(DamageReceiveEffect != null) DamageReceiveEffect.Stop();
             
+            //Clear active effects
+            ClearActiveEffects();
+            
         }
-        
+
+        public override void Cleanup()
+        {
+            base.Cleanup();
+            ClearActiveEffects();
+        }
+
         #region Fx Players
         public Effect GetExistingEffect(string effectId)
         {
@@ -326,7 +335,8 @@ namespace Kuantech.Core.FX
         /// <param name="effect"></param>
         public void AddActiveEffect(Effect effect)
         {
-            if (ActiveEffects == null) ActiveEffects = new HashSet<Effect>();
+            if (ActiveEffects == null) ActiveEffects = new List<Effect>();
+            effect.OwnerEffectModule = this;
             ActiveEffects.Add(effect);
         }
         
@@ -336,18 +346,28 @@ namespace Kuantech.Core.FX
         /// <param name="effect"></param>
         public void StopActiveEffect(Effect effect)
         {
-            if (ActiveEffects.IsNullOrEmpty() || !ActiveEffects.Contains(effect)) return;
-            ActiveEffects.Remove(effect);
+            RemoveActiveEffect(effect);
+
             effect.Stop();
         }
 
-        public void StopActiveEffects()
+        public void ClearActiveEffects()
         {
             foreach (var activeFx in ActiveEffects)
             {
-                activeFx.Stop();
+                activeFx.Cleanup();
             }
             ActiveEffects.Clear();
+        }
+
+        public void RemoveActiveEffect(Effect effect)
+        {
+            if (!ActiveEffects.IsNullOrEmpty() && ActiveEffects.Contains(effect) && effect.OwnerEffectModule == this)
+            {
+                effect.Stop();
+                ActiveEffects.Remove(effect);
+                effect.OwnerEffectModule = null;
+            }
         }
         #endregion
     }

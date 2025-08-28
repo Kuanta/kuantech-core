@@ -38,9 +38,41 @@ namespace Kuantech.Core.FX
 
         //If an effect is under the protection of effects library, it can't be destroyed with timed calls
         [NonSerialized] public bool SpawnedFromPool = false; //This is used to determine if the effect was spawned from the pool or not. 
-        [NonSerialized] public Actor OwnerActor; //Effects may be owned by actors
+        [NonSerialized] public EffectsModule OwnerEffectModule; //Effects may be owned by actors
         [NonSerialized] public EffectPlaySettings EffectPlaySettings; //This is used to store the settings used to play the effect
-        
+
+        private IEnumerator _stopRoutine = null;
+        private IEnumerator _despawnRoutine = null;
+
+        // App kapanırken OnDisable temizliği tetiklenmesin diye
+        private bool _isQuitting = false;
+        private void OnApplicationQuit() => _isQuitting = true;
+
+        /// <summary>
+        /// Parent yüzünden pasif olma durumunu yakala: 
+        /// gameObject.activeSelf == true && activeInHierarchy == false
+        /// Bu durumda coroutine’ler çalışmayacağı için cleanup’ı anında yap.
+        /// </summary>
+        private void OnDisable()
+        {
+            if (_isQuitting) return;
+
+            // Her durumda bu objeye bağlı tüm coroutineleri iptal et
+            if (_stopRoutine != null) { StopCoroutine(_stopRoutine); _stopRoutine = null; }
+            if (_despawnRoutine != null) { StopCoroutine(_despawnRoutine); _despawnRoutine = null; }
+
+            bool deactivatedByHierarchy = gameObject.activeSelf && !gameObject.activeInHierarchy;
+
+            if (deactivatedByHierarchy)
+            {
+                Stop(); 
+                if (SpawnedFromPool)
+                {
+                    _Despawn();
+                }
+            }
+        }
+
         /// <summary>
         /// To simply play
         /// </summary>
@@ -49,8 +81,6 @@ namespace Kuantech.Core.FX
             EffectPlaySettings.GetDefaultSettings();
             Play(EffectPlaySettings.GetDefaultSettings());
         }
-
-        private IEnumerator _stopRoutine = null;
         
         /// <summary>
         /// Plays the effect using the settings
@@ -84,12 +114,14 @@ namespace Kuantech.Core.FX
             {
                 StopCoroutine(_stopRoutine);
             }
-            //If duration is set, pool it
+
+            // Zamanlamaya göre otomatik durdurma/pool
             if (settings.DespawnAfterPlay && Duration > 0)
             {
                 _stopRoutine = PoolRoutine(Duration);
                 StartCoroutine(_stopRoutine);
-            }else if (Duration > 0)
+            }
+            else if (Duration > 0)
             {
                 _stopRoutine = StopRoutine();
                 StartCoroutine(_stopRoutine);
@@ -113,6 +145,7 @@ namespace Kuantech.Core.FX
             yield return new WaitForSeconds(Duration);
             Stop();
         }
+
         protected virtual void PlayEffects(EffectPlaySettings playSettings)
         {
             if(Sfx != null)
@@ -175,8 +208,6 @@ namespace Kuantech.Core.FX
             EffectsLibrary.SetLastPlayedTime(EffectId);
         }
 
-
-        
         #region Old Play Methods
         public void Play(Vector3 position, Quaternion rotation, float effectCooldown, bool local = false)
         {
@@ -208,7 +239,6 @@ namespace Kuantech.Core.FX
         {
             //Play(effectCooldown);
             StartCoroutine(PoolRoutine(Duration));
-            
         }
         
         public void PlayTimed(float duration, Vector3 position, Quaternion rotation, float effectCooldown, bool local = false)
@@ -232,13 +262,19 @@ namespace Kuantech.Core.FX
         
         public void Stop()
         {
+            // VFX
             if(Vfx!=null) Vfx.Stop();
+            
+            // SFX
             if (Sfx != null) Sfx.Stop(SfxFadeOutDuration);
+            
+            // Shader
             if (PlayedShaderEffect != null)
             {
                 PlayedShaderEffect.StopShaderEffect();
             }
             
+            // Behaviours
             if (!_effectBehaviours.IsNullOrEmpty())
             {
                 foreach (var behaviour in _effectBehaviours)
@@ -247,6 +283,7 @@ namespace Kuantech.Core.FX
                 }
             }
             
+            // Havuzdan geldiyse, normal akışta Despawn iste
             if (SpawnedFromPool)
             {
                 Despawn();
@@ -257,6 +294,7 @@ namespace Kuantech.Core.FX
         {
             if (Sfx != null) Sfx.SetPitch(pitch);
         }
+
         private IEnumerator PoolRoutine(float duration)
         {
             if(!SpawnedFromPool) yield break;
@@ -273,17 +311,23 @@ namespace Kuantech.Core.FX
             Stop();
         }
 
-        private IEnumerator _despawnRoutine;
-        public void Despawn()
+        public void Despawn(bool immediate=false)
         {
+            // Bu objeye bağlı tüm coroutineleri iptal et
+            if (_stopRoutine != null) { StopCoroutine(_stopRoutine); _stopRoutine = null; }
+            if (_despawnRoutine != null) { StopCoroutine(_despawnRoutine); _despawnRoutine = null; }
+
             if (SpawnedFromPool)
             {
-                if (_despawnRoutine != null)
+                // Hiyerarşi pasifken coroutine çalışamayacağından HER DURUMDA anında despawn et
+                if (immediate || !gameObject.activeInHierarchy)
                 {
-                    StartCoroutine(_despawnRoutine);
+                    _Despawn();
+                    return;
                 }
+
+                // Aksi halde gecikmeli despawn
                 _despawnRoutine = DespawnRoutine();
-                if (!gameObject.activeInHierarchy) return;
                 StartCoroutine(_despawnRoutine);
             }
         }
@@ -291,11 +335,22 @@ namespace Kuantech.Core.FX
         private IEnumerator DespawnRoutine()
         {
             yield return new WaitForSeconds(DespawnDelay);
-            _stopRoutine = null;
-            _despawnRoutine = null;
-            EffectsLibrary.GetContext<EffectsLibrary>().EffectsPool.PoolObject(gameObject);
+            _Despawn();
+        }
+
+        public void Cleanup()
+        {
+            Despawn(true);
         }
         
+        private void _Despawn()
+        {
+            _stopRoutine = null;
+            _despawnRoutine = null;
+            //Pool effects deferred cause they may be pooled during OnDisable
+            EffectsLibrary.GetContext<EffectsLibrary>().EffectsPool.PoolObjectDeferred(gameObject);
+        }
+
         public void OnSoundDequeued()
         {
             Sfx.Enqueued = false;

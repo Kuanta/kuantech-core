@@ -131,6 +131,13 @@ namespace Kuantech.Midcore
 
             return ctx.ProgressiblesHandler.GetProgressibleData(ctx.PlayerLevelDataAsset).GetRank();
         }
+
+        public static void SetPlayerLevel(int level)
+        {
+            var ctx = GetContext<ProgressionManager>();
+            SetRank(ctx.PlayerLevelDataAsset, level);
+            ctx.OnPlayerEarnedExperience?.Invoke(GetPlayerLevel());
+        }
         
         public static ProgressableDataAsset GetPlayerLevelDataAsset()
         {
@@ -362,7 +369,7 @@ namespace Kuantech.Midcore
             {
                 ctx.SaveState();
             }
-
+            ctx.CheckUnlockedCollectibles(false);
             return true;
         }
         

@@ -149,11 +149,47 @@ namespace Kuantech.Core.Combat
                 }
             }
         }
-
-
+        
+        /// <summary>
+        /// Damages actors in a box
+        /// </summary>
+        /// <param name="startPosition"></param>
+        /// <param name="direction"></param>
+        /// <param name="width"></param>
+        /// <param name="length"></param>
+        /// <param name="layerMask"></param>
+        /// <param name="hitInfo"></param>
+        /// <param name="factionFilter">Factions to damage</param>
+        /// <param name="damageHandler"></param>
         public static void HitActorsInBox2D(Vector3 startPosition, Vector3 direction, float width, float length, LayerMask layerMask,
             HitInfo hitInfo, HashSet<int> factionFilter = null, UnityAction<Actor> damageHandler = null)
         {
+            List<Actor> actors = GetActorsInBox2D(startPosition, direction, width, length, layerMask, factionFilter);
+            foreach (var actor in actors)
+            {
+                if (actor == null || !actor.IsAlive()) continue;
+                if (!factionFilter.IsNullOrEmpty() && !factionFilter.Contains(actor.GetFactionId())) continue;
+                
+                actor.OnHit(hitInfo);
+                // You can do something with hitInfo here if needed (like filling in contact point, etc.)
+                damageHandler?.Invoke(actor);
+            }
+        }
+        
+        /// <summary>
+        /// Gets actors in a 2d box
+        /// </summary>
+        /// <param name="startPosition"></param>
+        /// <param name="direction"></param>
+        /// <param name="width"></param>
+        /// <param name="length"></param>
+        /// <param name="layerMask"></param>
+        /// <param name="factionFilter">Factions to get</param>
+        /// <returns></returns>
+        public static List<Actor> GetActorsInBox2D(Vector3 startPosition, Vector3 direction, float width, float length,
+            LayerMask layerMask, HashSet<int> factionFilter = null)
+        {
+            List<Actor> actors = new List<Actor>();
             direction.z = 0;
             direction.Normalize();
             Vector3 boxCenter = startPosition + direction * length * 0.5f;
@@ -165,7 +201,7 @@ namespace Kuantech.Core.Combat
 
             // Perform the box overlap
             Collider2D[] hits = Physics2D.OverlapBoxAll(boxCenter, boxSize, angle, layerMask);
-
+            if (hits.IsNullOrEmpty()) return actors;
             foreach (var hit in hits)
             {
                 if (hit == null) continue;
@@ -173,12 +209,12 @@ namespace Kuantech.Core.Combat
                 if (!actor.IsAlive()) continue;
                 if (!factionFilter.IsNullOrEmpty() && !factionFilter.Contains(actor.GetFactionId())) continue;
                 
-                actor.OnHit(hitInfo);
-                // You can do something with hitInfo here if needed (like filling in contact point, etc.)
-                damageHandler?.Invoke(actor);
+                actors.Add(actor);
             }
-        }
 
+            return actors;
+        }
+        
         public static List<Actor> GetActorsInRaycast2D(Vector3 startPosition, Vector3 direction, float range,
             LayerMask layerMask, HashSet<int> factionFilter = null,
             UnityAction<Actor> damageHandler = null)

@@ -325,7 +325,14 @@ namespace Kuantech.Rpg.Skills
         {
             foreach (var effect in PlayedEffects)
             {
-                effect.Stop(); 
+                if (effect.OwnerEffectModule != null)
+                {
+                    effect.OwnerEffectModule.RemoveActiveEffect(effect);
+                }
+                else
+                {
+                    effect.Stop(); 
+                }
             }
         }
         #endregion
