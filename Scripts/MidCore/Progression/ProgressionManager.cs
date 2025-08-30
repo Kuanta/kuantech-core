@@ -136,6 +136,7 @@ namespace Kuantech.Midcore
         {
             var ctx = GetContext<ProgressionManager>();
             SetRank(ctx.PlayerLevelDataAsset, level);
+            ctx.CheckUnlockedCollectibles(false);
             ctx.OnPlayerEarnedExperience?.Invoke(GetPlayerLevel());
         }
         
@@ -369,7 +370,6 @@ namespace Kuantech.Midcore
             {
                 ctx.SaveState();
             }
-            ctx.CheckUnlockedCollectibles(false);
             return true;
         }
         
