@@ -96,7 +96,7 @@ namespace Kuantech.TowerDefense
         /// <returns></returns>
         public bool IsWaveCompleted()
         {
-            int remainingEnemies = GetRemainingEnemyCount();
+            int remainingEnemies = GetRemainingEnemyCount(EnemyFactionId);
             HashSet<Actor> enemyActors = _unitManager.GetActorsByFaction(EnemyFactionId);
             int aliveEnemies = enemyActors.Count;
             return remainingEnemies + aliveEnemies <= 0;
@@ -189,7 +189,8 @@ namespace Kuantech.TowerDefense
                 _waveQueue.Enqueue(new WaveEntry
                 {
                     SpawnableIndex = spawnableIndex,
-                    SpawnerIndex = -1 //-1 means random spawner
+                    SpawnerIndex = -1, //-1 means random spawner
+                    Amount = 1,
                 });
             }
 
@@ -335,10 +336,16 @@ namespace Kuantech.TowerDefense
             return null;
         }
         
-        public int GetRemainingEnemyCount()
+        public int GetRemainingEnemyCount(int enemyFactionId)
         {
-            if (Helpers.IsNullOrEmpty(_waveQueue)) return 0;
-            return _waveQueue.Count;
+            int currentlyAlive = _unitManager.GetSpawnedActorIdByFaction(enemyFactionId);
+            if (Helpers.IsNullOrEmpty(_waveQueue)) return currentlyAlive;
+            foreach (var entry in _waveQueue)
+            {
+                currentlyAlive += entry.Amount;
+            }
+
+            return currentlyAlive;
         }
 
         public int GetMaxEnemyCountForWave(int waveIndex)
