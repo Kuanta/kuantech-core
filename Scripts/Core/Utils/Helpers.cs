@@ -216,6 +216,44 @@ namespace Kuantech.Utils
             if (list.Count > index && index >= 0) return true;
             return false;
         }
+        
+        /// <summary>
+        /// Tries to split a text to float array
+        /// </summary>
+        /// <param name="arraytext"></param>
+        /// <param name="seperator"></param>
+        /// <param name="defaultVal"></param>
+        /// <returns></returns>
+        public static float[] SplitToFloats(string arraytext, string seperator, float defaultVal)
+        {
+            string[] splitText = arraytext.Split(seperator);
+            float[] floatArray = new float[splitText.Length];
+            for (int i = 0; i < splitText.Length; ++i)
+            {
+                floatArray[i] = splitText[i].TryParseFloat(defaultVal);
+            }
+
+            return floatArray;
+        }
+        
+        /// <summary>
+        /// Tries to split a text to int array
+        /// </summary>
+        /// <param name="arraytext"></param>
+        /// <param name="seperator"></param>
+        /// <param name="defaultVal"></param>
+        /// <returns></returns>
+        public static int[] SplitToInts(string arraytext, string seperator, int defaultVal)
+        {
+            string[] splitText = arraytext.Split(seperator);
+            int[] intArray = new int[splitText.Length];
+            for (int i = 0; i < splitText.Length; ++i)
+            {
+                intArray[i] = splitText[i].TryParseInt(defaultVal);
+            }
+
+            return intArray;
+        }
         #endregion
         
         public static Vector2 Get2D(this Vector3 vector3)

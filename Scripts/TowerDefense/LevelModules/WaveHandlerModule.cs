@@ -338,7 +338,7 @@ namespace Kuantech.TowerDefense
         
         public int GetRemainingEnemyCount(int enemyFactionId)
         {
-            int currentlyAlive = _unitManager.GetSpawnedActorIdByFaction(enemyFactionId);
+            int currentlyAlive = _unitManager.GetSpawnedActorCountByFaction(enemyFactionId);
             if (Helpers.IsNullOrEmpty(_waveQueue)) return currentlyAlive;
             foreach (var entry in _waveQueue)
             {

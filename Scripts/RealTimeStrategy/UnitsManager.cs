@@ -192,8 +192,8 @@ namespace Kuantech.RealTimeStrategy
         public bool CanSpawnActor(ActorBlueprint actorBlueprint)
         {
             int maxUnitCount = GetMaxActorCountByFaction(actorBlueprint.FactionId);
-            if (GetSpawnedActorIdByFaction(actorBlueprint.FactionId) >= maxUnitCount && maxUnitCount >= 0) return false;
-            int actorPerFaction = GetSpawnedActorIdByFaction(actorBlueprint.FactionId);
+            if (GetSpawnedActorCountByFaction(actorBlueprint.FactionId) >= maxUnitCount && maxUnitCount >= 0) return false;
+            int actorPerFaction = GetSpawnedActorCountByFaction(actorBlueprint.FactionId);
             int maxActorPerFaction = GetMaxActorCountByFaction(actorBlueprint.FactionId);
             if (maxActorPerFaction >= 0 && actorPerFaction >= maxActorPerFaction)
             {
@@ -210,13 +210,13 @@ namespace Kuantech.RealTimeStrategy
                 return _maxUnitsPerFaction[faction];
             }
 
-            return -1;
+            return -1; //Limitless
         }
         
-        public int GetSpawnedActorIdByFaction(int faction)
+        public int GetSpawnedActorCountByFaction(int faction)
         {
             if (_actorsByFaction == null || !_actorsByFaction.ContainsKey(faction))
-                return -1; //Limitless
+                return 0;
             return _actorsByFaction[faction].Count;    
         }
         
