@@ -133,6 +133,12 @@ namespace Kuantech.Core
         /// <returns></returns>
         public Vector3 GetTargetVector()
         {
+            //If target manager has a target...
+            if (ParentActor != null && ParentActor.GetModule<TargetManager>() != null)
+            {
+                Actor target = ParentActor.GetModule<TargetManager>().CurrentTarget;
+                if (target != null) TargetedObject = target.transform;
+            }
             if (TargetedObject != null)
             {
                 return (TargetedObject.position - ParentActor.transform.position).normalized;
@@ -175,6 +181,8 @@ namespace Kuantech.Core
         {
             MovementVector = Vector3.zero;
             ForceMoveVector = Vector3.zero;
+            TargetVector = Vector3.zero;
+            TargetedObject = null;
         }
     }
 }

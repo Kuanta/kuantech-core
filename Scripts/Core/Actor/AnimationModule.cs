@@ -72,9 +72,9 @@ namespace Kuantech.Core
                 OnActorVisualChanged(visualHandler.CurrentActorVisual);
             }
         }
-        private void Update()
+        public override void ModuleUpdate()
         {
-            if (GameManager.Instance.GameIsPaused || Animator == null) return;
+            if (GameManager.Instance.GameIsPaused || Animator == null || Actor == null) return;
             
             //Update from Motion Vectors Handler
             if (Actor.MotionVectorsHandler != null)

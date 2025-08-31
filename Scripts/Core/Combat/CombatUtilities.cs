@@ -35,7 +35,7 @@ namespace Kuantech.Core.Combat
             {
                 Actor actor = hit.GetComponentInParent<Actor>();
                 if (actor == null) continue;
-                if(factionFilter != null && factionFilter.Contains(actor.GetFactionId())) continue;
+                if(factionFilter != null && !factionFilter.Contains(actor.GetFactionId())) continue;
                 actors.Add(actor);
             }
 
@@ -84,7 +84,7 @@ namespace Kuantech.Core.Combat
                 if (!col || !col.TryGetComponent(out Actor actor)) continue;
                 if (!actor.IsAlive()) continue;
                 int f = actor.GetFactionId();
-                if (factionFilter != null && factionFilter.Contains(f)) continue;
+                if (factionFilter != null && !factionFilter.IsNullOrEmpty() && !factionFilter.Contains(f)) continue;
 
                 // Test noktası: collider'ın merkezi yerine en yakın nokta daha güvenilir
                 Vector2 p = useClosestPoint ? col.ClosestPoint(center) : (Vector2)actor.transform.position;
@@ -116,7 +116,7 @@ namespace Kuantech.Core.Combat
                 if(!result.TryGetComponent(out Actor actor)) continue;
                 if(!actor.IsAlive()) continue;
                 int actorFaction = actor.GetFactionId();
-                if(!factionFilter.IsNullOrEmpty() && !factionFilter.Contains(actorFaction)) continue;
+                if(factionFilter != null && !factionFilter.IsNullOrEmpty() && !factionFilter.Contains(actorFaction)) continue;
                 actor.OnHit(hitInfo);
                 if (damageHandler != null)
                 {
@@ -134,7 +134,7 @@ namespace Kuantech.Core.Combat
                 if(!result.TryGetComponent(out Actor actor)) continue;
                 if(!actor.IsAlive()) continue;
                 int actorFaction = actor.GetFactionId();
-                if(!factionFilter.IsNullOrEmpty() && !factionFilter.Contains(actorFaction)) continue;
+                if(factionFilter != null && !factionFilter.IsNullOrEmpty() && !factionFilter.Contains(actorFaction)) continue;
                 
                 //Check angle
                 Vector3 toTarget = actor.transform.position - center;
@@ -168,7 +168,7 @@ namespace Kuantech.Core.Combat
             foreach (var actor in actors)
             {
                 if (actor == null || !actor.IsAlive()) continue;
-                if (!factionFilter.IsNullOrEmpty() && !factionFilter.Contains(actor.GetFactionId())) continue;
+                if (factionFilter != null && !factionFilter.IsNullOrEmpty() && !factionFilter.Contains(actor.GetFactionId())) continue;
                 
                 actor.OnHit(hitInfo);
                 // You can do something with hitInfo here if needed (like filling in contact point, etc.)
@@ -207,7 +207,7 @@ namespace Kuantech.Core.Combat
                 if (hit == null) continue;
                 if (!hit.TryGetComponent(out Actor actor)) continue;
                 if (!actor.IsAlive()) continue;
-                if (!factionFilter.IsNullOrEmpty() && !factionFilter.Contains(actor.GetFactionId())) continue;
+                if (factionFilter != null && !factionFilter.IsNullOrEmpty() && !factionFilter.Contains(actor.GetFactionId())) continue;
                 
                 actors.Add(actor);
             }
@@ -227,7 +227,7 @@ namespace Kuantech.Core.Combat
                 if (hit.collider == null) continue;
                 if (!hit.collider.TryGetComponent(out Actor actor)) continue;
                 if (!actor.IsAlive()) continue;
-                if (!factionFilter.IsNullOrEmpty() && !factionFilter.Contains(actor.GetFactionId())) continue;
+                if (factionFilter != null && !factionFilter.IsNullOrEmpty() && !factionFilter.Contains(actor.GetFactionId())) continue;
                 actors.Add(actor);
             }
 
@@ -245,7 +245,7 @@ namespace Kuantech.Core.Combat
                 if (hit.collider == null) continue;
                 if (!hit.collider.TryGetComponent(out Actor actor)) continue;
                 if (!actor.IsAlive()) continue;
-                if (!factionFilter.IsNullOrEmpty() && !factionFilter.Contains(actor.GetFactionId())) continue;
+                if (factionFilter != null && !factionFilter.IsNullOrEmpty() && !factionFilter.Contains(actor.GetFactionId())) continue;
 
                 actor.OnHit(hitInfo);
                 damageHandler?.Invoke(actor);
