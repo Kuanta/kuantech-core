@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Kuantech.Utils;
 using UnityEngine;
@@ -52,6 +53,17 @@ namespace Kuantech.Core.FX
             if(AudioLibrary != null) AudioLibrary.Initialize();
         }
         
+        /// <summary>
+        /// Call late update for pool
+        /// </summary>
+        private void LateUpdate()
+        {
+            if (EffectsPool != null)
+            {
+                EffectsPool.LateUpdate();
+            }
+        }
+
         public static Effect PlayEffect(string EffectId, EffectPlaySettings settings)
         {
             EffectsLibrary context = GetContext<EffectsLibrary>();

@@ -24,11 +24,12 @@ namespace Kuantech.Core
             _poolSizeLevels = new Dictionary<GameObject, int>();
         }
         
-        private readonly Queue<GameObject> _deferredPoolQueue = new Queue<GameObject>();
+        private Queue<GameObject> _deferredPoolQueue = new Queue<GameObject>();
 
         public void PoolObjectDeferred(GameObject go)
         {
             if (go == null) return;
+            if(_deferredPoolQueue == null) _deferredPoolQueue = new Queue<GameObject>();
             _deferredPoolQueue.Enqueue(go);
         }
 
