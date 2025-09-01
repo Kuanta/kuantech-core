@@ -538,10 +538,19 @@ namespace Kuantech.Core
             damageInfo.DamageAmount += (statVariable * attackPattern.AttributeScaleFactor) * critMultiplier;
             return damageInfo;
         }
-
+        
+        /// <summary>
+        /// Returns splash damage radius
+        /// </summary>
+        /// <returns></returns>
         public float GetSplashDamageRadius()
         {
-            return GetCurrentAttackPattern().SplashRadius;
+            AttackPattern attackPattern = GetCurrentAttackPattern();
+            if (attackPattern.AttributeToScaleSplashRadius == null)
+            {
+                return GetCurrentAttackPattern().SplashRadius;
+            }
+            return _statModule.GetAttributeValue(attackPattern.AttributeToScaleSplashRadius);
         }
         #endregion
 
