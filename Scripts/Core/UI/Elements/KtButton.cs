@@ -7,6 +7,7 @@ namespace Kuantech.Core.UI
     {
         public UnityAction<KtButton> OnPreButtonClicked; //Before calling actions
         public UnityAction<KtButton> OnPostButtonClicked; //After calling actions
+        
         public interface IUIButtonAction
         {
             void OnClick();

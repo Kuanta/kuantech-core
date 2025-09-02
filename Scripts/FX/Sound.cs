@@ -34,6 +34,9 @@ namespace Kuantech.Core.FX
         public List<AudioClip> ComboSfxCollection;
 
         [Header("Fire Rate")] public float FireRate = 0;
+
+        [Header("Volumd")] 
+        public float Volume = 1;
         
         [Header("Pitch Adjustments")]
         public float BasePitch = 1f;
@@ -73,13 +76,20 @@ namespace Kuantech.Core.FX
                 EffectsLibrary.PlayAudio(AudioTag);
                 return;
             }
+            
 
             if (!SfxCollection.IsNullOrEmpty())
             {
                 AudioSource = SfxCollection.GetRandomElement();
             }
 
-            if (AudioSource == null) return;
+            if (AudioSource == null)
+            {
+                Debug.Log($"Audio source is null for {gameObject.name}");
+                return;
+            }
+            
+            AudioSource.volume = Volume;
 
             if (FireRate > 0f)
             {
@@ -171,14 +181,16 @@ namespace Kuantech.Core.FX
 
         public void Stop(float fadeOutDuraiton=0f)
         {
-            //todo(sfx): Implement fadeout
             StopFiring();
             if(AudioSource == null || _fadeOutRoutine != null) return;
-            if (fadeOutDuraiton > 0)
+            if (gameObject.activeInHierarchy)
             {
-                _fadeOutRoutine = FadeOutCoroutine(AudioSource, fadeOutDuraiton);
-                StartCoroutine(_fadeOutRoutine);
-                return;
+                if (fadeOutDuraiton > 0)
+                {
+                    _fadeOutRoutine = FadeOutCoroutine(AudioSource, fadeOutDuraiton);
+                    StartCoroutine(_fadeOutRoutine);
+                    return;
+                }
             }
             
             //No fade out, just play
@@ -194,7 +206,7 @@ namespace Kuantech.Core.FX
         #region FadeInOut
         private IEnumerator FadeOutCoroutine(AudioSource audioSource, float fadeOutSecs)
         {
-            float startVolume = audioSource.volume;
+            float startVolume = Volume;
 
             while (audioSource.volume > 0)
             {
@@ -203,7 +215,7 @@ namespace Kuantech.Core.FX
             }
 
             audioSource.Stop();
-            audioSource.volume = startVolume; //Set the volume back to start volume so that in next play sequence its not quiet
+            audioSource.volume = Volume; //Set the volume back to start volume so that in next play sequence its not quiet
         }
 
         #endregion

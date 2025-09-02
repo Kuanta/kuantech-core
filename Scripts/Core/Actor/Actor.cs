@@ -191,8 +191,8 @@ namespace Kuantech.Core
         private IEnumerator _despawnCoroutine;
         private IEnumerator _DespawnRoutine(float delay)
         {
-            yield return new WaitForSeconds(delay);
             Cleanup();
+            yield return new WaitForSeconds(delay);
             ChangeActorState(ActorState.Despawned);
             OnDespawnedEvent?.Invoke(this);
             if (VisualHandler != null)

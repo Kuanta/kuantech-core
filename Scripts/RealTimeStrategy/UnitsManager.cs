@@ -21,8 +21,6 @@ namespace Kuantech.RealTimeStrategy
     {
         [Header("Unit Counts")] 
         public List<MaxUnitPerFactionEntry> MaxUnitsPerFaction;
-        public int MaxUnitCount = 50;
-
         private Dictionary<int, HashSet<Actor>> _actorsByFaction;
         private Dictionary<int, int> _maxUnitsPerFaction;
         public HashSet<Actor> SpawnedActors = new HashSet<Actor>();
@@ -57,7 +55,6 @@ namespace Kuantech.RealTimeStrategy
             if (spawned == null) return null;
             return spawned;
         }
-
 
         public int GetSpawnedActorCount()
         {
@@ -194,8 +191,9 @@ namespace Kuantech.RealTimeStrategy
         
         public bool CanSpawnActor(ActorBlueprint actorBlueprint)
         {
-            if (GetSpawnedActorCount() >= MaxUnitCount && MaxUnitCount >= 0) return false;
-            int actorPerFaction = GetSpawnedActorIdByFaction(actorBlueprint.FactionId);
+            int maxUnitCount = GetMaxActorCountByFaction(actorBlueprint.FactionId);
+            if (GetSpawnedActorCountByFaction(actorBlueprint.FactionId) >= maxUnitCount && maxUnitCount >= 0) return false;
+            int actorPerFaction = GetSpawnedActorCountByFaction(actorBlueprint.FactionId);
             int maxActorPerFaction = GetMaxActorCountByFaction(actorBlueprint.FactionId);
             if (maxActorPerFaction >= 0 && actorPerFaction >= maxActorPerFaction)
             {
@@ -204,7 +202,7 @@ namespace Kuantech.RealTimeStrategy
 
             return true;
         }
-        
+
         public int GetMaxActorCountByFaction(int faction)
         {
             if (_maxUnitsPerFaction.ContainsKey(faction))
@@ -212,13 +210,13 @@ namespace Kuantech.RealTimeStrategy
                 return _maxUnitsPerFaction[faction];
             }
 
-            return -1;
+            return -1; //Limitless
         }
         
-        public int GetSpawnedActorIdByFaction(int faction)
+        public int GetSpawnedActorCountByFaction(int faction)
         {
             if (_actorsByFaction == null || !_actorsByFaction.ContainsKey(faction))
-                return -1; //Limitless
+                return 0;
             return _actorsByFaction[faction].Count;    
         }
         

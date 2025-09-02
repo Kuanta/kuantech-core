@@ -24,10 +24,29 @@ namespace Kuantech.Core
             _poolSizeLevels = new Dictionary<GameObject, int>();
         }
         
-        /// <summary>
-        /// Pools an object if it has poolable component. Destroys it otherwise.
-        /// </summary>
-        /// <param name="objectToPool">Object to be pooled</param>
+        private Queue<GameObject> _deferredPoolQueue = new Queue<GameObject>();
+
+        public void PoolObjectDeferred(GameObject go)
+        {
+            if (go == null) return;
+            if(_deferredPoolQueue == null) _deferredPoolQueue = new Queue<GameObject>();
+            _deferredPoolQueue.Enqueue(go);
+        }
+
+        public void LateUpdate()
+        {
+            // Pool objects at late update
+            while (_deferredPoolQueue.Count > 0)
+            {
+                var go = _deferredPoolQueue.Dequeue();
+                
+                if (go != null)
+                {
+                    PoolObject(go);
+                }
+            }
+        }
+
         public void PoolObject(GameObject objectToPool)
         {
             if (objectToPool == null) return;
@@ -40,22 +59,24 @@ namespace Kuantech.Core
 
             GameObject key = poolable.CorrespondingPrefab;
             if (objectToPool == null) return;
-        
-            if (!_pool.ContainsKey(key)) //This should never be the case
+
+            if (!_pool.ContainsKey(key))
             {
                 Debug.LogWarning($"Prefab {objectToPool.name} doesn't have a field in the pool");
                 UnityEngine.Object.Destroy(objectToPool);
                 return;
             }
-            
+
             if (_pool[key].Count >= _size)
             {
-                UnityEngine.Object.Destroy(objectToPool); // Pool is full, no need to store anymore
+                UnityEngine.Object.Destroy(objectToPool);
             }
             else
             {
-                objectToPool.SetActive(false);
+                // Sıra önemi çok fark etmiyor ama genelde önce parent’ı alıp sonra SetActive(false) yapmak okunaklıdır
                 objectToPool.transform.SetParent(_poolParent, false);
+                objectToPool.SetActive(false);
+
                 poolable.InUse = false;
                 _pool[key].Enqueue(objectToPool);
             }

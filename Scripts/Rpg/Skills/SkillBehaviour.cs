@@ -281,7 +281,17 @@ namespace Kuantech.Rpg.Skills
         public Effect PlayEffectAtActorSlot(Transform actorSlot, EffectPlayer effectPlayer)
         {
             if (effectPlayer.IsNull()) return null;
-            EffectPlaySettings playSettings = GetEffectPlaySettings(FxPlayData.SkillBehaviourFxPlayType.AtCaster);
+            Vector3 effectDir = CurrentSkillCastData.CastDirection;
+            Quaternion playRot = Quaternion.identity;
+            if (effectDir.sqrMagnitude >= 0.001f)
+            {
+                playRot = Quaternion.LookRotation(effectDir);
+            }
+            
+            //Local rot compared to actorSLot
+            Quaternion localRot = Quaternion.Inverse(actorSlot.rotation) * playRot;
+            EffectPlaySettings playSettings = EffectPlaySettings.GetPlayAtObjectSettings(actorSlot, Vector3.zero, localRot);
+
             playSettings.Caster = ParentSkill.ParentSpellBook.Actor;
             return effectPlayer.PlayEffect(playSettings);
         }
@@ -325,7 +335,14 @@ namespace Kuantech.Rpg.Skills
         {
             foreach (var effect in PlayedEffects)
             {
-                effect.Stop(); 
+                if (effect.OwnerEffectModule != null)
+                {
+                    effect.OwnerEffectModule.RemoveActiveEffect(effect);
+                }
+                else
+                {
+                    effect.Stop(); 
+                }
             }
         }
         #endregion

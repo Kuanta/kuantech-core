@@ -3,6 +3,7 @@ using Kuantech.Core.Combat;
 using Kuantech.Core.FX;
 using Kuantech.Rpg.Inventory;
 using Kuantech.Utils;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Serialization;
@@ -99,6 +100,9 @@ namespace Kuantech.Core
         /// <param name="riseHeight">To act as pseudo throwable. Projectile will rise to this height and falls down in a sinudoidal fasion.</param>
         public virtual void Shoot(Actor castBy, Weapon shotFrom, Vector3 shootPosition, Vector3 shootDirection, Transform target = null, float relativeSpeed = 0.0f)
         {
+            //Set enemy factions
+            FactionFilter = castBy.FactionHandler.GetEnemyFactions().ToHashSet();
+
             //Set pos and rot
             Reset();
             _direction = CancelUpComponent(shootDirection).normalized;
@@ -392,6 +396,7 @@ namespace Kuantech.Core
         
         protected virtual void Impact(GameObject impacted)
         {
+            if (DestroyOnImpact && Despawned) return;
             Actor target = impacted.GetComponent<Actor>();
             GameObject hitter = CastBy != null ? CastBy.gameObject : null;
             if (target != null)

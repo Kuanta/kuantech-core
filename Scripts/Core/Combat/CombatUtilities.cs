@@ -35,7 +35,7 @@ namespace Kuantech.Core.Combat
             {
                 Actor actor = hit.GetComponentInParent<Actor>();
                 if (actor == null) continue;
-                if(factionFilter != null && factionFilter.Contains(actor.GetFactionId())) continue;
+                if(factionFilter != null && !factionFilter.Contains(actor.GetFactionId())) continue;
                 actors.Add(actor);
             }
 
@@ -84,7 +84,7 @@ namespace Kuantech.Core.Combat
                 if (!col || !col.TryGetComponent(out Actor actor)) continue;
                 if (!actor.IsAlive()) continue;
                 int f = actor.GetFactionId();
-                if (factionFilter != null && factionFilter.Contains(f)) continue;
+                if (factionFilter != null && !factionFilter.IsNullOrEmpty() && !factionFilter.Contains(f)) continue;
 
                 // Test noktası: collider'ın merkezi yerine en yakın nokta daha güvenilir
                 Vector2 p = useClosestPoint ? col.ClosestPoint(center) : (Vector2)actor.transform.position;
@@ -116,7 +116,7 @@ namespace Kuantech.Core.Combat
                 if(!result.TryGetComponent(out Actor actor)) continue;
                 if(!actor.IsAlive()) continue;
                 int actorFaction = actor.GetFactionId();
-                if(!factionFilter.IsNullOrEmpty() && !factionFilter.Contains(actorFaction)) continue;
+                if(factionFilter != null && !factionFilter.IsNullOrEmpty() && !factionFilter.Contains(actorFaction)) continue;
                 actor.OnHit(hitInfo);
                 if (damageHandler != null)
                 {
@@ -134,7 +134,7 @@ namespace Kuantech.Core.Combat
                 if(!result.TryGetComponent(out Actor actor)) continue;
                 if(!actor.IsAlive()) continue;
                 int actorFaction = actor.GetFactionId();
-                if(!factionFilter.IsNullOrEmpty() && !factionFilter.Contains(actorFaction)) continue;
+                if(factionFilter != null && !factionFilter.IsNullOrEmpty() && !factionFilter.Contains(actorFaction)) continue;
                 
                 //Check angle
                 Vector3 toTarget = actor.transform.position - center;
@@ -149,11 +149,47 @@ namespace Kuantech.Core.Combat
                 }
             }
         }
-
-
+        
+        /// <summary>
+        /// Damages actors in a box
+        /// </summary>
+        /// <param name="startPosition"></param>
+        /// <param name="direction"></param>
+        /// <param name="width"></param>
+        /// <param name="length"></param>
+        /// <param name="layerMask"></param>
+        /// <param name="hitInfo"></param>
+        /// <param name="factionFilter">Factions to damage</param>
+        /// <param name="damageHandler"></param>
         public static void HitActorsInBox2D(Vector3 startPosition, Vector3 direction, float width, float length, LayerMask layerMask,
             HitInfo hitInfo, HashSet<int> factionFilter = null, UnityAction<Actor> damageHandler = null)
         {
+            List<Actor> actors = GetActorsInBox2D(startPosition, direction, width, length, layerMask, factionFilter);
+            foreach (var actor in actors)
+            {
+                if (actor == null || !actor.IsAlive()) continue;
+                if (factionFilter != null && !factionFilter.IsNullOrEmpty() && !factionFilter.Contains(actor.GetFactionId())) continue;
+                
+                actor.OnHit(hitInfo);
+                // You can do something with hitInfo here if needed (like filling in contact point, etc.)
+                damageHandler?.Invoke(actor);
+            }
+        }
+        
+        /// <summary>
+        /// Gets actors in a 2d box
+        /// </summary>
+        /// <param name="startPosition"></param>
+        /// <param name="direction"></param>
+        /// <param name="width"></param>
+        /// <param name="length"></param>
+        /// <param name="layerMask"></param>
+        /// <param name="factionFilter">Factions to get</param>
+        /// <returns></returns>
+        public static List<Actor> GetActorsInBox2D(Vector3 startPosition, Vector3 direction, float width, float length,
+            LayerMask layerMask, HashSet<int> factionFilter = null)
+        {
+            List<Actor> actors = new List<Actor>();
             direction.z = 0;
             direction.Normalize();
             Vector3 boxCenter = startPosition + direction * length * 0.5f;
@@ -165,20 +201,20 @@ namespace Kuantech.Core.Combat
 
             // Perform the box overlap
             Collider2D[] hits = Physics2D.OverlapBoxAll(boxCenter, boxSize, angle, layerMask);
-
+            if (hits.IsNullOrEmpty()) return actors;
             foreach (var hit in hits)
             {
                 if (hit == null) continue;
                 if (!hit.TryGetComponent(out Actor actor)) continue;
                 if (!actor.IsAlive()) continue;
-                if (!factionFilter.IsNullOrEmpty() && !factionFilter.Contains(actor.GetFactionId())) continue;
+                if (factionFilter != null && !factionFilter.IsNullOrEmpty() && !factionFilter.Contains(actor.GetFactionId())) continue;
                 
-                actor.OnHit(hitInfo);
-                // You can do something with hitInfo here if needed (like filling in contact point, etc.)
-                damageHandler?.Invoke(actor);
+                actors.Add(actor);
             }
-        }
 
+            return actors;
+        }
+        
         public static List<Actor> GetActorsInRaycast2D(Vector3 startPosition, Vector3 direction, float range,
             LayerMask layerMask, HashSet<int> factionFilter = null,
             UnityAction<Actor> damageHandler = null)
@@ -191,7 +227,7 @@ namespace Kuantech.Core.Combat
                 if (hit.collider == null) continue;
                 if (!hit.collider.TryGetComponent(out Actor actor)) continue;
                 if (!actor.IsAlive()) continue;
-                if (!factionFilter.IsNullOrEmpty() && !factionFilter.Contains(actor.GetFactionId())) continue;
+                if (factionFilter != null && !factionFilter.IsNullOrEmpty() && !factionFilter.Contains(actor.GetFactionId())) continue;
                 actors.Add(actor);
             }
 
@@ -209,7 +245,7 @@ namespace Kuantech.Core.Combat
                 if (hit.collider == null) continue;
                 if (!hit.collider.TryGetComponent(out Actor actor)) continue;
                 if (!actor.IsAlive()) continue;
-                if (!factionFilter.IsNullOrEmpty() && !factionFilter.Contains(actor.GetFactionId())) continue;
+                if (factionFilter != null && !factionFilter.IsNullOrEmpty() && !factionFilter.Contains(actor.GetFactionId())) continue;
 
                 actor.OnHit(hitInfo);
                 damageHandler?.Invoke(actor);

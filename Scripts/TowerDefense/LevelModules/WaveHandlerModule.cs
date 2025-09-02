@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using DTT.Utils.Extensions;
 using Kuantech.Core;
 using Kuantech.Core.Utils;
 using Kuantech.RealTimeStrategy;
@@ -31,6 +32,8 @@ namespace Kuantech.TowerDefense
         private Queue<WaveEntry> _waveQueue;
         private float _lastSpawnTime;
         
+        private Queue<ActorSummonData> _pendingSummons = new Queue<ActorSummonData>();
+        
         //Events
         public UnityAction<Actor> OnEnemySpawned;
         public UnityAction OnWaveCompleted;
@@ -38,7 +41,7 @@ namespace Kuantech.TowerDefense
         public override void Initialize()
         {
             base.Initialize();
-            if (ActorSummoners.IsNullOrEmpty())
+            if (Helpers.IsNullOrEmpty(ActorSummoners))
             {
                 Debug.LogError("No Actor Summoners assigned to WaveHandlerModule!");
             }
@@ -46,7 +49,7 @@ namespace Kuantech.TowerDefense
             {
                 Debug.LogError("No Spawnables Collection assigned to WaveHandlerModule!");
             }
-            if (WaveDatas.IsNullOrEmpty())
+            if (Helpers.IsNullOrEmpty(WaveDatas))
             {
                 Debug.LogError("No Wave Data assigned to WaveHandlerModule!");
             }
@@ -63,6 +66,7 @@ namespace Kuantech.TowerDefense
         public override void OnReset()
         {
             base.OnReset();
+            _pendingSummons = null;
             CurrentWaveIndex = -1;
             _waveCompleteRoutine = null;
         }
@@ -92,7 +96,7 @@ namespace Kuantech.TowerDefense
         /// <returns></returns>
         public bool IsWaveCompleted()
         {
-            int remainingEnemies = GetRemainingEnemyCount();
+            int remainingEnemies = GetRemainingEnemyCount(EnemyFactionId);
             HashSet<Actor> enemyActors = _unitManager.GetActorsByFaction(EnemyFactionId);
             int aliveEnemies = enemyActors.Count;
             return remainingEnemies + aliveEnemies <= 0;
@@ -163,8 +167,8 @@ namespace Kuantech.TowerDefense
             }
 
             WeightedProbabilityArray<int> enemyProbs = new WeightedProbabilityArray<int>();
-            if (waveData.EnemyProbabilities.Values.IsNullOrEmpty() ||
-                waveData.EnemyProbabilities.Weights.IsNullOrEmpty())
+            if (Helpers.IsNullOrEmpty(waveData.EnemyProbabilities.Values) ||
+                Helpers.IsNullOrEmpty(waveData.EnemyProbabilities.Weights))
             {
                 enemyProbs.AddElement(0, 1);
             }
@@ -185,9 +189,12 @@ namespace Kuantech.TowerDefense
                 _waveQueue.Enqueue(new WaveEntry
                 {
                     SpawnableIndex = spawnableIndex,
-                    SpawnerIndex = -1 //-1 means random spawner
+                    SpawnerIndex = -1, //-1 means random spawner
+                    Amount = 1,
                 });
             }
+
+            _pendingSummons = new Queue<ActorSummonData>();
             
             //Set actor limits
             UnitsManager um = ParentLevel.GetLevelModule<UnitsManager>();
@@ -205,6 +212,18 @@ namespace Kuantech.TowerDefense
  
         public void SpawnNextWaveElement()
         {
+            while (!Helpers.IsNullOrEmpty(_pendingSummons))
+            {
+                ActorSummonData summonData = _pendingSummons.Peek();
+                if (!CanSpawnActorBlueprint(summonData.ActorBlueprint))
+                {
+                    return; //Don't continue if there are actors pending
+                }
+
+                _pendingSummons.Dequeue();
+                SpawnActor(summonData.ActorBlueprint, summonData.SummonerIndex, summonData.Order);
+            }
+            
             WaveEntry nextEntry = PeekNextWaveEntry();
             if (!CanSpawnEnemy(nextEntry)) return;
             if (nextEntry.SpawnableIndex < 0) return;
@@ -215,21 +234,62 @@ namespace Kuantech.TowerDefense
             for (int i = 0; i < amount; ++i)
             {
                 ActorBlueprint actorBlueprint = GetActorTemplate(nextEntry.SpawnableIndex);
-                if (actorBlueprint == null) continue;
-                Actor spawned = summoner.SpawnActor(actorBlueprint, i);
-                StatsModule sm = spawned.GetModule<StatsModule>();
-                if (sm != null && UseLevelPowerAsActorLevel)
+                if (!CanSpawnActorBlueprint(actorBlueprint))
                 {
-                    sm.SetLevel(ParentLevel.GetPowerLevel());
+                    if(_pendingSummons == null) _pendingSummons = new Queue<ActorSummonData>();
+                    _pendingSummons.Enqueue(new ActorSummonData()
+                    {
+                        Order = i,
+                        ActorBlueprint = actorBlueprint,
+                        SummonerIndex = nextEntry.SpawnerIndex,
+                    });
                 }
-            
-                if (spawned == null) continue;
-                OnEnemySpawned?.Invoke(spawned);
+                else
+                {
+                    SpawnActor(actorBlueprint, nextEntry.SpawnerIndex, i);
+                }
+                // if (actorBlueprint == null) continue;
+                // Actor spawned = summoner.SpawnActor(actorBlueprint, i);
+                // StatsModule sm = spawned.GetModule<StatsModule>();
+                // if (sm != null && UseLevelPowerAsActorLevel)
+                // {
+                //     sm.SetLevel(ParentLevel.GetPowerLevel());
+                // }
+                //
+                // if (spawned == null) continue;
+                // OnEnemySpawned?.Invoke(spawned);
             }
             _lastSpawnTime = Time.time;
 
         }
-
+        
+        private struct ActorSummonData
+        {
+            public int SummonerIndex;
+            public ActorBlueprint ActorBlueprint;
+            public int Order;
+        }
+        
+        /// <summary>
+        /// Spawns the actor blueprint
+        /// </summary>
+        /// <param name="actorBlueprint"></param>
+        private Actor SpawnActor(ActorBlueprint actorBlueprint, int summonerIndex, int order=0)
+        {
+            if (actorBlueprint == null) return null;
+            ActorSummoner summoner = GetSummoner(summonerIndex);
+            Actor spawned = summoner.SpawnActor(actorBlueprint, order);
+            StatsModule sm = spawned.GetModule<StatsModule>();
+            if (sm != null && UseLevelPowerAsActorLevel)
+            {
+                sm.SetLevel(ParentLevel.GetPowerLevel());
+            }
+            
+            if (spawned == null) return null;
+            OnEnemySpawned?.Invoke(spawned);
+            _lastSpawnTime = Time.time;
+            return spawned;
+        }
         public bool CanSpawnEnemy(WaveEntry waveEntry)
         {
             if (waveEntry.SpawnableIndex < 0) return false;
@@ -238,16 +298,21 @@ namespace Kuantech.TowerDefense
                 return false;
             }
 
+            return CanSpawnActorBlueprint(GetActorTemplate(waveEntry.SpawnableIndex));
+        }
+
+        public bool CanSpawnActorBlueprint(ActorBlueprint actorBlueprint)
+        {
             if (_unitManager != null)
             {
-                return _unitManager.CanSpawnActor(GetActorTemplate(waveEntry.SpawnableIndex));
+                return _unitManager.CanSpawnActor(actorBlueprint);
             }
 
             return true;
         }
         public ActorSummoner GetSummoner(int index)
         {
-            if (ActorSummoners.IsNullOrEmpty())
+            if (Helpers.IsNullOrEmpty(ActorSummoners))
             {
                 return null;
             }
@@ -271,10 +336,16 @@ namespace Kuantech.TowerDefense
             return null;
         }
         
-        public int GetRemainingEnemyCount()
+        public int GetRemainingEnemyCount(int enemyFactionId)
         {
-            if (_waveQueue.IsNullOrEmpty()) return 0;
-            return _waveQueue.Count;
+            int currentlyAlive = _unitManager.GetSpawnedActorCountByFaction(enemyFactionId);
+            if (Helpers.IsNullOrEmpty(_waveQueue)) return currentlyAlive;
+            foreach (var entry in _waveQueue)
+            {
+                currentlyAlive += entry.Amount;
+            }
+
+            return currentlyAlive;
         }
 
         public int GetMaxEnemyCountForWave(int waveIndex)
@@ -290,7 +361,7 @@ namespace Kuantech.TowerDefense
 
         public WaveEntry GetNextWaveEntry()
         {
-            if (_waveQueue.IsNullOrEmpty())
+            if (Helpers.IsNullOrEmpty(_waveQueue))
             {
                 return new WaveEntry()
                 {
@@ -303,7 +374,7 @@ namespace Kuantech.TowerDefense
 
         public WaveEntry PeekNextWaveEntry()
         {
-            if (_waveQueue.IsNullOrEmpty())
+            if (Helpers.IsNullOrEmpty(_waveQueue))
             {
                 return new WaveEntry()
                 {

@@ -7,6 +7,8 @@ namespace Kuantech.AI
     public class BTAgent : ActorModule
     {
         private BehaviourTree Bt;
+        [SerializeField] private float TickInterval = 0.1f;
+        [SerializeField] private float TickJitter = 0.05f;
         [SerializeField] private BehaviourTreeBlueprint DefaultBtBlueprint;
         private WaitForSeconds _waitForSeconds;
         public bool AgentRunning;
@@ -14,7 +16,7 @@ namespace Kuantech.AI
         public override void Initialize()
         {
             //todo: Can we remove this?
-            _waitForSeconds = new WaitForSeconds(0.01f);
+            _waitForSeconds = new WaitForSeconds(TickInterval);
             SetBehaviourTree(DefaultBtBlueprint.CreateBehaviourTree());
         }
 
@@ -62,11 +64,17 @@ namespace Kuantech.AI
         }
         private IEnumerator Behave()
         {
-            Bt.OwnerAgent = this;
+            if (Bt == null) yield break;
+
+            float firstDelay = (TickJitter > 0f) ? Random.Range(0f, TickJitter) : 0f;
+            if (firstDelay > 0f) yield return new WaitForSeconds(firstDelay);
+
+            Bt.OwnerAgent = this; 
+
             while (AgentRunning)
             {
-                Bt.Process();
-                yield return _waitForSeconds;
+                Bt.Process();         
+                yield return _waitForSeconds; 
             }
         }
 
