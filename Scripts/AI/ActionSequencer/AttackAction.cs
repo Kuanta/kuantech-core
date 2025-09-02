@@ -62,7 +62,7 @@ namespace Kuantech.AI.ActionSequencer
                 return;
             }
             
-            if (CombatModule.IsInAttackRange(_target.transform))
+            if (CombatModule.IsInAttackRange(_target.GetHitPoint(null)))
             {
                 CombatModule.AttackToTarget(_target);
             }

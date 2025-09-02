@@ -105,7 +105,7 @@ namespace Kuantech.Core
             }
 
             actor.Initialize();
-            if (actor.VisualHandler != null)
+            if (actor.VisualHandler != null && ActorVisualPrefab != null)
             {
                 actor.VisualHandler.SetActorVisual(PoolManager.GetObjectFromPool(ActorVisualPrefab.gameObject).GetComponent<ActorVisual>());
             }

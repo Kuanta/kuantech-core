@@ -407,13 +407,20 @@ namespace Kuantech.Core
             return true;
         }
 
-        public Transform GetHitPoint()
+        public virtual WorldPoint GetHitPoint(Actor attackingActor)
         {
+            WorldPoint hitPoint = new WorldPoint()
+            {
+                Target =  transform,
+            };
             ActorSlotsHandler actorSlotsHandler = GetModule<ActorSlotsHandler>();
-            if (actorSlotsHandler == null) return transform;
-            Transform hitPoint = actorSlotsHandler.GetSlot("HitPoint");
-            if (hitPoint != null) return hitPoint;
-            return transform;
+            if (actorSlotsHandler == null) return hitPoint;
+            Transform hitPointSlot =  actorSlotsHandler.GetSlot("HitPoint");
+            if (hitPointSlot != null)
+            {
+                hitPoint.Target = hitPointSlot;
+            }
+            return hitPoint;
         }
 
         public void OnHit(HitInfo hitInfo)

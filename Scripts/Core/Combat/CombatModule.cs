@@ -378,7 +378,7 @@ namespace Kuantech.Core
             if (currentTarget == null ||
                 !currentTarget.IsAlive()) return;
 
-            if (!IsInAttackRange(currentTarget.GetHitPoint().transform))
+            if (!IsInAttackRange(currentTarget.GetHitPoint(Actor)))
             {
                 return;
             }
@@ -421,7 +421,7 @@ namespace Kuantech.Core
             
             if (currentTarget != null)
             {
-                Vector3 targetOffset = currentTarget.GetHitPoint().position - currentTarget.transform.position;
+                Vector3 targetOffset = currentTarget.GetHitPoint(Actor).GetTargetPosition() - currentTarget.transform.position;
                 projectile.Shoot(Actor, null, GetAttackPosition(), GetAttackDirection(), currentTarget.transform);
                 projectile.SetTargetOffset(targetOffset);
             }
@@ -469,7 +469,7 @@ namespace Kuantech.Core
             EffectPlayer hitEffect = GetCurrentAttackPattern().HitEffect;
             if (hitEffect != null)
             {
-                hitEffect.PlayEffectAtPosition(actor.GetHitPoint().position, Quaternion.LookRotation(GetAttackDirection()));
+                hitEffect.PlayEffectAtPosition(actor.GetHitPoint(Actor).GetTargetPosition(), Quaternion.LookRotation(GetAttackDirection()));
             }
             actor.OnHit(hitInfo);
         }
@@ -674,9 +674,9 @@ namespace Kuantech.Core
             return _isAttacking;
         }
 
-        public bool IsInAttackRange(Transform target)
+        public bool IsInAttackRange(WorldPoint target)
         {
-            float sqrDist = Vector3.SqrMagnitude(target.position - Actor.transform.position);
+            float sqrDist = Vector3.SqrMagnitude(target.GetTargetPosition() - Actor.transform.position);
             return sqrDist <= (GetCurrentAttackPattern().Range + RangeTolerance) * (GetCurrentAttackPattern().Range + RangeTolerance);
         }
         
@@ -818,7 +818,7 @@ namespace Kuantech.Core
             Vector3 attackDireciton = GetAttackDirection();
             if(getTarget != null)
             {
-                return getTarget.GetHitPoint().position;
+                return getTarget.GetHitPoint(Actor).GetTargetPosition();
             }
 
             return startPosition + attackDireciton * GetCurrentAttackPattern().Range;

@@ -29,9 +29,9 @@ namespace Kuantech.Core
         /// <summary>
         /// Gets the movement vector
         /// </summary>
-        public void GetMovementVector()
+        public Vector3 GetMovementVector()
         {
-            Actor.MotionVectorsHandler.GetMovementVector();
+            return Actor.MotionVectorsHandler.GetMovementVector();
         }
         #endregion
         
