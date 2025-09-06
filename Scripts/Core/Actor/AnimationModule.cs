@@ -289,7 +289,7 @@ namespace Kuantech.Core
                 return;
             }
             Animator = newVisual.Animator;
-            Animator.logWarnings = false;
+            if(Animator != null) Animator.logWarnings = false;
         }
 
         #endregion

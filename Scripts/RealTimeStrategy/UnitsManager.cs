@@ -51,8 +51,8 @@ namespace Kuantech.RealTimeStrategy
         {
             if (!CanSpawnActor(actorBlueprint)) return null;
             Actor spawned = actorBlueprint.CreateActor();
-            SpawnedActors.Add(spawned);
             if (spawned == null) return null;
+            RegisterActor(spawned);
             return spawned;
         }
 
@@ -78,6 +78,7 @@ namespace Kuantech.RealTimeStrategy
         /// <param name="actor"></param>
         private bool AddActor(Actor actor)
         {
+            SpawnedActors.Add(actor);
             int factionId = actor.GetFactionId();
             if(_actorsByFaction == null)
                 _actorsByFaction = new Dictionary<int, HashSet<Actor>>();

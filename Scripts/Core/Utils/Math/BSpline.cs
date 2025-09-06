@@ -15,6 +15,14 @@ namespace Kuantech.Utils.Math
         public int RotationLookAhead = 5;
         public bool InvertDirection = false;
         private int _basePointCount;
+
+        public static BSpline CreateSpline(List<Vector3> points, int splineDegree, int splineResolution)
+        {
+            BSpline spline = new BSpline();
+            spline.SetSplinePoints(points, splineDegree, splineResolution);
+            return spline;
+
+        }
         public void SetSplinePoints(List<Vector3> controlPoints, int SplineDegree, int SegmentPerSpline, bool looping=false, bool closed=false)
         {
             List<Vector3> extendedControlPoints = new List<Vector3>(controlPoints);

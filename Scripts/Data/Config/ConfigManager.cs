@@ -70,6 +70,7 @@ namespace Kuantech.Utils
         public static float GetFloatConfig(string key, float defaultValue = 0.0f)
         {
             var ctx = GetContext<ConfigManager>();
+            if (ctx == null) return defaultValue;
             ConfigSource configSource = ctx.GetConfigSourceFromConfigKey(key);
             if (configSource == null) return defaultValue;
             return configSource.GetFloatConfig(key, defaultValue);
@@ -79,6 +80,7 @@ namespace Kuantech.Utils
         public static int GetIntConfig(string key, int defaultValue = 0)
         {
             var ctx = GetContext<ConfigManager>();
+            if (ctx == null) return defaultValue;
             ConfigSource configSource = ctx.GetConfigSourceFromConfigKey(key);
             if (configSource == null) return defaultValue;
             return configSource.GetIntConfig(key, defaultValue);
@@ -87,6 +89,7 @@ namespace Kuantech.Utils
         public static string GetStringConfig(string key, string defaultValue="")
         {
             var ctx = GetContext<ConfigManager>();
+            if (ctx == null) return defaultValue;
             ConfigSource configSource = ctx.GetConfigSourceFromConfigKey(key);
             if (configSource == null) return defaultValue;
             return configSource.GetStringConfig(key, defaultValue);
@@ -95,6 +98,7 @@ namespace Kuantech.Utils
         public static bool GetBoolConfig(string key, bool defaultValue=false)
         {
             var ctx = GetContext<ConfigManager>();
+            if (ctx == null) return defaultValue;
             ConfigSource configSource = ctx.GetConfigSourceFromConfigKey(key);
             if (configSource == null) return defaultValue;
             return configSource.GetBoolConfig(key, defaultValue);

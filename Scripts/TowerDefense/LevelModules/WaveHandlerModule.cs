@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using DTT.Utils.Extensions;
 using Kuantech.Core;
 using Kuantech.Core.Utils;
 using Kuantech.RealTimeStrategy;
@@ -73,7 +72,7 @@ namespace Kuantech.TowerDefense
         
         private void Update()
         {
-            if (ParentLevel.CurrentState != LevelState.Playing) return;
+            if (ParentLevel == null || ParentLevel.CurrentState != LevelState.Playing) return;
             if (IsLevelInWavePhase())
             {
                 SpawnNextWaveElement();

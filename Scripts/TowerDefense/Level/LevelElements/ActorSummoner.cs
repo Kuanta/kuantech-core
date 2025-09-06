@@ -38,7 +38,7 @@ namespace Kuantech.TowerDefense
             return createdActor;
         }
 
-        private Transform GetSpawnPoint(int order)
+        protected virtual Transform GetSpawnPoint(int order)
         {
             if (SpawnPoints.IsNullOrEmpty()) return transform;
             return SpawnPoints[order % SpawnPoints.Count];

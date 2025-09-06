@@ -75,19 +75,16 @@ namespace Kuantech.Core
             CurrentTarget = null;
             UnsetCurrentTargetSlot();
         }
-
-        public WorldPoint GetTargetPoint()
-        {
-            if (CurrentTargetSlot != null)
-            {
-                return CurrentTargetSlot.WorldPoint;
-            }
-            
-            return new WorldPoint()
-            {
-                Target = CurrentTarget.GetHitPoint(),
-            };
-        }
+        //
+        // public WorldPoint GetTargetPoint()
+        // {
+        //     if (CurrentTargetSlot != null)
+        //     {
+        //         return CurrentTargetSlot.WorldPoint;
+        //     }
+        //
+        //     return CurrentTarget.GetHitPoint();
+        // }
 
         public override void Reset()
         {
