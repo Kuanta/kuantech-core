@@ -13,6 +13,11 @@ namespace Kuantech.Rpg
         public float BaseValue;
         public float ValuePerRank;
         public float ValuePerLevel;
+
+        public float GetValue(int level, int rank)
+        {
+            return BaseValue + ValuePerLevel * level + ValuePerRank * ValuePerRank;
+        }
     }
 
     /// <summary>

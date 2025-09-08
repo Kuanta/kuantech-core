@@ -62,6 +62,14 @@ namespace Kuantech.TowerDefense
             _unitManager.OnActorRemoved += OnActorRemoved;
         }
 
+        public void SetWaveDatas(List<WaveData> waveDatas)
+        {
+            WaveDatas = waveDatas;
+            
+            //Generate?
+            
+        }
+        
         public override void OnReset()
         {
             base.OnReset();
@@ -140,7 +148,6 @@ namespace Kuantech.TowerDefense
         }
 
         #endregion
-       
         
         #region Wave Control
     
@@ -384,7 +391,6 @@ namespace Kuantech.TowerDefense
             return _waveQueue.Peek();
         }
         #endregion
-
         
         #region Wave Completion
 

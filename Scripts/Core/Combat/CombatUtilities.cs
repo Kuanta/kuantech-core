@@ -253,5 +253,27 @@ namespace Kuantech.Core.Combat
         }
         #endregion
        
+        #region Attack Timing
+
+        public static float GetAttackDuration(float attackSpeed, float baseAttackTime, float minAttackTime,
+            float maxAttackTime)
+        {
+            float attackRate = attackSpeed / (100 * baseAttackTime);
+            float attackDuration = Mathf.Clamp(1 / attackRate, minAttackTime, maxAttackTime);
+            return attackDuration;
+        }
+
+        /// <summary>
+        /// Returns the time multiplier for attack speed. The more attack speed the less this multiplier becomes.
+        /// More attack speed, reduces the time taken for every part of an attack
+        /// </summary>
+        /// <returns></returns>
+        public static float GetAttackSpeedMultiplier(float attackSpeed, float baseAttackTime, float minAttackTime,
+            float maxAttackTime)
+        {
+            float reducedAttackTime = GetAttackDuration(attackSpeed, baseAttackTime, minAttackTime, maxAttackTime);
+            return attackSpeed / reducedAttackTime;
+        }
+        #endregion
     }
 }

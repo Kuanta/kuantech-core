@@ -18,10 +18,12 @@ namespace Kuantech.TowerDefense
         public List<int> Values;
         public List<float> Weights;
     }
+    
     [Serializable]
     public class WaveData
     {
         public int EnemyFactionId = 1; //Faction ID of the enemies in this wave
+        public int WavePowerLevel = 0;
         public List<WaveEntry> WaveEntries; //Predefined
         public int MaxEnemyCount = -1; //If greater than -1, limits the number of enemies in the wave      
         public int GeneratedEnemyCount;
