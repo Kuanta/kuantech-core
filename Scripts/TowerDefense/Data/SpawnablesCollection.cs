@@ -22,10 +22,12 @@ namespace Kuantech.TowerDefense
             [Header("Runtime")]
             public ActorBlueprint ActorBlueprint;
 
-            [Header("Design Meta (Generation)")]
-            [Min(1)] public int Cost = 10;
-            [Min(0.1f)] public float ConcurrencyWeight = 1f;
+            [Header("Tags")]
             public List<EnemyTagAsset> Tags = new List<EnemyTagAsset>();
+            
+            [Header("Gating")]
+            [Tooltip("This spawnable will NOT appear before this linear difficulty index.")]
+            public int MinDifficultyLevel = 0;
         }
         
         public List<SpawnableEntry> Spawnables;
@@ -52,14 +54,6 @@ namespace Kuantech.TowerDefense
                 Spawnables[i].SpawnableIndex = i;
 
             // blueprint’i olmayan entry’leri istersen buradan işaretleyebilirsin
-        }
-
-        [ContextMenu("Sort By Cost (Asc)")]
-        private void SortByCost()
-        {
-            Spawnables = Spawnables.OrderBy(e => e.Cost).ToList();
-            OnValidate();
-            UnityEditor.EditorUtility.SetDirty(this);
         }
 #endif
     }

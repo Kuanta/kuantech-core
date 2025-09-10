@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Kuantech.Core.Utils;
 
 namespace Kuantech.TowerDefense
 {
@@ -23,7 +22,7 @@ namespace Kuantech.TowerDefense
     public class WaveData
     {
         public int EnemyFactionId = 1; //Faction ID of the enemies in this wave
-        public int WavePowerLevel = 0;
+        public int WaveActorsLevel = 0;
         public List<WaveEntry> WaveEntries; //Predefined
         public int MaxEnemyCount = -1; //If greater than -1, limits the number of enemies in the wave      
         public int GeneratedEnemyCount;

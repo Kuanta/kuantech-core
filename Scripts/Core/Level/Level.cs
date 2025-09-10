@@ -46,7 +46,7 @@ namespace Kuantech.Core
         //World Data
         [NonSerialized] public WorldDataAsset WorldDataAsset = null;
         [NonSerialized] public int WorldIndex; //Index in the levels array. 
-        [NonSerialized] public int WorldNumber; //Actual world number. can be usedas power level
+        [NonSerialized] public int WorldNumber; //Actual world number. Number of world the player is at. There may be 5 worlds but player can be at 50th world. Used to provide infinite gameplay
         
         //Spawnables
         public HashSet<ISpawnable> SpawnedActors = new HashSet<ISpawnable>();
@@ -329,11 +329,13 @@ namespace Kuantech.Core
 
         public virtual int GetPowerLevel()
         {
+            int powerLevel = LevelNumber;
             if (WorldDataAsset != null)
             {
-                return WorldDataAsset.GetPowerLevel(WorldNumber, LevelNumber);
+                powerLevel = LevelManager.GetContext<LevelManager>().GetTotalLevelIndex(WorldNumber, LevelIndex);
             }
-            return LevelNumber;
+            Debug.Log("Power Level is " + powerLevel);
+            return powerLevel;
         }
         #endregion
 
