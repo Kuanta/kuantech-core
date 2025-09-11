@@ -41,6 +41,11 @@ namespace Kuantech.Midcore
 
         public static void GoToMenuScene()
         {
+            Level currLevel = LevelManager.GetCurrentLevel();
+            if (currLevel != null)
+            {
+                currLevel.QuitLevel();
+            }
             string menuSceneName = GetMenuSceneName();
             GameManager.ChangeScene(menuSceneName);
         }

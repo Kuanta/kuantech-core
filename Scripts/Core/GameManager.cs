@@ -143,6 +143,16 @@ namespace Kuantech.Core
         #endregion
         
         #region SceneManagement
+        
+        /// <summary>
+        /// Gets the name of the current scene
+        /// </summary>
+        /// <returns></returns>
+        public static string GetCurrentSceneName()
+        {
+            return SceneManager.GetActiveScene().name;
+        }
+        
         public static void ChangeScene(string sceneName, LevelTransitionData levelTransitionData = null)
         {
             var ctx = GameManager.Instance;

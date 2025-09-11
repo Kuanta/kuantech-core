@@ -187,6 +187,14 @@ namespace Kuantech.Core
         }
         
         /// <summary>
+        /// Quits from current level
+        /// </summary>
+        public virtual void QuitLevel()
+        {
+            ClearLevel();
+        }
+
+        /// <summary>
         /// Restarts the level
         /// </summary>
         public virtual void RestartLevel()
