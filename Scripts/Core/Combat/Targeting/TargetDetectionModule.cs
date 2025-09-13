@@ -98,7 +98,18 @@ namespace Kuantech.Core.Combat
         public Actor GetEnemyTarget()
         {
             if (DetectedEnemies.IsNullOrEmpty()) return null;
-            return DetectedEnemies[0];
+            foreach (var enemy in DetectedEnemies)
+            {
+                if (!enemy.IsAlive())
+                {
+                    Debug.LogError("Dead enemy in DetectedEnemies list");
+                    continue;
+                }
+
+                return enemy;
+            }
+            
+            return null;
         }
         
         /// <summary>
@@ -108,7 +119,17 @@ namespace Kuantech.Core.Combat
         public Actor GetAllyTarget()
         {
             if (DetectedAllies.IsNullOrEmpty()) return null;
-            return DetectedAllies[0];
+            foreach (var ally in DetectedAllies)
+            {
+                if (!ally.IsAlive())
+                {
+                    Debug.LogError("Dead ally in detected allies list");
+                    continue;
+                }
+
+                return ally;
+            }
+            return null;
         }
         
         private void Update()
