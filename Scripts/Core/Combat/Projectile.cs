@@ -422,6 +422,7 @@ namespace Kuantech.Core
         // ==========================
         protected virtual void HandleOnTriggerEnter(GameObject triggeredObject)
         {
+            if (_useArc && !_reachedPeak) return; //Wait for peak
             if (CastBy != null && triggeredObject == CastBy.gameObject) return;
 
             Actor targetActor = triggeredObject.GetComponent<Actor>();
