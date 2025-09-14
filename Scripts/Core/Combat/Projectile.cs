@@ -254,30 +254,37 @@ namespace Kuantech.Core
             float dt = Time.deltaTime;
             _age += dt;
 
-            //Calculate arc height
-            _currentRiseHeight += _currentRiseVelocity * Time.deltaTime;
-            _currentRiseVelocity -= WorldUp * Gravity * Time.deltaTime;
-
-            if (!_reachedPeak && _useArc)
+            if (_useArc)
             {
-                //Did we reached peak?
-                if(_currentRiseVelocity.sqrMagnitude <= 1e-6f || Vector3.Dot(_currentRiseVelocity, _initialRiseVelocity) <= 0f)
+                //Calculate arc height
+                _currentRiseHeight += _currentRiseVelocity * Time.deltaTime;
+                _currentRiseVelocity -= WorldUp * Gravity * Time.deltaTime;
+
+                if (!_reachedPeak && _useArc)
                 {
-                    _reachedPeak = true;
+                    //Did we reached peak?
+                    if(_currentRiseVelocity.sqrMagnitude <= 1e-6f || Vector3.Dot(_currentRiseVelocity, _initialRiseVelocity) <= 0f)
+                    {
+                        _reachedPeak = true;
+                    }
+                }
+            
+                //Clamp current rise height to 0 if its in the inverse direction of world up
+                if (Vector3.Dot(_currentRiseHeight, WorldUp) < 0f && _reachedPeak)
+                {
+                    _currentRiseHeight = Vector3.zero;
+                    _currentRiseVelocity = Vector3.zero;
                 }
             }
-            
-            //Clamp current rise height to 0 if its in the inverse direction of world up
-            if (Vector3.Dot(_currentRiseHeight, WorldUp) < 0f && _reachedPeak)
+            else
             {
                 _currentRiseHeight = Vector3.zero;
-                _currentRiseVelocity = Vector3.zero;
             }
+      
             
             _currentBasePosition += GetFlightDirection() * CurrentSpeed * dt;
             Vector3 prevPos = transform.position;
             Vector3 newPos = _currentBasePosition + _currentRiseHeight;
-            Debug.LogError("Base pos:"+_currentBasePosition);
             transform.position = newPos;
             Vector3 finalMovementVector = (newPos - prevPos).normalized;
             
