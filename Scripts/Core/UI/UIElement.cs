@@ -31,6 +31,7 @@ namespace Kuantech.Core.UI
         private void Awake()
         {
             _animator = GetComponent<Animator>();
+            if(_animator != null) _animator.logWarnings = false;
             _rectTransform = GetComponent<RectTransform>();
         }
 

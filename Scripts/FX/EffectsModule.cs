@@ -12,6 +12,25 @@ namespace Kuantech.Core.FX
     /// </summary>
     public class EffectsModule : ActorModule
     {
+        #region Shader Defaults
+        [Serializable]
+        public struct Param
+        {
+            public enum ParamType { Float, Int, Color }
+            
+            public string Property;          // Shader property name (e.g., "_Cutoff", "_TintColor")
+            public ParamType Type;
+            public float FloatValue;         // Used when Type == Float
+            public int IntValue;             // Used when Type == Int
+            public Color ColorValue;         // Used when Type == Color
+        }
+
+        [Header("Defaults")]
+        [Tooltip("Property → default value pairs to apply when resetting.")]
+        public List<Param> Defaults = new List<Param>();
+
+        #endregion
+
         [Header("Pre-defined Effects")]
         public Effect DamageReceiveEffect;
         public Effect HealEffect;
@@ -145,6 +164,7 @@ namespace Kuantech.Core.FX
             {
                 _effectPlayerComponentsByTag[effectComp.EffectPlayer.EffectTag] = effectComp;
             }
+            ApplyDefaults(actorVisual);
         }
 
 
@@ -204,6 +224,9 @@ namespace Kuantech.Core.FX
             
             //Clear active effects
             ClearActiveEffects();
+            
+            //Clear Shader parameters
+            
             
         }
 
@@ -370,5 +393,51 @@ namespace Kuantech.Core.FX
             }
         }
         #endregion
+        
+        /// <summary>
+        /// Applies default values to all configured properties.
+        /// </summary>
+        public void ApplyDefaults(ActorVisual visual)
+        {
+            var renderers = visual != null ? visual.GetComponentsInChildren<Renderer>() : GetComponentsInChildren<Renderer>();
+            
+
+            if (Defaults == null || Defaults.Count == 0 || renderers.IsNullOrEmpty())
+                return;
+            foreach (var renderer in renderers)
+            {
+                // Directly modify materials (this can instantiate them if you access .materials)
+                for(int i=0;i<renderer.materials.Length;++i)
+                {
+                    ApplyParamsToMaterial(renderer.materials[i]);
+                }
+
+            }
+        }
+        
+        private void ApplyParamsToMaterial(Material mat)
+        {
+            if (mat == null) return;
+
+            foreach (var p in Defaults)
+            {
+                if (string.IsNullOrEmpty(p.Property)) continue;
+                if (!mat.HasProperty(p.Property)) continue;
+                switch (p.Type)
+                {
+                        
+                    case Param.ParamType.Float:
+                        mat.SetFloat(p.Property, p.FloatValue);
+                        break;
+                    case Param.ParamType.Int:
+                        // Material.SetInt exists widely; fallback to SetFloat if needed
+                        mat.SetInt(p.Property, p.IntValue);
+                        break;
+                    case Param.ParamType.Color:
+                        mat.SetColor(p.Property, p.ColorValue);
+                        break;
+                }
+            }
+        }
     }
 }

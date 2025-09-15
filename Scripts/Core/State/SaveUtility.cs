@@ -35,6 +35,7 @@ namespace Kuantech.Core
 
         public static T DeserializePoco<T>(byte[] bytes)
         {
+            if (bytes == null) return default;
             string json = System.Text.Encoding.UTF8.GetString(bytes);
             return JsonConvert.DeserializeObject<T>(json, JsonSettings);
         }

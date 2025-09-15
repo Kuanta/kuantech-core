@@ -342,7 +342,6 @@ namespace Kuantech.Core
             {
                 powerLevel = LevelManager.GetContext<LevelManager>().GetTotalLevelIndex(WorldNumber, LevelIndex);
             }
-            Debug.Log("Power Level is " + powerLevel);
             return powerLevel;
         }
         #endregion

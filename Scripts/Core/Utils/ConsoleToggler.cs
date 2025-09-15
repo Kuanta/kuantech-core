@@ -7,29 +7,29 @@ namespace Kuantech.Utils
     {
         public GameObject Console;
         
-            [Header("Output")]
+    [Header("Output")]
     public UnityEvent OnActivated;
 
     [Header("Hot Zone (normalized 0..1 screen coords)")]
-    [Tooltip("Hot zone'un merkez noktası (0..1). (0,0)=sol-alt, (1,1)=sağ-üst")]
+    [Tooltip("Hot zone center")]
     public Vector2 hotZoneCenter01 = new Vector2(0.9f, 0.1f); // sağ-alt köşe civarı
-    [Tooltip("Hot zone genişliği/yüksekliği (ekran oranında 0..1)")]
+    [Tooltip("Hot zone size")]
     public Vector2 hotZoneSize01 = new Vector2(0.12f, 0.12f);
 
     [Header("Pattern")]
-    [Tooltip("Gereken kısa tap sayısı (örn. 6). Sonra uzun basma gerekir.")]
+    [Tooltip("Required taps. Then a long tap is required")]
     public int requiredTaps = 6;
-    [Tooltip("Bir kısa tap için maksimum süre (s)")]
+    [Tooltip("Max duration for tap")]
     public float shortTapMaxDuration = 0.22f;
-    [Tooltip("Tap'ler arası maksimum bekleme (s). Aşılırsa sıfırlanır.")]
+    [Tooltip("Max delay between taps")]
     public float interTapMaxGap = 1.0f;
-    [Tooltip("Uzun basma süresi (s) - (N+1). dokunuşta)")]
+    [Tooltip("Long press duration")]
     public float longPressDuration = 0.7f;
-    [Tooltip("Tap esnasında izin verilen maks hareket (px)")]
+    [Tooltip("Tolerance between taps")]
     public float moveTolerancePx = 18f;
 
     [Header("Editor Test")]
-    public bool enableEditorMouseTest = true; // sol tık = tap, basılı tut = long press
+    public bool enableEditorMouseTest = true; 
 
     // --- state ---
     int _tapCount;
@@ -46,6 +46,13 @@ namespace Kuantech.Utils
             HandleMouse();
         }
 #endif
+        
+#if DEV_BUILD || UNITY_EDITOR
+    if(Input.GetKeyDown(KeyCode.KeypadEnter))
+        {
+            ToggleConsole();
+        }
+#endif
         HandleTouch();
     }
 
@@ -55,7 +62,7 @@ namespace Kuantech.Utils
         float h = Screen.height * Mathf.Clamp01(hotZoneSize01.y);
         float cx = Screen.width * Mathf.Clamp01(hotZoneCenter01.x);
         float cy = Screen.height * Mathf.Clamp01(hotZoneCenter01.y);
-        // Unity ekran koordinatında (0,0) sol-alt; Input pos (0,0) sol-alt (dokunmada) uyumlu
+
         return new Rect(cx - w * 0.5f, cy - h * 0.5f, w, h);
     }
 
@@ -150,13 +157,12 @@ namespace Kuantech.Utils
 #if UNITY_EDITOR
     void HandleMouse()
     {
-        // Editor test: sol tık
         if (Input.GetMouseButtonDown(0))
         {
             if (_tapCount > 0 && (Time.unscaledTime - _lastTapEndTime) > interTapMaxGap)
                 ResetSequence();
 
-            Vector2 pos = Input.mousePosition; // sol-alt orijin
+            Vector2 pos = Input.mousePosition; 
             if (!InHotZone(pos))
             {
                 ResetSequence();
@@ -225,9 +231,6 @@ namespace Kuantech.Utils
     void OnDrawGizmosSelected()
     {
         var r = GetHotZonePixels();
-        // Ekran pikselinden world'e çizmek zahmetli; sadece editor konsoluna log bırakıyoruz.
-        // İsterseniz overlay UI ile gösterilebilir.
-        // Debug.Log($"HotZone px: {r}");
     }
 #endif
     }

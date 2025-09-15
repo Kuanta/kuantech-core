@@ -240,5 +240,10 @@ namespace Kuantech.Core.FX
             context.AudioLibrary.PlaySound(sound);
         }
         #endregion
+        
+        public override void OnSceneLeave()
+        {
+            AudioLibrary.StopMusic();
+        }
     }
 }

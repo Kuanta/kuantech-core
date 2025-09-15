@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Kuantech.Core;
+using Kuantech.Core.FX;
 using Kuantech.Midcore.UI;
 using Kuantech.Utils;
 using UnityEngine;
@@ -15,6 +16,9 @@ namespace Kuantech.Midcore
         private FreshUnlocksPanel FreshUnlocksPanel;
         public string GameSceneName = "GameScene";
 
+        [Header("Theme Music")] [SerializeField]
+        private Music MenuMusic;
+        
         public override void OnSubmanagersInitialized()
         {
             if (FreshUnlocksPanel == null) return;
@@ -31,6 +35,9 @@ namespace Kuantech.Midcore
             
             //Clear fresh collectibles after showing them
             ProgressionManager.ClearFreshCollectables();
+            
+            //Play menu music
+            EffectsLibrary.GetAudioLibrary().PlayMusic(MenuMusic);
         }
         
         #region Level

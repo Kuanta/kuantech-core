@@ -8,26 +8,23 @@ namespace Kuantech.Core.FX
     public class ShaderEffect : MonoBehaviour
     {
         public string EffectId;
-        [SerializeField] private List<SpriteRenderer> SpriteRenderers;
         [NonSerialized] public List<Material> MaterialInstances;
-        
-    
-        public void DetectAllRenderers(GameObject root)
-        {
-            MaterialInstances ??= new List<Material>();
-            MaterialInstances.Clear();
 
+        public static List<Material> DetectMaterialsUnderGameobject(GameObject root)
+        {
+            List<Material> materialInstances = new List<Material>();
+            
             if (root == null)
             {
                 Debug.LogWarning("DetectAllRenderers: Root is null.");
-                return;
+                return null;
             }
 
             // 1. SpriteRenderer (2D)
             foreach (var sr in root.GetComponentsInChildren<SpriteRenderer>(true))
             {
                 if (sr == null) continue;
-                MaterialInstances.Add(sr.material);
+                materialInstances.Add(sr.material);
             }
 
             // 2. MeshRenderer (3D static)
@@ -37,7 +34,7 @@ namespace Kuantech.Core.FX
                 foreach (var mat in mr.materials)
                 {
                     if (mat != null)
-                        MaterialInstances.Add(mat);
+                        materialInstances.Add(mat);
                 }
             }
 
@@ -48,9 +45,15 @@ namespace Kuantech.Core.FX
                 foreach (var mat in smr.materials)
                 {
                     if (mat != null)
-                        MaterialInstances.Add(mat);
+                        materialInstances.Add(mat);
                 }
             }
+
+            return materialInstances;
+        }
+        public void DetectAllRenderers(GameObject root)
+        {
+            MaterialInstances = DetectMaterialsUnderGameobject(root);
         }
 
         public virtual void PlayShaderEffect()

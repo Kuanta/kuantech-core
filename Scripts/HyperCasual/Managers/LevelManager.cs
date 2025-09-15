@@ -95,11 +95,11 @@ namespace Kuantech.Core
         {
             int totalLevels = 0;
             if (worldNumber <= 0) return levelIndex;
-            for (int i = 0; i < worldNumber - 1; ++i)
+            for (int i = 0; i < worldNumber; ++i)
             {
-                totalLevels += GetWorld(worldNumber).Levels.Count;
+                totalLevels += GetWorld(i).Levels.Count;
             }
-            return totalLevels + levelIndex;
+            return totalLevels + levelIndex + 1;
         }
         
         public Level GetWorldLevelPrefab(int worldIndex, int levelIndex)
