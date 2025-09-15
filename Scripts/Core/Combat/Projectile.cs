@@ -26,6 +26,7 @@ namespace Kuantech.Core
         [Header("Arc")] 
         public float InitialRiseHeight;
         public float Gravity = 10f;
+        public bool RequireReachPeakForImpact = true;
         
         [Tooltip("Squared distance threshold to consider target reached")]
         public float ReachThreshold = 0.1f;
@@ -260,10 +261,11 @@ namespace Kuantech.Core
                 _currentRiseHeight += _currentRiseVelocity * Time.deltaTime;
                 _currentRiseVelocity -= WorldUp * Gravity * Time.deltaTime;
 
-                if (!_reachedPeak && _useArc)
+                if (!_reachedPeak )
                 {
-                    //Did we reached peak?
-                    if(_currentRiseVelocity.sqrMagnitude <= 1e-6f || Vector3.Dot(_currentRiseVelocity, _initialRiseVelocity) <= 0f)
+                    bool velDown = Vector3.Dot(_currentRiseVelocity, WorldUp) <= 0f;
+                    bool heightCapped = Vector3.Dot(_currentRiseHeight, WorldUp) >= InitialRiseHeight - 1e-4f;
+                    if (velDown || heightCapped)
                     {
                         _reachedPeak = true;
                     }
@@ -320,7 +322,6 @@ namespace Kuantech.Core
         protected void CheckLifetime()
         {
             if (Despawned) return;
-            _age += Time.deltaTime;
             if (_age > Mathf.Min(_lifeTime, MaxLifetime))
             {
                 EndLifetime();
@@ -422,7 +423,6 @@ namespace Kuantech.Core
         // ==========================
         protected virtual void HandleOnTriggerEnter(GameObject triggeredObject)
         {
-            if (_useArc && !_reachedPeak) return; //Wait for peak
             if (CastBy != null && triggeredObject == CastBy.gameObject) return;
 
             Actor targetActor = triggeredObject.GetComponent<Actor>();
@@ -432,6 +432,8 @@ namespace Kuantech.Core
             {
                 return;
             }
+            
+            if (_useArc && !_reachedPeak && RequireReachPeakForImpact) return; //Wait for peak
 
             if (ImpactEffect != null) ImpactEffect.PlayEffectAtPosition(transform.position, Quaternion.identity);
             OnImpactEvent?.Invoke(this);
