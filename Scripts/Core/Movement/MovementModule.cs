@@ -108,6 +108,7 @@ namespace Kuantech.Core
         
         public void Knockback(Vector3 direction, float knockback, float knockbackTime)
         {
+            if (knockback == 0 || knockbackTime == 0) return;
             IEnumerator routine = KnockbackRoutine(direction, knockback, knockbackTime);
             _knockbackRoutines.Add(routine);
             StartCoroutine(routine);
