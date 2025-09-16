@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using Kuantech.Core.Store;
+using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Kuantech.TowerDefense
 {
@@ -43,8 +46,23 @@ namespace Kuantech.TowerDefense
     [Serializable]
     public class TowerDefenseLevelData
     {
-        public float TowerHealth;
-        public int StartingGold;
-        public List<WaveData> WaveData;
+        [Header("Level Info")]
+        public int WorldIndex;
+        public int LevelIndex;
+        
+        [Header("Starting Parameters")]
+        public int TowerHealth = 100;
+        [FormerlySerializedAs("StartingGold")] public int StartingCurrency;
+        
+        [Header("Wave")]
+        public List<WaveData> WaveDatas;
+        
+        [Header("Tutorial")] 
+        public int TutorialIndex = -1;
+               
+        [Header("Rewards")]
+        public int PlayerExperienceReward = 10;
+        public List<string> CollectibleRewards = new List<string>();
+        public List<CurrencyData> CurrencyRewards = new List<CurrencyData>();
     }
 }
