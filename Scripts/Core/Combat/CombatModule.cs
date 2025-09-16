@@ -245,11 +245,7 @@ namespace Kuantech.Core
         /// <returns></returns>
         public float GetAttackDuration()
         {
-            float attackSpeed = GetAttackSpeed();
-            float bat = GetBaseAttackTime();
-            float attackRate = attackSpeed / (100 * bat);
-            float attackDuration = Mathf.Clamp(1 / attackRate, MinAttackTime, MaxAttackTime);
-            return attackDuration;
+            return  CombatUtilities.GetAttackDuration(GetAttackSpeed(), GetBaseAttackTime(), MinAttackTime, MaxAttackTime);;
         }
                 
         /// <summary>

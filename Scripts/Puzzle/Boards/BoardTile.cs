@@ -1,16 +1,30 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Puzzle
 {
     public abstract class BoardTile : MonoBehaviour
     {
+        [SerializeField] private string TileId;
         public Board ParentBoard;
         public BoardTileCoordinate CurrentCoordinate; //Anchor coordinate
         
         public bool IsExisting;
         public bool DestroyOnDespawn = true;
         public bool StayOnBoardAfterDespawn = false;
+
+        public virtual string GetTileId()
+        {
+            if (TileId.IsNullOrEmpty())
+            {
+                throw new Exception("TileId is null or empty");
+                return null;
+            }
+
+            return TileId;
+        }
         
         //Multi coord Board Tile
         public List<BoardTileCoordinate> Coordinates;
@@ -89,5 +103,38 @@ namespace Kuantech.Puzzle
            Despawn(false);
         }
         #endregion
+
+
+        public virtual Board.BoardTileState GetBoardTileState()
+        {
+            Board.BoardTileState newBoardTileState = new Board.BoardTileState
+            {
+                AnchorCoordinates = CurrentCoordinate,
+                LocalCoordinates = Coordinates,
+                TileTypeId = GetTileId(),
+                CustomData = GetCustomData(),
+            };
+
+            return newBoardTileState;
+        }
+
+        public virtual void LoadBoardTileState(Board.BoardTileState state)
+        {
+            LoadCustomData(state.CustomData);
+        }
+        
+        /// <summary>
+        /// If a tile has custom data, this is the place to provide that custom data
+        /// </summary>
+        /// <returns></returns>
+        public virtual byte[] GetCustomData()
+        {
+            return null;
+        }
+
+        public virtual void LoadCustomData(byte[] customData)
+        {
+            
+        }
     }
 }

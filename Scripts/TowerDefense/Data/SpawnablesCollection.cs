@@ -1,6 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Kuantech.Core;
-using Kuantech.Midcore;
 using Kuantech.Utils;
 using UnityEngine;
 
@@ -12,13 +13,48 @@ namespace Kuantech.TowerDefense
     [CreateAssetMenu(fileName = "SpawnablesCollection", menuName = "Kuantech/TowerDefense/SpawnablesCollection", order = 1)]
     public class SpawnablesCollection : ScriptableObject
     {
-        public List<ActorBlueprint> ActorTemplates;
+        [Serializable]
+        public class SpawnableEntry
+        {
+            [Tooltip("List order = SpawnableIndex. Otomatik set edilir.")]
+            public int SpawnableIndex;
+
+            [Header("Runtime")]
+            public ActorBlueprint ActorBlueprint;
+
+            [Header("Tags")]
+            public List<EnemyTagAsset> Tags = new List<EnemyTagAsset>();
+            
+            [Header("Gating")]
+            [Tooltip("This spawnable will NOT appear before this linear difficulty index.")]
+            public int MinDifficultyLevel = 0;
+        }
+        
+        public List<SpawnableEntry> Spawnables;
 
         public ActorBlueprint GetActorTemplate(int index)
         {
-            if (ActorTemplates.IsNullOrEmpty()) return null;
-            index = index % ActorTemplates.Count;
-            return ActorTemplates[index];
+            if (Spawnables.IsNullOrEmpty()) return null;
+            index = index % Spawnables.Count;
+            return Spawnables[index].ActorBlueprint;
         }
+        
+        public SpawnableEntry GetEntry(int index)
+        {
+            if (Spawnables == null || index < 0 || index >= Spawnables.Count) return null;
+            return Spawnables[index];
+        }
+        
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            // sıralamaya göre indexleri güncelle
+            if (Spawnables == null) return;
+            for (int i = 0; i < Spawnables.Count; i++)
+                Spawnables[i].SpawnableIndex = i;
+
+            // blueprint’i olmayan entry’leri istersen buradan işaretleyebilirsin
+        }
+#endif
     }
 }

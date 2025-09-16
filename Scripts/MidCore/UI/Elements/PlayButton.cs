@@ -9,17 +9,17 @@ namespace Kuantech.Midcore.UI
         public GameObject ClickMeIndicator;
         public void OnClick()
         {
-            //Change scene
-            MidcoreSceneTransitionData transitionData = new MidcoreSceneTransitionData()
-            {
-                LevelIndex = MidcoreMenuSceneManager.GetCurrentLevelIndex(),
-                WorldIndex = MidcoreMenuSceneManager.GetCurrentWorldIndex(),
-            };
-
-            GameManager.ChangeScene(
-                MidcoreMenuSceneManager.GetGameSceneName(),
-                transitionData
-            );
+            // //Change scene
+            // MidcoreSceneTransitionData transitionData = new MidcoreSceneTransitionData()
+            // {
+            //     LevelIndex = MidcoreMenuSceneManager.GetCurrentLevelIndex(),
+            //     WorldIndex = MidcoreMenuSceneManager.GetCurrentWorldIndex(),
+            // };
+            //
+            // GameManager.ChangeScene(
+            //     MidcoreMenuSceneManager.GetGameSceneName(),
+            //     transitionData
+            // );
         }
 
         public void ToggleClickMeIndicator(bool toggle)

@@ -84,7 +84,24 @@ namespace Kuantech.Core
         }
 
         #region World Levels
-
+        
+        /// <summary>
+        /// Returns flattened level index
+        /// </summary>
+        /// <param name="worldIndex"></param>
+        /// <param name="levelIndex"></param>
+        /// <returns></returns>
+        public int GetTotalLevelIndex(int worldNumber, int levelIndex)
+        {
+            int totalLevels = 0;
+            if (worldNumber <= 0) return levelIndex;
+            for (int i = 0; i < worldNumber; ++i)
+            {
+                totalLevels += GetWorld(i).Levels.Count;
+            }
+            return totalLevels + levelIndex + 1;
+        }
+        
         public Level GetWorldLevelPrefab(int worldIndex, int levelIndex)
         {
             WorldDataAsset worldDataAsset = GetWorld(worldIndex);

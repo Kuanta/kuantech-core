@@ -52,7 +52,7 @@ namespace Kuantech.RealTimeStrategy
             if (!CanSpawnActor(actorBlueprint)) return null;
             Actor spawned = actorBlueprint.CreateActor();
             if (spawned == null) return null;
-            RegisterActor(spawned);
+            RegisterActor(spawned, true);
             return spawned;
         }
 
@@ -61,14 +61,22 @@ namespace Kuantech.RealTimeStrategy
             return SpawnedActors.Count;
         }
 
-        
-        public void RegisterActor(Actor actor)
+        /// <summary>
+        /// Registers an actor.
+        /// </summary>
+        /// <param name="actor"></param>
+        /// <param name="spawned">For actors spawned during the game. Actors like towers, hearts should be marked as false</param>
+        public void RegisterActor(Actor actor, bool spawned)
         {
             if (actor == null) return;
             if (AddActor(actor))
             {
                 actor.OnDeathEvent -= OnActorDeath;
                 actor.OnDeathEvent += OnActorDeath;
+                if (spawned)
+                {
+                    SpawnedActors.Add(actor);
+                }
             }
         }
         
@@ -78,7 +86,6 @@ namespace Kuantech.RealTimeStrategy
         /// <param name="actor"></param>
         private bool AddActor(Actor actor)
         {
-            SpawnedActors.Add(actor);
             int factionId = actor.GetFactionId();
             if(_actorsByFaction == null)
                 _actorsByFaction = new Dictionary<int, HashSet<Actor>>();

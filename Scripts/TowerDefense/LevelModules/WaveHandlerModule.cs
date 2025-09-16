@@ -16,13 +16,12 @@ namespace Kuantech.TowerDefense
         [Header("Properties")]
         public int EnemyFactionId = 1;
         public float WaveCompletedDelay = 0.5f;
-        public bool UseLevelPowerAsActorLevel = true;
         
         [Header("Summoners")]
         public List<ActorSummoner> ActorSummoners;
         public SpawnablesCollection SpawnablesCollection;
-        
-        [Header("Wave Data")]
+
+        [Header("Wave Data")] 
         public List<WaveData> WaveDatas;
         
         //Runtime
@@ -62,6 +61,20 @@ namespace Kuantech.TowerDefense
             _unitManager.OnActorRemoved += OnActorRemoved;
         }
 
+        public void SetWaveDatas(List<WaveData> waveDatas,  int waveCount)
+        {
+            if (waveDatas.IsNullOrEmpty())
+            {
+                //Generate
+                WaveGeneratorConfig config = TowerDefenseLevelDataManager.GetWaveGeneratorConfig();
+                WaveDatas = WaveGenerator.Generate(config, SpawnablesCollection, ParentLevel.GetPowerLevel(), waveCount);
+            }
+            else
+            {
+                WaveDatas = waveDatas;
+            }
+        }
+        
         public override void OnReset()
         {
             base.OnReset();
@@ -140,7 +153,6 @@ namespace Kuantech.TowerDefense
         }
 
         #endregion
-       
         
         #region Wave Control
     
@@ -220,7 +232,7 @@ namespace Kuantech.TowerDefense
                 }
 
                 _pendingSummons.Dequeue();
-                SpawnActor(summonData.ActorBlueprint, summonData.SummonerIndex, summonData.Order);
+                SpawnActor(summonData.ActorBlueprint, summonData.SummonerIndex, GetCurrentWaveData().WaveActorsLevel, summonData.Order);
             }
             
             WaveEntry nextEntry = PeekNextWaveEntry();
@@ -245,18 +257,9 @@ namespace Kuantech.TowerDefense
                 }
                 else
                 {
-                    SpawnActor(actorBlueprint, nextEntry.SpawnerIndex, i);
+                    int actorLevel = GetCurrentWaveData().WaveActorsLevel;
+                    SpawnActor(actorBlueprint, nextEntry.SpawnerIndex, actorLevel, i);
                 }
-                // if (actorBlueprint == null) continue;
-                // Actor spawned = summoner.SpawnActor(actorBlueprint, i);
-                // StatsModule sm = spawned.GetModule<StatsModule>();
-                // if (sm != null && UseLevelPowerAsActorLevel)
-                // {
-                //     sm.SetLevel(ParentLevel.GetPowerLevel());
-                // }
-                //
-                // if (spawned == null) continue;
-                // OnEnemySpawned?.Invoke(spawned);
             }
             _lastSpawnTime = Time.time;
 
@@ -273,16 +276,13 @@ namespace Kuantech.TowerDefense
         /// Spawns the actor blueprint
         /// </summary>
         /// <param name="actorBlueprint"></param>
-        private Actor SpawnActor(ActorBlueprint actorBlueprint, int summonerIndex, int order=0)
+        private Actor SpawnActor(ActorBlueprint actorBlueprint, int summonerIndex, int actorLevel, int order=0)
         {
             if (actorBlueprint == null) return null;
             ActorSummoner summoner = GetSummoner(summonerIndex);
             Actor spawned = summoner.SpawnActor(actorBlueprint, order);
             StatsModule sm = spawned.GetModule<StatsModule>();
-            if (sm != null && UseLevelPowerAsActorLevel)
-            {
-                sm.SetLevel(ParentLevel.GetPowerLevel());
-            }
+            sm.SetLevel(actorLevel);
             
             if (spawned == null) return null;
             OnEnemySpawned?.Invoke(spawned);
@@ -384,7 +384,6 @@ namespace Kuantech.TowerDefense
             return _waveQueue.Peek();
         }
         #endregion
-
         
         #region Wave Completion
 

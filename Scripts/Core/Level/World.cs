@@ -14,19 +14,5 @@ namespace Kuantech.Core
             if (Levels.IsNullOrEmpty()) return null;
             return Levels[levelIndex % Levels.Count];
         }
-        
-        /// <summary>
-        /// Returns the corresponding power level
-        /// </summary>
-        /// <param name="worldIndex"></param>
-        /// <param name="levelIndex"></param>
-        /// <returns></returns>
-        public int GetPowerLevel(int worldIndex, int levelIndex)
-        {
-            int rankUpPerWorld = ConfigManager.GetIntConfig("RankUpPerWorld");
-            if (rankUpPerWorld == 0) return worldIndex;
-            int powerLevel = Mathf.FloorToInt((float)worldIndex / rankUpPerWorld);
-            return powerLevel;
-        }
     }
 }

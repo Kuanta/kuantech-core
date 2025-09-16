@@ -112,7 +112,19 @@ namespace Kuantech.Core.UI
 
             return elements;
         }
+        
+        public UIElement GetPhasePanelByKey(string key)
+        {
+            if (key.IsNullOrEmpty()) return null;
+            if (_phasePanelsById.TryGetValue(key, out var panel))
+            {
+                return panel;
+            }
+
+            return null;
+        }
         #endregion
+        
         public virtual void Reset()
         {
             

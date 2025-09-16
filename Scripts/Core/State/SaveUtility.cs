@@ -19,6 +19,29 @@ namespace Kuantech.Core
 
     public static class SaveUtility
     {
+        #region POCO
+
+        static readonly JsonSerializerSettings JsonSettings = new JsonSerializerSettings
+        {
+            TypeNameHandling = TypeNameHandling.Auto,
+            ContractResolver = new UnitySerializeFieldContractResolver()
+        };
+
+        public static byte[] SerializePoco<T>(T value)
+        {
+            string json = JsonConvert.SerializeObject(value, Formatting.None, JsonSettings);
+            return System.Text.Encoding.UTF8.GetBytes(json);
+        }
+
+        public static T DeserializePoco<T>(byte[] bytes)
+        {
+            if (bytes == null) return default;
+            string json = System.Text.Encoding.UTF8.GetString(bytes);
+            return JsonConvert.DeserializeObject<T>(json, JsonSettings);
+        }
+
+        #endregion
+        
         public static byte[] Serialize(ISaveable target)
         {
             var data = CreateSaveableData(target);

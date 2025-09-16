@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Kuantech.Utils;
 using UnityEngine;
 using UnityEngine.Events;
@@ -28,11 +29,14 @@ namespace Kuantech.Puzzle
     
     public abstract class Board : MonoBehaviour
     {
+        [Header("Tile Collection")] 
+        public BoardTileCollection BoardTileCollection;
+        
         [Header("Existing Tiles")] 
         public List<GameObject> ExistingLayers;
         
         //Events
-        public UnityAction<BoardTile> OnTilePlacedToBoardEvent;
+        public UnityAction<BoardTile, bool> OnTilePlacedToBoardEvent;
         public UnityAction<BoardTile> OnTileMergedEvent;
         
         //Editor
@@ -96,7 +100,7 @@ namespace Kuantech.Puzzle
         /// <param name="coordinate"></param>
         /// <param name="setPosition"></param>
         /// <returns></returns>
-        public virtual bool SetTile(BoardTile tile, BoardTileCoordinate coordinate, bool setPosition = true)
+        public virtual bool SetTile(BoardTile tile, BoardTileCoordinate coordinate, bool setPosition = true, bool fromLoadState=false)
         {
             if (!CanSetTile(tile, coordinate)) return false;
             if (tile.ParentBoard != null)
@@ -145,7 +149,7 @@ namespace Kuantech.Puzzle
             {
                 PositionTileAtCoordinate(tile, coordinate);
             }
-            OnTileSetToBoard(tile);
+            OnTileSetToBoard(tile, fromLoadState);
             return true;
         }
 
@@ -154,9 +158,9 @@ namespace Kuantech.Puzzle
             OnTileMergedEvent?.Invoke(tile);
         }
         
-        protected virtual void OnTileSetToBoard(BoardTile tile)
+        protected virtual void OnTileSetToBoard(BoardTile tile, bool fromLoadState)
         {
-            OnTilePlacedToBoardEvent?.Invoke(tile);
+            OnTilePlacedToBoardEvent?.Invoke(tile, fromLoadState);
         }
         
         public virtual void PositionTileAtCoordinate(BoardTile tile, BoardTileCoordinate coordinate)
@@ -179,6 +183,8 @@ namespace Kuantech.Puzzle
         public abstract BoardTile GetTile(BoardTileCoordinate qbertTileCoordinate);
         
         public abstract List<T> GetTiles<T>() where T : BoardTile;
+
+        public abstract List<BoardTile> GetAllTiles();
         
         /// <summary>
         /// Saves the tile. Every board must have its own implementation
@@ -233,6 +239,20 @@ namespace Kuantech.Puzzle
                 UnsetCoordinate(boardTileCoordinate);
             }
         }
+        
+        /// <summary>
+        /// Clears the board
+        /// </summary>
+        public virtual void ClearBoard()
+        {
+            List<BoardTile> boards = GetAllTiles();
+            foreach (var boardTile in boards)
+            {
+                UnsetTile(boardTile);
+                boardTile.Despawn(true);
+            }
+        }
+        
         #endregion
 
         #region Tile Coordinates
@@ -242,6 +262,60 @@ namespace Kuantech.Puzzle
         
         public abstract bool IsCoordinateValid(BoardTileCoordinate tileCoordinate);
         
+        #endregion
+        
+        #region State
+        
+        [Serializable]
+        public class BoardState
+        {
+            public List<BoardTileState> TileStates;
+        }
+        
+        [Serializable]
+        public class BoardTileState
+        {
+            public BoardTileCoordinate AnchorCoordinates;
+            public List<BoardTileCoordinate> LocalCoordinates;
+            public string TileTypeId;
+            public byte[] CustomData;
+        }
+
+        public BoardState GetBoardState()
+        {
+            BoardState boardState = new BoardState();
+            boardState.TileStates = new List<BoardTileState>();
+            List<BoardTile> allPlacedTiles = GetAllTiles();
+            foreach (var tile in allPlacedTiles)
+            {
+                boardState.TileStates.Add(tile.GetBoardTileState());
+            }
+            return boardState;
+        }
+
+        public void LoadBoardState(BoardState boardState)
+        {
+            ClearBoard();
+            if (BoardTileCollection == null)
+            {
+                Debug.LogWarning("No collection is set, cant load the board");
+                return;
+            }
+            
+            //Instantiate and place tiles
+            foreach(var boardTileState in boardState.TileStates)
+            {
+                BoardTile tilePrefab = BoardTileCollection.GetTilePrefab(boardTileState.TileTypeId);
+                if (tilePrefab == null)
+                {
+                    Debug.LogError($"Tile prefab with id {boardTileState.TileTypeId} not found in collection");
+                    continue;
+                }
+                BoardTile newTile = Instantiate(tilePrefab);
+                SetTile(newTile, boardTileState.AnchorCoordinates, true, true);
+                newTile.LoadBoardTileState(boardTileState);
+            }
+        }
         #endregion
     }
 }

@@ -44,9 +44,6 @@ namespace Kuantech.Puzzle
 
         [Header("Origin Offset")] 
         public Vector2 OriginOffset = new Vector2(-0.5f, -0.5f);
-
-        [Header("Tile Collection")] 
-        public TileCollection TileCollection;
         
         [Header("BackgroundTile object")] 
         public GridTileBackground BackgroundGameObjectPrefab;
@@ -281,9 +278,9 @@ namespace Kuantech.Puzzle
             return !IsTileOccupied(row, col, layer) && IsCoordinateValid(row, col);
         }
 
-        public bool SetTile(GridTile gridTile, int row, int col, int layer=0, bool setPosition = true)
+        public bool SetTile(GridTile gridTile, int row, int col, int layer=0, bool setPosition = true, bool fromLoadState=false)
         {
-            return SetTile(gridTile, new GridTileCoordinate(row, col, layer), setPosition);
+            return SetTile(gridTile, new GridTileCoordinate(row, col, layer), setPosition, fromLoadState);
         }
 
         private void UpdateDirectionalTiles()
@@ -658,25 +655,25 @@ namespace Kuantech.Puzzle
         }
         #endregion
 
-        public void ClearBoard()
-        {
-            for (int layer = 0; layer < Tiles.Count; ++layer)
-            {
-                for (int r = 0; r < RowCount; ++r)
-                {
-                    for (int c = 0; c < ColumnCount; ++c)
-                    {
-                        GridTile tile = GetTile(r, c, layer);
-                        if(tile != null)
-                        {
-                            UnsetTile(r,c);
-                            tile.Despawn(true);
-                        }
-                    }
-                }
-            }
-            
-        }
+        // public override void ClearBoard()
+        // {
+        //     for (int layer = 0; layer < Tiles.Count; ++layer)
+        //     {
+        //         for (int r = 0; r < RowCount; ++r)
+        //         {
+        //             for (int c = 0; c < ColumnCount; ++c)
+        //             {
+        //                 GridTile tile = GetTile(r, c, layer);
+        //                 if(tile != null)
+        //                 {
+        //                     UnsetTile(r,c);
+        //                     tile.Despawn(true);
+        //                 }
+        //             }
+        //         }
+        //     }
+        //     
+        // }
         
         #region Utility Methods
         /// <summary>
@@ -727,6 +724,21 @@ namespace Kuantech.Puzzle
             }
 
             return tilesOfType;
+        }
+
+        public override List<BoardTile> GetAllTiles()
+        {
+            List<BoardTile> tiles = new List<BoardTile>();
+            for(int r=0;r<RowCount;++r)
+            {
+                for(int c=0;c<ColumnCount;++c)
+                {
+                    BoardTile tile = GetTile(r, c, 0);
+                    if(tile == null || !tile.IsPlacedToBoard()) continue;
+                    tiles.Add(tile);
+                }
+            }
+            return tiles;
         }
         
         #region Core Set & Clear
