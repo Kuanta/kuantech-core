@@ -6,14 +6,15 @@ using UnityEngine;
 
 namespace Kuantech.TowerDefense
 {
+    
     [Serializable]
     public class TowerDefenseLevelsCollection
     {
-        public List<TowerDefenseLevelData> Levels;
+        public List<TowerDefenseLevelData> TowerDefenseLevels;
         
-        public TowerDefenseLevelData GetLevelData(int worldNumber, int levelNumber)
+        public virtual TowerDefenseLevelData GetLevelData(int worldNumber, int levelNumber)
         {
-            foreach (var level in Levels)
+            foreach (var level in TowerDefenseLevels)
             {
                 if (level.WorldIndex == worldNumber && level.LevelIndex == levelNumber)
                 {
@@ -26,10 +27,10 @@ namespace Kuantech.TowerDefense
     public class TowerDefenseLevelDataManager : SubManager
     {
         [SerializeField] private WaveGeneratorConfig WaveGeneratorConfig;
-
-        public static TowerDefenseLevelData GetLevelData(int worldNumber, int levelNumber)
+        
+        public static TowerDefenseLevelData GetLevelData<T>(int worldNumber, int levelNumber) where T : TowerDefenseLevelsCollection
         {
-            TowerDefenseLevelsCollection levelsData = JsonDataManager.GetData<TowerDefenseLevelsCollection>();
+            TowerDefenseLevelsCollection levelsData = JsonDataManager.GetData<T>();
             if (levelsData == null)
             {
                 return null;

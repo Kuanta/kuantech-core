@@ -26,6 +26,13 @@ namespace Kuantech.Core
         public LevelPhase OldPhase;
         public LevelPhase NewPhase;
     }
+
+    public struct LevelIdentificationData
+    {
+        public string WorldID;
+        public int WorldIndex;
+        public int LevelIndex;
+    }
     
     public class Level : MonoBehaviour
     {

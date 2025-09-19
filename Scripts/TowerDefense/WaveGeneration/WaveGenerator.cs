@@ -85,7 +85,7 @@ public static class
         float intraMix = Mathf.Clamp01(cfg.IntraEarlyLateMix.Evaluate(t01));
         float mix      = Mathf.Clamp01(Mathf.Lerp(lp.EarlyLateMix, intraMix, 0.6f));
 
-        // budget: base * intraBudget (DOĞRU ÇARPIM) + rest penalty
+        // budget: base * intraBudget + rest penalty
         float bmul  = Mathf.Max(0.1f, cfg.IntraBudget.Evaluate(t01));
         int budget  = Mathf.RoundToInt(lp.BaseBudget * bmul);
         if (cfg.RestEveryN > 0 && (waveIndex + 1) % cfg.RestEveryN == 0)

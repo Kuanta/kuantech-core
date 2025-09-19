@@ -15,11 +15,9 @@ namespace Kuantech.TowerDefense
             public float BudgetMul;
             public float BudgetQuadTerm;
             public float ConcurrencyT;
-            public float DelayMul;
             public float ChainChance;
             public float EarlyLateMix;
             public int PowerLevel;
-            public int SeedSaltApplied;
         }
         
         [Header("Determinism")]
@@ -83,13 +81,11 @@ namespace Kuantech.TowerDefense
                 BudgetQuadTerm = BudgetQuadK * (levelIndex * levelIndex),
 
                 ConcurrencyT = Mathf.Clamp01(ConcurrencyProgress.Evaluate(t)),
-                DelayMul = Mathf.Max(0.3f, DelayMultiplier.Evaluate(t)),
 
                 ChainChance = Mathf.Clamp01(ChainChanceCurve.Evaluate(t)),
                 EarlyLateMix = Mathf.Clamp01(EarlyToLateMix.Evaluate(t)),
 
                 PowerLevel = CalculatePowerLevel(levelIndex),
-                SeedSaltApplied = SeedSalt
             };
         }
 

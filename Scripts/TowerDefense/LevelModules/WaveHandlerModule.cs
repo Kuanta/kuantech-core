@@ -6,6 +6,7 @@ using Kuantech.Core.Utils;
 using Kuantech.RealTimeStrategy;
 using Kuantech.Rpg;
 using Kuantech.Utils;
+using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -60,14 +61,12 @@ namespace Kuantech.TowerDefense
             _unitManager = ParentLevel.GetLevelModule<UnitsManager>();
             _unitManager.OnActorRemoved += OnActorRemoved;
         }
-
+        
         public void SetWaveDatas(List<WaveData> waveDatas,  int waveCount)
         {
             if (waveDatas.IsNullOrEmpty())
             {
-                //Generate
-                WaveGeneratorConfig config = TowerDefenseLevelDataManager.GetWaveGeneratorConfig();
-                WaveDatas = WaveGenerator.Generate(config, SpawnablesCollection, ParentLevel.GetPowerLevel(), waveCount);
+                GenerateWaves(ParentLevel.GetPowerLevel(), waveCount);
             }
             else
             {
@@ -161,7 +160,7 @@ namespace Kuantech.TowerDefense
             SetWave(CurrentWaveIndex+1);
         }
 
-                
+        [Button("Set Wave")]
         public void SetWave(int waveIndex)
         {
             if (waveIndex >= WaveDatas.Count)
@@ -418,6 +417,16 @@ namespace Kuantech.TowerDefense
             {
                 CompleteWave();
             }
+        }
+        #endregion
+        
+        #region Debug
+        [Button("Generate Wave Datas")]
+        public void GenerateWaves(int difficultyLevel, int waveCount)
+        {
+            //Generate
+            WaveGeneratorConfig config = TowerDefenseLevelDataManager.GetWaveGeneratorConfig();
+            WaveDatas = WaveGenerator.Generate(config, SpawnablesCollection, difficultyLevel, waveCount);
         }
         #endregion
     }
