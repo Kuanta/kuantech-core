@@ -2,11 +2,26 @@
 using System.Collections.Generic;
 using Kuantech.Core;
 using Kuantech.Rpg;
+using UnityEngine;
 
 namespace Kuantech.TowerDefense
 {
-    using UnityEngine;
 
+    [Serializable]
+    public class TagWeightRule
+    {
+        public EnemyTagAsset Tag;
+        public float BaseWeight = 1f;                   
+        public AnimationCurve WeightOverT =                       
+            AnimationCurve.Linear(0, 1, 1, 1);
+        [Header("Opener bonus (first N entries)")]
+        public float OpenerMultiplier = 1.0f;                      
+        [Header("Share limit (cap: 0..1; 1=no cap)")]
+        [Range(0f, 1f)] public float MaxShare = 1f;                
+        [Header("Scarcity boost (0=off)")]
+        public float ScarcityPower = 0f;                          
+    }
+    
     [CreateAssetMenu(menuName = "Kuantech/TowerDefense/Wave Generator Config", fileName = "WaveGeneratorConfig")]
     public class WaveGeneratorConfig : ScriptableObject
     {
@@ -30,6 +45,17 @@ namespace Kuantech.TowerDefense
         [Min(1)] public int MaxSafeBatchSize = 4;              // smaller batches for openers
         public bool SkipChainOnSafeEntries = true;             // prevent chaining in openers
         public List<EnemyTagAsset> FirstWaveEntriesAllowed;
+        
+        [Header("Tag Weights")]
+        public List<TagWeightRule> TagWeights = new();
+        
+        [Tooltip("First N entries can get opener bonus")]
+        public int OpenerEntryCount = 2;
+        
+        public bool UseStrictAndGate = false;  
+        
+        public TagWeightRule FindRule(EnemyTagAsset tag)
+            => TagWeights?.Find(r => r.Tag == tag);
         
         #region Ramp Curves
         [Header("Ramp Curves")]

@@ -62,6 +62,116 @@ public static class
             EarlyLateMix     = rp.EarlyLateMix
         };
     }
+
+    #region Tag Filtering
+
+    /// <summary>
+    /// For tag filtering
+    /// </summary>
+    /// <param name="tags"></param>
+    /// <param name="allowed"></param>
+    /// <returns></returns>
+    private static bool PassesStrictAndGate(
+        List<EnemyTagAsset> tags,
+        List<EnemyTagAsset> allowed)
+    {
+        if (allowed == null || allowed.Count == 0) return true;   // boşsa serbest
+        if (tags == null || tags.Count == 0) return false;
+        for (int i = 0; i < tags.Count; i++)
+        {
+            var t = tags[i];
+            if (t == null) continue;
+            if (!allowed.Contains(t)) return false;
+        }
+        return true;
+    }
+    
+    /// <summary>
+    /// Final selection weight for a candidate spawnable.
+    /// Combines cheap-bias with tag-based rules, duplicate penalty, share caps, opener bonus, scarcity.
+    /// </summary>
+    private static double ComputeCandidateWeight(
+        WaveGeneratorConfig cfg,
+        SpawnablesCollection.SpawnableEntry cand,
+        float targetSpend,              
+        float cost,                        
+        float t01,                         
+        bool isOpener,                      
+        int? lastPickedType,                
+        Dictionary<EnemyTagAsset,int> tagUnitCounts,  
+        int totalUnits           
+    )
+    {
+        // 1) “cheap bias” (ucuzlara eğilim)
+        double w = Math.Pow(
+            Math.Max(0.1, (double)targetSpend / Math.Max(1.0, cost)),
+            cfg.CheapBiasPower
+        );
+
+        // 2) tag tabanlı çarpan (entry’nin tüm tag’lerinin ortalaması)
+        var tags = cand.Tags;
+        if (tags != null && tags.Count > 0)
+        {
+            double sum = 0.0;
+            int used = 0;
+
+            for (int i = 0; i < tags.Count; i++)
+            {
+                var tag = tags[i];
+                if (tag == null) continue;
+
+                var rule = cfg.FindRule(tag);
+
+                float tagWeight = 1f;
+                float maxShare = 1f;
+                float openerMul = 1f;
+                float scarcityPow = 0f;
+
+                if (rule != null)
+                {
+                    tagWeight   = rule.BaseWeight * rule.WeightOverT.Evaluate(t01);
+                    maxShare    = Mathf.Clamp01(rule.MaxShare);
+                    openerMul   = isOpener ? Mathf.Max(0f, rule.OpenerMultiplier) : 1f;
+                    scarcityPow = Mathf.Max(0f, rule.ScarcityPower);
+                }
+
+                int usedCount = 0;
+                // share cap
+                if (maxShare < 1f && totalUnits > 0 && tagUnitCounts != null &&
+                    tagUnitCounts.TryGetValue(tag, out usedCount))
+                {
+                    float share = (float)usedCount / totalUnits;
+                    if (share >= maxShare * 0.98f) tagWeight = 0f;
+                }
+
+                // scarcity
+                if (scarcityPow > 0f && totalUnits > 0 && tagUnitCounts != null)
+                {
+                    tagUnitCounts.TryGetValue(tag, out usedCount);
+                    float scarcity = 1f - ((float)usedCount / totalUnits); // 0..1
+                    tagWeight *= Mathf.Pow(Mathf.Clamp01(scarcity), scarcityPow);
+                }
+
+                tagWeight *= openerMul;
+
+                sum  += tagWeight;
+                used += 1;
+            }
+
+            if (used > 0)
+            {
+                w *= Math.Max(0.0, sum / used);
+            }
+        }
+
+        // 3) duplicate penalty
+        if (lastPickedType.HasValue && cand.SpawnableIndex == lastPickedType.Value)
+            w *= Math.Max(0.0, cfg.DuplicatePenalty);
+
+        return w;
+    }
+
+    #endregion
     
     public static WaveParams ComputeWaveParams(
         WaveGeneratorConfig cfg,
@@ -196,11 +306,16 @@ public static class
             1, 999
         );
         
+        var tagUnitCounts = new Dictionary<EnemyTagAsset, int>();
         var typeCounts = new Dictionary<int, int>();
         int totalUnits = 0;
         int? lastPickedType = null;
         
         int entryIndex = 0;
+
+        bool isOpener = wave.WaveEntries.Count < cfg.OpenerEntryCount;
+        
+     
         
         while (remaining > 0 && wave.WaveEntries.Count < cfg.MaxWaveEntryCount)
         {
@@ -223,24 +338,23 @@ public static class
             if (inSafeWindow)
             {
                 var safePool = pool.Where(e => HasAll(e.Tags, cfg.FirstWaveEntriesAllowed)).ToList();
-                if (safePool.Count > 0) poolForThisEntry = safePool; // boşsa eski davranışa düş
+                if (safePool.Count > 0) poolForThisEntry = safePool;
             }
             
-            var candidates = new List<(SpawnablesCollection.SpawnableEntry e, float cost)>();
+            var candidates = new List<(SpawnablesCollection.SpawnableEntry e, float cost, double w)>();
            
             foreach (var e in poolForThisEntry)
             {
                 float c = cfg.CalculateCost(e, levelParams.PowerLevel);
-                if (c <= softCap) candidates.Add((e, c));
-            }
-            if (candidates.Count == 0)
-            {
-                foreach (var e in poolForThisEntry)
+                if (c <= softCap)
                 {
-                    float c = cfg.CalculateCost(e, levelParams.PowerLevel);
-                    if (c <= remaining) candidates.Add((e, c));
+                    double wght = ComputeCandidateWeight(cfg, e, targetSpend, c, waveParams.T01,
+                        isOpener, lastPickedType,
+                        tagUnitCounts, totalUnits);
+                    if (wght > 0) candidates.Add((e, c, wght));
                 }
             }
+
             if (candidates.Count == 0) break;
 
             // 3) Cheap-biased roulette (stronger than before)
@@ -304,10 +418,23 @@ public static class
                 SpawnerIndex   = (cfg.SpawnerLaneCount <= 0) ? 0 : spawner,
                 Amount         = amount
             });
-        
+            
+            //Increase picked type count
             typeCounts.TryGetValue(pick.e.SpawnableIndex, out int cur);
             cur += amount;
             typeCounts[pick.e.SpawnableIndex] = cur;
+            
+            //Increase picked tag count
+            if (pick.e.Tags != null)
+            {
+                foreach (var tag in pick.e.Tags)
+                {
+                    if (tag == null) continue;
+                    tagUnitCounts.TryGetValue(tag, out var used);
+                    tagUnitCounts[tag] = used + amount;
+                }
+            }
+            
             totalUnits += amount;
 
             lastPickedType = pick.e.SpawnableIndex;
@@ -446,6 +573,8 @@ public static class
             return h;
         }
     }
+    
+    
     
     // Optional helper to print to console
     public static void LogReport(DebugReport r)
