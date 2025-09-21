@@ -108,7 +108,7 @@ public static class
             cfg.CheapBiasPower
         );
 
-        // 2) tag tabanlı çarpan (entry’nin tüm tag’lerinin ortalaması)
+        // 2) Tag based multiplier
         var tags = cand.Tags;
         if (tags != null && tags.Count > 0)
         {
