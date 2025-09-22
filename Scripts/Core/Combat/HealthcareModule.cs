@@ -134,6 +134,11 @@ namespace Kuantech.Core.Combat
             Healthbar.SetHealth(currentHealth, GetMaxHealth());
         }
 
+        public void SetHealthbar(Healthbar healthbar)
+        {
+            Healthbar = healthbar;
+        }
+        
         public DamageInfo CalculateReducedDamageInfo(DamageInfo damageInfo)
         {
             float reducedDamage = damageInfo.DamageAmount;

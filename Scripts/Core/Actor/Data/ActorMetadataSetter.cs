@@ -1,4 +1,5 @@
-﻿using Kuantech.Midcore;
+﻿using Kuantech.Core.Database.Attributes;
+using Kuantech.Midcore;
 
 namespace Kuantech.Core
 {
@@ -6,6 +7,8 @@ namespace Kuantech.Core
     {
         public int FactionId;
         public string DropCurrencyId = "IngameCoin";
+        
+        [KtDatabaseVariable("CurrencyDrop")]
         public int DropCurrencyAmount = 1;
         
         public override void OnActorCreated(ActorBlueprint blueprint, Actor actor)

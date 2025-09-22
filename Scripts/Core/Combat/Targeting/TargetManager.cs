@@ -14,7 +14,9 @@ namespace Kuantech.Core
         
         //Runtime
         public TargetSlot CurrentTargetSlot;
-        public Actor CurrentTarget;
+        
+        //todo: Create a faction based target system
+        private Actor CurrentTarget = null;
 
         public override void Initialize()
         {

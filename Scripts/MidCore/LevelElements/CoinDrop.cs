@@ -73,9 +73,6 @@ namespace Kuantech.Midcore
                 yield break;
             }
 
-            // (Opsiyonel) Dünyadaki coin görselini gizlemek istersen:
-            // HideWorldVisuals(true);
-
             // Şu anki world pozisyonundan UI’ya uç
             levelUI.FlyTowardsUIElementInWorldSpace(FlyingCurrency, transform.position, targetTransform);
         }

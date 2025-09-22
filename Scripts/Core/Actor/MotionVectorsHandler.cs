@@ -136,7 +136,7 @@ namespace Kuantech.Core
             //If target manager has a target...
             if (ParentActor != null && ParentActor.GetModule<TargetManager>() != null)
             {
-                Actor target = ParentActor.GetModule<TargetManager>().CurrentTarget;
+                Actor target = ParentActor.GetModule<TargetManager>().GetCurrentTarget();
                 if (target != null) TargetedObject = target.transform;
             }
             if (TargetedObject != null)
