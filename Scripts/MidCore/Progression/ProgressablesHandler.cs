@@ -102,7 +102,8 @@ namespace Kuantech.Midcore
         /// <returns></returns>
         public bool IsProgressibleUnlocked(ProgressableDataAsset asset)
         {
-            return GetProgressibleData(asset) != null;
+            return GetCurrentRank(asset) >= 0;
+            //return GetProgressibleData(asset) != null;
         }
         
         /// <summary>
