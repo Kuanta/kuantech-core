@@ -23,16 +23,18 @@ namespace Kuantech.RealTimeStrategy
         public List<MaxUnitPerFactionEntry> MaxUnitsPerFaction;
         private Dictionary<int, HashSet<Actor>> _actorsByFaction;
         private Dictionary<int, int> _maxUnitsPerFaction;
+        private Dictionary<int, float> _maxUnitsFactorPerFaction;
         public HashSet<Actor> SpawnedActors = new HashSet<Actor>();
         
 
         //todo(rts): Factions management here. Something like factions lookup table
 
-        public UnityAction OnActorRemoved;
+        public UnityAction<Actor> OnActorRemoved;
         
         public override void Initialize()
         {
             _actorsByFaction = new Dictionary<int, HashSet<Actor>>();
+            _maxUnitsFactorPerFaction = new Dictionary<int, float>();
             if (!MaxUnitsPerFaction.IsNullOrEmpty())
             {
                 foreach (var entry in MaxUnitsPerFaction)
@@ -116,7 +118,7 @@ namespace Kuantech.RealTimeStrategy
             if(SpawnedActors != null && SpawnedActors.Contains(actor))
                 SpawnedActors.Remove(actor);
             UnregisterActor(actor);
-            OnActorRemoved?.Invoke();
+            OnActorRemoved?.Invoke(actor);
         }
 
         private void UnregisterActor(Actor actor)
@@ -207,7 +209,6 @@ namespace Kuantech.RealTimeStrategy
             {
                 return false;
             }
-
             return true;
         }
 
@@ -215,7 +216,8 @@ namespace Kuantech.RealTimeStrategy
         {
             if (_maxUnitsPerFaction.ContainsKey(faction))
             {
-                return _maxUnitsPerFaction[faction];
+                float factor = GetMaxUnitFactorPerFaction(faction);
+                return Mathf.FloorToInt(_maxUnitsPerFaction[faction] * factor);
             }
 
             return -1; //Limitless
@@ -234,6 +236,21 @@ namespace Kuantech.RealTimeStrategy
             _maxUnitsPerFaction[faction] = actorCount;
         }
 
+        public void SetMaxUnitFactorPerFaction(int faction, float factor)
+        {
+            if (_maxUnitsFactorPerFaction == null) _maxUnitsFactorPerFaction = new Dictionary<int, float>();
+            _maxUnitsFactorPerFaction[faction] = factor;
+        }
+
+        public float GetMaxUnitFactorPerFaction(int faction)
+        {
+            if (_maxUnitsFactorPerFaction.ContainsKey(faction))
+            {
+                return _maxUnitsFactorPerFaction[faction];
+            }
+
+            return 1;
+        }
         #endregion
 
         #region Event Handlers
