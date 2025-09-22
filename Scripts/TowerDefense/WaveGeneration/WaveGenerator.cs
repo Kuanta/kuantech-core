@@ -47,7 +47,7 @@ public static class
         );
         baseBudget = Mathf.Max(5, baseBudget);
 
-        // max conc (difficulty’e göre)
+        // Max concurrency (max amount of enemies on the battle)
         int maxConc = Mathf.RoundToInt(Mathf.Lerp(cfg.MaxConcurrentBase, cfg.MaxConcurrentCap, rp.ConcurrencyT));
         maxConc = Mathf.Clamp(maxConc, cfg.MaxConcurrentBase, cfg.MaxConcurrentCap);
 
@@ -270,7 +270,7 @@ public static class
         WaveParams waveParams = ComputeWaveParams(cfg, levelParams, w, waveCount);
        
         // ---- Tag allow list
-        var allowed = rng.NextDouble() < waveParams.Mix ? cfg.LateAllowed : cfg.EarlyAllowed;
+        var allowed = cfg.EarlyMixThreshold < waveParams.Mix ? cfg.LateAllowed : cfg.EarlyAllowed;
 
         // ---- Pool: blueprint + tag + MinDifficultyLevel gate
         var pool = spawnables.Spawnables
@@ -312,10 +312,7 @@ public static class
         int? lastPickedType = null;
         
         int entryIndex = 0;
-
-        bool isOpener = wave.WaveEntries.Count < cfg.OpenerEntryCount;
         
-     
         
         while (remaining > 0 && wave.WaveEntries.Count < cfg.MaxWaveEntryCount)
         {
@@ -342,7 +339,9 @@ public static class
             }
             
             var candidates = new List<(SpawnablesCollection.SpawnableEntry e, float cost, double w)>();
-           
+            
+            bool isOpener = wave.WaveEntries.Count < cfg.OpenerEntryCount; //Check if first few entries. Can be used to scale down the prob of a certain tag
+
             foreach (var e in poolForThisEntry)
             {
                 float c = cfg.CalculateCost(e, levelParams.PowerLevel);

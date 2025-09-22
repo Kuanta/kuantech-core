@@ -69,14 +69,13 @@ namespace Kuantech.TowerDefense
         [Tooltip("Concurrency Progress (C(i)) 0..1")]
         public AnimationCurve ConcurrencyProgress = AnimationCurve.Linear(0, 0f, 1, 1f);
 
-        [Tooltip("Delay Multiplier (D(i))")]
-        public AnimationCurve DelayMultiplier = AnimationCurve.Linear(0, 1f, 1, 0.8f);
-
         [Tooltip("Chain Chance")]
         public AnimationCurve ChainChanceCurve = AnimationCurve.Linear(0, 0.4f, 1, 0.6f);
 
         [Tooltip("Composition Early→Late mix (0..1)")]
         public AnimationCurve EarlyToLateMix = AnimationCurve.Linear(0, 0.3f, 1, 1.0f);
+        [Tooltip("Threshold to distinguish early waves to late waves")]
+        public float EarlyMixThreshold = 0.2f;
 
         [Tooltip("Power Level (enemy stat level)")]
         public AnimationCurve PowerLevelCurve = AnimationCurve.Linear(0, 1f, 1, 5f);
@@ -138,7 +137,6 @@ namespace Kuantech.TowerDefense
 
         [Header("Concurrency → WaveData.MaxEnemyCount")]
         public int MaxConcurrentBase = 8;
-        public int MaxConcurrentGrowth = 2;
         public int MaxConcurrentCap = 20;
        
         [Tooltip("Spawn delay within a single wave. Delay = Lerp(DelayMin, DelayMax, IntraDelay.Evaluate(t))")]
