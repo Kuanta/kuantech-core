@@ -79,12 +79,12 @@ namespace Kuantech.Puzzle
         {
             BackgroundTiles = new Dictionary<BoardTileCoordinate, BoardTileBackground>();
             BackgroundMask = new HashSet<BoardTileCoordinate>();
+            SetBackgroundTiles();
             if(MaskedLayersAtStartup.IsNullOrEmpty()) return;
             foreach(var layerIndex in MaskedLayersAtStartup)
             {
                 MaskAllCoordinates(layerIndex);
             }
-            SetBackgroundTiles();
             UpdateBackgroundTileVisibilities();
         }
         
