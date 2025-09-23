@@ -12,6 +12,7 @@ namespace Kuantech.Utils
         public Sprite Sprite;
         public float Angle;
         public ConnectivityMask ConnectivityMask;
+        public GameObject EntryObject;
         //public List<ModularTileVisualPiece.DirectionalityConditionEntry> DirectionalityConditions;
     }
     
@@ -30,19 +31,42 @@ namespace Kuantech.Utils
         {
             foreach (var entry in SpriteEntries)
             {
-                bool satisfied = true;
                 if (entry.ConnectivityMask.Equals(eightConnectivitiy))
                 {
-                    if(SpriteRenderer != null) SpriteRenderer.sprite = entry.Sprite;
-                    transform.localRotation = Quaternion.AngleAxis(entry.Angle, UpVector);
-                    return;
+                    SetEntry(entry);
+                }
+                else
+                {
+                    UnsetEntry(entry);
                 }
             }
-            
-            //Set as default
-            SpriteRenderer.sprite = DefaultSprite;
+            //
+            // //Set as default
+            // SpriteRenderer.sprite = DefaultSprite;
         }
 
+        private void SetEntry(TiledSpriteEntry entry)
+        {
+            if (SpriteRenderer != null && entry.Sprite != null)
+            {
+                SpriteRenderer.sprite = entry.Sprite;
+            }
+            
+            if (entry.EntryObject != null)
+            {
+                entry.EntryObject.SetActive(true);
+            }
+            transform.localRotation = Quaternion.AngleAxis(entry.Angle, UpVector);
+
+        }
+
+        private void UnsetEntry(TiledSpriteEntry entry)
+        {
+            if (entry.EntryObject != null)
+            {
+                entry.EntryObject.SetActive(false);
+            }
+        }
         public void SetSprite(ConnectivityMask mask)
         {
             SetSprite(mask.GetEightConnectivity());

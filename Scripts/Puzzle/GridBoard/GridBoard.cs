@@ -44,9 +44,6 @@ namespace Kuantech.Puzzle
 
         [Header("Origin Offset")] 
         public Vector2 OriginOffset = new Vector2(-0.5f, -0.5f);
-        
-        [Header("BackgroundTile object")] 
-        public GridTileBackground BackgroundGameObjectPrefab;
 
         [Header("Pathfinding")] 
         public GridBoardPathTree GridBoardPathTree;
@@ -56,33 +53,25 @@ namespace Kuantech.Puzzle
         
         public List<GridTile[,]> Tiles; //A list of list to represent layered tiles
         //public GridTile[,] Tiles;
-        public GridTileBackground[,] BackgroundObjects;
-        public bool[,] BackgroundMask; //A background object can't be placed if its masked here
+        // public BoardTileBackground[,] BackgroundObjects;
+        // public bool[,] BackgroundMask; //A background object can't be placed if its masked here
 
         protected List<ExistingTileData> ExistingTiles;
         //protected HashSet<GridTile> _existingTilesSet = new HashSet<GridTile>();
-
-        //Masked tiles are tiles that are empty but 'blocked' tiles. 
-        public HashSet<GridTileCoordinate> MaskedTiles = new HashSet<GridTileCoordinate>();
+        //
+        // //Masked tiles are tiles that are empty but 'blocked' tiles. 
+        // public HashSet<GridTileCoordinate> MaskedTiles = new HashSet<GridTileCoordinate>();
 
         public delegate void TileOperation(GridTile tile);
 
         public override void CreateBoard()
         {
+            base.CreateBoard();
             Tiles = new List<GridTile[,]>();
-            BackgroundMask = new bool[RowCount,ColumnCount];
-            for (int r = 0; r < RowCount; ++r)
-            {
-                for (int c = 0; c < ColumnCount; ++c)
-                {
-                    BackgroundMask[r, c] = false;
-                }
-            }
             
             AddLayer(); //Add at least a single layer
             FindExistingTiles();
             SpawnExistingTiles();
-            SetBackgroundTiles();
             UpdateDirectionalTiles();
             if (Editorbackground != null)
             {
@@ -93,8 +82,22 @@ namespace Kuantech.Puzzle
             {
                 GridBoardPathTree.CreateNodes(this);
             }
+            
+            UpdateBackgroundTileVisibilities();
         }
-
+        
+        public override List<BoardTileCoordinate> GetAllCoordinates(int layer=0)
+        {
+            List<BoardTileCoordinate> allCoords = new List<BoardTileCoordinate>();
+            for (int r = 0; r < RowCount; ++r)
+            {
+                for (int c = 0; c < ColumnCount; ++c)
+                {
+                    allCoords.Add(new GridTileCoordinate(r,c,layer));
+                }
+            }
+            return allCoords;
+        }
 
         /// <summary>
         /// Finds existing tiles on the board
@@ -145,6 +148,7 @@ namespace Kuantech.Puzzle
         {
             Tiles.Add(new GridTile[RowCount, ColumnCount]);
         }
+        
         private void FindExistingTilesUnderLayer(GameObject parent, int layer)
         {
             GridTile[] existingTiles = parent.transform.GetComponentsInChildren<GridTile>();
@@ -180,41 +184,26 @@ namespace Kuantech.Puzzle
             }
             if (tile.MaskBackground)
             {
-                BackgroundMask[coord.Row, coord.Column] = true;
+                MaskBackground(coord);
             }
             tile.DestroyOnDespawn = false;
             tile.gameObject.SetActive(true);
             SetTile(tile, coord.Row, coord.Column, coord.Layer);
             tile.Spawn(true);
         }
+       
         
-        /// <summary>
-        /// Creates the background tiles
-        /// </summary>
-        private void SetBackgroundTiles()
+        protected override BoardTileBackground AddBackgroundObject(BoardTileCoordinate coordinate)
         {
-            BackgroundObjects = new GridTileBackground[RowCount, ColumnCount];
-            for (int r = 0; r < RowCount; ++r)
-            {
-                for (int c = 0; c < ColumnCount; ++c)
-                {
-                    if (BackgroundMask[r, c]) continue;
-                    AddBackgroundObject(r,c);
-                }
-            }
+            BoardTileBackground bg = base.AddBackgroundObject(coordinate);
+            if(bg == null) return null;
+            int row = ((GridTileCoordinate)coordinate).Row;
+            int col = ((GridTileCoordinate)coordinate).Column;
+            bg.transform.localPosition = GetLocalPosition(row, col);
+            bg.transform.localRotation = Quaternion.identity;
+            return bg;
         }
         
-        public virtual void AddBackgroundObject(int row, int col)
-        {
-            if (BackgroundGameObjectPrefab != null)
-            {
-                GridTileBackground bgObj = Instantiate(BackgroundGameObjectPrefab);
-                bgObj.transform.parent = transform;
-                bgObj.transform.localPosition = GetLocalPosition(row, col);
-                bgObj.transform.localRotation = Quaternion.identity;
-                BackgroundObjects[row, col] = bgObj;
-            }
-        }
         public virtual void RestartBoard()
         {
             ClearBoard();
@@ -230,32 +219,44 @@ namespace Kuantech.Puzzle
             return true;
         }
         #endregion
-
-        #region Query Methods
-        /// <summary>
-        /// Masks a tile
-        /// </summary>
-        /// <param name="coord"></param>
-        public void MaskTile(GridTileCoordinate coord)
+        
+        #region Masking
+        public override void MaskAllCoordinates(int layer)
         {
-            MaskedTiles ??= new HashSet<GridTileCoordinate>();
-            MaskedTiles.Add(coord);
+            for (int r = 0; r < RowCount; ++r)
+            {
+                for (int c = 0; c < ColumnCount; ++c)
+                {
+                    GridTileCoordinate coord = new GridTileCoordinate()
+                    {
+                        Row = r,
+                        Column = c,
+                        Layer = layer,
+                    };
+                    MaskCoordinate(coord);
+                }
+            }
         }
         
-        /// <summary>
-        /// Removes the mask from the tile
-        /// </summary>
-        /// <param name="coord"></param>
-        public void RemoveTileMask(GridTileCoordinate coord)
+        public override void UnmaskAllCoordinates(int layer)
         {
-            if(MaskedTiles == null) return;
-            MaskedTiles.Remove(coord);
+            for (int r = 0; r < RowCount; ++r)
+            {
+                for (int c = 0; c < ColumnCount; ++c)
+                {
+                    GridTileCoordinate coord = new GridTileCoordinate()
+                    {
+                        Row = r,
+                        Column = c,
+                        Layer = layer,
+                    };
+                    ClearMask(coord);
+                }
+            }
         }
-
-        public void ClearTileMasks()
-        {
-            MaskedTiles.Clear();
-        }
+        #endregion
+        
+        #region Query Methods
 
         public bool IsCoordinateValid(int row, int col)
         {
@@ -381,13 +382,13 @@ namespace Kuantech.Puzzle
         /// </summary>
         /// <param name="group"></param>
         /// <returns></returns>
-        public bool CanTileGroupBePlaced(GridTileGroup group)
+        public bool CanTileGroupBePlaced(GridTileGroup group, int layer)
         {
             for (int r = 0; r < RowCount; ++r)
             {
                 for (int c = 0; c < ColumnCount; ++c)
                 {
-                    if (group.CanBePlacedToBoard(this, r, c)) return true; 
+                    if (group.CanBePlacedToBoard(this, r, c, layer)) return true; 
                 }
             }
 
@@ -491,10 +492,7 @@ namespace Kuantech.Puzzle
         {
             if(!IsCoordinateValid(row, col)) return false;
 
-            if (MaskedTiles != null && MaskedTiles.Contains(new GridTileCoordinate()
-                {
-                    Row = row, Column = col, Layer = layer,
-                }))
+            if(IsTileMasked(new GridTileCoordinate(row, col, layer)))
             {
                 return true;
             }
@@ -643,37 +641,7 @@ namespace Kuantech.Puzzle
 
             return neighs;
         }
-        /// <summary>
-        /// Returns the background object for given row and col
-        /// </summary>
-        /// <param name="coord"></param>
-        /// <returns></returns>
-        public GridTileBackground GetBackground(GridTileCoordinate coord)
-        {
-            if (!IsCoordinateValid(coord)) return null;
-            return BackgroundObjects[coord.Row, coord.Column];
-        }
         #endregion
-
-        // public override void ClearBoard()
-        // {
-        //     for (int layer = 0; layer < Tiles.Count; ++layer)
-        //     {
-        //         for (int r = 0; r < RowCount; ++r)
-        //         {
-        //             for (int c = 0; c < ColumnCount; ++c)
-        //             {
-        //                 GridTile tile = GetTile(r, c, layer);
-        //                 if(tile != null)
-        //                 {
-        //                     UnsetTile(r,c);
-        //                     tile.Despawn(true);
-        //                 }
-        //             }
-        //         }
-        //     }
-        //     
-        // }
         
         #region Utility Methods
         /// <summary>
@@ -917,13 +885,13 @@ namespace Kuantech.Puzzle
 
         #region Tile Highlighting
 
-        private HashSet<GridTileBackground> _highlightedTiles;
+        private HashSet<BoardTileBackground> _highlightedTiles;
 
         public void IndicateBackgroundTiles(List<GridTileCoordinate> coordinatesToIndicate)
         {
             foreach (var coord in coordinatesToIndicate)
             {
-                GridTileBackground bg = GetBackground(coord);
+                BoardTileBackground bg = GetBackground(coord);
                 if(bg == null) continue;
                 bg.Indicate();
             }
@@ -933,7 +901,7 @@ namespace Kuantech.Puzzle
         {
             foreach (var coord in coordinatesToIndicate)
             {
-                GridTileBackground bg = GetBackground(coord);
+                BoardTileBackground bg = GetBackground(coord);
                 if(bg == null) continue;
                 bg.ClearIndicate();
             }
@@ -958,7 +926,7 @@ namespace Kuantech.Puzzle
         public void HighlightTiles(List<GridTileCoordinate> coordinates)
         {
             ClearHighlightedTiles();
-            if(_highlightedTiles == null) _highlightedTiles = new HashSet<GridTileBackground>();
+            if(_highlightedTiles == null) _highlightedTiles = new HashSet<BoardTileBackground>();
             foreach (var coord in coordinates)
             {
                 HighlightTile(coord);
@@ -967,12 +935,12 @@ namespace Kuantech.Puzzle
 
         public virtual void HighlightTile(GridTileCoordinate coord)
         {
-            GridTileBackground bgObj = GetBackground(coord);
+            BoardTileBackground bgObj = GetBackground(coord);
             if (bgObj == null) return;
             bgObj.Highlight();
             if (_highlightedTiles == null)
             {
-                _highlightedTiles = new HashSet<GridTileBackground>();
+                _highlightedTiles = new HashSet<BoardTileBackground>();
             }
             _highlightedTiles.Add(bgObj);
         }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Core.Utils
@@ -192,6 +193,11 @@ namespace Kuantech.Core.Utils
                 }
             } 
             return 0;
+        }
+
+        public bool IsNullOrEmpty()
+        {
+            return Elements.IsNullOrEmpty();
         }
         public void Clear()
         {

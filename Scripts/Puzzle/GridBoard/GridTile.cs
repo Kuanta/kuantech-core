@@ -67,6 +67,23 @@ namespace Kuantech.Puzzle
                 Layer = Layer + localCoordinate.Layer,
             };
         }
+        public override bool Equals(object obj)
+        {
+            if (obj is not GridTileCoordinate other) return false;
+            return Row == other.Row && Column == other.Column && Layer == other.Layer && Height == other.Height;
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                int hash = 17;
+                hash = hash * 23 + Row.GetHashCode();
+                hash = hash * 23 + Column.GetHashCode();
+                hash = hash * 23 + Layer.GetHashCode();
+                return hash;
+            }
+        }
     }
     
     public class GridTile : BoardTile
@@ -233,6 +250,30 @@ namespace Kuantech.Puzzle
         {
             if (ParentBoard == null) return null;
             return (ParentBoard as GridBoard)?.Get4Neighs(AnchorRow, AnchorColumn, 0);
+        }
+
+        public override List<BoardTileCoordinate> GetOccupiedCoordinates()
+        {
+            if (Coordinates.IsNullOrEmpty()) return new List<BoardTileCoordinate>()
+            {
+                new GridTileCoordinate()
+                {
+                    Row = GetAnchorRow(),
+                    Column = GetAnchorColumn(),
+                    Layer = GetAnchorLayer(),
+                }
+            };
+            List<BoardTileCoordinate> globalCoords = new List<BoardTileCoordinate>();
+            foreach (var coord in Coordinates)
+            {
+                globalCoords.Add(new GridTileCoordinate()
+                {
+                    Row = GetAnchorRow() + coord.Row,
+                    Column = GetAnchorColumn() + coord.Column,
+                    Layer = GetAnchorLayer() + coord.Layer,
+                });
+            }
+            return globalCoords;
         }
     }
 }

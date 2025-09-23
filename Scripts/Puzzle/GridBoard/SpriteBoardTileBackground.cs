@@ -2,7 +2,7 @@
 
 namespace Kuantech.Puzzle
 {
-    public class SpriteGridTileBackground : GridTileBackground
+    public class SpriteBoardTileBackground : BoardTileBackground
     {
         public Color HighlightColor = Color.green;
         private Color _lastColor;
