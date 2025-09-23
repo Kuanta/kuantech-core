@@ -248,6 +248,10 @@ namespace Kuantech.Midcore
             PayThePrice(asset, rank, currentRank);
 
             SetRank(asset, rank);
+            
+            //Analytics
+            Analytics.Analytics.UpgradePurchased(asset.GetId(), rank);
+            
             return true;
         }
         /// <summary>
