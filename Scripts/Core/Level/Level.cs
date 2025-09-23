@@ -4,6 +4,7 @@ using System.Linq;
 using Kuantech.Core.UI;
 using Kuantech.Utils;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Kuantech.Core
 {
@@ -42,6 +43,13 @@ namespace Kuantech.Core
         [Header("Components")] 
         public bool AutoDetectLevelElements = false;
         public List<LevelElement> LevelElements;
+
+        [FormerlySerializedAs("UseWorldIndex")]
+        [Header("Analytics")] 
+        [Tooltip("Should world index be sent to analytics")]
+        public bool TriggerEventWithWorldIndex = false;
+        [Tooltip("Should event with linear level number be triggered")]
+        public bool TriggerEventWithLinearLevelNumber = true;
         
         //Runtime
         public LevelPhaseSystem PhaseSystem;
@@ -121,6 +129,17 @@ namespace Kuantech.Core
             {
                 module.PostLevelSetup();
             }
+            
+                        
+            //Trigger analytics
+            if (TriggerEventWithWorldIndex)
+            {
+                Analytics.Analytics.OnWorldLevelStarted(WorldNumber, LevelIndex);
+            }
+            if(TriggerEventWithLinearLevelNumber)
+            {
+                Analytics.Analytics.OnLevelStarted(GetLevelNumber());
+            }
         }
         
         protected virtual void SetupPhaseSystem()
@@ -181,6 +200,16 @@ namespace Kuantech.Core
             {
                 component.OnCompleteLevel();
             }
+            
+            //Trigger analytics
+            if (TriggerEventWithWorldIndex)
+            {
+                Analytics.Analytics.OnWorldLevelEnded(WorldNumber, LevelIndex, true, GetCurrentScore());
+            }
+            if(TriggerEventWithLinearLevelNumber)
+            {
+                Analytics.Analytics.OnLevelEnded(GetLevelNumber(), true, GetCurrentScore());
+            }
         }
 
         public virtual void FailLevel()
@@ -191,6 +220,16 @@ namespace Kuantech.Core
             {
                 component.OnFailLevel();
             }
+            
+            //Trigger analytics
+            if (TriggerEventWithWorldIndex)
+            {
+                Analytics.Analytics.OnWorldLevelEnded(WorldNumber, LevelIndex, false, GetCurrentScore());
+            }
+            if(TriggerEventWithLinearLevelNumber )
+            {
+                Analytics.Analytics.OnLevelEnded(GetLevelNumber(), false, GetCurrentScore());
+            }
         }
         
         /// <summary>
@@ -199,6 +238,16 @@ namespace Kuantech.Core
         public virtual void QuitLevel()
         {
             ClearLevel();
+            
+            //Trigger analytics
+            if (TriggerEventWithWorldIndex)
+            {
+                Analytics.Analytics.OnWorldLevelEnded(WorldNumber, LevelIndex, false, GetCurrentScore());
+            }
+            if(TriggerEventWithLinearLevelNumber)
+            {
+                Analytics.Analytics.OnLevelEnded(GetLevelNumber(), false, GetCurrentScore());
+            }
         }
 
         /// <summary>
@@ -337,6 +386,21 @@ namespace Kuantech.Core
         #endregion
         
         #region Level Info
+        
+        /// <summary>
+        /// Returns the number of level. Not array index, the number
+        /// </summary>
+        /// <returns></returns>
+        public int GetLevelNumber()
+        {
+            int levelNumber = LevelNumber;
+            if (WorldDataAsset != null)
+            {
+                levelNumber = LevelManager.GetContext<LevelManager>().GetTotalLevelIndex(WorldNumber, LevelIndex);
+            }
+            return levelNumber;
+        }
+        
         public virtual float GetCurrentScore()
         {
             return 0f;
@@ -344,12 +408,7 @@ namespace Kuantech.Core
 
         public virtual int GetPowerLevel()
         {
-            int powerLevel = LevelNumber;
-            if (WorldDataAsset != null)
-            {
-                powerLevel = LevelManager.GetContext<LevelManager>().GetTotalLevelIndex(WorldNumber, LevelIndex);
-            }
-            return powerLevel;
+            return GetLevelNumber();
         }
         #endregion
 

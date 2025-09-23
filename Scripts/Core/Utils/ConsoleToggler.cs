@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Sirenix.OdinInspector;
+using UnityEngine;
 using UnityEngine.Events;
 
 namespace Kuantech.Utils
@@ -218,7 +219,7 @@ namespace Kuantech.Utils
         }
     }
 #endif
-
+        [Button("Toggle Console")]
         private void ToggleConsole()
         {
             OnActivated?.Invoke();

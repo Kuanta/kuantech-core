@@ -24,6 +24,11 @@ namespace Kuantech.TowerDefense
 
         [Header("Wave Data")] 
         public List<WaveData> WaveDatas;
+
+        [Header("Max Units Factor")] 
+        public float BaseMaxUnitsFactor = 0.5f;
+        public float MaxUnitsFactorIncreasePerKill = 0.05f;
+        private float _currentMaxUnitsFactor;
         
         //Runtime
         [NonSerialized] public int CurrentWaveIndex;
@@ -53,6 +58,8 @@ namespace Kuantech.TowerDefense
                 Debug.LogError("No Wave Data assigned to WaveHandlerModule!");
             }
             CurrentWaveIndex = -1;
+
+            BaseMaxUnitsFactor = ConfigManager.GetFloatConfig("BaseMaxUnitsFactor", BaseMaxUnitsFactor);
         }
         
         public override void PostLevelSetup()
@@ -80,6 +87,7 @@ namespace Kuantech.TowerDefense
             _pendingSummons = null;
             CurrentWaveIndex = -1;
             _waveCompleteRoutine = null;
+            _currentMaxUnitsFactor = BaseMaxUnitsFactor;
         }
         
         private void Update()
@@ -205,12 +213,13 @@ namespace Kuantech.TowerDefense
             }
 
             _pendingSummons = new Queue<ActorSummonData>();
-            
+            _currentMaxUnitsFactor = BaseMaxUnitsFactor;
             //Set actor limits
             UnitsManager um = ParentLevel.GetLevelModule<UnitsManager>();
             if (um != null)
             {
                 um.SetMaxUnitPerFaction(waveData.EnemyFactionId, waveData.MaxEnemyCount);
+                um.SetMaxUnitFactorPerFaction(EnemyFactionId, _currentMaxUnitsFactor);
             }
 
             _waveCompleteRoutine = null;
@@ -408,10 +417,18 @@ namespace Kuantech.TowerDefense
         #endregion
 
         #region Event
-        private void OnActorRemoved()
+        private void OnActorRemoved(Actor removedActor)
         {
             WavePhase wavePhase = ParentLevel.GetCurrentPhase() as WavePhase;
             if (wavePhase == null) return;
+
+            if (removedActor.GetFactionId() == EnemyFactionId)
+            {
+                _currentMaxUnitsFactor += MaxUnitsFactorIncreasePerKill;
+                _currentMaxUnitsFactor = Mathf.Clamp(_currentMaxUnitsFactor, 0f, 1f);
+                _unitManager.SetMaxUnitFactorPerFaction(EnemyFactionId, _currentMaxUnitsFactor);
+            }
+            
             bool waveCompleted = IsWaveCompleted();
             if (waveCompleted)
             {

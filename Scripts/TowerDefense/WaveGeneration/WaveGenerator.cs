@@ -66,27 +66,6 @@ public static class
     #region Tag Filtering
 
     /// <summary>
-    /// For tag filtering
-    /// </summary>
-    /// <param name="tags"></param>
-    /// <param name="allowed"></param>
-    /// <returns></returns>
-    private static bool PassesStrictAndGate(
-        List<EnemyTagAsset> tags,
-        List<EnemyTagAsset> allowed)
-    {
-        if (allowed == null || allowed.Count == 0) return true;   // boşsa serbest
-        if (tags == null || tags.Count == 0) return false;
-        for (int i = 0; i < tags.Count; i++)
-        {
-            var t = tags[i];
-            if (t == null) continue;
-            if (!allowed.Contains(t)) return false;
-        }
-        return true;
-    }
-    
-    /// <summary>
     /// Final selection weight for a candidate spawnable.
     /// Combines cheap-bias with tag-based rules, duplicate penalty, share caps, opener bonus, scarcity.
     /// </summary>
