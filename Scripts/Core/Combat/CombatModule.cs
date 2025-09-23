@@ -475,12 +475,12 @@ namespace Kuantech.Core
             AttackPattern currPattern = GetCurrentAttackPattern();
             float criticalChance = currPattern .CriticalChance;
             float criticalMultiplier = Mathf.Max(1, currPattern .CriticalMultiplier);
-            if (CriticalChanceAttribute != null)
+            if (CriticalChanceAttribute != null && _statModule != null)
             {
                 criticalChance += _statModule.GetAttributeValue(CriticalChanceAttribute);
             }
 
-            if (CriticalMultiplierAttribute != null)
+            if (CriticalMultiplierAttribute != null && _statModule != null)
             {
                 criticalMultiplier += _statModule.GetAttributeValue(CriticalMultiplierAttribute);
             }
@@ -520,8 +520,11 @@ namespace Kuantech.Core
             AttackPattern attackPattern = GetCurrentAttackPattern();
             DamageInfo damageInfo = attackPattern.GetDamageInfo();
             damageInfo.IsCritical = critMultiplier > 1;
-            float statVariable = _statModule.GetAttributeValue(attackPattern.AttributeToScaleDamage);
-            damageInfo.DamageAmount += (statVariable * attackPattern.AttributeScaleFactor) * critMultiplier;
+            if (_statModule != null)
+            {
+                float statVariable = _statModule.GetAttributeValue(attackPattern.AttributeToScaleDamage);
+                damageInfo.DamageAmount += (statVariable * attackPattern.AttributeScaleFactor) * critMultiplier;
+            }
             return damageInfo;
         }
 
@@ -529,9 +532,12 @@ namespace Kuantech.Core
         {
             float critMultiplier = GetCriticalMultiplier();
             AttackPattern attackPattern = GetCurrentAttackPattern();
-            float statVariable = _statModule.GetAttributeValue(attackPattern.AttributeToScaleSplashDamage);
             DamageInfo damageInfo = attackPattern.SplashDamage;
-            damageInfo.DamageAmount += (statVariable * attackPattern.AttributeScaleFactor) * critMultiplier;
+            if (_statModule != null)
+            {
+                float statVariable = _statModule.GetAttributeValue(attackPattern.AttributeToScaleSplashDamage);
+                damageInfo.DamageAmount += (statVariable * attackPattern.AttributeScaleFactor) * critMultiplier;
+            }
             return damageInfo;
         }
         
@@ -542,7 +548,7 @@ namespace Kuantech.Core
         public float GetSplashDamageRadius()
         {
             AttackPattern attackPattern = GetCurrentAttackPattern();
-            if (attackPattern.AttributeToScaleSplashRadius == null)
+            if (attackPattern.AttributeToScaleSplashRadius == null || _statModule == null)
             {
                 return GetCurrentAttackPattern().SplashRadius;
             }

@@ -9,6 +9,7 @@ namespace Kuantech.Puzzle
     {
         [Header("Tile Properties")]
         [SerializeField] private string TileId;
+        
         [Tooltip("A filter for what layers this tile can be placed on (if empty, can be placed on any layer)")]
         [SerializeField] private List<int> AllowedLayers = null;
         
@@ -20,6 +21,10 @@ namespace Kuantech.Puzzle
         public bool StayOnBoardAfterDespawn = false;
         [Tooltip("Not a common behaviour but could be useful for unmaskers")]
         public bool DespawnOnPlaced = false;
+                
+        //Multi coord Board Tile
+        [SerializeReference]
+        public List<BoardTileCoordinate> Coordinates;
         
         //Runtime
         [NonSerialized] public bool IsExisting;
@@ -36,10 +41,7 @@ namespace Kuantech.Puzzle
 
             return TileId;
         }
-        
-        //Multi coord Board Tile
-        [SerializeReference]
-        public List<BoardTileCoordinate> Coordinates;
+
         
         public abstract List<BoardTileCoordinate> GetOccupiedCoordinates();
         

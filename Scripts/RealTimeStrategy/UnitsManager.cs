@@ -201,6 +201,7 @@ namespace Kuantech.RealTimeStrategy
         
         public bool CanSpawnActor(ActorBlueprint actorBlueprint)
         {
+            if (actorBlueprint == null) return false;
             int maxUnitCount = GetMaxActorCountByFaction(actorBlueprint.FactionId);
             if (GetSpawnedActorCountByFaction(actorBlueprint.FactionId) >= maxUnitCount && maxUnitCount >= 0) return false;
             int actorPerFaction = GetSpawnedActorCountByFaction(actorBlueprint.FactionId);

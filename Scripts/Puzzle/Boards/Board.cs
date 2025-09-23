@@ -6,6 +6,7 @@ using UnityEngine.Events;
 
 namespace Kuantech.Puzzle
 {
+    [Serializable]
     public abstract class BoardTileCoordinate
     {
         public BoardTileCoordinate()
@@ -118,7 +119,7 @@ namespace Kuantech.Puzzle
             }
         }
            
-        public void UpdateBackgroundTileVisibilities()
+        public virtual void UpdateBackgroundTileVisibilities()
         {
             foreach(var pair in BackgroundTiles)
             {
