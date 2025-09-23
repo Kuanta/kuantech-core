@@ -25,9 +25,12 @@ namespace Kuantech.Puzzle
 
         public void SetMasked(bool masked)
         {
-            Color baseColor = HighlightRenderer.material.GetColor(BaseColorKey);
-            baseColor.a = masked ? MaskedOpacity : UnmaskedOpacity;
-            HighlightRenderer.material.SetColor(BaseColorKey, baseColor);
+            if (HighlightRenderer.material.HasProperty(BaseColorKey))
+            {
+                Color baseColor = HighlightRenderer.material.GetColor(BaseColorKey);
+                baseColor.a = masked ? MaskedOpacity : UnmaskedOpacity;
+                HighlightRenderer.material.SetColor(BaseColorKey, baseColor);
+            }
             gameObject.SetActive(!masked);
 
         }
@@ -38,13 +41,19 @@ namespace Kuantech.Puzzle
         public virtual void Highlight()
         {
             if (HighlightRenderer == null) return;
-            HighlightRenderer.material.SetFloat(HighlightToggleFieldKey, 1);
+            if (HighlightRenderer.material.HasProperty(HighlightToggleFieldKey))
+            {
+                HighlightRenderer.material.SetFloat(HighlightToggleFieldKey, 1);
+            }
         }
 
         public virtual void ClearHighlight()
         {
             if (HighlightRenderer == null) return;
-            HighlightRenderer.material.SetFloat(HighlightToggleFieldKey, 0);
+            if (HighlightRenderer.material.HasProperty(HighlightToggleFieldKey))
+            {
+                HighlightRenderer.material.SetFloat(HighlightToggleFieldKey, 0);
+            }
         }
         
         /// <summary>
