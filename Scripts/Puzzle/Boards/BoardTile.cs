@@ -7,14 +7,25 @@ namespace Kuantech.Puzzle
 {
     public abstract class BoardTile : MonoBehaviour
     {
+        [Header("Tile Properties")]
         [SerializeField] private string TileId;
-        public Board ParentBoard;
-        public BoardTileCoordinate CurrentCoordinate; //Anchor coordinate
+        [Tooltip("A filter for what layers this tile can be placed on (if empty, can be placed on any layer)")]
+        [SerializeField] private List<int> AllowedLayers = null;
         
-        public bool IsExisting;
+        [Tooltip("If this tile is an unmasker, what layers it will unmask (if empty, will unmask all layers)")]
+        [SerializeField] private List<int> LayersToUnmask = null;
+        
+        [Header("Despawn Settings")]        
         public bool DestroyOnDespawn = true;
         public bool StayOnBoardAfterDespawn = false;
-
+        [Tooltip("Not a common behaviour but could be useful for unmaskers")]
+        public bool DespawnOnPlaced = false;
+        
+        //Runtime
+        [NonSerialized] public bool IsExisting;
+        [NonSerialized] public Board ParentBoard;
+        [NonSerialized] public BoardTileCoordinate CurrentCoordinate; //Anchor coordinate
+        
         public virtual string GetTileId()
         {
             if (TileId.IsNullOrEmpty())
@@ -27,7 +38,10 @@ namespace Kuantech.Puzzle
         }
         
         //Multi coord Board Tile
+        [SerializeReference]
         public List<BoardTileCoordinate> Coordinates;
+        
+        public abstract List<BoardTileCoordinate> GetOccupiedCoordinates();
         
         public virtual void Spawn(bool isExisting = false)
         {
@@ -86,12 +100,16 @@ namespace Kuantech.Puzzle
 
         public virtual void OnSetToBoard()
         {
-            
+            UnmaskLayers();
+            if(DespawnOnPlaced)
+            {
+                Despawn(false);
+            }
         }
         
         public virtual void OnUnsetFromBoard()
         {
-            
+            //todo: Discuss if unmasked layers should be masked back
         }
         
         /// <summary>
@@ -103,8 +121,26 @@ namespace Kuantech.Puzzle
            Despawn(false);
         }
         #endregion
-
-
+        
+        #region Unmasker
+        //Unmasks the layer
+        public void UnmaskLayers()
+        {
+            if (ParentBoard == null || LayersToUnmask.IsNullOrEmpty()) return;
+            foreach (var layer in LayersToUnmask)
+            {
+                List<BoardTileCoordinate> coords = GetOccupiedCoordinates();
+                foreach(var coord in coords)
+                {
+                    coord.Layer = layer;
+                    ParentBoard.ClearMask(coord);
+                }
+            }
+            ParentBoard.UpdateBackgroundTileVisibilities();
+        }
+        #endregion
+        
+        #region State
         public virtual Board.BoardTileState GetBoardTileState()
         {
             Board.BoardTileState newBoardTileState = new Board.BoardTileState
@@ -122,7 +158,7 @@ namespace Kuantech.Puzzle
         {
             LoadCustomData(state.CustomData);
         }
-        
+
         /// <summary>
         /// If a tile has custom data, this is the place to provide that custom data
         /// </summary>
@@ -136,5 +172,6 @@ namespace Kuantech.Puzzle
         {
             
         }
+        #endregion
     }
 }

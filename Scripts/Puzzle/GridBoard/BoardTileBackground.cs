@@ -1,12 +1,17 @@
 using UnityEngine;
 namespace Kuantech.Puzzle
 {
-    public class GridTileBackground : MonoBehaviour
+    public class BoardTileBackground : MonoBehaviour
     {
+        [Header("Base Color")] [SerializeField]
+        private string BaseColorKey = "_BaseColor";
+        public float MaskedOpacity = 0.5f;
+        public float UnmaskedOpacity = 1f;
+        
         [Header("Highlighting")] 
         [SerializeField] protected Renderer HighlightRenderer;
         [SerializeField] private string HighlightToggleFieldKey = "_HighlightToggle";
-        
+
         [Header("Even & Odd")]
         [SerializeField] private GameObject EvenBackground;
         [SerializeField] private GameObject OddBackground;
@@ -18,9 +23,17 @@ namespace Kuantech.Puzzle
             OddBackground.SetActive(!isEven);
         }
 
+        public void SetMasked(bool masked)
+        {
+            Color baseColor = HighlightRenderer.material.GetColor(BaseColorKey);
+            baseColor.a = masked ? MaskedOpacity : UnmaskedOpacity;
+            HighlightRenderer.material.SetColor(BaseColorKey, baseColor);
+            gameObject.SetActive(!masked);
+
+        }
         public virtual void SetColor(Color color)
         {
-            HighlightRenderer.material.SetColor("_BaseColor", color);
+            HighlightRenderer.material.SetColor(BaseColorKey, color);
         }
         public virtual void Highlight()
         {
