@@ -48,6 +48,7 @@ namespace Kuantech.HyperCasual.UI
             if (!AutoUpdate) return;
             var cm = CurrencyManager.GetContext<CurrencyManager>();
             if (cm == null) return;
+            cm.CurrencyUpdated -= OnCurrencyChangeEvent;
             cm.CurrencyUpdated += OnCurrencyChangeEvent;
             // gsm.CurrencyUpdatedEvent += OnCurrencyChangeEvent;
             UpdateValue();
@@ -84,6 +85,7 @@ namespace Kuantech.HyperCasual.UI
 
         public virtual void SetAmount(int amount)
         {
+            if (CurrencyAsset == null) return;
             CurrencyAmount.text = amount.Stringfy();
         }
 
@@ -93,7 +95,7 @@ namespace Kuantech.HyperCasual.UI
         /// <returns></returns>
         public virtual string GetCurrencyId()
         {
-            return CurrencyAsset.GetId();
+            return CurrencyAsset != null ? CurrencyAsset.GetId() : "";
         }
     }
 }

@@ -184,7 +184,6 @@ namespace Kuantech.Core
 
         
         #region Shoot
-
         public virtual void Shoot(Actor castBy, Weapon shotFrom, Vector3 shootPosition, Vector3 shootDirection, Transform target = null, float relativeSpeed = 0.0f)
         {
             // Set faction enemies

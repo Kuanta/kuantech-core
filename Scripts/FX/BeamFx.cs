@@ -34,6 +34,7 @@ namespace Kuantech.Core.FX
                 }
             }
 
+            EndPoint.forward = (EndPoint.position - StartPoint.position).normalized;
             if (MuzzleFx != null && MuzzleFx != null)
             {
                 MuzzleFx.transform.position = StartPoint.position;
@@ -47,6 +48,11 @@ namespace Kuantech.Core.FX
                 ImpactFx.transform.forward = EndPoint.forward;
                 ImpactFx.Play();
             }
+        }
+        
+        public void SetEndPointPosition(Vector3 endPoint)
+        {
+            EndPoint.transform.position = endPoint;
         }
     }
 }

@@ -7,13 +7,17 @@ using UnityEngine;
 
 namespace Kuantech.Midcore
 {
+    //todo: Remove this class completely
     public class MidcoreMenuSceneManager : SubManager
     {
         // [SaveableField] public int CurrentWorldIndex;
         // [SaveableField] public int CurrentLevelIndex;
-
+        
+        //todo: Remove this from here
         [Header("UI elements")] [SerializeField]
         private FreshUnlocksPanel FreshUnlocksPanel;
+        
+        //todo: remove this from here
         public string GameSceneName = "GameScene";
 
         [Header("Theme Music")] [SerializeField]

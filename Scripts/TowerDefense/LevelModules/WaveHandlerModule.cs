@@ -32,6 +32,7 @@ namespace Kuantech.TowerDefense
         
         //Runtime
         [NonSerialized] public int CurrentWaveIndex;
+        [NonSerialized] public bool WaveStarted;
         private UnitsManager _unitManager;
         private Queue<WaveEntry> _waveQueue;
         private float _lastSpawnTime;
@@ -60,6 +61,8 @@ namespace Kuantech.TowerDefense
             CurrentWaveIndex = -1;
 
             BaseMaxUnitsFactor = ConfigManager.GetFloatConfig("BaseMaxUnitsFactor", BaseMaxUnitsFactor);
+            
+            StopWave(); //Start as stopped
         }
         
         public override void PostLevelSetup()
@@ -93,7 +96,7 @@ namespace Kuantech.TowerDefense
         private void Update()
         {
             if (ParentLevel == null || ParentLevel.CurrentState != LevelState.Playing) return;
-            if (IsLevelInWavePhase())
+            if (WaveStarted)
             {
                 SpawnNextWaveElement();
             }
@@ -162,7 +165,28 @@ namespace Kuantech.TowerDefense
         #endregion
         
         #region Wave Control
-    
+
+        public void StartWave()
+        {
+            ToggleSpawners(true);
+            WaveStarted = true;
+            
+        }
+
+        public void StopWave()
+        {
+            ToggleSpawners(false);
+            WaveStarted = false;
+        }
+        
+        public void ToggleSpawners(bool toggle)
+        {
+            foreach (var spawner in ActorSummoners)
+            {
+                spawner.Toggled = toggle;
+            }
+        }
+        
         public void SetNextWave()
         {
             SetWave(CurrentWaveIndex+1);
@@ -351,7 +375,6 @@ namespace Kuantech.TowerDefense
             {
                 currentlyAlive += entry.Amount;
             }
-
             return currentlyAlive;
         }
 
@@ -403,7 +426,7 @@ namespace Kuantech.TowerDefense
             {
                 return;
             }
-
+            StopWave();
             _waveCompleteRoutine = CompleteWaveRoutine();
             StartCoroutine(_waveCompleteRoutine);
         }

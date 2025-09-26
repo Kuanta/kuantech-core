@@ -86,7 +86,7 @@ namespace Kuantech.Midcore.UI
                 LevelIndex = _levelToPlay,
                 WorldIndex = _worldToPlay,
             };
-
+            
             GameManager.ChangeScene(
                 MidcoreMenuSceneManager.GetGameSceneName(),
                 transitionData
