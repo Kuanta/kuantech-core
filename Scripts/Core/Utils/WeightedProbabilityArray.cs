@@ -44,6 +44,25 @@ namespace Kuantech.Core.Utils
             //totalWeight += weight;
         }
 
+        public void RemoveElement(T element)
+        {
+            WPAElement elementToRemove = null;
+            var cmp = EqualityComparer<T>.Default;
+            foreach (var wpa in Elements)
+            {
+                if (cmp.Equals(wpa.Element, element))
+                {
+                    elementToRemove = wpa;
+                    break;
+                }
+            }
+
+            if (elementToRemove != null)
+            {
+                Elements.Remove(elementToRemove);
+            }
+        }
+
         public float GetTotalWeight()
         {
             float totalWeight = 0f;
@@ -158,10 +177,11 @@ namespace Kuantech.Core.Utils
 
         public void SetElementWeight(T element, float weight)
         {
+            var cmp = EqualityComparer<T>.Default;
             for (int i = 0; i < Elements.Count; ++i)
             {
                 WPAElement existing = Elements[i];
-                if (existing.Element.Equals(element))
+                if (cmp.Equals(existing.Element,element))
                 {
                     existing.Probability = weight;
                     Elements[i] = existing;
@@ -199,6 +219,7 @@ namespace Kuantech.Core.Utils
         {
             return Elements.IsNullOrEmpty();
         }
+        
         public void Clear()
         {
             Elements.Clear();

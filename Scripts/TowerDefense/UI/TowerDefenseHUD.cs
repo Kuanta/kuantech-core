@@ -1,4 +1,6 @@
 ﻿using Kuantech.Core.UI;
+using Kuantech.Rpg;
+using Kuantech.Rpg.UI;
 using Kuantech.Utils;
 using TMPro;
 using UnityEngine;
@@ -9,8 +11,8 @@ namespace Kuantech.TowerDefense
     {
         [Header("Indicators")]
         [SerializeField] private TMP_Text WaveIndicator;
-
         [SerializeField] private TMP_Text RemainingEnemyCount;
+        [SerializeField] private LevelableFloatIndicator ExperienceBar;
         
         /// <summary>
         /// Sets the current wave indicator
@@ -35,6 +37,11 @@ namespace Kuantech.TowerDefense
             {
                 RemainingEnemyCount.text = count.Stringfy();
             }
+        }
+
+        public void SetExperienceBar(LevelVariable levelVariable)
+        {
+            ExperienceBar.UpdateValue(levelVariable);
         }
     }
 }

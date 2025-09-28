@@ -21,7 +21,9 @@ namespace Kuantech.Rpg
         public float ValueIntoCurrentLevel => TotalValue - GetTotalRequiredForLevel(CurrentLevel);
         public float ValueToNextLevel => GetTotalRequiredForLevel(CurrentLevel + 1) - TotalValue;
         public float CurrentLevelRequirement => GetTotalRequiredForLevel(CurrentLevel + 1) - GetTotalRequiredForLevel(CurrentLevel);
-        
+
+        public EventHandler<(int, int)> OnLevelUp;
+
         public LevelVariable(LevelVariableData lvd)
         {
             baseRequirement = lvd.BaseRequirement;
@@ -40,7 +42,13 @@ namespace Kuantech.Rpg
         
         public void AddValue(float amount)
         {
+            int oldLevel = CurrentLevel;
             TotalValue = Mathf.Max(0f, TotalValue + amount);
+            int newLevel = CurrentLevel;
+            if (newLevel > oldLevel)
+            {
+                OnLevelUp?.Invoke(this, (oldLevel, newLevel));
+            }
         }
         
         public void SetValue(float newTotal)
