@@ -105,6 +105,24 @@ namespace Kuantech.Core.Combat
             return detected;
         }
 
+        public static void HitActorsInSphere(Vector3 center, float radius, LayerMask layerMask, HitInfo hitInfo,
+            HashSet<int> factionFilter = null, UnityAction<Actor> damageHandler = null)
+        {
+            Collider[] results = UnityEngine.Physics.OverlapSphere(center, radius, layerMask.value);
+            foreach (var result in results)
+            {
+                if(result == null) continue;
+                if(!result.TryGetComponent(out Actor actor)) continue;
+                if(!actor.IsAlive()) continue;
+                int actorFaction = actor.GetFactionId();
+                if(factionFilter != null && !factionFilter.IsNullOrEmpty() && !factionFilter.Contains(actorFaction)) continue;
+                actor.OnHit(hitInfo);
+                if (damageHandler != null)
+                {
+                    damageHandler(actor);
+                }
+            }
+        }
 
         public static void HitActorsInCircle2D(Vector3 center, float range,
             LayerMask layerMask, HitInfo hitInfo, HashSet<int> factionFilter = null, UnityAction<Actor> damageHandler = null)

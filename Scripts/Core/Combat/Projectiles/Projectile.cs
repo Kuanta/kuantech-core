@@ -181,7 +181,6 @@ namespace Kuantech.Core
         }
 
         #endregion
-
         
         #region Shoot
         public virtual void Shoot(Actor castBy, Weapon shotFrom, Vector3 shootPosition, Vector3 shootDirection, Transform target = null, float relativeSpeed = 0.0f)
@@ -277,13 +276,14 @@ namespace Kuantech.Core
                     _currentRiseVelocity = Vector3.zero;
                 }
             }
+            
             else
             {
                 _currentRiseHeight = Vector3.zero;
             }
-      
-            
-            _currentBasePosition += GetFlightDirection() * CurrentSpeed * dt;
+
+            _direction = GetFlightDirection(); //Update _direction
+            _currentBasePosition += _direction * CurrentSpeed * dt;
             Vector3 prevPos = transform.position;
             Vector3 newPos = _currentBasePosition + _currentRiseHeight;
             transform.position = newPos;
@@ -306,7 +306,6 @@ namespace Kuantech.Core
                 if (diff.sqrMagnitude <= ReachThreshold * ReachThreshold)
                 {
                     HandleOnTriggerEnter(Target.gameObject);
-                    Despawn();
                     return;
                 }
             }
@@ -314,7 +313,6 @@ namespace Kuantech.Core
             CheckLifetime();
         }
         #endregion
-
         
         #region Lifecycle
 
@@ -436,49 +434,66 @@ namespace Kuantech.Core
 
             if (ImpactEffect != null) ImpactEffect.PlayEffectAtPosition(transform.position, Quaternion.identity);
             OnImpactEvent?.Invoke(this);
-
+            
+            //Check impact override
             if (ImpactOverride != null)
             {
                 ImpactOverride(this, targetActor, triggeredObject);
                 return;
             }
-
+            
+            //If non-zero radius, explode
             if (SplashRadius > 0f)
             {
-                Vector3 origin = transform.position;
-
-                if (Is2D)
-                {
-                    HitInfo hitInfo2D = new HitInfo()
-                    {
-                        DamageInfo = SplashDamage,
-                        Hitter = CastBy != null ? CastBy.gameObject : null,
-                        HitDirection = _direction,
-                        KnockbackDuration = KnockbackTime,
-                        KnockbackForce = Knockback,
-                    };
-                    CombatUtilities.HitActorsInCircle2D(origin, SplashRadius, Targets, hitInfo2D, FactionFilter);
-                }
-                else
-                {
-                    Collider[] colliders3D = UnityEngine.Physics.OverlapSphere(origin, SplashRadius);
-                    foreach (Collider coll in colliders3D)
-                    {
-                        Impact(coll.gameObject);
-                    }
-                }
+                Explode();
             }
-            else
-            {
-                Impact(triggeredObject);
-            }
+            
+            //Impact hit target
+            Impact(triggeredObject);
 
+            CheckDespawn();
+        }
+
+        protected virtual void CheckDespawn()
+        {
             if (DestroyOnImpact)
             {
                 Despawn();
             }
         }
-
+        
+        /// <summary>
+        /// Damages enemies in circle or sphere around the impact point
+        /// </summary>
+        protected virtual void Explode()
+        {
+            Vector3 origin = transform.position;
+            GameObject hitter = CastBy != null ? CastBy.gameObject : null;
+            if (Is2D)
+            {
+                HitInfo hitInfo2D = new HitInfo()
+                {
+                    DamageInfo = SplashDamage,
+                    Hitter = hitter,
+                    HitDirection = _direction,
+                    KnockbackDuration = KnockbackTime,
+                    KnockbackForce = Knockback,
+                };
+                CombatUtilities.HitActorsInCircle2D(origin, SplashRadius, Targets, hitInfo2D, FactionFilter);
+            }
+            else
+            {
+                HitInfo hitInfo = new HitInfo()
+                {
+                    DamageInfo = SplashDamage,
+                    Hitter = hitter,
+                    HitDirection = _direction,
+                    KnockbackDuration = KnockbackTime,
+                    KnockbackForce = Knockback,
+                };
+                CombatUtilities.HitActorsInSphere(origin, SplashRadius, Targets, hitInfo, FactionFilter);
+            }
+        }
         protected virtual void Impact(GameObject impacted)
         {
             if (DestroyOnImpact && Despawned) return;

@@ -27,9 +27,11 @@ namespace Kuantech.Core.UI
         //Events
         public UnityAction OnMenuOpened;
         public UnityAction OnMenuClosed;
-        
-        private void Awake()
+
+        public virtual void Initialize()
         {
+            if (Initialized) return;
+            Initialized = true;
             ElementAnimator = GetComponent<Animator>();
             if (ElementAnimator != null)
             {
@@ -37,12 +39,6 @@ namespace Kuantech.Core.UI
                 if(!UseTimeScale) ElementAnimator.updateMode = AnimatorUpdateMode.UnscaledTime;
             }
             _rectTransform = GetComponent<RectTransform>();
-        }
-
-        public virtual void Initialize()
-        {
-            if (Initialized) return;
-            Initialized = true;
         }
         
         /// <summary>

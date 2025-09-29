@@ -56,12 +56,14 @@ namespace Kuantech.Midcore.UI
         
         public void PlaySelectedAnimation()
         {
+            if (ElementAnimator == null) return;
             ElementAnimator.SetTrigger(Selected);
 
         }
         
         public void PlayNotSelectedAnimation()
         {
+            if (ElementAnimator == null) return;
             ElementAnimator.SetTrigger(Unselected);
 
         }

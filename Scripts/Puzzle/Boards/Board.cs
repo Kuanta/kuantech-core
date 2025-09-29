@@ -206,8 +206,8 @@ namespace Kuantech.Puzzle
             List<BoardTile> tilesThatCanBeMerged = new List<BoardTile>();
             foreach (var local in tile.Coordinates)
             {
-                if (!IsCoordinateValid(local)) return false; // All coords must be valid
                 BoardTileCoordinate globalCoord = coordinate.GetGlobalCoordinate(local);
+                if (!IsCoordinateValid(globalCoord) || IsTileMasked(globalCoord)) return false; // All coords must be valid
                 BoardTile existingTile = GetTile(globalCoord);
                 if (existingTile != null)
                 {
