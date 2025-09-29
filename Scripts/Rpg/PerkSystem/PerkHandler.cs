@@ -80,5 +80,7 @@ namespace Kuantech.Rpg
             if (PerkDatas == null) return;
             PerkDatas.Clear();
         }
+        
+        
     }
 }

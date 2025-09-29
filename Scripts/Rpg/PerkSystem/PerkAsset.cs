@@ -10,7 +10,7 @@ namespace Kuantech.Rpg
     public class PerkAsset : MetadataAsset
     {
         public List<PerkVariable> PerkVariables;
-        
+        public int MaxRank = 5;
         public PerkVariable GetPerkVariable(string variableName)
         {
             return PerkVariables.Find(v => v.Name == variableName);

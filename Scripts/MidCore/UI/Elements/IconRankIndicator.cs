@@ -17,7 +17,7 @@ namespace Kuantech.Midcore.UI
         {
             for (int i = 0; i < Icons.Count; i++)
             {
-                Icons[i].color = i >= rank ? ActiveColor : InactiveColor;
+                Icons[i].color = i <= rank ? ActiveColor : InactiveColor;
             }
         }
     }

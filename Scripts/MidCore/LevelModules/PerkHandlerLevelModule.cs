@@ -69,6 +69,7 @@ namespace Kuantech.Midcore
         }
         
         private WeightedProbabilityArray<PerkAsset> _perkSelectionArray;
+        
         /// <summary>
         /// Gets a selection of perks to choose from
         /// </summary>
@@ -87,7 +88,6 @@ namespace Kuantech.Midcore
                     perkDatas.Add(GetRandomPerkData());
                 }
             }
-
             return perkDatas;
         }
 
@@ -98,6 +98,7 @@ namespace Kuantech.Midcore
             foreach (var perks in AvailablePerks)
             {
                 int currentRank = _perkHandler.GetCurrentPerkRank(perks);
+                if(currentRank >= perks.MaxRank) continue; //Don't include max ranked perks
                 float weight = Mathf.Pow(probDecayPerRank, currentRank); //1 * 0.5^Rank
                 probArray.AddElement(perks, weight);
             }
