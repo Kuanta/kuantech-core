@@ -16,8 +16,6 @@ namespace Kuantech.TowerDefense
                 Debug.LogError("Current level doesn't have wave handler module");
                 return;
             }
-            whm.SetNextWave();
-            (ParentLevel as TowerDefenseLevel)?.ToggleSpawners(true);
         }
     }
 }

@@ -79,7 +79,7 @@ namespace Kuantech.Core.Utils
                 Animator.Rebind();
             }
             Visual.SetActive(true);
-            if (SpriteRenderer == null) return;
+            if (SpriteRenderer == null || GrabSprite == null) return;
             SpriteRenderer.sprite = GrabSprite;
         }
 

@@ -66,7 +66,7 @@ namespace Kuantech.TowerDefense
             Reset();
             //SetupWaveQueue();
             base.PlayLevel();
-            ToggleSpawners(false);
+            
             //Start preparation phase
             PhaseSystem.ChangePhase(_preparationPhase);
         }
@@ -189,18 +189,6 @@ namespace Kuantech.TowerDefense
         public ActorBlueprint GetActorTemplate(int index)
         {
             return SpawnablesCollection.GetActorTemplate(index);
-        }
-        
-        /// <summary>
-        /// Toggles spawners
-        /// </summary>
-        /// <param name="toggle"></param>
-        public void ToggleSpawners(bool toggle)
-        {
-            foreach (var spawner in ActorSummoners)
-            {
-                spawner.Toggled = toggle;
-            }
         }
 
         public WaveEntry GetNextWaveEntry()

@@ -306,8 +306,7 @@ public static class
             if (inSafeWindow)
                 targetSpend = Mathf.Max(1, targetSpend * Mathf.Clamp01(cfg.SafeEntryBudgetMul));
             
-            // 2) Build candidate list; first try <= targetSpend*1.15, fallback to <= remaining
-            var softCap = Mathf.Max(1, Mathf.RoundToInt(targetSpend * 1.15f));
+ 
             
             // NEW: choose pool for this entry (safe → EarlyAllowed; else full pool)
             var poolForThisEntry = pool;
@@ -324,16 +323,16 @@ public static class
             foreach (var e in poolForThisEntry)
             {
                 float c = cfg.CalculateCost(e, levelParams.PowerLevel);
-                if (c <= softCap)
-                {
-                    double wght = ComputeCandidateWeight(cfg, e, targetSpend, c, waveParams.T01,
-                        isOpener, lastPickedType,
-                        tagUnitCounts, totalUnits);
-                    if (wght > 0) candidates.Add((e, c, wght));
-                }
+                double wght = ComputeCandidateWeight(cfg, e, targetSpend, c, waveParams.T01,
+                    isOpener, lastPickedType,
+                    tagUnitCounts, totalUnits);
+                if (wght > 0) candidates.Add((e, c, wght));
             }
 
-            if (candidates.Count == 0) break;
+            if (candidates.Count == 0)
+            {
+                break;
+            }
 
             // 3) Cheap-biased roulette (stronger than before)
             double sumW = 0;

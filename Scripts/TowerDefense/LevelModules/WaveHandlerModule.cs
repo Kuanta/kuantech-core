@@ -35,6 +35,7 @@ namespace Kuantech.TowerDefense
         private UnitsManager _unitManager;
         private Queue<WaveEntry> _waveQueue;
         private float _lastSpawnTime;
+        private bool _waveStarted = false;
         
         private Queue<ActorSummonData> _pendingSummons = new Queue<ActorSummonData>();
         
@@ -88,12 +89,14 @@ namespace Kuantech.TowerDefense
             CurrentWaveIndex = -1;
             _waveCompleteRoutine = null;
             _currentMaxUnitsFactor = BaseMaxUnitsFactor;
+            _waveStarted = false;
+            ToggleSummoners(false);
         }
         
         private void Update()
         {
             if (ParentLevel == null || ParentLevel.CurrentState != LevelState.Playing) return;
-            if (IsLevelInWavePhase())
+            if (IsLevelInWavePhase() && _waveStarted)
             {
                 SpawnNextWaveElement();
             }
@@ -162,12 +165,17 @@ namespace Kuantech.TowerDefense
         #endregion
         
         #region Wave Control
-    
+
+        public void StartWave()
+        {
+            _waveStarted = true;
+            ToggleSummoners(true);
+        }
         public void SetNextWave()
         {
             SetWave(CurrentWaveIndex+1);
         }
-
+        
         [Button("Set Wave")]
         public void SetWave(int waveIndex)
         {
@@ -228,7 +236,14 @@ namespace Kuantech.TowerDefense
         #endregion
         
         #region Summoners
- 
+
+        public void ToggleSummoners(bool toggle)
+        {
+            foreach (var summoner in ActorSummoners)
+            {
+                summoner.Toggled = toggle;
+            }
+        }
         public void SpawnNextWaveElement()
         {
             while (!Helpers.IsNullOrEmpty(_pendingSummons))
@@ -327,6 +342,7 @@ namespace Kuantech.TowerDefense
             index = index % ActorSummoners.Count;
             return ActorSummoners[index];
         }
+        
         public ActorBlueprint GetActorTemplate(int index)
         {
             return SpawnablesCollection.GetActorTemplate(index);
@@ -404,6 +420,8 @@ namespace Kuantech.TowerDefense
                 return;
             }
 
+            _waveStarted = false;
+            ToggleSummoners(false);
             _waveCompleteRoutine = CompleteWaveRoutine();
             StartCoroutine(_waveCompleteRoutine);
         }

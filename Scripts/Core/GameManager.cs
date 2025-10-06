@@ -31,6 +31,9 @@ namespace Kuantech.Core
         private bool _startedGame = false;
         protected virtual void Awake()
         {
+#if DEV_BUILD
+            Debug.Log("DEVELOPMENT BUILD");
+#endif
             if (_instance != null && _instance != this)
             {
                 Destroy(gameObject);

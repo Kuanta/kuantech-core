@@ -27,6 +27,8 @@ namespace Kuantech.Core
         public float InitialRiseHeight;
         public float Gravity = 10f;
         public bool RequireReachPeakForImpact = true;
+        [Tooltip("If rise velocity smaller than this, projectile is considered to be reached the peak")]
+        public float RiseVelocityReachedPeakThresh = 0.2f;
         
         [Tooltip("Squared distance threshold to consider target reached")]
         public float ReachThreshold = 0.1f;
@@ -241,6 +243,7 @@ namespace Kuantech.Core
             if (TrailRenderer != null) TrailRenderer.Clear();
         }
 
+
         // ==========================
         // Update (movement + facing)
         // ==========================
@@ -261,16 +264,6 @@ namespace Kuantech.Core
                 _currentRiseHeight += _currentRiseVelocity * Time.deltaTime;
                 _currentRiseVelocity -= WorldUp * Gravity * Time.deltaTime;
 
-                if (!_reachedPeak )
-                {
-                    bool velDown = Vector3.Dot(_currentRiseVelocity, WorldUp) <= 0f;
-                    bool heightCapped = Vector3.Dot(_currentRiseHeight, WorldUp) >= InitialRiseHeight - 1e-4f;
-                    if (velDown || heightCapped)
-                    {
-                        _reachedPeak = true;
-                    }
-                }
-            
                 //Clamp current rise height to 0 if its in the inverse direction of world up
                 if (Vector3.Dot(_currentRiseHeight, WorldUp) < 0f && _reachedPeak)
                 {
@@ -289,6 +282,17 @@ namespace Kuantech.Core
             Vector3 newPos = _currentBasePosition + _currentRiseHeight;
             transform.position = newPos;
             Vector3 finalMovementVector = (newPos - prevPos).normalized;
+            
+            //Check reached peak
+            if (_useArc && !_reachedPeak )
+            {
+                Vector3 posDiff = newPos - prevPos;
+                bool velDown = Vector3.Dot(posDiff, WorldUp) <= 0;
+                if (velDown)
+                {
+                    _reachedPeak = true;
+                }
+            }
             
             // Face travel direction (stable): prefer horizontal component to avoid pitching in top-down,
             // otherwise use total velocity if you want true 3D nose-up/down.
@@ -433,7 +437,11 @@ namespace Kuantech.Core
                 return;
             }
             
-            if (_useArc && !_reachedPeak && RequireReachPeakForImpact) return; //Wait for peak
+            if (_useArc && !_reachedPeak && RequireReachPeakForImpact)
+            {
+                Debug.LogError("Not reached peak");
+                return; //Wait for peak
+            }
 
             if (ImpactEffect != null) ImpactEffect.PlayEffectAtPosition(transform.position, Quaternion.identity);
             OnImpactEvent?.Invoke(this);

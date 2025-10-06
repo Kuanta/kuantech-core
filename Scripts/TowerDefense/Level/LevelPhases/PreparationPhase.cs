@@ -11,11 +11,6 @@ namespace Kuantech.TowerDefense
         {
             // Constructor logic if needed
         }
-        public override void OnEnter(Level level)
-        {
-            base.OnEnter(level);
-            (ParentLevel as TowerDefenseLevel)?.ToggleSpawners(false);
-        }
 
         public override void TickPhase(float deltaTime)
         {

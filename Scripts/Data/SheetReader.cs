@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Globalization;
-using System.IO;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
@@ -24,6 +21,7 @@ namespace Kuantech.Data
     {
         [Header("Keys")] 
         [SerializeField] private string SheetId;
+        [SerializeField] private string DevSheetId;
         [SerializeField] private string ApiKey;
         [SerializeField] private string SheetRange;
 
@@ -34,9 +32,17 @@ namespace Kuantech.Data
         
         public string GetRequestUrl(string SheetRange)
         {
-            return $"https://sheets.googleapis.com/v4/spreadsheets/{SheetId}/values/{SheetRange}?key={ApiKey}";
+            return $"https://sheets.googleapis.com/v4/spreadsheets/{GetSheetId()}/values/{SheetRange}?key={ApiKey}";
         }
-        
+
+        public string GetSheetId()
+        {
+#if DEV_BUILD //For testing with a separate sheet
+            return DevSheetId;
+#else
+            return SheetId;
+#endif
+        }
         public async UniTask<JObject> GetSheetDataAsync(string sheetRange)
         {
             string url = GetRequestUrl(sheetRange);
@@ -116,7 +122,7 @@ namespace Kuantech.Data
 
         public async UniTask WriteToSheet(string SheetRange, JArray values)
         {
-            string url = $"https://sheets.googleapis.com/v4/spreadsheets/{SheetId}/values/{SheetRange}:append?valueInputOption=USER_ENTERED&key={ApiKey}";
+            string url = $"https://sheets.googleapis.com/v4/spreadsheets/{GetSheetId()}/values/{SheetRange}:append?valueInputOption=USER_ENTERED&key={ApiKey}";
             JObject body = new JObject
             {
                 ["range"] = SheetRange,
