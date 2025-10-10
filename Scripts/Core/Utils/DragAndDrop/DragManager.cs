@@ -112,11 +112,7 @@ namespace Kuantech.Utils
             else if (Input.GetMouseButton(0))
             {
                 if(!_startedClick) return;
-                //
-                // if (IsPointerClick())
-                // {
-                //     return;
-                // }
+     
                 Vector3 mousePosition = GetCursorPosition(true);
                 if (Time.time - _startTime < DragStartTime)
                 {
@@ -138,7 +134,6 @@ namespace Kuantech.Utils
             }
             else if (Input.GetMouseButtonUp(0) && _draggedInterface != null)
             {
-                
                 if (IsPointerClick())
                 {
                     _draggedInterface.OnTap(_lastHit.point);
@@ -148,7 +143,7 @@ namespace Kuantech.Utils
                 Release();
             }
         }
-
+    
         public static Vector3 GetCursorPosition(bool applyOffset)
         {
             Vector3 mousePos = Input.mousePosition;
@@ -211,17 +206,21 @@ namespace Kuantech.Utils
                 position = GetCursorPosition(false)
             };
             List<RaycastResult> results = new List<RaycastResult>();
-            GraphicsRaycaster.Raycast(pointerData, results);
-
-            if (results.Count > 0)
+            if (GraphicsRaycaster != null)
             {
-                if (HandleUIRaycastHit(results)) return;
-            }   
+                GraphicsRaycaster.Raycast(pointerData, results);
+                
+                if (results.Count > 0)
+                {
+                    if (HandleUIRaycastHit(results)) return;
+                }  
+            }
+ 
             
             if (Utils.Helpers.IsCursorOnUI()) return;
 
             Vector3 screenPos = GetCursorPosition(false);
-            Ray ray =GetMainCamera().ScreenPointToRay(screenPos);
+            Ray ray = GetMainCamera().ScreenPointToRay(screenPos);
 
             if (UnityEngine.Physics.Raycast(ray, out var hit3D, RaycastLength, DraggableLayer))
             {
