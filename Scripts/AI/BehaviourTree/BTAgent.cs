@@ -17,6 +17,7 @@ namespace Kuantech.AI
         {
             //todo: Can we remove this?
             _waitForSeconds = new WaitForSeconds(TickInterval);
+            if (DefaultBtBlueprint == null) return;
             SetBehaviourTree(DefaultBtBlueprint.CreateBehaviourTree());
         }
 
