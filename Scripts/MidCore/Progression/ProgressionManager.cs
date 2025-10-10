@@ -86,7 +86,11 @@ namespace Kuantech.Midcore
             base.SetDefaultState();
             
             //Player Level
+            if(PlayerLevelDataAsset != null)
+            {
             SetRank(PlayerLevelDataAsset, 0);
+            
+            }
             SetDefaultProgressables();
         }
         
