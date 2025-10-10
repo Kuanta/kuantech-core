@@ -129,6 +129,11 @@ namespace Kuantech.RealTimeStrategy
                 _actorsByFaction[factionId].Remove(actor);
             }
         }
+
+        public HashSet<Actor> GetAllActors()
+        {
+            return SpawnedActors;
+        }
         
         /// <summary>
         /// Gets all actors by faction ID.
@@ -196,6 +201,19 @@ namespace Kuantech.RealTimeStrategy
             }
             SpawnedActors.Clear();
         }
+
+        public void ClearSpawnedActorsByFaction(int faction)
+        {
+            HashSet<Actor> originalActorsSet = GetActorsByFaction(faction);
+            if (originalActorsSet.IsNullOrEmpty()) return;
+            HashSet<Actor> actors = new HashSet<Actor>(originalActorsSet);
+            if(actors.IsNullOrEmpty()) return; 
+            foreach (var actor in actors)
+            {
+                actor.Despawn();
+                UnregisterActor(actor);
+            }
+        }
         
         #region Pop limit
         
@@ -215,7 +233,7 @@ namespace Kuantech.RealTimeStrategy
 
         public int GetMaxActorCountByFaction(int faction)
         {
-            if (_maxUnitsPerFaction.ContainsKey(faction))
+            if (!_maxUnitsPerFaction.IsNullOrEmpty() && _maxUnitsPerFaction.ContainsKey(faction))
             {
                 float factor = GetMaxUnitFactorPerFaction(faction);
                 return Mathf.FloorToInt(_maxUnitsPerFaction[faction] * factor);
