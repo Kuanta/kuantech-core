@@ -12,6 +12,7 @@ namespace Kuantech.Core.Combat
         public bool AutoDetectTargets = true;
         public float AutoDetectFrequency;
         private float _lastDetectTime;
+        public bool Is2D = true;
         
         [NonSerialized] public List<Actor> DetectedEnemies;
         [NonSerialized] public List<Actor> DetectedAllies;
@@ -24,7 +25,17 @@ namespace Kuantech.Core.Combat
         /// </summary>
         public void DetectTargets()
         {
-            List<Actor> actors = CombatUtilities.GetActorsInCircle2D(transform.position, DetectionRadius, TargetLayerMask);
+            List<Actor> actors;
+            if (Is2D)
+            {
+                actors = CombatUtilities.GetActorsInCircle2D(transform.position, DetectionRadius, TargetLayerMask);
+
+            }
+            else
+            {
+                actors = CombatUtilities.GetActorsInSphere(transform.position, DetectionRadius, TargetLayerMask);
+            }
+            
             DetectedAllies = new List<Actor>();
             DetectedEnemies = new List<Actor>();
             foreach (var actor in actors)

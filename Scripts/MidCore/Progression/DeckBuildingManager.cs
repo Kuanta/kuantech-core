@@ -11,7 +11,7 @@ namespace Kuantech.Midcore
         [Header("Default Deck")]
         public List<Deck> DefaultDecks;
 
-        [SaveableField] public List<Deck> Decks;
+        [HideInInspector] [SaveableField] public List<Deck> Decks;
 
         public override async UniTask Initialize(GameManager gameManager)
         {

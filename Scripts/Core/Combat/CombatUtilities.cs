@@ -41,6 +41,23 @@ namespace Kuantech.Core.Combat
 
             return actors;
         }
+
+         public static List<Actor> GetActorsInSphere(Vector3 position, float radius, LayerMask layerMask,
+             HashSet<int> factionFilter = null)
+         {
+             Collider[] hits = UnityEngine.Physics.OverlapSphere(position, radius, layerMask);
+             List<Actor> actors = new List<Actor>();
+             foreach (var hit in hits)
+             {
+                 Actor actor = hit.GetComponentInParent<Actor>();
+                 if (actor == null) continue;
+                 if(factionFilter != null && !factionFilter.Contains(actor.GetFactionId())) continue;
+                 actors.Add(actor);
+             }
+
+             return actors;
+             
+         }
         
         /// <summary>
         /// Gets actors in a 2d arc

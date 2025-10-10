@@ -27,8 +27,8 @@ namespace Kuantech.Core
         public UnityEvent OnDamageFrameEvent;
         
         //Animation Hashes
-        private static readonly int X = Animator.StringToHash("Forward");
-        private static readonly int Y = Animator.StringToHash("Right");
+        private static readonly int Forward = Animator.StringToHash("Forward");
+        private static readonly int Sideways = Animator.StringToHash("Right");
         private static readonly int Movement = Animator.StringToHash("Movement");
         private static readonly int Attack = Animator.StringToHash("Attack");
         private static readonly int Hold = Animator.StringToHash("Hold");
@@ -97,8 +97,8 @@ namespace Kuantech.Core
             }
             else
             {
-                Animator.SetFloat(X, _movementParameters.x);
-                Animator.SetFloat(Y, _movementParameters.y);
+                Animator.SetFloat(Sideways, _movementParameters.x);
+                Animator.SetFloat(Forward, _movementParameters.y);
             }
         }
 
@@ -141,8 +141,8 @@ namespace Kuantech.Core
             base.Reset();
             if (Animator != null)
             {            
-                Animator.SetFloat(X, 0);
-                Animator.SetFloat(Y, 0);
+                Animator.SetFloat(Forward, 0);
+                Animator.SetFloat(Sideways, 0);
                 Animator.SetBool(Death, false);
                 Animator.Rebind();
             }

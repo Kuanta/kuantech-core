@@ -16,7 +16,7 @@ namespace Kuantech.Midcore
         [NonSaveableField]
         public List<CollectableAsset> DefaultDeck;
         
-        [SaveableField] public List<ProgressibleData> CurrentDeck;
+        [HideInInspector] [SaveableField] public List<ProgressibleData> CurrentDeck;
         private Dictionary<string, CollectableAsset> _equippedCollectiblesById = new Dictionary<string, CollectableAsset>();
 
         public void Initialize()

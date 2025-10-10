@@ -21,7 +21,13 @@ namespace Kuantech.Core.UI
         private Dictionary<string, UIElement> _phasePanelsById = new Dictionary<string, UIElement>();
         public virtual void Initialize()
         {
-           
+            if (PhasePanels != null)
+            {
+                foreach (var phasePanel in PhasePanels)
+                {
+                    phasePanel.PhasePanel.Initialize();
+                }
+            }
         }
         
         public virtual void OnLevelSetup(Level level)

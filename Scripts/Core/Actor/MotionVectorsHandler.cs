@@ -160,8 +160,6 @@ namespace Kuantech.Core
             TargetVector = targetVector;
         }
         #endregion
-
-
         
         /// <summary>
         /// Projects a vector to the forward plane of the actor
