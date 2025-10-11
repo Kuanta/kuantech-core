@@ -40,6 +40,7 @@ namespace Kuantech.Core
         [Header("Damage")]
         public bool RawDamage = false;
         public DamageInfo Damage;
+        public List<DamageInfo> AdditionalDamages = new List<DamageInfo>();
         public float SplashRadius = 0f; // 0 = no splash
         public DamageInfo SplashDamage;
 

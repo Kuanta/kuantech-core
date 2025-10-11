@@ -1,6 +1,8 @@
 ﻿using System.Collections;
+using System.Collections.Generic;
 using Kuantech.Core.FX;
 using Kuantech.Rpg;
+using Kuantech.Utils;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
@@ -13,28 +15,29 @@ namespace Kuantech.Core.Combat
     public class HealthcareModule : ActorModule
     {
         [Header("Resources")]
+        [Tooltip("Which resource is considered as health. Health, manages the lifecycle")]
         public ResourceAsset HealthResourceAsset;
+        public List<ResourceAsset> Resources;
         
         public bool DespawnAfterDeath = true;
         [Tooltip("Delay that despawns the actor after death")] public float DespawnDelay = 1f;
 
-        [Header("Resistance")] 
-        public AttributeAsset ArmorAttribute;
-        public DamageReductionFormula DamageReductionFormula;
-        
         [Header("UI")] 
         [SerializeField] private Healthbar Healthbar;
         [SerializeField] private bool ShowDamageText = false;
-
+        private Dictionary<ResourceAsset, Healthbar> _resourceBars = new Dictionary<ResourceAsset, Healthbar>();
+        
         [Header("Effects")]
         [SerializeField] private Effect HealEffect;
         
         //Events
         public UnityAction<HealthcareModule> OnHealthChanged;
+        public UnityAction<ResourceAsset> OnResourceChanged;
         public UnityAction<DamageInfo> OnHealReceived;
         
         //Runtime 
         private StatsModule _statModule;
+        
         public override void Initialize()
         {
             base.Initialize();
@@ -49,8 +52,28 @@ namespace Kuantech.Core.Combat
 
         public void Refresh()
         {
-            if(_statModule != null) _statModule.RefreshResourceValue(HealthResourceAsset);
-            UpdateHealthbar();
+            if (_statModule == null) return;
+
+            if (Resources.IsNullOrEmpty())
+            {
+                Debug.LogWarning($"Resources are null for {Actor.gameObject.name}");
+                return;
+            }
+            //Refresh all resources
+            foreach (var resource in Resources)
+            {
+                RefreshResource(resource);
+            }
+        }
+        
+        /// <summary>
+        /// Refreshes a resource to its max value
+        /// </summary>
+        /// <param name="resource"></param>
+        public void RefreshResource(ResourceAsset resource)
+        {
+            _statModule.RefreshResourceValue(resource);
+            UpdateResourceBar(resource);
         }
         
         public override void OnModulesInitialized()
@@ -73,28 +96,21 @@ namespace Kuantech.Core.Combat
         
         private void OnHit(HitInfo hitInfo)
         {
-            ReceiveDamage(hitInfo.DamageInfo);
-        }
-        
-        /// <summary>
-        /// Receives damage
-        /// </summary>
-        /// <param name="damageInfo"></param>
-        public void ReceiveDamage(DamageInfo damageInfo)
-        {
-            if (!Actor.IsAlive()) return; //Can't kill which is already dead
-            DamageInfo reducedDamage = CalculateReducedDamageInfo(damageInfo);
-            float healthAfterDamage = CalculateHealthAfterDamage(reducedDamage);
-            _statModule.SetResourceValue(HealthResourceAsset, healthAfterDamage);
-            OnHealthChanged?.Invoke(this);
-
-            if (ShowDamageText)
+            //Apply main damage
+            DamageResource(hitInfo.DamageInfo);
+    
+            //Additional damages
+            if (hitInfo.AdditionalDamages != null)
             {
-                CombatManager.ShowDamageText(Actor.transform.position, reducedDamage, Actor.GetFactionId() == 0); //todo: Fix Friendly check
+                foreach (var damageInfo in hitInfo.AdditionalDamages)
+                {
+                    DamageResource(damageInfo);
+                }
             }
             
-            UpdateHealthbar();
-            if (healthAfterDamage <= 0.0f)
+            //Check health
+            float currentHealth = GetCurrentResource(HealthResourceAsset);
+            if (currentHealth <= 0.0f)
             {
                 Actor.KillActor();
                 if (Healthbar != null)
@@ -107,73 +123,141 @@ namespace Kuantech.Core.Combat
                 }
             }
         }
-
-        public void ReceiveHeal(DamageInfo heal)
+        
+        /// <summary>
+        /// Receives damage
+        /// </summary>
+        /// <param name="damageInfo"></param>
+        public void DamageResource(DamageInfo damageInfo)
         {
-            if (!Actor.IsAlive()) return; //Can't heal the dead
-            float health = GetCurrentHealth();
-            float maxHealth = GetMaxHealth();
-            float newHealth  = Mathf.Clamp(health + heal.DamageAmount, 0, maxHealth);
-            
-            _statModule.SetResourceValue(HealthResourceAsset, newHealth);
-            OnHealthChanged?.Invoke(this);
-            
-            if (ShowDamageText)
+            if (!Actor.IsAlive()) return; //Can't kill which is already dead
+
+            ResourceAsset resourceAsset = GetAffectedResource(damageInfo);
+            DamageInfo reducedDamage = CalculateReducedDamageInfo(damageInfo);
+            float resourceAfterDamage = CalculateResourceAfterDamage(reducedDamage);
+            _statModule.SetResourceValue(resourceAsset, resourceAfterDamage);
+
+            if (resourceAsset == HealthResourceAsset)
             {
-                CombatManager.ShowHealText(Actor.transform.position, heal, Actor.GetFactionId() == 0); //todo: Fix Friendly check
+                OnHealthChanged?.Invoke(this);
+
+                if (ShowDamageText)
+                {
+                    CombatManager.ShowDamageText(Actor.transform.position, reducedDamage, Actor.GetFactionId() == 0); //todo: Fix Friendly check
+                }
             }
             
-            UpdateHealthbar();
-            OnHealReceived?.Invoke(heal);
-        }
+            UpdateResourceBar(resourceAsset);
 
-        public void UpdateHealthbar()
-        {
-            if (Healthbar == null) return;
-            float currentHealth = GetCurrentHealth();
-            Healthbar.SetHealth(currentHealth, GetMaxHealth());
-        }
-
-        public void SetHealthbar(Healthbar healthbar)
-        {
-            Healthbar = healthbar;
         }
         
+        public void ReceiveResource(DamageInfo heal)
+        {
+            if (!Actor.IsAlive()) return; //Can't heal the dead
+            ResourceAsset resourceAsset = heal.DamageType.AffectedResource;
+            float currentRes = GetCurrentResource(resourceAsset);
+            float maxRes = GetMaxResourceValue(resourceAsset);
+            float newRes  = Mathf.Clamp(currentRes + heal.DamageAmount, 0, maxRes);
+            
+            _statModule.SetResourceValue(HealthResourceAsset, newRes);
+            
+            //Show heal text if health resource is increased
+            if (ShowDamageText && heal.DamageType.AffectedResource == HealthResourceAsset)
+            {
+                CombatManager.ShowHealText(Actor.transform.position, heal, Actor.GetFactionId() == 0); //todo: Fix Friendly check
+                OnHealReceived?.Invoke(heal);
+                OnHealthChanged?.Invoke(this);
+            }
+            OnResourceChanged?.Invoke(resourceAsset);
+            UpdateResourceBar(heal.DamageType.AffectedResource);
+        }
+
+        #region Resource Bars
+
+        public void UpdateResourceBar(ResourceAsset resourceType)
+        {
+            Healthbar resourceBar = GetResourceBar(resourceType);
+            if (resourceBar == null) return;
+            float currentValue = _statModule.GetResourceValue(resourceType);
+            resourceBar.SetHealth(currentValue, GetMaxResourceValue(resourceType));
+        }
+
+        public void SetResourceBar(ResourceAsset resourceType, Healthbar resourceBar)
+        {
+            if (_resourceBars == null) _resourceBars = new Dictionary<ResourceAsset, Healthbar>();
+            _resourceBars[resourceType] = resourceBar;
+        }
+
+        public Healthbar GetResourceBar(ResourceAsset resourceType)
+        {
+            if (_resourceBars == null || !_resourceBars.ContainsKey(resourceType)) return null;
+            return _resourceBars[resourceType];
+        }
+
+        #endregion
+
+        public ResourceAsset GetAffectedResource(DamageInfo damageInfo)
+        {
+            if (damageInfo.DamageType == null) return HealthResourceAsset;
+            return damageInfo.DamageType.AffectedResource;
+        }
+  
+        /// <summary>
+        /// Calculates the reduced damage info after applying armor and resistances
+        /// </summary>
+        /// <param name="damageInfo"></param>
+        /// <returns></returns>
         public DamageInfo CalculateReducedDamageInfo(DamageInfo damageInfo)
         {
             float reducedDamage = damageInfo.DamageAmount;
-            if (DamageReductionFormula != null && _statModule != null && ArmorAttribute != null)
+            if (damageInfo.DamageType != null)
             {
-                float armor = _statModule.GetAttributeValue(ArmorAttribute);
-                reducedDamage *= DamageReductionFormula.GetDamageMultiplier(armor);
+                DamageReductionFormula reductionFormula = damageInfo.DamageType.DamageReductionFormula;
+                AttributeAsset resistanceAttribute = damageInfo.DamageType.ResistanceAttribute;
+                if (reductionFormula != null && _statModule != null && resistanceAttribute != null)
+                {
+                    float armor = _statModule.GetAttributeValue(resistanceAttribute);
+                    reducedDamage *= reductionFormula.GetDamageMultiplier(armor);
+                }
             }
+       
             DamageInfo reducedDamageInfo = damageInfo;
             reducedDamageInfo.DamageAmount = reducedDamage;
             return reducedDamageInfo;
         }
         
-        public float CalculateHealthAfterDamage(DamageInfo damageInfo)
+        public float CalculateResourceAfterDamage(DamageInfo damageInfo)
         {
-            float currentHealth = GetCurrentHealth();
+            float currentResource = GetCurrentResource(GetAffectedResource(damageInfo));
             float damageAmount = damageInfo.DamageAmount;
-            return currentHealth - damageAmount; //todo(combat): Implement armor system here
+            return currentResource - damageAmount;
+        }
+        
+        public float GetCurrentResource(ResourceAsset resourceAsset)
+        {
+            return _statModule.GetResourceValue(resourceAsset);
+        }
+        
+        public float GetCurrenctPercentageResource(ResourceAsset resourceAsset)
+        {
+            float currentResource = GetCurrentResource(resourceAsset);
+            float maxHealth = GetMaxResourceValue(resourceAsset);
+            return maxHealth > 0 ? currentResource / maxHealth : 0f;
+        }
+
+        public float GetMaxResourceValue(ResourceAsset resourceAsset)
+        {
+            return _statModule.GetResourceMaxValue(resourceAsset);
         }
         
         public float GetCurrentHealth()
         {
-            return _statModule.GetResourceValue(HealthResourceAsset);
+            return GetCurrentResource(HealthResourceAsset);
         }
-        
-        public float GetCurrenctPercentageHealth()
-        {
-            float currentHealth = GetCurrentHealth();
-            float maxHealth = GetMaxHealth();
-            return maxHealth > 0 ? currentHealth / maxHealth : 0f;
-        }
-        
+
         public float GetMaxHealth()
         {
-            return _statModule.GetResourceMaxValue(HealthResourceAsset);
+            return GetMaxResourceValue(HealthResourceAsset);
         }
     }
 }

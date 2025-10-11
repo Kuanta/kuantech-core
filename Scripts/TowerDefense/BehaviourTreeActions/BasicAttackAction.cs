@@ -1,5 +1,6 @@
 ﻿using Kuantech.AI;
 using Kuantech.Core;
+using Kuantech.Utils;
 
 namespace Kuantech.TowerDefense
 {
@@ -47,7 +48,13 @@ namespace Kuantech.TowerDefense
             {
                 return BTNode.NodeStatus.FAILURE;
             }
-
+            
+            //Is in attack range?
+            WorldPoint hitPoint = _enemyActor.GetHitPoint(ownerActor);
+            if (!cm.IsInAttackRange(hitPoint))
+            {
+                return BTNode.NodeStatus.FAILURE;
+            }
             if (!cm.AttackToTarget(_enemyActor))
             {
                 return BTNode.NodeStatus.FAILURE;

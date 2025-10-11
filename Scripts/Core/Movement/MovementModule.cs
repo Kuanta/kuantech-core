@@ -14,7 +14,7 @@ namespace Kuantech.Core
         public float Speed = 1f;
         
         //Lock
-        public LockVariable MovementLock;
+        public LockVariable MovementLock = new LockVariable();
 
         #region Movement Vector
         /// <summary>

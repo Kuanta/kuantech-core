@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
+using Kuantech.Rpg;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Kuantech.Core
 {
@@ -9,8 +12,9 @@ namespace Kuantech.Core
     [Serializable]
     public struct DamageInfo
     {
-        public float DamageAmount;
-        public bool IsCritical;
+        public DamageType DamageType; //Type of damge
+        public float DamageAmount; //Amount of damage
+        public bool IsCritical; //If is critical, useful for UI
     }
     
     [Serializable]
@@ -18,6 +22,7 @@ namespace Kuantech.Core
     {
         public GameObject Hitter;
         public DamageInfo DamageInfo;
+        public List<DamageInfo> AdditionalDamages;
         public Vector3 HitDirection;
         public float KnockbackForce;
         public float KnockbackDuration;

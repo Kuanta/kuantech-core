@@ -28,7 +28,8 @@ namespace Kuantech.Rpg
         private Dictionary<string, Attribute> _statMap;
         public static float LevelFormulaX = 0.4f;
 
-        [Header("Resources")] public List<ResourceDefinition> ResourceDefinitions;
+        [Header("Resources")] 
+        public List<ResourceDefinition> ResourceDefinitions;
         public ResourceManager ResourceManager;
         
         //Level

@@ -12,6 +12,7 @@ namespace Kuantech.Core
     {
         public AnimatorOverrideController DefaultAnimationSet;
         public Animator Animator;
+        public AnimationMontagePlayer MontagePlayer;
 
         [Header("Settings")]
         [Tooltip("If set to true, movement will be sent to animator as a single float")]
@@ -127,6 +128,27 @@ namespace Kuantech.Core
             Animator.SetTrigger(hash);
         }
 
+        public void PlayAnimationMontage(AnimationMontage animationMontage, float speedMultiplier = 1.0f)
+        {
+            Animator animator = GetAnimator();
+            if (animator == null) return;
+            if (MontagePlayer == null) return;
+            animator.SetFloat(AttackSpeedMultiplier, speedMultiplier);
+            MontagePlayer.PlayMontage(animationMontage);
+        }
+        
+        /// <summary>
+        /// Plays an animation montage
+        /// </summary>
+        /// <param name="animationMontage">Motnage to play</param>
+        /// <param name="montageDuration">Desired play duration</param>
+        public void PlayAnimationMontageByDuration(AnimationMontage animationMontage, float montageDuration)
+        {
+            float baseAnimationDuration = animationMontage.MontageDuration;
+            float multiplier = baseAnimationDuration / montageDuration;
+            PlayAnimationMontage(animationMontage, multiplier);
+        }
+        
         public void PlayAnimation(AnimationData animationData, float speedMultiplier = 1.0f)
         {
             Animator animator = GetAnimator();
@@ -290,6 +312,10 @@ namespace Kuantech.Core
             }
             Animator = newVisual.Animator;
             if(Animator != null) Animator.logWarnings = false;
+            if (MontagePlayer != null)
+            {
+                MontagePlayer.Animator = Animator;
+            }
         }
 
         #endregion

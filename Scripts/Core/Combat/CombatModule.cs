@@ -48,6 +48,7 @@ namespace Kuantech.Core
         
         [Header("Damage")]
         public DamageInfo DamageInfo;
+        public List<DamageInfo> AdditionalDamages;
         public AttributeAsset AttributeToScaleDamage;
         public float AttributeScaleFactor = 0f; //How much the attribute value scales the damage, 1 means 1:1 scaling
         
@@ -85,8 +86,9 @@ namespace Kuantech.Core
 
         [Header("Skill")] 
         public SkillDataAsset SkillToCast;
-        
-        [Header("Animation")]
+
+        [Header("Animation")] 
+        public AnimationMontage AttackMontage;
         public AnimationData AttackAnimationData;
 
         [Header("FX")] 
@@ -407,7 +409,9 @@ namespace Kuantech.Core
             if (projectile == null) return;
             
             //Apply projectileproperties
-            projectile.Damage = GetDamage();
+            float critMultiplier = GetCriticalMultiplier();
+            projectile.Damage = GetDamage(critMultiplier);
+            projectile.AdditionalDamages = GetAdditionalDamageInfos(critMultiplier);
             projectile.SplashDamage = GetSplashDamage();
             projectile.SplashRadius = GetSplashDamageRadius();
             projectile.Range = GetCurrentAttackPattern().Range;
@@ -434,13 +438,15 @@ namespace Kuantech.Core
         /// <param name="actor"></param>
         private void DamageActor(Actor actor)
         {
-            DamageInfo damage = GetDamage();
+            float critMultiplier = GetCriticalMultiplier();
+            DamageInfo damageInfos = GetDamage(critMultiplier);
             if (actor == null || !actor.IsAlive()) return;
             
             HitInfo hitInfo = new HitInfo()
             {
                 Hitter = gameObject,
-                DamageInfo = damage,
+                DamageInfo = damageInfos,
+                AdditionalDamages = GetAdditionalDamageInfos(critMultiplier),
                 HitDirection = GetAttackDirection(),
                 KnockbackForce = GetCurrentAttackPattern().Knockback,
                 KnockbackDuration = GetCurrentAttackPattern().KnockbackTime
@@ -514,20 +520,36 @@ namespace Kuantech.Core
 
         #region Attack Pattern Queries
 
-        public DamageInfo GetDamage()
+        public DamageInfo GetDamage(float critMultiplier)
         {
-            float critMultiplier = GetCriticalMultiplier();
-            AttackPattern attackPattern = GetCurrentAttackPattern();
-            DamageInfo damageInfo = attackPattern.GetDamageInfo();
-            damageInfo.IsCritical = critMultiplier > 1;
-            if (_statModule != null)
-            {
-                float statVariable = _statModule.GetAttributeValue(attackPattern.AttributeToScaleDamage);
-                damageInfo.DamageAmount += (statVariable * attackPattern.AttributeScaleFactor) * critMultiplier;
-            }
-            return damageInfo;
+            DamageInfo damageInfo = GetCurrentAttackPattern().GetDamageInfo();
+            return _ApplyCritToDamageInfo(damageInfo, critMultiplier);
         }
 
+        public List<DamageInfo> GetAdditionalDamageInfos(float critMult)
+        {
+            AttackPattern attackPattern = GetCurrentAttackPattern();
+            List<DamageInfo> additionalDamages = new List<DamageInfo>();
+            foreach (var addDamInfo in attackPattern.AdditionalDamages)
+            {
+                DamageInfo critApplied = _ApplyCritToDamageInfo(addDamInfo, critMult);
+                additionalDamages.Add(critApplied);
+            }
+
+            return additionalDamages;
+        }
+
+        private DamageInfo _ApplyCritToDamageInfo(DamageInfo damageInfo, float critMultiplier)
+        {
+            AttackPattern attackPattern = GetCurrentAttackPattern();
+
+            List<DamageInfo> result = new List<DamageInfo>();
+            float statVariable = _statModule != null ? _statModule.GetAttributeValue(attackPattern.AttributeToScaleDamage) : 0;
+            damageInfo.DamageAmount += (statVariable * attackPattern.AttributeScaleFactor) * critMultiplier;
+            damageInfo.IsCritical = critMultiplier > 1;
+            return damageInfo;
+        }
+        
         public DamageInfo GetSplashDamage()
         {
             float critMultiplier = GetCriticalMultiplier();
@@ -717,7 +739,14 @@ namespace Kuantech.Core
             _effectPlayed = false;
             if(_animationModule != null)
             {
-                _animationModule.PlayAnimation(currPattern.AttackAnimationData, timeMultiplier);
+                if (currPattern.AttackMontage != null)
+                {
+                    _animationModule.PlayAnimationMontageByDuration(currPattern.AttackMontage, _attackDuration);
+                }
+                else
+                {
+                    _animationModule.PlayAnimation(currPattern.AttackAnimationData, timeMultiplier);
+                }
             }
   
             //todo(networking): Check server auth

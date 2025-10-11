@@ -8,6 +8,11 @@ namespace Kuantech.Core
     {
         [Header("Animation Timing")]
         public float AnimationTime;
+        public string AnimationTimeMultiplierParameterName;
+        
+        [Header("Play By State")] 
+        public string AnimationStateName;
+        public int StateLayer = 0;
         
         [Header("Float")]
         public string FloatParameterName;
