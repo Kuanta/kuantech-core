@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Kuantech.Core.Database;
 using Kuantech.Core.HyperCasual;
 using Kuantech.Midcore;
 using UnityEngine;
@@ -112,6 +113,7 @@ namespace Kuantech.Core
                 
             //Sets blueprint comps
             ApplyComponentsToActor(actor);
+            actor.ActorBlueprint = this;
             return actor;
         }
 
@@ -123,5 +125,25 @@ namespace Kuantech.Core
                 blueprintComp.OnActorCreated(this, actor);
             }
         }
+
+        #region Database
+
+        public void UpdateFromDatabaseTable(DataTable table)
+        {
+            DataTable.RowData rd = table.GetRow(GetId());
+            if (rd == null) return;
+            UpdateFromDatabaseTableRow(rd);
+        }
+
+        public void UpdateFromDatabaseTableRow(DataTable.RowData rowData)
+        {
+            foreach(var comp in ActorBlueprintComponents)
+            {
+                if(comp == null) continue;
+                comp.UpdateFromDatabaseRow(rowData);
+            }
+        }
+        #endregion
+ 
     }
 }

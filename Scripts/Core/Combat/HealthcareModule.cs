@@ -148,7 +148,6 @@ namespace Kuantech.Core.Combat
             }
             
             UpdateResourceBar(resourceAsset);
-
         }
         
         public void ReceiveResource(DamageInfo heal)
@@ -186,6 +185,7 @@ namespace Kuantech.Core.Combat
         {
             if (_resourceBars == null) _resourceBars = new Dictionary<ResourceAsset, Healthbar>();
             _resourceBars[resourceType] = resourceBar;
+            UpdateResourceBar(resourceType);
         }
 
         public Healthbar GetResourceBar(ResourceAsset resourceType)

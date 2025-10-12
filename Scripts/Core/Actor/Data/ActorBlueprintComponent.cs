@@ -1,4 +1,5 @@
 ﻿using System;
+using Kuantech.Core.Database;
 
 namespace Kuantech.Core
 {
@@ -6,5 +7,10 @@ namespace Kuantech.Core
     public abstract class ActorBlueprintComponent
     {
         public abstract void OnActorCreated(ActorBlueprint blueprint, Actor actor);
+
+        public virtual void UpdateFromDatabaseRow(DataTable.RowData rowData)
+        {
+            
+        }
     }
 }

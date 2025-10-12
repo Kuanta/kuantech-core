@@ -104,8 +104,6 @@ namespace Kuantech.Core
                 rb.isKinematic = true;
                 rb.useGravity  = false;
                 rb.detectCollisions = false;
-                rb.linearVelocity = Vector3.zero;
-                rb.angularVelocity = Vector3.zero;
                 rb.collisionDetectionMode = CollisionDetectionMode.Discrete;
                 rb.interpolation = RigidbodyInterpolation.None;
             }

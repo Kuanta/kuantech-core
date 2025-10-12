@@ -197,12 +197,10 @@ namespace Kuantech.Utils
             bool isTap = (motion.Duration <= tapMaxDuration && motion.Distance <= tapMaxMovement);
             if (isTap)
             {
-                Debug.Log("Tap detected");
                 OnTap?.Invoke(this, motion);
             }
             else if (motion.Distance >= swipeMinDistance)
             {
-                Debug.Log("Swipe detected");
                 OnSwipe?.Invoke(this, motion);
             }
 

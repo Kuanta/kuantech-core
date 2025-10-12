@@ -49,6 +49,13 @@ namespace Kuantech.Core.Database
                 }
                 return Values[columnIndex];
             }
+            
+            public T GetValue<T>(string key)
+            {
+                CellData cellData = GetCellData(key);
+                if (cellData == null) return default;
+                return cellData.Value.Get<T>();
+            }
         }
 
 

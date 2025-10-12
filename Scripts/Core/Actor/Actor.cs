@@ -49,6 +49,7 @@ namespace Kuantech.Core
         //Runtime
         public ActorState CurrentActorState = ActorState.Spawned;
         [NonSerialized] public bool Dirtied = false;
+        [NonSerialized] public ActorBlueprint ActorBlueprint; //May be needed in some cases. If created by a template this should be non null
 
         //Events
         public EventHandler OnModulesInitialized;
