@@ -82,7 +82,7 @@ namespace Kuantech.AI
             if (firstDelay > 0f) yield return new WaitForSeconds(firstDelay);
 
             Bt.OwnerAgent = this; 
-
+            
             while (AgentRunning)
             {
                 if (!AgentPaused)

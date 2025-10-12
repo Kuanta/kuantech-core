@@ -53,6 +53,14 @@ namespace Kuantech.AI
                 _table.Add(key, value); // Add new key-value pair
             }
         }
+        
+        public void UnregisterVariable(string key)
+        {
+            if (_table.ContainsKey(key))
+            {
+                _table.Remove(key);
+            }
+        }
 
         // Get a variable. Note that the caller should know the type and cast accordingly.
         public object GetVariable(string key)
