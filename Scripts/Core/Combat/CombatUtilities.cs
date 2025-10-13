@@ -104,7 +104,7 @@ namespace Kuantech.Core.Combat
                 if (factionFilter != null && !factionFilter.IsNullOrEmpty() && !factionFilter.Contains(f)) continue;
 
                 // Test noktası: collider'ın merkezi yerine en yakın nokta daha güvenilir
-                Vector2 p = useClosestPoint ? col.ClosestPoint(center) : (Vector2)actor.transform.position;
+                Vector2 p = useClosestPoint ? col.ClosestPoint(center) : (Vector2)actor.GetActorLocation();
 
                 // "Önde mi?" koruması (orijinal merkez referansıyla)
                 float proj = Vector2.Dot(p - center, dir);
@@ -122,6 +122,58 @@ namespace Kuantech.Core.Combat
             return detected;
         }
 
+        public static List<Actor> GetActorsInArc3D(
+            Vector3 center,
+            Vector3 direction,
+            float range,
+            float angle,
+            LayerMask layerMask,
+            HashSet<int> factionFilter = null,
+            float backOffset = 0.5f,
+            float forwardGuard = 0f,
+            bool useClosestPoint = true,
+            int maxActorCount = 128)
+        {
+            var detected = new List<Actor>();
+
+            var dir = direction.sqrMagnitude < 1e-6f ? Vector3.right : direction.normalized;
+
+            float cosHalf = Mathf.Cos(0.5f * angle * Mathf.Deg2Rad);
+            float rangeSqr = range * range;
+
+            // Move aapex
+            Vector3 apex = center - dir * backOffset;
+
+            // Adayları kaçırmamak için arama yarıçapını biraz genişlet
+            Collider[] results = new Collider[maxActorCount];
+
+            if (UnityEngine.Physics.OverlapSphereNonAlloc(apex, range + backOffset, results, layerMask) > 0)
+            {
+                foreach (var col in results)
+                {
+                    if (!col || !col.TryGetComponent(out Actor actor)) continue;
+                    if (!actor.IsAlive()) continue;
+                    int f = actor.GetFactionId();
+                    if (factionFilter != null && !factionFilter.IsNullOrEmpty() && !factionFilter.Contains(f)) continue;
+
+                    // Test point
+                    Vector3 p = useClosestPoint ? col.ClosestPoint(center) : (Vector3)actor.GetActorLocation();
+
+                    float proj = Vector3.Dot(p - center, dir);
+                    if (proj < forwardGuard) continue;
+
+                    // Açı/distance testi apex'e göre
+                    Vector3 v = p - apex;
+                    if (v.sqrMagnitude > rangeSqr) continue;
+
+                    float dot = Vector3.Dot(dir, v.normalized); // cos(theta)
+                    if (dot >= cosHalf)
+                        detected.Add(actor);
+                }
+            }
+            return detected;
+        }
+        
         public static void HitActorsInSphere(Vector3 center, float radius, LayerMask layerMask, HitInfo hitInfo,
             HashSet<int> factionFilter = null, UnityAction<Actor> damageHandler = null)
         {

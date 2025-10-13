@@ -43,9 +43,10 @@ namespace Kuantech.Rpg.Skills
         [Tooltip("Behaviour specific config data")]
         [SerializeReference]
         [SubclassSelector]
-        public SkillBehaviourConfigData ConfigData; 
-        
-        [Header("Common Properties")]
+        public SkillBehaviourConfigData ConfigData;
+
+        [Header("Common Properties")] 
+        public float CastAnimationDuration;
         public float Duration;
 
         [Header("Effects")] 
@@ -62,8 +63,8 @@ namespace Kuantech.Rpg.Skills
         [NonSerialized] public SkillBehaviourData BehaviourData;
         [NonSerialized] public SkillCastData CurrentSkillCastData;
     
-        private bool _isCompleted;
-        private float _castStartTime;
+        protected bool _isCompleted;
+        protected float _castStartTime;
         public HashSet<Effect> PlayedEffects = new HashSet<Effect>();
         
         /// <summary>
@@ -106,7 +107,7 @@ namespace Kuantech.Rpg.Skills
             AnimationModule am = ParentSkill.ParentSpellBook.Actor.GetModule<AnimationModule>();
             if (am != null)
             {
-                BehaviourData.BehaviourStartAnimationData.SetParameters(am.Animator);
+                am.PlayAnimationData(BehaviourData.BehaviourStartAnimationData, BehaviourData.CastAnimationDuration, 1f); //todo: 
             }
         }
 

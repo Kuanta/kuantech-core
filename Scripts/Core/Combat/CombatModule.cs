@@ -46,11 +46,13 @@ namespace Kuantech.Core
         public float Width;
         public float Range;
         
+        [Header("Required Resource")]
+        public ResourceAsset RequiredResource;
+        public float RequiredResourceAmount = 0;
+        
         [Header("Damage")]
         public DamageInfo DamageInfo;
         public List<DamageInfo> AdditionalDamages;
-        public AttributeAsset AttributeToScaleDamage;
-        public float AttributeScaleFactor = 0f; //How much the attribute value scales the damage, 1 means 1:1 scaling
         
         [Header("Splash Damage")]
         public DamageInfo SplashDamage;
@@ -88,7 +90,6 @@ namespace Kuantech.Core
         public SkillDataAsset SkillToCast;
 
         [Header("Animation")] 
-        public AnimationMontage AttackMontage;
         public AnimationData AttackAnimationData;
 
         [Header("FX")] 
@@ -148,6 +149,7 @@ namespace Kuantech.Core
         private TargetManager _targetManager;
         private AnimationModule _animationModule;
         private ActorSlotsHandler _slotsHandler;
+        private HealthcareModule _healthcareModule;
         
         //Runtime
         private float _attackStartTime;
@@ -172,6 +174,7 @@ namespace Kuantech.Core
             _animationModule = Actor.GetModule<AnimationModule>();
             _targetManager = Actor.GetModule<TargetManager>();
             _slotsHandler = Actor.GetModule<ActorSlotsHandler>();
+            _healthcareModule = Actor.GetModule<HealthcareModule>();
         }
         
 
@@ -523,7 +526,7 @@ namespace Kuantech.Core
         public DamageInfo GetDamage(float critMultiplier)
         {
             DamageInfo damageInfo = GetCurrentAttackPattern().GetDamageInfo();
-            return _ApplyCritToDamageInfo(damageInfo, critMultiplier);
+            return _AdjustDamageInfo(damageInfo, critMultiplier);
         }
 
         public List<DamageInfo> GetAdditionalDamageInfos(float critMult)
@@ -532,21 +535,23 @@ namespace Kuantech.Core
             List<DamageInfo> additionalDamages = new List<DamageInfo>();
             foreach (var addDamInfo in attackPattern.AdditionalDamages)
             {
-                DamageInfo critApplied = _ApplyCritToDamageInfo(addDamInfo, critMult);
+                DamageInfo critApplied = _AdjustDamageInfo(addDamInfo, critMult);
                 additionalDamages.Add(critApplied);
             }
 
             return additionalDamages;
         }
-
-        private DamageInfo _ApplyCritToDamageInfo(DamageInfo damageInfo, float critMultiplier)
+        
+        /// <summary>
+        /// Adjusts the damage info by setting the crit multiplier and the attribute value
+        /// </summary>
+        /// <param name="damageInfo"></param>
+        /// <param name="critMultiplier"></param>
+        /// <returns></returns>
+        private DamageInfo _AdjustDamageInfo(DamageInfo damageInfo, float critMultiplier)
         {
-            AttackPattern attackPattern = GetCurrentAttackPattern();
-
-            List<DamageInfo> result = new List<DamageInfo>();
-            float statVariable = _statModule != null ? _statModule.GetAttributeValue(attackPattern.AttributeToScaleDamage) : 0;
-            damageInfo.DamageAmount += (statVariable * attackPattern.AttributeScaleFactor) * critMultiplier;
-            damageInfo.IsCritical = critMultiplier > 1;
+            damageInfo.SetAttributeValue(_statModule);
+            damageInfo.CritMultiplier = critMultiplier;
             return damageInfo;
         }
         
@@ -555,11 +560,8 @@ namespace Kuantech.Core
             float critMultiplier = GetCriticalMultiplier();
             AttackPattern attackPattern = GetCurrentAttackPattern();
             DamageInfo damageInfo = attackPattern.SplashDamage;
-            if (_statModule != null)
-            {
-                float statVariable = _statModule.GetAttributeValue(attackPattern.AttributeToScaleSplashDamage);
-                damageInfo.DamageAmount += (statVariable * attackPattern.AttributeScaleFactor) * critMultiplier;
-            }
+            damageInfo.SetAttributeValue(_statModule);
+            damageInfo.CritMultiplier = critMultiplier;
             return damageInfo;
         }
         
@@ -582,6 +584,17 @@ namespace Kuantech.Core
         public bool Attack(ActionCastData castData)
         {
             if (!CanAttack()) return false;
+            
+            //Spend resource
+            if (_healthcareModule != null)
+            {
+                ResourceAsset resourceAsset = GetCurrentAttackPattern().RequiredResource;
+                if (resourceAsset != null)
+                {
+                    _healthcareModule.RemoveResource(resourceAsset, GetCurrentAttackPattern().RequiredResourceAmount);
+                }
+            }
+            
             _currentCastData = castData;
             if (_currentCastData.Target != null && _targetManager != null && _currentCastData.Target.IsAlive())
             {
@@ -689,8 +702,25 @@ namespace Kuantech.Core
         /// <returns></returns>
         public bool CanAttack()
         {
-            if (GetCurrentAttackPattern().AttackType == AttackTypes.Target && GetCurrentTarget() == null) return false;
-            return !_isAttacking && !AttackLock.IsLocked() && Actor.IsAlive();
+            return CanUseAttack(GetCurrentAttackPattern());
+        }
+        
+        /// <summary>
+        /// Checks if an attack pattern can be used or not.
+        /// </summary>
+        /// <param name="attackPattern"></param>
+        /// <returns></returns>
+        public bool CanUseAttack(AttackPattern attackPattern)
+        {
+            if (attackPattern.AttackType == AttackTypes.Target && GetCurrentTarget() == null) return false;
+            if (!Actor.IsAlive() || AttackLock.IsLocked() || _isAttacking) return false;
+            //Check resource
+            if (_healthcareModule != null && attackPattern.RequiredResource != null)
+            {
+                float currentResource = _healthcareModule.GetCurrentResource(attackPattern.RequiredResource);
+                if (currentResource < attackPattern.RequiredResourceAmount) return false;
+            }
+            return true;
         }
         
         public bool IsAttacking()
@@ -739,14 +769,7 @@ namespace Kuantech.Core
             _effectPlayed = false;
             if(_animationModule != null)
             {
-                if (currPattern.AttackMontage != null)
-                {
-                    _animationModule.PlayAnimationMontageByDuration(currPattern.AttackMontage, _attackDuration);
-                }
-                else
-                {
-                    _animationModule.PlayAnimation(currPattern.AttackAnimationData, timeMultiplier);
-                }
+                _animationModule.PlayAnimationData(currPattern.AttackAnimationData, _attackDuration, timeMultiplier);
             }
   
             //todo(networking): Check server auth

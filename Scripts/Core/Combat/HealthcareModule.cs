@@ -38,6 +38,7 @@ namespace Kuantech.Core.Combat
         
         //Runtime 
         private StatsModule _statModule;
+        private AnimationModule _animationModule;
         
         public override void Initialize()
         {
@@ -81,6 +82,7 @@ namespace Kuantech.Core.Combat
         {
             base.OnModulesInitialized();
             _statModule = Actor.GetModule<StatsModule>();
+            _animationModule = Actor.GetModule<AnimationModule>();
         }
 
         public override void OnActorRankSet(int rank)
@@ -125,10 +127,16 @@ namespace Kuantech.Core.Combat
             }
             
             OnReceivedHitEvent?.Invoke(hitInfo);
+            
+            //Play hit animation?
+            if (_animationModule != null)
+            {
+                _animationModule.OnDamageReceive(hitInfo);
+            }
         }
         
         /// <summary>
-        /// Receives damage
+        /// Reduces the resource by checking the resistance values
         /// </summary>
         /// <param name="damageInfo"></param>
         public void DamageResource(DamageInfo damageInfo)
@@ -139,7 +147,7 @@ namespace Kuantech.Core.Combat
             DamageInfo reducedDamage = CalculateReducedDamageInfo(damageInfo);
             float resourceAfterDamage = CalculateResourceAfterDamage(reducedDamage);
             _statModule.SetResourceValue(resourceAsset, resourceAfterDamage);
-
+            UpdateResourceBar(resourceAsset);
             if (resourceAsset == HealthResourceAsset)
             {
                 OnHealthChanged?.Invoke(this);
@@ -149,10 +157,26 @@ namespace Kuantech.Core.Combat
                     CombatManager.ShowDamageText(Actor.transform.position, reducedDamage, Actor.GetFactionId() == 0); //todo: Fix Friendly check
                 }
             }
-            
+        }
+        
+        /// <summary>
+        /// Removes resource without applying any resistance or armor
+        /// </summary>
+        /// <param name="resourceAsset"></param>
+        /// <param name="amount"></param>
+        public void RemoveResource(ResourceAsset resourceAsset, float amount)
+        {
+            float currentResource = GetCurrentResource(resourceAsset);
+            float newResource = Mathf.Clamp(currentResource - amount, 0, GetMaxResourceValue(resourceAsset));
+            _statModule.SetResourceValue(resourceAsset, newResource);
+            OnResourceChanged?.Invoke(resourceAsset);
             UpdateResourceBar(resourceAsset);
         }
         
+        /// <summary>
+        /// Adds resource
+        /// </summary>
+        /// <param name="heal"></param>
         public void ReceiveResource(DamageInfo heal)
         {
             if (!Actor.IsAlive()) return; //Can't heal the dead
@@ -173,7 +197,7 @@ namespace Kuantech.Core.Combat
             OnResourceChanged?.Invoke(resourceAsset);
             UpdateResourceBar(heal.DamageType.AffectedResource);
         }
-
+        
         #region Resource Bars
 
         public void UpdateResourceBar(ResourceAsset resourceType)

@@ -10,6 +10,8 @@ namespace Kuantech.Rpg
         public ResourceAsset AffectedResource; //Which resource to damage
         public AttributeAsset ResistanceAttribute; //Which attribute provides resistance
         public DamageReductionFormula DamageReductionFormula; //Damage reduction formula for this damage type
+        public AttributeAsset DamageScaleAttribute; //Which attribute scales the damage
+        public float AttributeScale;
 
     }
 }

@@ -28,6 +28,9 @@ namespace Kuantech.Core
 
         [Header("Trigger")]
         public string TriggerParameterName;
+        
+        [Header("Animation Montage")]
+        public AnimationMontage AttackMontage;
 
         public void SetParameters(Animator animator)
         {

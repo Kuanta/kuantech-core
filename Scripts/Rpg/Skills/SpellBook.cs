@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Kuantech.Core;
+using Kuantech.Core.Combat;
 using Kuantech.Core.Utils;
 using Kuantech.Utils;
 using UnityEngine;
@@ -18,6 +19,13 @@ namespace Kuantech.Rpg.Skills
 
         //Runtime
         private float _lastSkillCastTime;
+        private HealthcareModule _healthcareModule;
+
+        public override void OnModulesInitialized()
+        {
+            base.OnModulesInitialized();
+            _healthcareModule = Actor.GetModule<HealthcareModule>();
+        }
 
         public override void ModuleUpdate()
         {
@@ -89,14 +97,38 @@ namespace Kuantech.Rpg.Skills
             {
                 _activeSkills.Add(skillToCast);
             }
+            
+            //Spend resource
+            if (_healthcareModule != null && skillDataAsset.RequiredResource != null)
+            {
+                _healthcareModule.RemoveResource(skillDataAsset.RequiredResource, skillDataAsset.RequiredResourceAmount);
+            }
             return skillToCast.Cast(skillCastData);
         }
 
         public bool CanCastSkill(SkillDataAsset skillDataAsset, SkillCastData skillCastData)
         {
-            if (!HasSkill(skillDataAsset)) return false;
+            if (!CanSkillBeCasted(skillDataAsset)) return false;
             Skill skill = GetSkillByDataAsset(skillDataAsset);
             return skill.CanBeCast(skillCastData);
+        }
+        
+        /// <summary>
+        /// Checks cooldown, skill availability and resource availability
+        /// </summary>
+        /// <param name="skillDataAsset"></param>
+        /// <returns></returns>
+        public bool CanSkillBeCasted(SkillDataAsset skillDataAsset)
+        {
+            if (!HasSkill(skillDataAsset)) return false;
+            
+            //Check resource
+            if (_healthcareModule != null && skillDataAsset.RequiredResource != null)
+            {
+                if(_healthcareModule.GetCurrentResource(skillDataAsset.RequiredResource) < skillDataAsset.RequiredResourceAmount) return false;
+            }
+
+            return true;
         }
 
         public override void Cleanup()

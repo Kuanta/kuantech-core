@@ -48,12 +48,11 @@ namespace Kuantech.Core
         private static readonly int CastIndex = Animator.StringToHash("CastIndex");
         private static readonly int AttackSpeedMultiplier = Animator.StringToHash("AttackSpeedMultiplier");
 
-
+    
         public override void Initialize()
         {
             base.Initialize();
             ApplyDefaultAnimationSet();
-            Actor.OnHitEvent += OnDamageReceive;
         }
         
         public override void OnModulesInitialized()
@@ -128,7 +127,7 @@ namespace Kuantech.Core
             Animator.SetTrigger(hash);
         }
 
-        public void PlayAnimationMontage(AnimationMontage animationMontage, float speedMultiplier = 1.0f)
+        private void PlayAnimationMontage(AnimationMontage animationMontage, float speedMultiplier = 1.0f)
         {
             Animator animator = GetAnimator();
             if (animator == null) return;
@@ -142,17 +141,24 @@ namespace Kuantech.Core
         /// </summary>
         /// <param name="animationMontage">Motnage to play</param>
         /// <param name="montageDuration">Desired play duration</param>
-        public void PlayAnimationMontageByDuration(AnimationMontage animationMontage, float montageDuration)
+        private void PlayAnimationMontageByDuration(AnimationMontage animationMontage, float montageDuration)
         {
             float baseAnimationDuration = animationMontage.MontageDuration;
             float multiplier = baseAnimationDuration / montageDuration;
             PlayAnimationMontage(animationMontage, multiplier);
         }
-        
-        public void PlayAnimation(AnimationData animationData, float speedMultiplier = 1.0f)
+
+        public void PlayAnimationData(AnimationData animationData, float animationDuration, float speedMultiplier)
         {
             Animator animator = GetAnimator();
             if (animator == null) return;
+            if (animationData.AttackMontage != null)
+            {
+                PlayAnimationMontageByDuration(animationData.AttackMontage, animationDuration);
+                return;
+            }
+            
+            //Play with parameters
             animationData.SetParameters(animator);
             animator.SetFloat(AttackSpeedMultiplier, speedMultiplier);
         }
