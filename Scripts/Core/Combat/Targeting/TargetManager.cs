@@ -25,7 +25,7 @@ namespace Kuantech.Core
             if (SlotCount == 0) SlotAllocator = null;
             else
             {
-                SlotAllocator = new TargetSlotAllocator(Actor.transform,SlotCount, Radius, Actor.ActorForwardVector, Actor.ActorUpVector);
+                SlotAllocator = new TargetSlotAllocator(Actor, SlotCount, Radius, Actor.ActorForwardVector, Actor.ActorUpVector);
             }
         }
         public bool SetCurrentTarget(Actor target)
@@ -82,7 +82,7 @@ namespace Kuantech.Core
         {
             if (CurrentTargetSlot != null)
             {
-                return CurrentTargetSlot.WorldPoint;
+                return CurrentTargetSlot.GetWorldPoint();
             }
             return CurrentTarget.GetHitPoint(Actor);
         }

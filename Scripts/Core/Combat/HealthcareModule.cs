@@ -34,6 +34,7 @@ namespace Kuantech.Core.Combat
         public UnityAction<HealthcareModule> OnHealthChanged;
         public UnityAction<ResourceAsset> OnResourceChanged;
         public UnityAction<DamageInfo> OnHealReceived;
+        public UnityAction<HitInfo> OnReceivedHitEvent; //Since we cant be sure of the order of Hit event from actor.
         
         //Runtime 
         private StatsModule _statModule;
@@ -122,6 +123,8 @@ namespace Kuantech.Core.Combat
                     Actor.Despawn(DespawnDelay); // Despawn actor after delay
                 }
             }
+            
+            OnReceivedHitEvent?.Invoke(hitInfo);
         }
         
         /// <summary>

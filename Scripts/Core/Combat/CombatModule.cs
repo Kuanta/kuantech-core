@@ -700,7 +700,7 @@ namespace Kuantech.Core
 
         public bool IsInAttackRange(WorldPoint target)
         {
-            float sqrDist = Vector3.SqrMagnitude(target.GetTargetPosition() - Actor.transform.position);
+            float sqrDist = Vector3.SqrMagnitude(target.GetTargetPosition() - Actor.GetActorLocation());
             return sqrDist <= (GetCurrentAttackPattern().Range + RangeTolerance) * (GetCurrentAttackPattern().Range + RangeTolerance);
         }
         

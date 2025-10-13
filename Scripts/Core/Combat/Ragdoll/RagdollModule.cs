@@ -23,13 +23,14 @@ namespace Kuantech.Core
             if(Ragdoll == null) return;
             Ragdoll.ParentActor = Actor.transform;
             Ragdoll.EnableRagdoll();
-
+            Actor.SetActorAnchor(Ragdoll.PelvisRigidbody.transform);
         }
         
         public void StandUpFromRagdoll()
         {
             if (Ragdoll == null) return;
             Ragdoll.GetUpFromRagdoll();
+            Actor.SetActorAnchor(Actor.transform);
         }
 
         public void ApplyRagdollForce(Vector3 force)

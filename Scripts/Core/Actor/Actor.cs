@@ -45,6 +45,9 @@ namespace Kuantech.Core
         public Vector3 ActorUpVector = Vector3.up;
         public Vector3 ActorForwardVector = Vector3.forward;
         public MotionVectorsHandler MotionVectorsHandler;
+
+        [Header("Anchor")] 
+        public Transform ActorAnchor;
         
         //Runtime
         public ActorState CurrentActorState = ActorState.Spawned;
@@ -411,7 +414,7 @@ namespace Kuantech.Core
         {
             WorldPoint hitPoint = new WorldPoint()
             {
-                Target =  transform,
+                Target =  GetActorAnchor(),
             };
             ActorSlotsHandler actorSlotsHandler = GetModule<ActorSlotsHandler>();
             if (actorSlotsHandler == null) return hitPoint;
@@ -456,6 +459,36 @@ namespace Kuantech.Core
         }
         #endregion
 
+        #region Actor Location
+        /// <summary>
+        /// Returns the actors location
+        /// </summary>
+        /// <returns></returns>
+        public Vector3 GetActorLocation()
+        {
+            if (ActorAnchor != null)
+            {
+                return ActorAnchor.transform.position;
+            }
+            return transform.position;
+        }
+
+        public Transform GetActorAnchor()
+        {
+            if(ActorAnchor != null)
+            {
+                return ActorAnchor;
+            }
+
+            return transform;
+        }
+
+        public void SetActorAnchor(Transform anchor)
+        {
+            ActorAnchor = anchor;
+        }
+        #endregion
+        
         #region Factions
         
         /// <summary>

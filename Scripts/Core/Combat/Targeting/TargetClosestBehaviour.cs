@@ -14,7 +14,7 @@ namespace Kuantech.Core
                 TargetSlot bestSlot = tm.SlotAllocator.GetBestSlot(a);
                 if (bestSlot != null)
                 {
-                    distToSelf = (self.transform.position - bestSlot.WorldPoint.GetTargetPosition()).sqrMagnitude;
+                    distToSelf = (self.transform.position - bestSlot.GetWorldPoint().GetTargetPosition()).sqrMagnitude;
                 }
             }
             return 1 / distToSelf; // Closer actors have higher priority
