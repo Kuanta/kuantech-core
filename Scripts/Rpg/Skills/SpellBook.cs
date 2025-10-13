@@ -62,6 +62,12 @@ namespace Kuantech.Rpg.Skills
             return true;
         }
 
+        public bool HasSkill(string skillId)
+        {
+            Skill skill = GetSkillById(skillId);
+            return skill != null;
+        }
+        
         public Skill GetSkillByDataAsset(SkillDataAsset skillDataAsset)
         {
             return GetSkillById(skillDataAsset.SkillId);
@@ -76,7 +82,7 @@ namespace Kuantech.Rpg.Skills
         public bool CastSkill(SkillDataAsset skillDataAsset, SkillCastData skillCastData)
         {
             if (SkillLock.IsLocked()) return false;
-            if (!CanCastSkill(skillDataAsset)) return false;
+            if (!CanCastSkill(skillDataAsset, skillCastData)) return false;
             Skill skillToCast = GetSkillByDataAsset(skillDataAsset);
             if (skillToCast == null) return false;
             if (!_activeSkills.Contains(skillToCast))
@@ -86,10 +92,11 @@ namespace Kuantech.Rpg.Skills
             return skillToCast.Cast(skillCastData);
         }
 
-        public bool CanCastSkill(SkillDataAsset skillDataAsset)
+        public bool CanCastSkill(SkillDataAsset skillDataAsset, SkillCastData skillCastData)
         {
             if (!HasSkill(skillDataAsset)) return false;
-            return true;
+            Skill skill = GetSkillByDataAsset(skillDataAsset);
+            return skill.CanBeCast(skillCastData);
         }
 
         public override void Cleanup()

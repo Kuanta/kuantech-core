@@ -19,5 +19,6 @@ namespace Kuantech.Rpg.Skills
         [Header("Skill Variables")]
         public List<SkillVariableData> SkillVariableDatas;
         public float SkillCooldown;
+        public float SkillRange;
     }
 }
