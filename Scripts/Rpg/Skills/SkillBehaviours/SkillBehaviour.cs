@@ -47,6 +47,7 @@ namespace Kuantech.Rpg.Skills
         public SkillBehaviourConfigData ConfigData;
 
         [Header("Common Properties")] 
+        public float CastTime;
         public float CastAnimationDuration;
         public float Duration;
         public float EffectPlayTime;
@@ -175,10 +176,13 @@ namespace Kuantech.Rpg.Skills
         {
             if (_isCompleted) return;
             float duration = GetDuration();
-            
+            float elapsedTime = GetElapsedTime();
                   
             //Behaviour
-            BehaviourImplementation();
+            if (elapsedTime >= BehaviourData.CastTime)
+            {
+                BehaviourImplementation();
+            }
             
             if(!_playedEffect && GetElapsedTime() > BehaviourData.EffectPlayTime)
             {
