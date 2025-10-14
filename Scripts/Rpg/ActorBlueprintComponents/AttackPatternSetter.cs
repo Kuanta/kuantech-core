@@ -42,5 +42,25 @@ namespace Kuantech.ConveyorDefense
                 }
             }
         }
+
+        public override void UpdateFromDatabaseRow(DataTable.RowData rowData)
+        {
+            AttackPattern.Range = rowData.GetFloatValue("Range", AttackPattern.Range);
+            AttackPattern.Angle = rowData.GetFloatValue("Angle", AttackPattern.Angle);
+            AttackPattern.AttackImplementationTime = rowData.GetFloatValue("AttackTime", AttackPattern.AttackImplementationTime);
+            AttackPattern.AttackDuration = rowData.GetFloatValue("AttackCooldown", AttackPattern.AttackDuration);
+            AttackPattern.Knockback = rowData.GetFloatValue("Knockback", AttackPattern.Knockback);
+            AttackPattern.KnockbackTime = rowData.GetFloatValue("KnockbackTime", AttackPattern.Knockback);
+            string skillName = rowData.GetStringValue("SkillToCast", "");
+            if (!skillName.IsNullOrEmpty())
+            {
+                SkillDataAsset skillDataAsset = RpgManager.GetSkillDataAssetById(skillName);
+                AttackPattern.SkillToCast = skillDataAsset;
+                if (skillDataAsset != null)
+                {
+                    AttackPattern.AttackType = AttackTypes.SkillCast;
+                }
+            }
+        }
     }
 }
