@@ -25,6 +25,7 @@ namespace Kuantech.RealTimeStrategy
         private Dictionary<int, int> _maxUnitsPerFaction;
         private Dictionary<int, float> _maxUnitsFactorPerFaction;
         public HashSet<Actor> SpawnedActors = new HashSet<Actor>();
+        public HashSet<Actor> DeadActors = new HashSet<Actor>();
         
 
         //todo(rts): Factions management here. Something like factions lookup table
@@ -75,6 +76,8 @@ namespace Kuantech.RealTimeStrategy
             {
                 actor.OnDeathEvent -= OnActorDeath;
                 actor.OnDeathEvent += OnActorDeath;
+                actor.OnDespawnedEvent -= OnActorDespawn;
+                actor.OnDespawnedEvent += OnActorDespawn;
                 if (spawned)
                 {
                     SpawnedActors.Add(actor);
@@ -120,7 +123,8 @@ namespace Kuantech.RealTimeStrategy
             UnregisterActor(actor);
             OnActorRemoved?.Invoke(actor);
         }
-
+        
+        
         private void UnregisterActor(Actor actor)
         {
             int factionId = actor.GetFactionId();
@@ -194,12 +198,21 @@ namespace Kuantech.RealTimeStrategy
             {
                 if (actor != null)
                 {
-                    //Play a vfx here?
                     actor.Despawn(0.0f);
                     UnregisterActor(actor);
                 }
             }
             SpawnedActors.Clear();
+            
+            //To clear all dead actors that are not despawned yet
+            foreach (var actor in DeadActors)
+            {
+                if (actor != null)
+                {
+                    actor.Despawn(0.0f);
+                }
+            }
+            DeadActors.Clear();
         }
 
         public void ClearSpawnedActorsByFaction(int faction)
@@ -289,8 +302,17 @@ namespace Kuantech.RealTimeStrategy
         {
             if (actor == null) return;
             RemoveActor(actor);
+            DeadActors.Add(actor);
         }
 
+        public void OnActorDespawn(Actor actor)
+        {
+            if (actor == null) return;
+            if (DeadActors != null && DeadActors.Contains(actor))
+            {
+                DeadActors.Remove(actor);
+            }
+        }
         public override void OnLevelStateChange(LevelStateChangeData levelStateChangeData)
         {
             base.OnLevelStateChange(levelStateChangeData);

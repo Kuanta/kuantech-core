@@ -25,6 +25,7 @@ namespace Kuantech.AI
         {
             return GetCurrentChild().Process();
         }
+        
         // Get a variable. Note that the caller should know the type and cast accordingly.
         public object GetVariable(string key)
         {

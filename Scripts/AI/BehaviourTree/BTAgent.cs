@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using Kuantech.Core;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -15,6 +16,9 @@ namespace Kuantech.AI
         private WaitForSeconds _waitForSeconds;
         [NonSerialized] public bool AgentRunning;
         [NonSerialized] public bool AgentPaused;
+        
+        private float _nextPlanTime;
+        
         public override void Initialize()
         {
             //todo: Can we remove this?
@@ -34,7 +38,7 @@ namespace Kuantech.AI
                 StartAgent();
             }
         }
-        
+
         #region Behaviour Tree
 
         public void SetBehaviourTree(BehaviourTree bt)
