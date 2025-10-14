@@ -101,6 +101,8 @@ namespace Kuantech.Core.Combat
         {
             //Apply main damage
             DamageResource(hitInfo.DamageInfo);
+            
+            Debug.LogError($"{Actor.Id} received {hitInfo.DamageInfo.GetDamage()} damage. New hp:{GetCurrentHealth()}");
     
             //Additional damages
             if (hitInfo.AdditionalDamages != null)
@@ -240,7 +242,7 @@ namespace Kuantech.Core.Combat
         /// <returns></returns>
         public DamageInfo CalculateReducedDamageInfo(DamageInfo damageInfo)
         {
-            float reducedDamage = damageInfo.DamageAmount;
+            float reducedDamage = damageInfo.GetDamage();
             if (damageInfo.DamageType != null)
             {
                 DamageReductionFormula reductionFormula = damageInfo.DamageType.DamageReductionFormula;
@@ -251,16 +253,19 @@ namespace Kuantech.Core.Combat
                     reducedDamage *= reductionFormula.GetDamageMultiplier(armor);
                 }
             }
-       
-            DamageInfo reducedDamageInfo = damageInfo;
-            reducedDamageInfo.DamageAmount = reducedDamage;
+
+            DamageInfo reducedDamageInfo = new DamageInfo()
+            {
+                DamageType = damageInfo.DamageType,
+            };
+            reducedDamageInfo.SetDamage(reducedDamage);
             return reducedDamageInfo;
         }
         
         public float CalculateResourceAfterDamage(DamageInfo damageInfo)
         {
             float currentResource = GetCurrentResource(GetAffectedResource(damageInfo));
-            float damageAmount = damageInfo.DamageAmount;
+            float damageAmount = damageInfo.GetDamage();
             return currentResource - damageAmount;
         }
         

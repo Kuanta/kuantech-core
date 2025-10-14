@@ -18,13 +18,18 @@ namespace Kuantech.Core
 
         [NonSerialized] public float CritMultiplier;
         [NonSerialized] public float AttributeValue;
+        
         public float GetDamage()
         {
             float baseDamage = DamageAmount;
             if(DamageType != null) baseDamage += AttributeValue * DamageType.AttributeScale;
-            return baseDamage * CritMultiplier;
+            return baseDamage * Mathf.Max(1,CritMultiplier);
         }
 
+        public void SetDamage(float damage)
+        {
+            DamageAmount = damage;
+        }
         public void SetAttributeValue(StatsModule statsModule)
         {
             if (DamageType == null || statsModule == null || DamageType.DamageScaleAttribute == null)
