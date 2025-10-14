@@ -33,7 +33,7 @@ namespace Kuantech.Core.Combat
         //Events
         public UnityAction<HealthcareModule> OnHealthChanged;
         public UnityAction<ResourceAsset> OnResourceChanged;
-        public UnityAction<DamageInfo> OnHealReceived;
+        public UnityAction<float> OnHealReceived;
         public UnityAction<HitInfo> OnReceivedHitEvent; //Since we cant be sure of the order of Hit event from actor.
         
         //Runtime 
@@ -110,7 +110,6 @@ namespace Kuantech.Core.Combat
                     DamageResource(damageInfo);
                 }
             }
-            
             //Check health
             float currentHealth = GetCurrentResource(HealthResourceAsset);
             if (currentHealth <= 0.0f)
@@ -177,25 +176,30 @@ namespace Kuantech.Core.Combat
         /// Adds resource
         /// </summary>
         /// <param name="heal"></param>
-        public void ReceiveResource(DamageInfo heal)
+        public void ReceiveResource(ResourceAsset resourceAsset, float amount)
         {
             if (!Actor.IsAlive()) return; //Can't heal the dead
-            ResourceAsset resourceAsset = heal.DamageType.AffectedResource;
             float currentRes = GetCurrentResource(resourceAsset);
             float maxRes = GetMaxResourceValue(resourceAsset);
-            float newRes  = Mathf.Clamp(currentRes + heal.DamageAmount, 0, maxRes);
+            float newRes  = Mathf.Clamp(currentRes + amount, 0, maxRes);
             
             _statModule.SetResourceValue(HealthResourceAsset, newRes);
             
             //Show heal text if health resource is increased
-            if (ShowDamageText && heal.DamageType.AffectedResource == HealthResourceAsset)
+            if (ShowDamageText && resourceAsset == HealthResourceAsset)
             {
-                CombatManager.ShowHealText(Actor.transform.position, heal, Actor.GetFactionId() == 0); //todo: Fix Friendly check
-                OnHealReceived?.Invoke(heal);
+                //CombatManager.ShowHealText(Actor.transform.position, amount, Actor.GetFactionId() == 0); //todo: Fix Friendly check
+                OnHealReceived?.Invoke(amount);
                 OnHealthChanged?.Invoke(this);
             }
             OnResourceChanged?.Invoke(resourceAsset);
-            UpdateResourceBar(heal.DamageType.AffectedResource);
+            UpdateResourceBar(resourceAsset);
+        }
+
+        public void ReceiveHeal(float healAmount)
+        {
+            ReceiveResource(HealthResourceAsset, healAmount);
+            
         }
         
         #region Resource Bars
@@ -265,13 +269,18 @@ namespace Kuantech.Core.Combat
             return _statModule.GetResourceValue(resourceAsset);
         }
         
-        public float GetCurrenctPercentageResource(ResourceAsset resourceAsset)
+        public float GetCurrentPercentageResource(ResourceAsset resourceAsset)
         {
             float currentResource = GetCurrentResource(resourceAsset);
             float maxHealth = GetMaxResourceValue(resourceAsset);
             return maxHealth > 0 ? currentResource / maxHealth : 0f;
         }
-
+        
+        public float GetCurrentPercentageHealth()
+        {
+            return GetCurrentPercentageResource(HealthResourceAsset);
+        }
+        
         public float GetMaxResourceValue(ResourceAsset resourceAsset)
         {
             return _statModule.GetResourceMaxValue(resourceAsset);
