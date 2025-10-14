@@ -153,6 +153,20 @@ namespace Kuantech.Rpg.Skills
 
                         break;
                     case FxPlayData.SkillBehaviourFxPlayType.OnTarget:
+                        if (CurrentSkillCastData.CastTarget != null)
+                        {
+                            ActorSlotsHandler targetSlotsHandler = CurrentSkillCastData.CastTarget.GetModule<ActorSlotsHandler>();
+                            if (targetSlotsHandler != null)
+                            {
+                                Transform slot = targetSlotsHandler.GetSlot(fx.ActorSlotName);
+                                if (slot != null)
+                                {
+                                    effect = PlayEffectAtActorSlot(slot, fx.EffectPlayer);
+                                    break;
+                                }
+                            }
+                        }
+             
                         effect = PlayEffectAtTarget(fx.EffectPlayer);
                         break;
                     case FxPlayData.SkillBehaviourFxPlayType.AtCastPoint:
