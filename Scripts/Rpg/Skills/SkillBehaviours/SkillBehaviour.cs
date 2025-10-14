@@ -31,7 +31,8 @@ namespace Kuantech.Rpg.Skills
         public SkillBehaviourFxPlayType PlayType;
         public EffectPlayer EffectPlayer;
         public bool StopOnBehaviourEnd;
-        public string ActorSlotName; //If PlayType is AtSlot, this is the slot name to play the effect at
+        [Tooltip("Useful for OnCaster or AtCaster. If play type is OnTarget, effect will be played attached to given slot")]
+        public string ActorSlotName; 
     }
     
     [Serializable]
@@ -48,6 +49,7 @@ namespace Kuantech.Rpg.Skills
         [Header("Common Properties")] 
         public float CastAnimationDuration;
         public float Duration;
+        public float EffectPlayTime;
 
         [Header("Effects")] 
         public List<FxPlayData> SkillBehaviourFxDatas;
@@ -65,6 +67,7 @@ namespace Kuantech.Rpg.Skills
     
         protected bool _isCompleted;
         protected float _castStartTime;
+        protected bool _playedEffect;
         public HashSet<Effect> PlayedEffects = new HashSet<Effect>();
         
         /// <summary>
@@ -92,13 +95,11 @@ namespace Kuantech.Rpg.Skills
             CurrentSkillCastData = skillCastData;
             _castStartTime = Time.time;
             _isCompleted = false;
+            _playedEffect = false;
             
             //Play animation
             PlayBehaviourAnimation();
-            
-            //Play effects
-            PlayBehaviourEffects();
-            
+
             OnBehaviourStarted();
         }
 
@@ -121,32 +122,41 @@ namespace Kuantech.Rpg.Skills
                 //Can effet be played at slot
                 Actor playerActor = ParentSkill.ParentSpellBook.Actor;
                 ActorSlotsHandler slotsHandler = playerActor.GetModule<ActorSlotsHandler>();
-                if (slotsHandler != null)
-                {
-                    Transform slot = slotsHandler.GetSlot(fx.ActorSlotName);
-                    if (slot != null)
-                    {
-                        effect = PlayEffectAtActorSlot(slot, fx.EffectPlayer);
-                    }
-                }
 
-                if (effect == null)
+                switch(fx.PlayType)
                 {
-                    switch(fx.PlayType)
-                    {
-                        case FxPlayData.SkillBehaviourFxPlayType.OnCaster:
-                            effect = PlayEffectOnCaster(fx.EffectPlayer);
-                            break;
-                        case FxPlayData.SkillBehaviourFxPlayType.AtCaster:
-                            effect  = PlayEffectAtCasterPosition(fx.EffectPlayer);
-                            break;
-                        case FxPlayData.SkillBehaviourFxPlayType.OnTarget:
-                            effect = PlayEffectAtTarget(fx.EffectPlayer);
-                            break;
-                        case FxPlayData.SkillBehaviourFxPlayType.AtCastPoint:
-                            effect = PlayEffectAtCastPosition(fx.EffectPlayer);
-                            break;
-                    }
+                    case FxPlayData.SkillBehaviourFxPlayType.OnCaster:
+                        if (slotsHandler != null)
+                        {
+                            Transform slot = slotsHandler.GetSlot(fx.ActorSlotName);
+                            if (slot != null)
+                            {
+                                effect = PlayEffectAtActorSlot(slot, fx.EffectPlayer);
+                                break;
+                            }
+                        }
+                        effect = PlayEffectOnCaster(fx.EffectPlayer);
+
+                        break;
+                    case FxPlayData.SkillBehaviourFxPlayType.AtCaster:
+                        if (slotsHandler != null)
+                        {
+                            Transform slot = slotsHandler.GetSlot(fx.ActorSlotName);
+                            if (slot != null)
+                            {
+                                effect = PlayEffectAtActorSlotLocation(slot, fx.EffectPlayer);
+                                break;
+                            }
+                        }
+                        effect  = PlayEffectAtCasterPosition(fx.EffectPlayer);
+
+                        break;
+                    case FxPlayData.SkillBehaviourFxPlayType.OnTarget:
+                        effect = PlayEffectAtTarget(fx.EffectPlayer);
+                        break;
+                    case FxPlayData.SkillBehaviourFxPlayType.AtCastPoint:
+                        effect = PlayEffectAtCastPosition(fx.EffectPlayer);
+                        break;
                 }
           
 
@@ -169,6 +179,12 @@ namespace Kuantech.Rpg.Skills
                   
             //Behaviour
             BehaviourImplementation();
+            
+            if(!_playedEffect && GetElapsedTime() > BehaviourData.EffectPlayTime)
+            {
+                PlayBehaviourEffects();
+                _playedEffect = true;
+            }
             
             //ıf duration is less than 0, it means the behaviour is infinite
             if (GetElapsedTime() >= duration && duration >= 0)
@@ -278,7 +294,13 @@ namespace Kuantech.Rpg.Skills
                 EffectPlaySettings.GetPlayAtObjectSettings(target, Vector3.zero, Quaternion.identity);
             return effectPlayer.PlayEffect(playSettings);
         }
-
+        
+        /// <summary>
+        /// Plays effect attached to actor slot
+        /// </summary>
+        /// <param name="actorSlot"></param>
+        /// <param name="effectPlayer"></param>
+        /// <returns></returns>
         public Effect PlayEffectAtActorSlot(Transform actorSlot, EffectPlayer effectPlayer)
         {
             if (effectPlayer.IsNull()) return null;
@@ -292,6 +314,28 @@ namespace Kuantech.Rpg.Skills
             //Local rot compared to actorSLot
             Quaternion localRot = Quaternion.Inverse(actorSlot.rotation) * playRot;
             EffectPlaySettings playSettings = EffectPlaySettings.GetPlayAtObjectSettings(actorSlot, Vector3.zero, localRot);
+
+            playSettings.Caster = ParentSkill.ParentSpellBook.Actor;
+            return effectPlayer.PlayEffect(playSettings);
+        }
+        
+        /// <summary>
+        /// Plays effect at actor slot location (world position)
+        /// </summary>
+        /// <param name="actorSlot"></param>
+        /// <param name="effectPlayer"></param>
+        /// <returns></returns>
+        public Effect PlayEffectAtActorSlotLocation(Transform actorSlot, EffectPlayer effectPlayer)
+        {
+            if (effectPlayer.IsNull()) return null;
+            Vector3 effectDir = CurrentSkillCastData.CastDirection;
+            Quaternion playRot = Quaternion.identity;
+            if (effectDir.sqrMagnitude >= 0.001f)
+            {
+                playRot = Quaternion.LookRotation(effectDir);
+            }
+           
+            EffectPlaySettings playSettings = EffectPlaySettings.GetPlayAtPositionSettings(actorSlot.position, playRot);
 
             playSettings.Caster = ParentSkill.ParentSpellBook.Actor;
             return effectPlayer.PlayEffect(playSettings);
