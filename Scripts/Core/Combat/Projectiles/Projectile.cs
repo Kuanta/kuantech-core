@@ -43,6 +43,7 @@ namespace Kuantech.Core
         public List<DamageInfo> AdditionalDamages = new List<DamageInfo>();
         public float SplashRadius = 0f; // 0 = no splash
         public DamageInfo SplashDamage;
+        public List<DamageInfo> AdditionalSplashDamages = new List<DamageInfo>();
 
         [Header("Ownership & Filters")]
         public Actor CastBy;
@@ -480,6 +481,7 @@ namespace Kuantech.Core
                     KnockbackDuration = KnockbackTime,
                     KnockbackForce = Knockback,
                 };
+                hitInfo2D.AdditionalDamages = AdditionalSplashDamages;
                 CombatUtilities.HitActorsInCircle2D(origin, SplashRadius, Targets, hitInfo2D, FactionFilter);
             }
             else
@@ -492,6 +494,7 @@ namespace Kuantech.Core
                     KnockbackDuration = KnockbackTime,
                     KnockbackForce = Knockback,
                 };
+                hitInfo.AdditionalDamages = AdditionalSplashDamages;
                 CombatUtilities.HitActorsInSphere(origin, SplashRadius, Targets, hitInfo, FactionFilter);
             }
         }
@@ -511,6 +514,7 @@ namespace Kuantech.Core
                     HitDirection = _direction,
                     KnockbackDuration = KnockbackTime,
                     KnockbackForce = Knockback,
+                    AdditionalDamages = AdditionalDamages,
                 });
             }
         }
