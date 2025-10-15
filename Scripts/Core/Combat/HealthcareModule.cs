@@ -29,6 +29,9 @@ namespace Kuantech.Core.Combat
         
         [Header("Effects")]
         [SerializeField] private Effect HealEffect;
+
+        [Header("Animations")] [SerializeField]
+        private float PlayDamageThreshPercentage;
         
         //Events
         public UnityAction<HealthcareModule> OnHealthChanged;
@@ -39,6 +42,7 @@ namespace Kuantech.Core.Combat
         //Runtime 
         private StatsModule _statModule;
         private AnimationModule _animationModule;
+        private float _remainingDamageToPlayHitAnim;
         
         public override void Initialize()
         {
@@ -66,6 +70,8 @@ namespace Kuantech.Core.Combat
             {
                 RefreshResource(resource);
             }
+            
+            SetRemainingDamageToPlayHitAnim();
         }
         
         /// <summary>
@@ -99,10 +105,9 @@ namespace Kuantech.Core.Combat
         
         private void OnHit(HitInfo hitInfo)
         {
+            float previousHealth = GetCurrentHealth();
             //Apply main damage
             DamageResource(hitInfo.DamageInfo);
-            
-            Debug.LogError($"{Actor.Id} received {hitInfo.DamageInfo.GetDamage()} damage. New hp:{GetCurrentHealth()}");
     
             //Additional damages
             if (hitInfo.AdditionalDamages != null)
@@ -129,11 +134,24 @@ namespace Kuantech.Core.Combat
             
             OnReceivedHitEvent?.Invoke(hitInfo);
             
-            //Play hit animation?
-            if (_animationModule != null)
+            //Hit anim?
+            float receivedDmg = previousHealth - currentHealth;
+            _remainingDamageToPlayHitAnim -= Mathf.Max(receivedDmg);
+
+            if (_remainingDamageToPlayHitAnim <= 0)
             {
-                _animationModule.OnDamageReceive(hitInfo);
+                SetRemainingDamageToPlayHitAnim();
+                //Play hit animation?
+                if (_animationModule != null)
+                {
+                    _animationModule.OnDamageReceive(hitInfo);
+                }
             }
+        }
+
+        private void SetRemainingDamageToPlayHitAnim()
+        {
+            _remainingDamageToPlayHitAnim = GetMaxHealth() * Mathf.Max(0, PlayDamageThreshPercentage);
         }
         
         /// <summary>
