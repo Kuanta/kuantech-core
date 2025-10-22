@@ -69,7 +69,7 @@ namespace Kuantech.Utils
 
         private void Update()
         {
-#if UNITY_ANDROID || UNITY_IOS
+#if !UNITY_EDITOR && (UNITY_ANDROID || UNITY_IOS)
             HandleTouch();
 #else
             HandleMouse();
