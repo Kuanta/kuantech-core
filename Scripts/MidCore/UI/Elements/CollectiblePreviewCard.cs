@@ -1,5 +1,6 @@
 ﻿using System;
 using Kuantech.Core.UI;
+using Kuantech.LegendsGuild;
 using Kuantech.Rpg.UI;
 using TMPro;
 using UnityEngine;
@@ -15,7 +16,7 @@ namespace Kuantech.Midcore.UI
     {
         [Header("Visuals")] 
         [SerializeField] private TMP_Text Name;
-        [SerializeField] private LevelableFloatIndicator LevelableFloatIndicator;
+        [SerializeField] private CollectableRankIndicator CollectableRankIndicator;
         [SerializeField] private Image CollectibleIcon;
         [SerializeField] private Image LockedCollectibleIcon;
         [SerializeField] private UnlockableUIElementVisualHandler VisualStateHandler;
@@ -108,13 +109,13 @@ namespace Kuantech.Midcore.UI
             var state = isUnlocked ? UnlockableStates.Unlocked : UnlockableStates.Locked;
             VisualStateHandler.SetVisual(state);
             
-            var data = ProgressionManager.GetProgressibleData(CollectibleDataAsset);
-            if (data == null)
-            {
-                return;
-            }
-            if(LevelableFloatIndicator != null) LevelableFloatIndicator.UpdateValue(data.GetRank());
+            SetCollectibleRank();
             if(Name != null) Name.text = CollectibleDataAsset.GetName();
+        }
+
+        private void SetCollectibleRank()
+        {
+            if(CollectableRankIndicator != null) CollectableRankIndicator.SetCollectableRank(CollectibleDataAsset);
         }
         
         public virtual void OnClick()
