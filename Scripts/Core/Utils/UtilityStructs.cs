@@ -15,6 +15,7 @@ namespace Kuantech.Utils
         public Vector3 LocalPosition;
         public Quaternion LocalRotation;
         public Vector3 OffsetPosition;
+        public float Radius; //Used for actor radius, or to represent a circular point
         
         public Vector3 GetTargetPosition()
         {

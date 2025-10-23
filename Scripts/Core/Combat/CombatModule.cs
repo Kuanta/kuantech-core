@@ -146,7 +146,7 @@ namespace Kuantech.Core
 
         //Quick module references
         private StatsModule _statModule;
-        private TargetManager _targetManager;
+        private SurroundManager _surroundManager;
         private AnimationModule _animationModule;
         private ActorSlotsHandler _slotsHandler;
         private HealthcareModule _healthcareModule;
@@ -172,7 +172,7 @@ namespace Kuantech.Core
             
             _statModule = Actor.GetModule<StatsModule>();
             _animationModule = Actor.GetModule<AnimationModule>();
-            _targetManager = Actor.GetModule<TargetManager>();
+            _surroundManager = Actor.GetModule<SurroundManager>();
             _slotsHandler = Actor.GetModule<ActorSlotsHandler>();
             _healthcareModule = Actor.GetModule<HealthcareModule>();
         }
@@ -217,8 +217,8 @@ namespace Kuantech.Core
         /// <returns></returns>
         public Actor GetCurrentTarget()
         {
-            if (_targetManager == null) return null;
-            return _targetManager.GetCurrentTarget();
+            if (_surroundManager == null) return null;
+            return _surroundManager.GetCurrentTarget();
         }
         #endregion
 
@@ -596,9 +596,9 @@ namespace Kuantech.Core
             }
             
             _currentCastData = castData;
-            if (_currentCastData.Target != null && _targetManager != null && _currentCastData.Target.IsAlive())
+            if (_currentCastData.Target != null && _surroundManager != null && _currentCastData.Target.IsAlive())
             {
-                _targetManager.SetCurrentTarget(_currentCastData.Target);
+                _surroundManager.SetCurrentTarget(_currentCastData.Target);
             }
 
             _currentCastData.StartPosition = GetAttackPosition();
@@ -727,11 +727,16 @@ namespace Kuantech.Core
         {
             return _isAttacking;
         }
-
+        
+        /// <summary>
+        /// Checks whether the target point is in attacking range
+        /// </summary>
+        /// <param name="target"></param>
+        /// <returns></returns>
         public bool IsInAttackRange(WorldPoint target)
         {
-            float sqrDist = Vector3.SqrMagnitude(target.GetTargetPosition() - Actor.GetActorLocation());
-            return sqrDist <= (GetCurrentAttackPattern().Range + RangeTolerance) * (GetCurrentAttackPattern().Range + RangeTolerance);
+            float dist = Vector3.Magnitude(target.GetTargetPosition() - Actor.GetActorLocation()) - target.Radius;
+            return dist <= (GetCurrentAttackPattern().Range + RangeTolerance);
         }
         
         public AttackPattern GetCurrentAttackPattern()

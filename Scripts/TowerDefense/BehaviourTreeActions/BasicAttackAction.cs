@@ -19,7 +19,7 @@ namespace Kuantech.TowerDefense
             _attacked = false;
             _enemyActor = ownerTree.GetVariable<Actor>(TargetKey);
             if (_enemyActor == null) return;
-            TargetManager tm  = ownerTree.OwnerAgent.Actor.GetModule<TargetManager>();
+            SurroundManager tm  = ownerTree.OwnerAgent.Actor.GetModule<SurroundManager>();
             tm.SetCurrentTarget(_enemyActor);
         }
         

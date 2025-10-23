@@ -23,7 +23,12 @@ namespace Kuantech.Core
         [Header("Identifier")] 
         public string Id;
         public int ActorRank = 0;
-            
+        
+        [Header("Positioning Variables")]
+        public Transform ActorAnchor;
+
+        public float ActorRadius = 0.5f;
+
         [Header("Factions")]
        // public int FactionId = 0; //Since faction Id is used frequently, it is stated in Actor class
         public FactionHandler FactionHandler;
@@ -45,9 +50,6 @@ namespace Kuantech.Core
         public Vector3 ActorUpVector = Vector3.up;
         public Vector3 ActorForwardVector = Vector3.forward;
         public MotionVectorsHandler MotionVectorsHandler;
-
-        [Header("Anchor")] 
-        public Transform ActorAnchor;
         
         //Runtime
         public ActorState CurrentActorState = ActorState.Spawned;
@@ -56,6 +58,7 @@ namespace Kuantech.Core
 
         //Events
         public EventHandler OnModulesInitialized;
+        public EventHandler<float> OnActorRadiusSet;
         
         //Lifecycle events
         public UnityAction<ActorState> OnActorStateChanged;
@@ -412,9 +415,11 @@ namespace Kuantech.Core
 
         public virtual WorldPoint GetHitPoint(Actor attackingActor)
         {
+            
             WorldPoint hitPoint = new WorldPoint()
             {
                 Target =  GetActorAnchor(),
+                Radius = ActorRadius,
             };
             ActorSlotsHandler actorSlotsHandler = GetModule<ActorSlotsHandler>();
             if (actorSlotsHandler == null) return hitPoint;
@@ -486,6 +491,25 @@ namespace Kuantech.Core
         public void SetActorAnchor(Transform anchor)
         {
             ActorAnchor = anchor;
+        }
+
+        public void SetActorRadius(float radius)
+        {
+            ActorRadius = radius;
+            OnActorRadiusSet?.Invoke(this, radius);
+        }
+        
+        /// <summary>
+        /// Returns distance towards point
+        /// </summary>
+        /// <param name="point"></param>
+        /// <returns></returns>
+        public float GetDistanceToPosition(Vector3 point)
+        {
+            Vector3 actorPosition = GetActorLocation();
+            Vector3 diff = (point - actorPosition);
+            float diffMag = diff.magnitude;
+            return Mathf.Max(0, diffMag - ActorRadius);
         }
         #endregion
         

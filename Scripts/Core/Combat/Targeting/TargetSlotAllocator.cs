@@ -49,6 +49,17 @@ namespace Kuantech.Core
                 };
             }
         }
+
+        public void SetRadius(float radius)
+        {
+            if (_slots == null || _slots.Length == 0) return;
+            for (int i = 0; i < _slots.Length; i++)
+            {
+                float angle = (360f / _slots.Length) * i;
+                Vector3 offset = Quaternion.AngleAxis(angle, LocalUp) * LocalForward * radius;
+                _slots[i].OffsetPosition = offset;
+            }
+        }
         
         /// <summary>
         /// Gets the closest slot
@@ -88,7 +99,7 @@ namespace Kuantech.Core
             if (occupyingActor == null || !slot.OccupyingActor.IsAlive()) return false;
             
             //Check if occupying actor actually targeting this
-            TargetManager tm = occupyingActor.GetModule<TargetManager>();
+            SurroundManager tm = occupyingActor.GetModule<SurroundManager>();
             if (tm == null) return true;
             if (tm.CurrentTargetSlot == slot) return true;
             return false; //Not the same slot

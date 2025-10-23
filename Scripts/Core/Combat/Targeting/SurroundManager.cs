@@ -3,15 +3,15 @@ using UnityEngine;
 
 namespace Kuantech.Core
 {
-    public class TargetManager : ActorModule
+    public class SurroundManager : ActorModule
     {
-        [Header("Target Detection")]
         [Header("Slot Allocator")]
-
         public TargetSlotAllocator SlotAllocator;
-        public int SlotCount = 0;
-        public float Radius;
         
+        [Tooltip("Final slot is calculated by 2*PI*Radius / SurroundSlotsDistance")] 
+        public float SurroundSlotsDistance;
+
+
         //Runtime
         public TargetSlot CurrentTargetSlot;
         
@@ -20,14 +20,39 @@ namespace Kuantech.Core
 
         public override void Initialize()
         {
-            if (Initialized) return;
             base.Initialize();
-            if (SlotCount == 0) SlotAllocator = null;
-            else
+            Actor.OnActorRadiusSet += OnActorRadiusSet;
+        }
+        public override void OnActorStateChanged(ActorState oldState, ActorState newState)
+        {
+            if (newState == ActorState.Spawned)
             {
-                SlotAllocator = new TargetSlotAllocator(Actor, SlotCount, Radius, Actor.ActorForwardVector, Actor.ActorUpVector);
+                SetSlotAllocator();
             }
         }
+
+        private void SetSlotAllocator()
+        {
+            int slotCount = GetSlotCount();
+            if (slotCount== 0) SlotAllocator = null;
+            else
+            {
+                SlotAllocator = new TargetSlotAllocator(Actor, slotCount, Actor.ActorRadius, Actor.ActorForwardVector, Actor.ActorUpVector);
+            }
+        }
+
+        public int GetSlotCount()
+        {
+            float radius = Mathf.Max(0.1f, Actor.ActorRadius);
+            return Mathf.CeilToInt((2 * Mathf.PI * radius) / Mathf.Max(0.1f, SurroundSlotsDistance));
+        }
+        
+        public void OnActorRadiusSet(object sender, float radius)
+        {
+            //Recalculate slot allocator
+            SetSlotAllocator();
+        }
+        
         public bool SetCurrentTarget(Actor target)
         {
             if (CurrentTarget != null && CurrentTarget == target) return true; //Don't change target 
@@ -43,7 +68,7 @@ namespace Kuantech.Core
         public void AssignToTargetSlot(Actor otherActor)
         {
             UnsetCurrentTargetSlot();
-            TargetManager otherManager = otherActor.GetModule<TargetManager>();
+            SurroundManager otherManager = otherActor.GetModule<SurroundManager>();
             TargetSlot slot = null;
             if (otherManager != null && otherManager.SlotAllocator != null)
             {
