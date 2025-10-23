@@ -134,11 +134,11 @@ namespace Kuantech.Core
         public Vector3 GetTargetVector()
         {
             //If target manager has a target...
-            if (ParentActor != null && ParentActor.GetModule<SurroundManager>() != null)
-            {
-                Actor target = ParentActor.GetModule<SurroundManager>().GetCurrentTarget();
-                if (target != null) TargetedObject = target.transform;
-            }
+            // if (ParentActor != null && ParentActor.GetModule<SurroundManager>() != null)
+            // {
+            //     Actor target = ParentActor.GetModule<SurroundManager>().GetCurrentTarget();
+            //     if (target != null) TargetedObject = target.transform;
+            // }
             if (TargetedObject != null)
             {
                 return (TargetedObject.position - ParentActor.transform.position).normalized;

@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Kuantech.Core.Combat;
 using Kuantech.Utils;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -40,7 +39,6 @@ namespace Kuantech.Core
         
         //Common module references
         public ActorVisualHandler VisualHandler;
-        public StatusEffectHandler StatusEffectHandler;
         
         protected bool Initialized;
         [Tooltip("If set to true, actor will initialize itself on start")]
@@ -105,8 +103,6 @@ namespace Kuantech.Core
             }
 
             VisualHandler = GetModule<ActorVisualHandler>();
-            StatusEffectHandler = GetModule<StatusEffectHandler>();
-            
 
             if(actorSerializableData != null)
             {
@@ -271,20 +267,6 @@ namespace Kuantech.Core
         #endregion
         
         #region Modules
-
-        /// <summary>
-        /// Return module by type
-        /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        public ActorModule GetModule(Type type)
-        {
-            if(Modules.ContainsKey(type) && Modules[type].Count > 0)
-            {
-                return Modules[type][0];
-            }
-            return null;
-        }
         
         /// <summary>
         /// Returns the first instance of a given mopdule type. Should only be used when searched for an explicit type and made sure that there is only a single instance of that component

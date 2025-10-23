@@ -103,6 +103,16 @@ namespace Kuantech.Rpg.Skills
             {
                 _healthcareModule.RemoveResource(skillDataAsset.RequiredResource, skillDataAsset.RequiredResourceAmount);
             }
+            
+            //Turn towards skill direction?
+            if (skillCastData.CastTarget != null)
+            {
+                Actor.MotionVectorsHandler.SetTargetObject(skillCastData.CastTarget.transform);
+            }
+            else
+            {
+                Actor.MotionVectorsHandler.SetTargetVector(skillCastData.CastDirection);
+            }
             return skillToCast.Cast(skillCastData);
         }
 
