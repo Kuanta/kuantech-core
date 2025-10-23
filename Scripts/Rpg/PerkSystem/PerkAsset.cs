@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using Kuantech.Core;
 using Kuantech.Utils;
 using UnityEngine;
+using ColorUtility = UnityEngine.ColorUtility;
 
 namespace Kuantech.Rpg
 {
