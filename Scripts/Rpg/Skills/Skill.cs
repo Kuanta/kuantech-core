@@ -6,22 +6,6 @@ using UnityEngine;
 
 namespace Kuantech.Rpg.Skills
 {
-    [Serializable]
-    public struct SkillCastData
-    {
-        public Actor Caster;
-        public Vector3 CastStartPosition;
-        public Vector3 CastDirection;
-        public Vector3 CastPosition;
-        public Actor CastTarget;
-
-        public Vector3 GetCastPoint()
-        {
-            if (CastTarget != null) return CastTarget.transform.position;
-            return CastPosition;
-        }
-    }
-    
     public class Skill
     {
         public SkillDataAsset SkillDataAsset;
@@ -31,7 +15,7 @@ namespace Kuantech.Rpg.Skills
         //Runtime
         [NonSerialized] public int SkillRank;
         [NonSerialized] public SpellBook ParentSpellBook;
-        [NonSerialized] public SkillCastData CurrentSkillCastData;
+        [NonSerialized] public ActionCastData CurrentSkillCastData;
         [NonSerialized] public int CurrentSkilLBehaviourIndex;
         [NonSerialized] public SkillBehaviour CurrentSkillBehaviour;
         private bool _isCasting;
@@ -82,23 +66,58 @@ namespace Kuantech.Rpg.Skills
         /// Check if the skill can be casted.
         /// </summary>
         /// <returns></returns>
-        public virtual bool CanBeCast(SkillCastData castData)
+        public virtual bool CanBeCast(ActionCastData castData)
         {
             if (SkillDataAsset == null || _isCasting) return false;
             float elapsedTime = Time.time - _lastCastTime;
             
             //todo(skill): Check skill resource here
             if (elapsedTime < SkillDataAsset.SkillCooldown) return false;
-
+    
+            
+            //Check cast data
+            if (!CheckCastData(castData)) return false;
+            
             if (SkillDataAsset.SkillCastChecker != null &&
                 !SkillDataAsset.SkillCastChecker.CanBeCast(this, castData)) return false;
+
+            return true;
+        }
+        
+        /// <summary>
+        /// Checks cast data by skill cast type
+        /// </summary>
+        /// <returns></returns>
+        protected virtual bool CheckCastData(ActionCastData castData)
+        {
+            switch (SkillDataAsset.SkillCastType)
+            {
+                case SkillDataAsset.SkillCastTypes.Self:
+                    if (castData.Target == null || castData.Target != ParentSpellBook.Actor)
+                    {
+                        return false;
+                    }
+                    break;
+                case Skills.SkillDataAsset.SkillCastTypes.Targeted:
+                    if (castData.Target == null) return false;
+                    break;
+                case Skills.SkillDataAsset.SkillCastTypes.Directional:
+                    if (castData.Direction.sqrMagnitude.Equals(0)) return false;
+                    break;
+                case Skills.SkillDataAsset.SkillCastTypes.ToPoint:
+                    //Check range
+                    float dist =
+                        Vector3.SqrMagnitude(castData.TargetPosition - ParentSpellBook.Actor.GetActorLocation());
+                    return dist <= SkillDataAsset.SkillRange;
+                    break;
+            }
 
             return true;
         }
         #endregion
 
         #region Lifecycle
-        public bool Cast(SkillCastData castData)
+        public bool Cast(ActionCastData castData)
         {
             if (!CanBeCast(castData) || ParentSpellBook == null) return false;
             CurrentSkillCastData = castData;

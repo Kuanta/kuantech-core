@@ -6,10 +6,20 @@ namespace Kuantech.Rpg.Skills
     [CreateAssetMenu(fileName = "SkillDataAsset", menuName = "Kuantech/Rpg/Skills/SkillDataAsset")]
     public class SkillDataAsset : ScriptableObject
     {
+        public enum SkillCastTypes
+        {
+            None,
+            Targeted,
+            Self,
+            Directional,
+            ToPoint,
+        }
+        
         [Header("Skill Info")]
         public string SkillId;
         public string SkillName;
         public string SkillDescription;
+        public SkillCastTypes SkillCastType;
         
         [Header("Required Resource")]
         public ResourceAsset RequiredResource;

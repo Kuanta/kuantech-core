@@ -86,8 +86,14 @@ namespace Kuantech.Rpg.Skills
             if (_skills.IsNullOrEmpty() || !_skills.ContainsKey(skillId)) return null;
             return _skills[skillId];
         }
+
+        public bool CastSkill(Skill skillToCast, ActionCastData skillCastData)
+        {
+            if (skillToCast == null || skillToCast.SkillDataAsset == null) return false;
+            return CastSkill(skillToCast.SkillDataAsset, skillCastData);
+        }
         
-        public bool CastSkill(SkillDataAsset skillDataAsset, SkillCastData skillCastData)
+        public bool CastSkill(SkillDataAsset skillDataAsset, ActionCastData skillCastData)
         {
             if (SkillLock.IsLocked()) return false;
             if (!CanCastSkill(skillDataAsset, skillCastData)) return false;
@@ -105,18 +111,18 @@ namespace Kuantech.Rpg.Skills
             }
             
             //Turn towards skill direction?
-            if (skillCastData.CastTarget != null)
+            if (skillCastData.Target != null)
             {
-                Actor.MotionVectorsHandler.SetTargetObject(skillCastData.CastTarget.transform);
+                Actor.MotionVectorsHandler.SetTargetObject(skillCastData.Target.transform);
             }
             else
             {
-                Actor.MotionVectorsHandler.SetTargetVector(skillCastData.CastDirection);
+                Actor.MotionVectorsHandler.SetTargetVector(skillCastData.Direction);
             }
             return skillToCast.Cast(skillCastData);
         }
 
-        public bool CanCastSkill(SkillDataAsset skillDataAsset, SkillCastData skillCastData)
+        public bool CanCastSkill(SkillDataAsset skillDataAsset, ActionCastData skillCastData)
         {
             if (!CanSkillBeCasted(skillDataAsset)) return false;
             Skill skill = GetSkillByDataAsset(skillDataAsset);

@@ -509,11 +509,11 @@ namespace Kuantech.Core
             if (currPattern.SkillToCast == null) return;
             SpellBook spellBook = Actor.GetModule<SpellBook>();
             if (spellBook == null) return;
-            SkillCastData skillCastData = new SkillCastData()
+            ActionCastData skillCastData = new ActionCastData()
             {
-                CastDirection = GetAttackDirection(),
-                CastStartPosition = GetAttackPosition(),
-                CastTarget = GetCurrentTarget(),
+                Direction = GetAttackDirection(),
+                StartPosition = GetAttackPosition(),
+                Target = GetCurrentTarget(),
             };
             spellBook.CastSkill(currPattern.SkillToCast, skillCastData);
         }
