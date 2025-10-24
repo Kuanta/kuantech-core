@@ -50,6 +50,7 @@ namespace Kuantech.Core.Combat
             Actor.OnHitEvent += OnHit;
         }
 
+
         public override void Reset()
         {
             base.Reset();
@@ -89,6 +90,11 @@ namespace Kuantech.Core.Combat
             base.OnModulesInitialized();
             _statModule = Actor.GetModule<StatsModule>();
             _animationModule = Actor.GetModule<AnimationModule>();
+            
+            if (Healthbar != null)
+            {
+                SetResourceBar(HealthResourceAsset, Healthbar);
+            }
         }
 
         public override void OnActorRankSet(int rank)

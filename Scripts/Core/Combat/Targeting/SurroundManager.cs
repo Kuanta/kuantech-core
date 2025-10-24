@@ -57,9 +57,15 @@ namespace Kuantech.Core
         {
             if (CurrentTarget != null && CurrentTarget == target) return true; //Don't change target 
             Actor.MotionVectorsHandler.SetTargetObject(target.transform);
-            UnsetCurrentTarget();
+            ClearTarget();
             CurrentTarget = target;
             return true;
+        }
+
+        public void ClearTarget()
+        {
+            CurrentTarget = null;
+            Actor.MotionVectorsHandler.SetTargetObject(null);
         }
         
         /// <summary>
@@ -96,12 +102,7 @@ namespace Kuantech.Core
             Actor.MotionVectorsHandler.SetTargetObject(null);
             CurrentTargetSlot = null;
         }
-        
-        public void UnsetCurrentTarget()
-        {
-            CurrentTarget = null;
-            UnsetCurrentTargetSlot();
-        }
+
         
         public WorldPoint GetTargetPoint()
         {

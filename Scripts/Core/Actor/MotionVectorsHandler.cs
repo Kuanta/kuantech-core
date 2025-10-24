@@ -159,6 +159,11 @@ namespace Kuantech.Core
         {
             TargetVector = targetVector;
         }
+
+        public void ClearTargetVector()
+        {
+            TargetVector = Vector3.zero;
+        }
         #endregion
         
         /// <summary>

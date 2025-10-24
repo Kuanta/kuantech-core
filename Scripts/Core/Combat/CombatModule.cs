@@ -643,6 +643,10 @@ namespace Kuantech.Core
                 Target = target,
                 TargetPosition = target.transform.position
             };
+            if (_surroundManager != null)
+            {
+                _surroundManager.SetCurrentTarget(target);
+            }
             
             return Attack(castData);
         }
