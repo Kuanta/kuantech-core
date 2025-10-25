@@ -10,12 +10,16 @@ namespace Kuantech.Rpg.Skills
 {
     public class SpellBook : ActorModule
     {
-        //public Skill CurrentlyCastedSkill;
-        public float GlobalCooldown;
+        [Header("Positionings")] 
+        public string DefaultCastSlotName;
+        
+        [Header("Lock")]
+        public LockVariable SkillLock = new LockVariable();
+        
         private Dictionary<string, Skill> _skills = new Dictionary<string, Skill>();
         private List<Skill> _activeSkills = new(); 
         
-        public LockVariable SkillLock = new LockVariable();
+       
 
         //Runtime
         private float _lastSkillCastTime;
@@ -46,6 +50,20 @@ namespace Kuantech.Rpg.Skills
             }
         }
 
+        #region Slot
+
+        public Vector3 GetDefaultCastPosition()
+        {
+            ActorSlotsHandler slotsHander = Actor.GetModule<ActorSlotsHandler>();
+            if(slotsHander != null)
+            { 
+                Transform slot = slotsHander.GetSlot(DefaultCastSlotName);
+                if (slot != null) return slot.position;
+            }
+            return Actor.transform.position;
+        }
+
+        #endregion
         
         #region Skill Management
 

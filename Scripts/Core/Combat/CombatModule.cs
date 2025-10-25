@@ -344,7 +344,10 @@ namespace Kuantech.Core
             _lastAttackImplementationTime = Time.time;
             AttackedEvent?.Invoke(this); //Maybe we shouldn't call this here
         }
-
+        
+        /// <summary>
+        /// 3d arc attack
+        /// </summary>
         public void ArcAttack()
         {
             AttackPattern currPattern = GetCurrentAttackPattern();
@@ -352,7 +355,12 @@ namespace Kuantech.Core
             Vector3 forward = GetAttackDirection().normalized;
             float range = currPattern.Range;
             float angle = currPattern.Angle;
-            
+            List<Actor> actors = CombatUtilities.GetActorsInArc3D(attackPoint, forward, range, angle, Targets, FactionFilter);
+
+            foreach (var actor in actors)
+            {
+                DamageActor(actor);
+            }
         }
 
         public void ArcAttack2D()

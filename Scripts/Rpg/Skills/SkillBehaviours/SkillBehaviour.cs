@@ -32,7 +32,9 @@ namespace Kuantech.Rpg.Skills
         public EffectPlayer EffectPlayer;
         public bool StopOnBehaviourEnd;
         [Tooltip("Useful for OnCaster or AtCaster. If play type is OnTarget, effect will be played attached to given slot")]
-        public string ActorSlotName; 
+        public string ActorSlotName;
+        [Tooltip("If set to true, will face the effect towards the direction")]
+        public bool RotateTowardsDirection;
     }
     
     [Serializable]
@@ -173,8 +175,11 @@ namespace Kuantech.Rpg.Skills
                         effect = PlayEffectAtCastPosition(fx.EffectPlayer);
                         break;
                 }
-          
 
+                if (effect != null && fx.RotateTowardsDirection)
+                {
+                    effect.transform.forward = CurrentSkillCastData.Direction;
+                }
                 if (effect != null && fx.StopOnBehaviourEnd)
                 {
                     PlayedEffects.Add(effect);
