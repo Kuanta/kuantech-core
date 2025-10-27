@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Kuantech.Core;
 using Kuantech.Core.FX;
 using Kuantech.Utils;
-using Unity.Entities;
 using UnityEngine;
 
 namespace Kuantech.Rpg.Skills
@@ -53,12 +52,17 @@ namespace Kuantech.Rpg.Skills
         public float CastAnimationDuration;
         public float Duration;
         public float EffectPlayTime;
+        [Tooltip("If set to true, skill will wait for rotation alignment before starting the behaviour")]
+        public float WaitForRotationAlign;
 
         [Header("Effects")] 
         public List<FxPlayData> SkillBehaviourFxDatas;
         
         //Animation data
         public AnimationData BehaviourStartAnimationData;
+        
+        [Tooltip("If any animation parameters needed to be cleared('Like clearing a channeled boolean') do it with these")]
+        public AnimationData AnimationParametersToClear;
     }
     
     public class SkillBehaviour
@@ -69,7 +73,7 @@ namespace Kuantech.Rpg.Skills
         [NonSerialized] public ActionCastData CurrentSkillCastData;
     
         protected bool _isCompleted;
-        protected float _castStartTime;
+        private float _castStartTime;
         protected bool _playedEffect;
         public HashSet<Effect> PlayedEffects = new HashSet<Effect>();
         
@@ -115,6 +119,15 @@ namespace Kuantech.Rpg.Skills
             }
         }
 
+        protected virtual void ClearAnimationParameters()
+        {
+            AnimationModule am = ParentSkill.ParentSpellBook.Actor.GetModule<AnimationModule>();
+            if (am != null)
+            {
+                BehaviourData.AnimationParametersToClear.SetParameters(am.GetAnimator());
+            }
+        }
+        
         protected virtual void PlayBehaviourEffects()
         {
             foreach (var fx in BehaviourData.SkillBehaviourFxDatas)
@@ -226,6 +239,7 @@ namespace Kuantech.Rpg.Skills
         {
             _isCompleted = true;
             OnBehaviourEnded();
+            ClearAnimationParameters();
             ParentSkill.OnSkillBehaviourCompleted();
         }
 

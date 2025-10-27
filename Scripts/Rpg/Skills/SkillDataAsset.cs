@@ -20,6 +20,7 @@ namespace Kuantech.Rpg.Skills
         public string SkillName;
         public string SkillDescription;
         public SkillCastTypes SkillCastType;
+        public bool WaitRotationalAlignToTarget;
         
         [Header("Required Resource")]
         public ResourceAsset RequiredResource;

@@ -117,6 +117,9 @@ namespace Kuantech.Rpg.Skills
         #endregion
 
         #region Lifecycle
+
+        private bool _requireAlignment = false;
+        private bool _hasAligned = false;
         public bool Cast(ActionCastData castData)
         {
             if (!CanBeCast(castData) || ParentSpellBook == null) return false;
@@ -124,13 +127,39 @@ namespace Kuantech.Rpg.Skills
             _isCasting = true;
             CurrentSkilLBehaviourIndex = 0;
             ParentSpellBook.OnSkillCastStarted(this);
+            _requireAlignment = SkillDataAsset.WaitRotationalAlignToTarget;
+            if (_requireAlignment)
+            {
+                _hasAligned = false;
+                return true;
+            }
+            
             StartSkillBehaviour(CurrentSkilLBehaviourIndex);
             _lastCastTime = Time.time;
             return true;
         }
-  
+
+        public bool HasAlignedWithTargetDirection()
+        {
+            Vector3 targetVector = ParentSpellBook.Actor.MotionVectorsHandler.GetTargetVector();
+            Vector3 currentVector = ParentSpellBook.Actor.transform.forward;
+            
+            //Check alignment
+            return Vector3.Dot(targetVector, currentVector) >= 0.9f;
+        }
+        
         public void UpdateSkill(float deltaTime)
         {
+            if (_requireAlignment && !_hasAligned)
+            {
+                if (HasAlignedWithTargetDirection())
+                {
+                    StartSkillBehaviour(CurrentSkilLBehaviourIndex);
+                    _hasAligned = true;
+                    return;
+                }
+            }
+            
             if (CurrentSkillBehaviour == null) return;
             CurrentSkillBehaviour.UpdateBehaviour();
         }
@@ -141,8 +170,6 @@ namespace Kuantech.Rpg.Skills
             Reset();
             ParentSpellBook.OnSkillCastEnded(this);
         }
-
-
         #endregion
 
         #region Skill Behaviour

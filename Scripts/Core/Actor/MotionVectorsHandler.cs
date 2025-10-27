@@ -149,7 +149,7 @@ namespace Kuantech.Core
             }
             return MovementVector; //same as movement
         }
- 
+        
         public void SetTargetObject(Transform targetObject)
         {
             TargetedObject = targetObject;

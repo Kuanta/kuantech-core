@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Kuantech.Utils;
+using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Kuantech.Core.FX
@@ -76,6 +77,7 @@ namespace Kuantech.Core.FX
         /// <summary>
         /// To simply play
         /// </summary>
+        [Button("Play")]
         public void Play()
         {
             EffectPlaySettings.GetDefaultSettings();
