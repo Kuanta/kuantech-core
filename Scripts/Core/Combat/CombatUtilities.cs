@@ -1,7 +1,11 @@
 ﻿using System.Collections.Generic;
+using System.Numerics;
 using Kuantech.Utils;
 using UnityEngine;
 using UnityEngine.Events;
+using Quaternion = UnityEngine.Quaternion;
+using Vector2 = UnityEngine.Vector2;
+using Vector3 = UnityEngine.Vector3;
 
 namespace Kuantech.Core.Combat
 {
@@ -57,6 +61,36 @@ namespace Kuantech.Core.Combat
 
              return actors;
              
+         }
+        
+         /// <summary>
+         /// Returns actors in a linear box
+         /// </summary>
+         /// <param name="startPosition"></param>
+         /// <param name="direction"></param>
+         /// <param name="width"></param>
+         /// <param name="range"></param>
+         /// <param name="layerMask"></param>
+         /// <param name="factionFilter"></param>
+         /// <param name="boxHeight"></param>
+         /// <returns></returns>
+         public static List<Actor> GetActorsInBox(Vector3 startPosition, Vector3 direction, float width, float range, LayerMask layerMask,
+             HashSet<int> factionFilter = null, float boxHeight = 2f)
+         {
+             List<Actor> actors = new List<Actor>();
+             Vector3 center = startPosition + direction.normalized * range * 0.5f;
+             Vector3 halfSizes = new Vector3(width * 0.5f, boxHeight * 0.5f, range * 0.5f);
+             Quaternion rotation = Quaternion.LookRotation(direction, Vector3.up);
+             Collider[] hits = UnityEngine.Physics.OverlapBox(center, halfSizes, rotation, layerMask);
+             foreach (var hit in hits)
+             {
+                 Actor actor = hit.GetComponentInParent<Actor>();
+                 if (actor == null) continue;
+                 if(factionFilter != null && !factionFilter.Contains(actor.GetFactionId())) continue;
+                 actors.Add(actor);
+             }
+
+             return actors;
          }
         
         /// <summary>
