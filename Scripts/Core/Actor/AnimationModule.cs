@@ -152,15 +152,17 @@ namespace Kuantech.Core
         {
             Animator animator = GetAnimator();
             if (animator == null) return;
+            //Set parameters
+            animationData.SetParameters(animator);
+            animator.SetFloat(AttackSpeedMultiplier, speedMultiplier);
+            
+            //Play montage
             if (animationData.AttackMontage != null)
             {
                 PlayAnimationMontageByDuration(animationData.AttackMontage, animationDuration);
-                return;
             }
             
-            //Play with parameters
-            animationData.SetParameters(animator);
-            animator.SetFloat(AttackSpeedMultiplier, speedMultiplier);
+   
         }
         #endregion
   
