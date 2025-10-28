@@ -8,8 +8,6 @@ using Kuantech.Rpg.Skills;
 using Kuantech.Utils;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.Serialization;
-using Random = System.Random;
 
 namespace Kuantech.Core
 {
