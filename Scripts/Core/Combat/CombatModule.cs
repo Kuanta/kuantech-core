@@ -479,7 +479,10 @@ namespace Kuantech.Core
             EffectPlayer hitEffect = GetCurrentAttackPattern().HitEffect;
             if (hitEffect != null)
             {
-                hitEffect.PlayEffectAtPosition(actor.GetHitPoint(Actor).GetTargetPosition(), Quaternion.LookRotation(GetAttackDirection()));
+                Vector3 targetHitPoint = actor.GetHitPoint(Actor).GetTargetPosition();
+                Vector3 attackerPosition = Actor.transform.position;
+                attackerPosition.y = targetHitPoint.y;
+                hitEffect.PlayEffectAtPosition(actor.GetHitPoint(Actor).GetTargetPositionTowardsTarget(attackerPosition), Quaternion.LookRotation(GetAttackDirection()));
             }
             actor.OnHit(hitInfo);
         }

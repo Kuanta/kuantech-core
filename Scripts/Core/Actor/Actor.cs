@@ -409,6 +409,7 @@ namespace Kuantech.Core
             if (hitPointSlot != null)
             {
                 hitPoint.Target = hitPointSlot;
+                hitPoint.Radius = ActorRadius;
             }
             return hitPoint;
         }
