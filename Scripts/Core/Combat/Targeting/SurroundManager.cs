@@ -56,8 +56,8 @@ namespace Kuantech.Core
         public bool SetCurrentTarget(Actor target)
         {
             if (CurrentTarget != null && CurrentTarget == target) return true; //Don't change target 
-            Actor.MotionVectorsHandler.SetTargetObject(target.transform);
             ClearTarget();
+            Actor.MotionVectorsHandler.SetTargetObject(target.transform);
             CurrentTarget = target;
             return true;
         }
