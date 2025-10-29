@@ -100,7 +100,7 @@ namespace Kuantech.Puzzle.MatchThree
             tileBg.transform.SetParent(transform);
             tileBg.transform.localPosition = pos;
             tileBg.name = $"BGTile_{row}_{col}";
-            if(tileBg.TryGetComponent(out GridTileBackground gridBg))
+            if(tileBg.TryGetComponent(out BoardTileBackground gridBg))
             {
                 gridBg.SetBackground(row, col);
             }

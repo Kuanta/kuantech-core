@@ -12,6 +12,7 @@ namespace Kuantech.Core
     {
         public AnimatorOverrideController DefaultAnimationSet;
         public Animator Animator;
+        public AnimationMontagePlayer MontagePlayer;
 
         [Header("Settings")]
         [Tooltip("If set to true, movement will be sent to animator as a single float")]
@@ -27,8 +28,8 @@ namespace Kuantech.Core
         public UnityEvent OnDamageFrameEvent;
         
         //Animation Hashes
-        private static readonly int X = Animator.StringToHash("Forward");
-        private static readonly int Y = Animator.StringToHash("Right");
+        private static readonly int Forward = Animator.StringToHash("Forward");
+        private static readonly int Sideways = Animator.StringToHash("Right");
         private static readonly int Movement = Animator.StringToHash("Movement");
         private static readonly int Attack = Animator.StringToHash("Attack");
         private static readonly int Hold = Animator.StringToHash("Hold");
@@ -47,12 +48,11 @@ namespace Kuantech.Core
         private static readonly int CastIndex = Animator.StringToHash("CastIndex");
         private static readonly int AttackSpeedMultiplier = Animator.StringToHash("AttackSpeedMultiplier");
 
-
+    
         public override void Initialize()
         {
             base.Initialize();
             ApplyDefaultAnimationSet();
-            Actor.OnHitEvent += OnDamageReceive;
         }
         
         public override void OnModulesInitialized()
@@ -72,9 +72,9 @@ namespace Kuantech.Core
                 OnActorVisualChanged(visualHandler.CurrentActorVisual);
             }
         }
-        private void Update()
+        public override void ModuleUpdate()
         {
-            if (GameManager.Instance.GameIsPaused || Animator == null) return;
+            if (GameManager.Instance.GameIsPaused || Animator == null || Actor == null) return;
             
             //Update from Motion Vectors Handler
             if (Actor.MotionVectorsHandler != null)
@@ -97,8 +97,8 @@ namespace Kuantech.Core
             }
             else
             {
-                Animator.SetFloat(X, _movementParameters.x);
-                Animator.SetFloat(Y, _movementParameters.y);
+                Animator.SetFloat(Sideways, _movementParameters.x);
+                Animator.SetFloat(Forward, _movementParameters.y);
             }
         }
 
@@ -127,12 +127,42 @@ namespace Kuantech.Core
             Animator.SetTrigger(hash);
         }
 
-        public void PlayAnimation(AnimationData animationData, float speedMultiplier = 1.0f)
+        private void PlayAnimationMontage(AnimationMontage animationMontage, float speedMultiplier = 1.0f)
         {
             Animator animator = GetAnimator();
             if (animator == null) return;
+            if (MontagePlayer == null) return;
+            animator.SetFloat(AttackSpeedMultiplier, speedMultiplier);
+            MontagePlayer.PlayMontage(animationMontage);
+        }
+        
+        /// <summary>
+        /// Plays an animation montage
+        /// </summary>
+        /// <param name="animationMontage">Motnage to play</param>
+        /// <param name="montageDuration">Desired play duration</param>
+        private void PlayAnimationMontageByDuration(AnimationMontage animationMontage, float montageDuration)
+        {
+            float baseAnimationDuration = animationMontage.MontageDuration;
+            float multiplier = baseAnimationDuration / montageDuration;
+            PlayAnimationMontage(animationMontage, multiplier);
+        }
+
+        public void PlayAnimationData(AnimationData animationData, float animationDuration, float speedMultiplier)
+        {
+            Animator animator = GetAnimator();
+            if (animator == null) return;
+            //Set parameters
             animationData.SetParameters(animator);
             animator.SetFloat(AttackSpeedMultiplier, speedMultiplier);
+            
+            //Play montage
+            if (animationData.AttackMontage != null)
+            {
+                PlayAnimationMontageByDuration(animationData.AttackMontage, animationDuration);
+            }
+            
+   
         }
         #endregion
   
@@ -141,8 +171,8 @@ namespace Kuantech.Core
             base.Reset();
             if (Animator != null)
             {            
-                Animator.SetFloat(X, 0);
-                Animator.SetFloat(Y, 0);
+                Animator.SetFloat(Forward, 0);
+                Animator.SetFloat(Sideways, 0);
                 Animator.SetBool(Death, false);
                 Animator.Rebind();
             }
@@ -289,6 +319,11 @@ namespace Kuantech.Core
                 return;
             }
             Animator = newVisual.Animator;
+            if(Animator != null) Animator.logWarnings = false;
+            if (MontagePlayer != null)
+            {
+                MontagePlayer.Animator = Animator;
+            }
         }
 
         #endregion

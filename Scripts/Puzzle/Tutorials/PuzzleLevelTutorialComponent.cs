@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Kuantech.Core;
+using Kuantech.Core.MidCore;
 using Kuantech.Utils;
 using UnityEngine;
 
@@ -12,11 +13,7 @@ namespace Kuantech.Puzzle
         public int CurrentTaskIndex;
     }
     
-    [Serializable]
-    public struct TasksCollection
-    {
-        public List<GameTask> Tasks;
-    }
+   
     
     /// <summary>
     /// This is a level component that implements a puzzle level tutorial

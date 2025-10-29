@@ -6,6 +6,7 @@ using UnityEngine;
 
 namespace Kuantech.TowerDefense
 {
+    // DEPRECATED: Use TowerDefenseHUD isntead
     public class TowerDefenseLevelUI : LevelUI
     {
         [Header("UI Elements")]

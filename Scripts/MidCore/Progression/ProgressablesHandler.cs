@@ -84,6 +84,7 @@ namespace Kuantech.Midcore
         #region Queries
         public ProgressibleData GetProgressibleData(ProgressableDataAsset asset)
         {
+            if (asset == null) return null;
             return GetProgessibleDataById(asset.GetId());
         }
 
@@ -101,7 +102,8 @@ namespace Kuantech.Midcore
         /// <returns></returns>
         public bool IsProgressibleUnlocked(ProgressableDataAsset asset)
         {
-            return GetProgressibleData(asset) != null;
+            return GetCurrentRank(asset) >= 0;
+            //return GetProgressibleData(asset) != null;
         }
         
         /// <summary>
@@ -182,6 +184,17 @@ namespace Kuantech.Midcore
         }
         
         /// <summary>
+        /// Checks whether the progressable data asset is at max rank
+        /// </summary>
+        /// <param name="asset"></param>
+        /// <returns></returns>
+        public bool IsAtMaxRank(ProgressableDataAsset asset)
+        {
+            int currentRank = GetCurrentRank(asset);
+            return (asset.GetMaxRank() > 0 && asset.GetMaxRank() <= currentRank);
+        }
+        
+        /// <summary>
         /// Unlocks the progressable. Simply sets its rank to 0 if its locked
         /// </summary>
         /// <param name="asset"></param>
@@ -241,11 +254,17 @@ namespace Kuantech.Midcore
             if (!CanRankBeUnlocked(asset, rank)) return false;
             int currentRank = GetCurrentRank(asset);
             if (!CanBeAfforded(asset, rank, currentRank)) return false;
+
+            if (IsAtMaxRank(asset)) return false;
             
             //Money upfront
             PayThePrice(asset, rank, currentRank);
 
             SetRank(asset, rank);
+            
+            //Analytics
+            Analytics.Analytics.UpgradePurchased(asset.GetId(), rank);
+            
             return true;
         }
         /// <summary>

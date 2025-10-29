@@ -44,20 +44,36 @@ namespace Kuantech.Core
             }
             pm.PoolObjectAfterTime(objectToPool, delay);
         }
-        public IEnumerator PoolObjectAfterTime(GameObject objToPool, float delay, UnityAction handler = null)
+        
+        public void PoolObjectAfterTime(GameObject objToPool, float delay, UnityAction handler = null)
         {
+            
             PoolManager pm = GetContext<PoolManager>();
+            if (delay <= 0)
+            {
+                _PoolObject(objToPool, handler);
+                return;
+            }
             IEnumerator coroutine = pm.PoolRoutine(objToPool, delay, handler);
             StartCoroutine(coroutine);
-            return coroutine;
         }
        
         private IEnumerator PoolRoutine(GameObject objToPool, float delay, UnityAction handler)
         {
             yield return new WaitForSeconds(delay);
+            _PoolObject(objToPool, handler);
+        }
+
+        private void _PoolObject(GameObject objToPool, UnityAction handler)
+        {
             Pool.PoolObject(objToPool);
             handler?.Invoke();
         }
-
+        
+        private void LateUpdate()
+        {
+            if (Pool == null) return;
+            Pool.LateUpdate();
+        }
     }
 }

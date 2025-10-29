@@ -17,9 +17,9 @@ namespace Kuantech.Utils.Math
         
         public Vector3 FollowRotationVector = new Vector3(0, 0, 1);
         public BSpline CurrentSpline = null;
-        public int SplineDegree = 3;
-        public int SplineResolution = 10;
-        public int RotationLookAhead;
+
+        public float RotationSlerpFactor = 1000; 
+        public int RotationLookAhead = 5;
         public float FollowSpeed;
         public bool Moving = false;
         public bool Paused = false;
@@ -46,11 +46,11 @@ namespace Kuantech.Utils.Math
         [NonSerialized] public Vector3 MovementDirection = Vector3.zero;
 
         #region Spline Creation
-
+        public int SplineDegree = 3;
+        public int SplineResolution = 10;
         public void CreateSplineFromControlPoints(List<Vector3> points)
         {
-            CurrentSpline = new BSpline();
-            CurrentSpline.SetSplinePoints(points, SplineDegree, SplineResolution);
+            CurrentSpline = BSpline.CreateSpline(points, SplineDegree, SplineResolution);
             CurrentSpline.RotationLookAhead = RotationLookAhead;
         }
 
@@ -209,7 +209,14 @@ namespace Kuantech.Utils.Math
             Transform transformToMove = GetTransformToMove();
             transformToMove.position = point.Position;
             MovementDirection = point.Rotation * Vector3.forward;
-            if(SetRotation) transformToMove.rotation = Quaternion.FromToRotation(FollowRotationVector, point.Rotation * Vector3.forward);
+            Quaternion lookRotation = Quaternion.LookRotation(MovementDirection, UpDirection);
+            Quaternion targetRot = lookRotation *
+                                   Quaternion.Inverse(Quaternion.FromToRotation(Vector3.forward, FollowRotationVector));
+            if (SetRotation)
+            {
+                transformToMove.rotation = Quaternion.Slerp(transformToMove.rotation, targetRot,
+                    RotationSlerpFactor * Time.deltaTime);
+            }
         }
         
         public Vector3 GetMovementVector()

@@ -20,10 +20,17 @@ namespace Kuantech.Midcore
 
         [Header("Progressible Level")] 
         public LevelVariableData LevelVariableData;
+
+        [Header("Max Rank")] public int MaxRank;
         
         public static string GetSubUpgradeAssetId(ProgressableDataAsset asset, ProgressableDataAsset subUpgradeAsset)
         {
             return $"{asset.Id}_{subUpgradeAsset.Id}";
+        }
+
+        public virtual int GetMaxRank()
+        {
+            return MaxRank;
         }
     }
 }

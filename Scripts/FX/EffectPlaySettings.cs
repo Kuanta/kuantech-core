@@ -1,6 +1,7 @@
 using System;
 using Kuantech.Utils;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Kuantech.Core.FX
 {
@@ -18,16 +19,17 @@ namespace Kuantech.Core.FX
         
         //Play under parent
         public bool SetPosition; //If true, the position will be set
+        public bool SetRotation;
         public Transform EffectParent;
         public Vector3 LocalPlayPosition;
         public Quaternion LocalPlayRotation;
 
         //Play at position
-        public Vector3 PlayPosition;
-        public Quaternion PlayRotation;
+        public Vector3 PlayStartPosition;
+        public Quaternion PlayStartRotation;
         
         //End position. For beam like effects where an end position is needed
-        public WorldPoint EndPoint;
+        public WorldPoint PlayEndPoint;
         
         public static EffectPlaySettings GetDefaultSettings()
         {
@@ -37,20 +39,22 @@ namespace Kuantech.Core.FX
                 EffectCooldown = -1,
                 DespawnAfterPlay = false,
                 SetPosition = false,
+                SetRotation = false,
                 EffectParent = null,
                 LocalPlayPosition = Vector3.zero,
                 LocalPlayRotation = Quaternion.identity,
-                PlayPosition = Vector3.zero,
-                PlayRotation = Quaternion.identity,
+                PlayStartPosition = Vector3.zero,
+                PlayStartRotation = Quaternion.identity,
             };
         }
 
         public static EffectPlaySettings GetPlayAtPositionSettings(Vector3 position, Quaternion rotation)
         {
             EffectPlaySettings settings = GetDefaultSettings();
+            settings.PlayStartPosition = position;
+            settings.PlayStartRotation = rotation;
             settings.SetPosition = true;
-            settings.PlayPosition = position;
-            settings.PlayRotation = rotation;
+            settings.SetRotation = true;
             return settings;
         }
 
@@ -59,6 +63,7 @@ namespace Kuantech.Core.FX
         {
             EffectPlaySettings settings = GetDefaultSettings();
             settings.SetPosition = true;
+            settings.SetRotation = true;
             settings.LocalPlayPosition = localPos;
             settings.EffectParent = target;
             settings.LocalPlayRotation = localRotation;

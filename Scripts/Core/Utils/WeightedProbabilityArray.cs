@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Core.Utils
@@ -41,6 +42,25 @@ namespace Kuantech.Core.Utils
                 Probability = weight,
             });
             //totalWeight += weight;
+        }
+
+        public void RemoveElement(T element)
+        {
+            WPAElement elementToRemove = null;
+            var cmp = EqualityComparer<T>.Default;
+            foreach (var wpa in Elements)
+            {
+                if (cmp.Equals(wpa.Element, element))
+                {
+                    elementToRemove = wpa;
+                    break;
+                }
+            }
+
+            if (elementToRemove != null)
+            {
+                Elements.Remove(elementToRemove);
+            }
         }
 
         public float GetTotalWeight()
@@ -157,10 +177,11 @@ namespace Kuantech.Core.Utils
 
         public void SetElementWeight(T element, float weight)
         {
+            var cmp = EqualityComparer<T>.Default;
             for (int i = 0; i < Elements.Count; ++i)
             {
                 WPAElement existing = Elements[i];
-                if (existing.Element.Equals(element))
+                if (cmp.Equals(existing.Element,element))
                 {
                     existing.Probability = weight;
                     Elements[i] = existing;
@@ -193,6 +214,12 @@ namespace Kuantech.Core.Utils
             } 
             return 0;
         }
+
+        public bool IsNullOrEmpty()
+        {
+            return Elements.IsNullOrEmpty();
+        }
+        
         public void Clear()
         {
             Elements.Clear();

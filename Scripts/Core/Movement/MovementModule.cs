@@ -14,7 +14,7 @@ namespace Kuantech.Core
         public float Speed = 1f;
         
         //Lock
-        public LockVariable MovementLock;
+        public LockVariable MovementLock = new LockVariable();
 
         #region Movement Vector
         /// <summary>
@@ -29,9 +29,9 @@ namespace Kuantech.Core
         /// <summary>
         /// Gets the movement vector
         /// </summary>
-        public void GetMovementVector()
+        public Vector3 GetMovementVector()
         {
-            Actor.MotionVectorsHandler.GetMovementVector();
+            return Actor.MotionVectorsHandler.GetMovementVector();
         }
         #endregion
         
@@ -108,6 +108,7 @@ namespace Kuantech.Core
         
         public void Knockback(Vector3 direction, float knockback, float knockbackTime)
         {
+            if (knockback == 0 || knockbackTime == 0) return;
             IEnumerator routine = KnockbackRoutine(direction, knockback, knockbackTime);
             _knockbackRoutines.Add(routine);
             StartCoroutine(routine);
@@ -136,20 +137,6 @@ namespace Kuantech.Core
         {
             return Actor.MotionVectorsHandler.ForceMoveVector;
         }
-        #endregion
-        
-        #region Locks
-
-        public void LockMovement(string locker)
-        {
-            MovementLock.Lock(locker);
-        }
-
-        public void UnlockMovement(string locker)
-        {
-            MovementLock.Unlock(locker);
-        }
-
         #endregion
 
         public override void Reset()

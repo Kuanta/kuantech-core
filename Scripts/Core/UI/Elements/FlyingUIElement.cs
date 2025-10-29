@@ -1,6 +1,6 @@
 using DG.Tweening;
-using Kuantech.Core;
 using Kuantech.Core.FX;
+using Kuantech.Utils;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -16,9 +16,11 @@ namespace Kuantech.Core.UI
         //Events
         public UnityAction<FlyingUIElement> OnTargetEventReached;
 
-        [Header("Effect")]
+        [Header("Effect")] 
+        [KTTag("AudioTag")] [SerializeField] private int ReachedAudioTag;
         [SerializeField] private EffectPlayer ScoreReachedEffect;
 
+    
         public virtual void Fly(Vector3 startPosition, Vector3 endPosition, object data=null, UnityAction OnTargetReachedHandler = null)
         {
             startPosition += new Vector3(Random.Range(-StartNoise.x, StartNoise.x), Random.Range(-StartNoise.y, StartNoise.y), Random.Range(-StartNoise.z, StartNoise.z));
@@ -48,7 +50,7 @@ namespace Kuantech.Core.UI
         {
             OnTargetReachedHandler?.Invoke();
             OnTargetEventReached?.Invoke(this);
-
+            AudioLibrary.PlaySoundByTag(ReachedAudioTag);
         }
     }
 }

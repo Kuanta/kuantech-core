@@ -8,13 +8,13 @@ namespace Kuantech.Core
         public override float GetTargetPriority(Actor a, Actor self)
         {
             float distToSelf = (self.transform.position - a.transform.position).sqrMagnitude;
-            TargetManager tm = a.GetModule<TargetManager>();
+            SurroundManager tm = a.GetModule<SurroundManager>();
             if(tm != null && tm.SlotAllocator != null)
             {
                 TargetSlot bestSlot = tm.SlotAllocator.GetBestSlot(a);
                 if (bestSlot != null)
                 {
-                    distToSelf = (self.transform.position - bestSlot.WorldPoint.GetTargetPosition()).sqrMagnitude;
+                    distToSelf = (self.transform.position - bestSlot.GetWorldPoint().GetTargetPosition()).sqrMagnitude;
                 }
             }
             return 1 / distToSelf; // Closer actors have higher priority

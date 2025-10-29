@@ -84,7 +84,24 @@ namespace Kuantech.Core
         }
 
         #region World Levels
-
+        
+        /// <summary>
+        /// Returns flattened level index
+        /// </summary>
+        /// <param name="worldIndex"></param>
+        /// <param name="levelIndex"></param>
+        /// <returns></returns>
+        public int GetTotalLevelIndex(int worldNumber, int levelIndex)
+        {
+            int totalLevels = 0;
+            if (worldNumber <= 0) return levelIndex;
+            for (int i = 0; i < worldNumber; ++i)
+            {
+                totalLevels += GetWorld(i).Levels.Count;
+            }
+            return totalLevels + levelIndex + 1;
+        }
+        
         public Level GetWorldLevelPrefab(int worldIndex, int levelIndex)
         {
             WorldDataAsset worldDataAsset = GetWorld(worldIndex);
@@ -160,6 +177,32 @@ namespace Kuantech.Core
 
             levelArrayIndex = Mathf.Clamp(levelArrayIndex, 0, LevelDictionary.Count - 1);
             return LevelDictionary[levelArrayIndex];
+        }
+
+        /// <summary>
+        /// Returns the array index in an array given the level index, array size and repeat count
+        /// </summary>
+        /// <param name="levelIndex">Unbounded level index. For example 1000th level</param>
+        /// <param name="arraySize">Size of levels list</param>
+        /// <param name="repeatCount">How many levels to repeat at the end of level array</param>
+        /// <param name="powerLevel">Power level, means the iteration count.(Count of repeat) </param>
+        /// <returns></returns>
+        public static int GetArrayIndexFromLevelIndex(int levelIndex, int arraySize, int repeatCount, out int powerLevel)
+        {
+            powerLevel = 0;
+            if (levelIndex < arraySize) return levelIndex;
+
+            if (repeatCount <= 0)
+            {
+                return arraySize - 1;
+            }
+
+            repeatCount = Mathf.Clamp(repeatCount, 0, arraySize);
+            
+            int a = levelIndex - arraySize;
+            powerLevel = 1 + Mathf.FloorToInt(a / (float) repeatCount);
+            int remainder = a % repeatCount - 1;
+            return remainder + (arraySize - repeatCount);
         }
         
         /// <summary>

@@ -1,4 +1,5 @@
 using Kuantech.Midcore;
+using Kuantech.Rpg;
 using Kuantech.Utils;
 using TMPro;
 using UnityEngine;
@@ -54,16 +55,18 @@ namespace Kuantech.Core.UI
             {
                 LevelRequirementText.text = $"Level {PlayerLevelRequirement+1}";
             }
+            UpdateVisual();
         }
 
         public void UpdateVisual()
         {
-            SetLockedState(IsUnlocked());
+            SetLockedState(!IsUnlocked());
         }
         
         private bool IsUnlocked()
         {
-            int playerLevel = ProgressionManager.GetPlayerLevel().CurrentLevel;
+            LevelVariable playerLevelVariable = ProgressionManager.GetPlayerLevel();
+            int playerLevel = playerLevelVariable?.CurrentLevel ?? 0;
             if (PlayerLevelRequirement > playerLevel) return false;
             return true;
         }
@@ -109,6 +112,7 @@ namespace Kuantech.Core.UI
             {
                 SetClosedVisual();
             }
+            UpdateVisual();
         }
 
         private void SetLockedState(bool locked)

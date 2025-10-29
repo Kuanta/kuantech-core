@@ -14,6 +14,7 @@ namespace Kuantech.Puzzle.UI
         {
             None,
             Swipe,
+            DynamicSwipe, //Updates the position with transform
             Tap,
         }
         
@@ -31,6 +32,10 @@ namespace Kuantech.Puzzle.UI
         
         private Vector2 _startSwipePosition;
         private Vector2 _endSwipePosition;
+        
+        private Transform _startSwipeTransform;
+        private Transform _endSwipeTransform;
+        
         private static readonly int TapHash = Animator.StringToHash("Tap");
 
         private void Update()
@@ -40,6 +45,9 @@ namespace Kuantech.Puzzle.UI
             if (CurrentMotion == Motions.Swipe)
             {
                 SwipeUpdate();
+            }else if (CurrentMotion == Motions.DynamicSwipe)
+            {
+                DynamicSwipeUpdate();
             }
         }
 
@@ -100,6 +108,12 @@ namespace Kuantech.Puzzle.UI
             StartSwipe(ParentCanvas.ScreenPositionToAnchoredPosition(ParentRectTransform, fromPos), 
                 ParentCanvas.ScreenPositionToAnchoredPosition(ParentRectTransform, toPos));
         }
+
+        public void DoSwipeMotionWorldTransformToWorldTransform(Transform from, Transform to)
+        {
+            StartSwipe(from, to);
+        }
+        
         private void StartSwipe(Vector2 startAnchoredPosition, Vector2 endAnchoredPosition)
         {
             ParentRectTransform.anchoredPosition = startAnchoredPosition;
@@ -108,7 +122,50 @@ namespace Kuantech.Puzzle.UI
             CurrentMotion = Motions.Swipe;
         }
 
+        public void SetStartSwipePositionFromWorldPosition(Vector3 worldPosition)
+        {
+            _startSwipePosition = GetAnhcoredPositionFromWorldPosition(worldPosition);
+        }
+
+        public void SetEndSwipePositionFromWorldPosition(Vector3 worldPosition)
+        {
+            _endSwipePosition = GetAnhcoredPositionFromWorldPosition(worldPosition);
+        }
+        
+        private void StartSwipe(Transform from, Transform to)
+        {
+            _startSwipeTransform = from;
+            _endSwipeTransform = to;
+            CurrentMotion = Motions.DynamicSwipe;
+        }
+
+        private Vector2 GetAnhcoredPositionFromWorldPosition(Vector3 position)
+        {
+            Vector2 screenPos = ParentCanvas.GlobalToScreenPosition(position, ParentCanvas.GetGameCamera());
+            Vector2 anchoredPos = ParentCanvas.ScreenPositionToAnchoredPosition(ParentRectTransform, screenPos);
+            return anchoredPos;
+        }
+
+       
         private void SwipeUpdate()
+        {
+            Vector2 error = _endSwipePosition - ParentRectTransform.anchoredPosition;
+            float errorMag = error.magnitude;
+            errorMag = Mathf.Max(errorMag, 0.001f);
+            //error /= errorMag;
+            //error.Normalize();
+            if (errorMag < ReachedThresh)
+            {
+                ParentRectTransform.anchoredPosition = _startSwipePosition;
+            }
+            else
+            {
+                ParentRectTransform.anchoredPosition += error * Time.deltaTime * SwipeMotionSpeed;
+
+            }
+        }
+
+        private void DynamicSwipeUpdate()
         {
             Vector2 error = _endSwipePosition - ParentRectTransform.anchoredPosition;
             float errorMag = error.magnitude;

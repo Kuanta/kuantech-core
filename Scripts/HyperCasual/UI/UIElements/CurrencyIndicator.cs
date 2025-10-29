@@ -1,23 +1,24 @@
-﻿using Kuantech.Core;
+﻿using System.Collections;
+using System.Collections.Generic;
+using Kuantech.Core;
 using Kuantech.Core.Store;
+using Kuantech.Core.UI;
 using Kuantech.Utils;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace Kuantech.HyperCasual.UI
 {
-    public class CurrencyIndicator : MonoBehaviour
+    public class CurrencyIndicator : UIElement
     {
         public bool AutoUpdate = false;
-        [FormerlySerializedAs("currencyAsset")] public CurrencyAsset CurrencyAsset;
+        public CurrencyAsset CurrencyAsset;
 
         [SerializeField] private Image CurrencyIcon;
         [SerializeField] private TMP_Text CurrencyAmount;
-
-        protected bool Initialized = false;
-
+        [SerializeField] private float InitializeOnStartDelay = 0f;
+        
         public bool CanGetCurrency()
         {
             if (!AutoUpdate || !GameManager.InstanceExists()) return false;
@@ -26,10 +27,27 @@ namespace Kuantech.HyperCasual.UI
         protected virtual void Start()
         {
             //Set currency icon
+            if (InitializeOnStartDelay > 0)
+            {
+                StartCoroutine(StartInitializeDelayRoutine());
+            }
+            else
+            {
+                StartInitialize();
+            }
+        }
+
+        private IEnumerator StartInitializeDelayRoutine()
+        {
+            yield return new WaitForSeconds(InitializeOnStartDelay);
+            StartInitialize();
+        }
+
+        private void StartInitialize()
+        {
             SetCurrency(CurrencyAsset);
             if (CanGetCurrency()) Initialize();
         }
-
         public void SetCurrency(CurrencyAsset currencyAsset)
         {
             if(currencyAsset == null) return;
@@ -41,17 +59,19 @@ namespace Kuantech.HyperCasual.UI
             }
         }
         
-        protected virtual void Initialize()
+        public override void Initialize()
         {
+            if (Initialized) return;
+            base.Initialize();
             if (!CanGetCurrency()) return;
 
             if (!AutoUpdate) return;
             var cm = CurrencyManager.GetContext<CurrencyManager>();
             if (cm == null) return;
+            cm.CurrencyUpdated -= OnCurrencyChangeEvent;
             cm.CurrencyUpdated += OnCurrencyChangeEvent;
             // gsm.CurrencyUpdatedEvent += OnCurrencyChangeEvent;
             UpdateValue();
-            Initialized = true;
         }
 
         /// <summary>
@@ -85,6 +105,7 @@ namespace Kuantech.HyperCasual.UI
 
         public virtual void SetAmount(int amount)
         {
+            if (CurrencyAsset == null) return;
             CurrencyAmount.text = amount.Stringfy();
         }
 
@@ -94,7 +115,7 @@ namespace Kuantech.HyperCasual.UI
         /// <returns></returns>
         public virtual string GetCurrencyId()
         {
-            return CurrencyAsset.GetId();
+            return CurrencyAsset != null ? CurrencyAsset.GetId() : "";
         }
     }
 }

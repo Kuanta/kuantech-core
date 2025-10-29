@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Kuantech.Core;
+using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Midcore
@@ -10,8 +12,10 @@ namespace Kuantech.Midcore
         [Header("Default Deck")]
         public List<Deck> DefaultDecks;
 
-        [SaveableField] public List<Deck> Decks;
+        [HideInInspector] [SaveableField] public List<Deck> Decks;
 
+        public EventHandler<int> OnDeckChanged;
+        
         public override async UniTask Initialize(GameManager gameManager)
         {
             await base.Initialize(gameManager);
@@ -29,6 +33,16 @@ namespace Kuantech.Midcore
             {
                 deck.SetEquippedCollectibles();
             }
+        }
+
+        public override void LoadState()
+        {
+            base.LoadState();
+            if (Decks.IsNullOrEmpty()) return;
+            foreach (var deck in Decks)
+            {
+                deck.CheckDeckIntegrity();
+            }    
         }
         
         public override void SetDefaultState()
@@ -113,6 +127,7 @@ namespace Kuantech.Midcore
             if (deck.EquipCollectible(collectible))
             {
                 ctx.SaveState();
+                ctx.OnDeckChanged?.Invoke(ctx, deck.DeckIndex);
                 return true;
             }
 
@@ -133,6 +148,7 @@ namespace Kuantech.Midcore
             if (deck.UnequipCollectible(collectible))
             {
                 ctx.SaveState();
+                ctx.OnDeckChanged?.Invoke(ctx, deck.DeckIndex);
                 return true;
             }
 

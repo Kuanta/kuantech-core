@@ -29,7 +29,7 @@ namespace Kuantech.Core
             return Description;
         }
 
-        public Sprite GetIcon()
+        public virtual Sprite GetIcon()
         {
             return Icon;
         }

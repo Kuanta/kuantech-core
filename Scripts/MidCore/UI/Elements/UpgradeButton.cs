@@ -1,5 +1,7 @@
 ﻿using System;
+using Kuantech.Core.FX;
 using Kuantech.Core.UI;
+using Kuantech.Utils;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -10,7 +12,8 @@ namespace Kuantech.Midcore.UI
         [SerializeField] private UpgradePriceTag PriceTag;
         [NonSerialized] public ProgressableDataAsset ProgressableToUpgrade;
         public UnityAction OnUpgradePurchased;
-        
+        [KTTag("AudioTag")] public int PurchasedSoundTag;
+        [KTTag("AudioTag")] public int CantPurchaseSoundTag;
         public void SetProgressable(ProgressableDataAsset progressableDataAsset)
         {
             int currentRank = ProgressionManager.GetCurrentRank(progressableDataAsset);
@@ -36,6 +39,11 @@ namespace Kuantech.Midcore.UI
             if (ProgressionManager.RankUpUpgrade(ProgressableToUpgrade))
             {
                 OnUpgradePurchased?.Invoke();
+                AudioLibrary.PlaySoundByTag(PurchasedSoundTag);
+            }
+            else
+            {
+                AudioLibrary.PlaySoundByTag(CantPurchaseSoundTag);
             }
         }
     }

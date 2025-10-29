@@ -86,4 +86,34 @@ public class GameStateManager : SubManager
     {
         return module.GetType().FullName;
     }
+    
+    #region POCO
+    public static void SaveObject<T>(string id, T data)
+    {
+        var ctx = GetContext<GameStateManager>();
+        if (ctx == null || ctx.GameState == null) return;
+        byte[] bytes = SaveUtility.SerializePoco(data);
+        ctx.GameState.UpdateData(id, bytes); // Dirtied otomatik true olmalı (senin GameState içinde)
+    }
+
+    public static bool TryLoadObject<T>(string id, out T data)
+    {
+        data = default;
+        var ctx = GetContext<GameStateManager>();
+        if (ctx == null || ctx.GameState == null) return false;
+
+        byte[] bytes = ctx.GameState.GetData(id);
+        if (bytes == null) return false;
+
+        data = SaveUtility.DeserializePoco<T>(bytes);
+        return true;
+    }
+
+    public static void ClearObject(string id)
+    {
+        var ctx = GetContext<GameStateManager>();
+        if (ctx == null || ctx.GameState == null) return;
+        ctx.GameState.ClearData(id);
+    }
+    #endregion
 }

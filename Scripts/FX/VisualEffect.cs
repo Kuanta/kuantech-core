@@ -4,7 +4,9 @@ using UnityEngine;
 
 namespace Kuantech.Core.FX
 {
-    public class VisualEffect : MonoBehaviour {
+    public class VisualEffect : MonoBehaviour
+    {
+        [SerializeField] private UnityEngine.VFX.VisualEffect VFXGraph;
         [SerializeField] private ParticleSystem ParticleEffect;
         [SerializeField] private bool Emit;
         [SerializeField] private int EmitCount = 1;
@@ -14,12 +16,13 @@ namespace Kuantech.Core.FX
 
         public void Play(EffectPlaySettings settings)
         {
+            if(VFXGraph != null) VFXGraph.Play();
             //todo: This can be done better
             if(Emit)
             {
                 ParticleSystem.EmitParams emitParams = new ParticleSystem.EmitParams();
-                emitParams.position = settings.PlayPosition;
-                emitParams.rotation3D = settings.PlayRotation.eulerAngles;
+                // emitParams.position = settings.PlayStartPosition;
+                // emitParams.rotation3D = settings.PlayStartRotation.eulerAngles;
                 if (ChildEmitters != null)
                 {
                     foreach (var childEmitter in ChildEmitters)
@@ -31,12 +34,21 @@ namespace Kuantech.Core.FX
                 return;
             }
             if(ParticleEffect !=null) ParticleEffect.Play();
+      
         }
 
       
         public void Stop()
         {
-            ParticleEffect.Stop();
+            if (ParticleEffect != null)
+            {
+                ParticleEffect.Stop();
+            }
+
+            if (VFXGraph != null)
+            {
+                VFXGraph.Stop();
+            }
         }
 
         public float GetDuration()

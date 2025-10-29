@@ -1,3 +1,5 @@
+using Kuantech.Core;
+
 namespace Kuantech.Rpg.Skills
 {
     /// <summary>
@@ -5,6 +7,6 @@ namespace Kuantech.Rpg.Skills
     /// </summary>
     public abstract class SkillCastChecker
     {
-        public abstract bool CanBeCast(Skill skill, SkillCastData castData);
+        public abstract bool CanBeCast(Skill skill, ActionCastData castData);
     }
 }

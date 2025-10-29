@@ -7,13 +7,16 @@ namespace Kuantech.Puzzle
 {
     public class GridTileDraggable : Draggable
     {
-        [Header("Spanned Tiles")] public GridTile GridTile;
-        //[Tooltip("transform.position + Offset gives the anchor position")]
-        //public Vector3 AnchorOffset = Vector3.zero;
+        [Header("Layer")]
+        public int LayerToDrop = 0;
+        [Header("Spanned Tiles")] 
+        public GridTile GridTile;
+
         [Tooltip("If set to true, draggable will try to highlight ")]
         
         [Header("Grid Tile Group")]
         public GridTileGroup GridTileGroup;
+        
         [Tooltip("If set to true, draggable will try to highlight ")]
         public bool HighlightBoard = false;
 
@@ -33,12 +36,12 @@ namespace Kuantech.Puzzle
         {
             if (GridTileGroup != null)
             {
-                return GridTileGroup.CanBePlacedToBoard(board, row, col);
+                return GridTileGroup.CanBePlacedToBoard(board, row, col, LayerToDrop);
             }
 
             if (GridTile != null)
             {
-                return board.CanTileBePlaced(GridTile, row, col);
+                return board.CanTileBePlaced(GridTile, row, col, LayerToDrop);
             }
 
             return true;
@@ -153,12 +156,12 @@ namespace Kuantech.Puzzle
         {
             if (GridTileGroup != null)
             {
-                if (!GridTileGroup.PlaceOnBoard(board, rowToDrop, colToDrop)) return false;
+                if (!GridTileGroup.PlaceOnBoard(board, rowToDrop, colToDrop, LayerToDrop)) return false;
             }
 
             if (GridTile != null)
             {
-                bool result = board.SetTile(GridTile, rowToDrop, colToDrop);
+                bool result = board.SetTile(GridTile, rowToDrop, colToDrop, LayerToDrop);
                 if (!result) return false;
             }
             

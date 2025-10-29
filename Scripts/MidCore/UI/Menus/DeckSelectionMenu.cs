@@ -10,6 +10,7 @@ namespace Kuantech.Midcore.UI
     {
         public int DeckIndex = 0;
         public CollectiblePreviewCard CollectiblePreviewCardPrefab;
+        public CollectiblePreviewCard EquippedCollectiblePreviewCardPrefab;
         public List<CollectiblePreviewCard> DeckCards;
         public bool CanEquipCards = true;
 
@@ -39,25 +40,13 @@ namespace Kuantech.Midcore.UI
                 showcasePanels.SetCollectibles(this, CollectiblePreviewCardPrefab);
             }
             
-            List<CollectableAsset> collectibleDataAssets = ProgressionManager.GetCollectibles();
-            
-            // //Create preview cards for all collectibles
-            // foreach(var dataAsset in collectibleDataAssets)
-            // {
-            //     if(dataAsset.DeckIndex != DeckIndex) continue;
-            //     CollectiblePreviewCard card = Instantiate(CollectiblePreviewCardPrefab, AllCollectiblesPanel);
-            //     card.Initialize(this, false);
-            //     card.SetCollectableAsset(dataAsset);
-            //     CollectiblePreviewCards[dataAsset.GetId()] = card;
-            // }
-            
             //Equipped
             int deckSize = DeckBuildingManager.GetDeckSize(DeckIndex);
             List<ProgressibleData> currentDeck = DeckBuildingManager.GetCurrentDeck(DeckIndex);
             
             for(int i=0;i < deckSize; ++i)
             {
-                CollectiblePreviewCard card = Instantiate(CollectiblePreviewCardPrefab, EquippedCardsPanel);
+                CollectiblePreviewCard card = Instantiate(EquippedCollectiblePreviewCardPrefab, EquippedCardsPanel);
                 card.Initialize(this, true);
                 DeckCards.Add(card);
                 card.transform.SetParent(EquippedCardsPanel);
@@ -81,6 +70,11 @@ namespace Kuantech.Midcore.UI
             base.Open();
             CardToEquip = null;
             UpdateCards();
+            DeselectCard();
+            foreach (var panel in CollectiblesShowcasePanels)
+            {
+                panel.DeselectCards();
+            }
         }
         
         public void UpdateCards()
@@ -198,8 +192,12 @@ namespace Kuantech.Midcore.UI
                     {
                         DeckBuildingManager.UnequipCollectible(card.CollectibleDataAsset);
                     }
-                    DeckBuildingManager.EquipCollectible(CardToEquip.CollectibleDataAsset);
-                    card.SetCollectableAsset(CardToEquip.CollectibleDataAsset);
+                    
+                    //If can equip, set the preview card
+                    if (DeckBuildingManager.EquipCollectible(CardToEquip.CollectibleDataAsset))
+                    {
+                        card.SetCollectableAsset(CardToEquip.CollectibleDataAsset);
+                    }
                 }
                 ClearCardToEquip();
                 

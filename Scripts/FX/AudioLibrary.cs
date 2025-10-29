@@ -24,9 +24,16 @@ namespace Kuantech.Core.FX
         [Header("Music")] 
         public List<Music> Musics;
         public AudioSource MusicPlayer;
-        public AudioSource MainMenuMusic;
-        public AudioSource IngameMusic;
+        
+        [Header("Music Crossfade")]
+        [SerializeField] private float MusicChangeDuration = 1.0f; // default crossfade seconds
+        [SerializeField] private bool UseUnscaledTime = true;       // ignore timescale during fades
 
+        private AudioSource _musicA;
+        private AudioSource _musicB;
+        private bool _usingA = true;           // which one is the "current" player
+        private Coroutine _musicFadeCo;
+        
         private bool _initialized = false;
         public void Initialize()
         {
@@ -49,9 +56,31 @@ namespace Kuantech.Core.FX
             }
             SoundQueue = new SoundQueue(this);
             _initialized = true;
-
+        
+            EnsureMusicSources();
         }
+        
+        private void EnsureMusicSources()
+        {
+            // Reuse the existing MusicPlayer as A, create B lazily
+            if (_musicA == null)
+            {
+                _musicA = MusicPlayer != null ? MusicPlayer : gameObject.AddComponent<AudioSource>();
+                _musicA.playOnAwake = false;
+                _musicA.loop = true;
+            }
+            if (_musicB == null)
+            {
+                _musicB = gameObject.AddComponent<AudioSource>();
+                _musicB.playOnAwake = false;
+                _musicB.loop = true;
 
+                // Match routing/settings
+                _musicB.outputAudioMixerGroup = _musicA.outputAudioMixerGroup;
+                _musicB.spatialBlend = _musicA.spatialBlend;
+            }
+        }
+        
         private void Update()
         {
             if(SoundQueue == null || !_initialized) return;
@@ -217,26 +246,105 @@ namespace Kuantech.Core.FX
         }
 
         #region Music
-        public void PlayMusic(Music music)
+
+        public void PlayMusicById(string musicId, float? durationOverride = null)
         {
-            if(music == null) return;
-            StopMusic();
-            if(MusicPlayer == null) return;
-            MusicPlayer.clip = music.Clip;
-            MusicPlayer.loop = music.Loop;
-            MusicPlayer.volume = music.Volume;
-            MusicPlayer.Play();
+            if (musicId.IsNullOrEmpty()) return;
+            var music = GetMusicById(musicId);
+            PlayMusic(music, durationOverride);
         }
-        public void RestartMusic()
+
+        public Music GetMusicById(string musicId)
         {
-            MusicPlayer.Stop();
-            MusicPlayer.Play();
+            foreach (var music in Musics)
+            {
+                if (string.Equals(music.Id, musicId))
+                {
+                    return music;
+                }
+            }
+
+            return null;
         }
+        public void PlayMusic(Music music, float? durationOverride = null)
+        {
+            if (music == null) return;
+            EnsureMusicSources();
+            float dur = durationOverride ?? MusicChangeDuration;
+            // if nothing is playing, dur can be used as fade-in; if <= 0 => hard switch
+            if (_musicFadeCo != null) StopCoroutine(_musicFadeCo);
+            _musicFadeCo = StartCoroutine(CrossfadeTo(music, dur));
+        }
+        
+        private System.Collections.IEnumerator CrossfadeTo(Music next, float duration)
+        {
+            // Pick source roles
+            AudioSource from = _usingA ? _musicA : _musicB;
+            AudioSource to   = _usingA ? _musicB : _musicA;
+
+            // Prepare "to" source
+            to.clip   = next.Clip;
+            to.loop   = next.Loop;
+            float targetVol = Mathf.Clamp01(next.Volume);
+            to.volume = 0f;
+            to.Play();
+
+            // If nothing is currently playing, treat as simple fade-in
+            bool fromActive = (from.isPlaying && from.clip != null);
+
+            if (duration <= 0f)
+            {
+                if (fromActive) from.Stop();
+                to.volume = targetVol;
+                _usingA = !_usingA; // swap active
+                yield break;
+            }
+
+            float t = 0f;
+            float fromStart = fromActive ? from.volume : 0f;
+            float toStart   = 0f;
+
+            // Crossfade
+            while (t < duration)
+            {
+                float dt = UseUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
+                t += dt;
+                float k = Mathf.Clamp01(t / duration);
+
+                if (fromActive) from.volume = Mathf.Lerp(fromStart, 0f, k);
+                to.volume = Mathf.Lerp(toStart, targetVol, k);
+
+                yield return null;
+            }
+
+            // Finalize
+            if (fromActive)
+            {
+                from.Stop();
+                from.volume = 0f;
+            }
+            to.volume = targetVol;
+
+            _usingA = !_usingA; // 'to' becomes current
+            _musicFadeCo = null;
+        }
+        
         public void StopMusic()
         {
-            if(MusicPlayer != null)
+            EnsureMusicSources();
+            if (_musicFadeCo != null) { StopCoroutine(_musicFadeCo); _musicFadeCo = null; }
+            if (_musicA != null) { _musicA.Stop(); _musicA.volume = 0f; }
+            if (_musicB != null) { _musicB.Stop(); _musicB.volume = 0f; }
+        }
+
+        public void RestartMusic()
+        {
+            EnsureMusicSources();
+            var cur = _usingA ? _musicA : _musicB;
+            if (cur != null && cur.clip != null)
             {
-                MusicPlayer.Stop();
+                cur.Stop();
+                cur.Play();
             }
         }
         #endregion

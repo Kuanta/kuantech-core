@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Kuantech.Core;
 using Kuantech.Core.FX;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.EventSystems;
 
 namespace Kuantech.Utils
@@ -67,6 +68,8 @@ namespace Kuantech.Utils
         public Action<DropInformation> OnSuccesfullDropEvent;
 
         [Tooltip("If set to false, Draggable can't be dragged")]
+        public delegate bool DragCheckHandler(Draggable draggable);
+        public List<DragCheckHandler> DragCheckHandlers;
         public bool DragToggle = true;
         
         [Tooltip("If set to false, can't be tapped")]
@@ -290,6 +293,17 @@ namespace Kuantech.Utils
         
         public virtual bool CanBeDragged()
         {
+
+            if (!DragCheckHandlers.IsNullOrEmpty())
+            {
+                foreach(var handler in DragCheckHandlers)
+                {
+                    if (handler != null)
+                    {
+                        if (!handler.Invoke(this)) return false;
+                    }
+                }
+            }
             return DragToggle;
         }
         
@@ -485,7 +499,10 @@ namespace Kuantech.Utils
 
         protected virtual void PlayDroppedEffect()
         {
-            DropEffect.PlayEffectAtPosition(transform.position, Quaternion.identity);
+            if(gameObject.activeInHierarchy && DropEffect != null)
+            {
+                DropEffect.PlayEffectAtPosition(transform.position, Quaternion.identity);
+            }
         }
         
         /// <summary>

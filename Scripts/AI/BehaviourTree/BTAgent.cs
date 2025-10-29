@@ -1,20 +1,29 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using Kuantech.Core;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace Kuantech.AI
 {
     public class BTAgent : ActorModule
     {
         private BehaviourTree Bt;
+        [SerializeField] private float TickInterval = 0.1f;
+        [SerializeField] private float TickJitter = 0.05f;
         [SerializeField] private BehaviourTreeBlueprint DefaultBtBlueprint;
         private WaitForSeconds _waitForSeconds;
-        public bool AgentRunning;
-
+        [NonSerialized] public bool AgentRunning;
+        [NonSerialized] public bool AgentPaused;
+        
+        private float _nextPlanTime;
+        
         public override void Initialize()
         {
             //todo: Can we remove this?
-            _waitForSeconds = new WaitForSeconds(0.01f);
+            _waitForSeconds = new WaitForSeconds(TickInterval);
+            if (DefaultBtBlueprint == null) return;
             SetBehaviourTree(DefaultBtBlueprint.CreateBehaviourTree());
         }
 
@@ -29,7 +38,7 @@ namespace Kuantech.AI
                 StartAgent();
             }
         }
-        
+
         #region Behaviour Tree
 
         public void SetBehaviourTree(BehaviourTree bt)
@@ -51,9 +60,18 @@ namespace Kuantech.AI
             if(_behaveRoutine != null) StopCoroutine(_behaveRoutine);
             _behaveRoutine = Behave();
             AgentRunning = true;
+            AgentPaused = false;
             StartCoroutine(_behaveRoutine);
         }
 
+        public void ResumeAgent()
+        {
+            AgentPaused = false;
+        }
+        public void PauseAgent()
+        {
+            AgentPaused = true;
+        }
         public void StopAgent()
         {
             AgentRunning = false;
@@ -62,11 +80,20 @@ namespace Kuantech.AI
         }
         private IEnumerator Behave()
         {
-            Bt.OwnerAgent = this;
+            if (Bt == null) yield break;
+
+            float firstDelay = (TickJitter > 0f) ? Random.Range(0f, TickJitter) : 0f;
+            if (firstDelay > 0f) yield return new WaitForSeconds(firstDelay);
+
+            Bt.OwnerAgent = this; 
+            
             while (AgentRunning)
             {
-                Bt.Process();
-                yield return _waitForSeconds;
+                if (!AgentPaused)
+                {
+                    Bt.Process();         
+                }
+                yield return _waitForSeconds; 
             }
         }
 

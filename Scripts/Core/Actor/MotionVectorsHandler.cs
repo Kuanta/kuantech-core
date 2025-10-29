@@ -133,6 +133,12 @@ namespace Kuantech.Core
         /// <returns></returns>
         public Vector3 GetTargetVector()
         {
+            //If target manager has a target...
+            // if (ParentActor != null && ParentActor.GetModule<SurroundManager>() != null)
+            // {
+            //     Actor target = ParentActor.GetModule<SurroundManager>().GetCurrentTarget();
+            //     if (target != null) TargetedObject = target.transform;
+            // }
             if (TargetedObject != null)
             {
                 return (TargetedObject.position - ParentActor.transform.position).normalized;
@@ -143,7 +149,7 @@ namespace Kuantech.Core
             }
             return MovementVector; //same as movement
         }
- 
+        
         public void SetTargetObject(Transform targetObject)
         {
             TargetedObject = targetObject;
@@ -153,9 +159,12 @@ namespace Kuantech.Core
         {
             TargetVector = targetVector;
         }
+
+        public void ClearTargetVector()
+        {
+            TargetVector = Vector3.zero;
+        }
         #endregion
-
-
         
         /// <summary>
         /// Projects a vector to the forward plane of the actor
@@ -175,6 +184,8 @@ namespace Kuantech.Core
         {
             MovementVector = Vector3.zero;
             ForceMoveVector = Vector3.zero;
+            TargetVector = Vector3.zero;
+            TargetedObject = null;
         }
     }
 }

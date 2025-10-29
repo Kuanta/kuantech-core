@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Kuantech.Core.Database;
 using Kuantech.Core.HyperCasual;
 using Kuantech.Midcore;
 using UnityEngine;
@@ -33,6 +34,31 @@ namespace Kuantech.Core
         
         private Dictionary<Type, ActorBlueprintComponent> _componentLookup;
 
+
+        public override string GetId()
+        {
+            if (ProgressableDataAsset != null) return ProgressableDataAsset.GetId();
+            return base.GetId();
+        }
+        
+        public override string GetName()
+        {
+            if (ProgressableDataAsset != null) return ProgressableDataAsset.GetName();
+            return base.GetName();
+        }
+        
+        public override string GetDescription()
+        {
+            if (ProgressableDataAsset != null) return ProgressableDataAsset.GetDescription();
+            return base.GetDescription();
+        }
+
+        public override Sprite GetIcon()
+        {
+            if (ProgressableDataAsset != null) return ProgressableDataAsset.GetIcon();
+            return base.GetIcon();
+        }
+        
         private void EnsureComponentLookupBuilt()
         {
             if (_componentLookup != null)
@@ -67,7 +93,7 @@ namespace Kuantech.Core
             Actor actor = PoolManager.GetObjectFromPool(ActorPrefab.gameObject).GetComponent<Actor>();
             if (actor == null) return null;
             actor.Id = GetId();
-            actor.FactionId = FactionId;
+            actor.FactionHandler.BelongingFaction = FactionId;
 
             if (ProgressableDataAsset != null)
             {
@@ -80,13 +106,14 @@ namespace Kuantech.Core
             }
 
             actor.Initialize();
-            if (actor.VisualHandler != null)
+            if (actor.VisualHandler != null && ActorVisualPrefab != null)
             {
                 actor.VisualHandler.SetActorVisual(PoolManager.GetObjectFromPool(ActorVisualPrefab.gameObject).GetComponent<ActorVisual>());
             }
                 
             //Sets blueprint comps
             ApplyComponentsToActor(actor);
+            actor.ActorBlueprint = this;
             return actor;
         }
 
@@ -98,5 +125,25 @@ namespace Kuantech.Core
                 blueprintComp.OnActorCreated(this, actor);
             }
         }
+
+        #region Database
+
+        public void UpdateFromDatabaseTable(DataTable table)
+        {
+            DataTable.RowData rd = table.GetRow(GetId());
+            if (rd == null) return;
+            UpdateFromDatabaseTableRow(rd);
+        }
+
+        public void UpdateFromDatabaseTableRow(DataTable.RowData rowData)
+        {
+            foreach(var comp in ActorBlueprintComponents)
+            {
+                if(comp == null) continue;
+                comp.UpdateFromDatabaseRow(rowData);
+            }
+        }
+        #endregion
+ 
     }
 }

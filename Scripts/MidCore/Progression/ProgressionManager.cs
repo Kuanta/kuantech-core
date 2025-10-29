@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Kuantech.Core;
+using Kuantech.Core.Combat;
 using Kuantech.Core.HyperCasual;
 using Kuantech.Rpg;
 using Kuantech.Utils;
@@ -86,7 +87,18 @@ namespace Kuantech.Midcore
             base.SetDefaultState();
             
             //Player Level
+            if(PlayerLevelDataAsset != null)
+            {
             SetRank(PlayerLevelDataAsset, 0);
+            
+            }
+            SetDefaultProgressables();
+        }
+        
+        public override void LoadState()
+        {
+            base.LoadState();
+            //Justin Case
             SetDefaultProgressables();
         }
 
@@ -123,6 +135,14 @@ namespace Kuantech.Midcore
             }
 
             return ctx.ProgressiblesHandler.GetProgressibleData(ctx.PlayerLevelDataAsset).GetRank();
+        }
+
+        public static void SetPlayerLevel(int level)
+        {
+            var ctx = GetContext<ProgressionManager>();
+            SetRank(ctx.PlayerLevelDataAsset, level);
+            ctx.CheckUnlockedCollectibles(false);
+            ctx.OnPlayerEarnedExperience?.Invoke(GetPlayerLevel());
         }
         
         public static ProgressableDataAsset GetPlayerLevelDataAsset()
@@ -324,6 +344,19 @@ namespace Kuantech.Midcore
             return true;
         }
         
+        public static bool UnlockProgressible(ProgressableDataAsset asset, bool saveState = true)
+        {
+            if (IsProgressibleUnlocked(asset)) return false; //Already unlocked
+            if (ProgressionManager.SetRank(asset, 0, saveState) && asset is CollectableAsset collectableAsset)
+            {
+                var ctx = GetContext<ProgressionManager>();
+                ctx.FreshUnlockedCollectibles.Add(collectableAsset);
+                return true;
+            }
+
+            return false;
+        }
+        
         /// <summary>
         /// Sets the rank without any checks
         /// </summary>
@@ -342,7 +375,6 @@ namespace Kuantech.Midcore
             {
                 ctx.SaveState();
             }
-
             return true;
         }
         
@@ -422,7 +454,19 @@ namespace Kuantech.Midcore
             {
                 if (traitUpgrade == null) continue;
                 traitUpgrade.ApplyToActor(actor);
-            }            
+            }
+
+            StatsModule statsModule = actor.GetModule<StatsModule>();
+            if (statsModule != null)
+            {
+                statsModule.UpdateStatModifiers();
+            }
+            
+            HealthcareModule healthcareModule = actor.GetModule<HealthcareModule>();
+            if (healthcareModule != null)
+            {
+                healthcareModule.Refresh();
+            }
         }
 
         public static TraitUpgradeProgressable GetTraitUpgradeProgressable(string id)

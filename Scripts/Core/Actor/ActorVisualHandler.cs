@@ -9,7 +9,8 @@ namespace Kuantech.Core
     {
         [Header("Slots")] 
         public Transform ActorVisualSlot;
-        
+
+        public bool ClearCurrentVisualOnDespawn = true;
         public ActorVisual CurrentActorVisual;
         
         //Events
@@ -48,7 +49,7 @@ namespace Kuantech.Core
 
         public void ClearCurrentVisual()
         {
-            if (CurrentActorVisual == null) return;
+            if (CurrentActorVisual == null || !ClearCurrentVisualOnDespawn) return;
             CurrentActorVisual.OnRemovedFromActor(Actor);
             OnActorVisualRemoved?.Invoke(CurrentActorVisual);
             PoolManager.PoolObject(CurrentActorVisual.gameObject);

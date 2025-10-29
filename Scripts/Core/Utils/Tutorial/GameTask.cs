@@ -7,6 +7,7 @@ namespace Kuantech.Core
     
     public class GameTask : MonoBehaviour
     {
+        [Header("Task Settings")]
         public GameTask NextTask;
         public string TaskId;
         public string TaskName;

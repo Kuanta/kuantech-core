@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Kuantech.Core.Combat;
 using Kuantech.Utils;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -22,8 +21,16 @@ namespace Kuantech.Core
     {
         [Header("Identifier")] 
         public string Id;
-        public int FactionId = 0; //Since faction Id is used frequently, it is stated in Actor class
         public int ActorRank = 0;
+        
+        [Header("Positioning Variables")]
+        public Transform ActorAnchor;
+
+        public float ActorRadius = 0.5f;
+
+        [Header("Factions")]
+       // public int FactionId = 0; //Since faction Id is used frequently, it is stated in Actor class
+        public FactionHandler FactionHandler;
         
         [Header("Modules")]
         protected List<ActorModule> ActorModulesList;
@@ -32,7 +39,6 @@ namespace Kuantech.Core
         
         //Common module references
         public ActorVisualHandler VisualHandler;
-        public StatusEffectHandler StatusEffectHandler;
         
         protected bool Initialized;
         [Tooltip("If set to true, actor will initialize itself on start")]
@@ -46,9 +52,11 @@ namespace Kuantech.Core
         //Runtime
         public ActorState CurrentActorState = ActorState.Spawned;
         [NonSerialized] public bool Dirtied = false;
+        [NonSerialized] public ActorBlueprint ActorBlueprint; //May be needed in some cases. If created by a template this should be non null
 
         //Events
         public EventHandler OnModulesInitialized;
+        public EventHandler<float> OnActorRadiusSet;
         
         //Lifecycle events
         public UnityAction<ActorState> OnActorStateChanged;
@@ -95,8 +103,6 @@ namespace Kuantech.Core
             }
 
             VisualHandler = GetModule<ActorVisualHandler>();
-            StatusEffectHandler = GetModule<StatusEffectHandler>();
-            
 
             if(actorSerializableData != null)
             {
@@ -187,8 +193,8 @@ namespace Kuantech.Core
         private IEnumerator _despawnCoroutine;
         private IEnumerator _DespawnRoutine(float delay)
         {
-            yield return new WaitForSeconds(delay);
             Cleanup();
+            yield return new WaitForSeconds(delay);
             ChangeActorState(ActorState.Despawned);
             OnDespawnedEvent?.Invoke(this);
             if (VisualHandler != null)
@@ -261,20 +267,6 @@ namespace Kuantech.Core
         #endregion
         
         #region Modules
-
-        /// <summary>
-        /// Return module by type
-        /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        public ActorModule GetModule(Type type)
-        {
-            if(Modules.ContainsKey(type) && Modules[type].Count > 0)
-            {
-                return Modules[type][0];
-            }
-            return null;
-        }
         
         /// <summary>
         /// Returns the first instance of a given mopdule type. Should only be used when searched for an explicit type and made sure that there is only a single instance of that component
@@ -403,13 +395,23 @@ namespace Kuantech.Core
             return true;
         }
 
-        public Transform GetHitPoint()
+        public virtual WorldPoint GetHitPoint(Actor attackingActor)
         {
+            
+            WorldPoint hitPoint = new WorldPoint()
+            {
+                Target =  GetActorAnchor(),
+                Radius = ActorRadius,
+            };
             ActorSlotsHandler actorSlotsHandler = GetModule<ActorSlotsHandler>();
-            if (actorSlotsHandler == null) return transform;
-            Transform hitPoint = actorSlotsHandler.GetSlot("HitPoint");
-            if (hitPoint != null) return hitPoint;
-            return transform;
+            if (actorSlotsHandler == null) return hitPoint;
+            Transform hitPointSlot =  actorSlotsHandler.GetSlot("HitPoint");
+            if (hitPointSlot != null)
+            {
+                hitPoint.Target = hitPointSlot;
+                hitPoint.Radius = ActorRadius;
+            }
+            return hitPoint;
         }
 
         public void OnHit(HitInfo hitInfo)
@@ -443,6 +445,97 @@ namespace Kuantech.Core
             if (mm == null) return transform.forward;
             return mm.GetForwardVector();
         }
+        #endregion
+
+        #region Actor Location
+        /// <summary>
+        /// Returns the actors location
+        /// </summary>
+        /// <returns></returns>
+        public Vector3 GetActorLocation()
+        {
+            if (ActorAnchor != null)
+            {
+                return ActorAnchor.transform.position;
+            }
+            return transform.position;
+        }
+
+        public Transform GetActorAnchor()
+        {
+            if(ActorAnchor != null)
+            {
+                return ActorAnchor;
+            }
+
+            return transform;
+        }
+
+        public void SetActorAnchor(Transform anchor)
+        {
+            ActorAnchor = anchor;
+        }
+
+        public void SetActorRadius(float radius)
+        {
+            ActorRadius = radius;
+            OnActorRadiusSet?.Invoke(this, radius);
+        }
+        
+        /// <summary>
+        /// Returns distance towards point
+        /// </summary>
+        /// <param name="point"></param>
+        /// <returns></returns>
+        public float GetDistanceToPosition(Vector3 point)
+        {
+            Vector3 actorPosition = GetActorLocation();
+            Vector3 diff = (point - actorPosition);
+            float diffMag = diff.magnitude;
+            return Mathf.Max(0, diffMag - ActorRadius);
+        }
+        #endregion
+        
+        #region Factions
+        
+        /// <summary>
+        /// Sets the faction Id
+        /// </summary>
+        /// <param name="factionId"></param>
+        public void SetFactionId(int factionId)
+        {
+            if (FactionHandler == null)
+            {
+                Debug.LogWarning("Faction Handler is null");
+                FactionHandler = new FactionHandler();
+            }
+            FactionHandler.BelongingFaction = factionId;
+        }
+        
+        /// <summary>
+        /// Returns faction Id
+        /// </summary>
+        /// <returns></returns>
+        public int GetFactionId()
+        {
+            if (FactionHandler == null)
+            {
+                Debug.LogWarning("Faction Handler is null");
+                return 0;
+            }
+            return FactionHandler.BelongingFaction;
+        }
+        public bool IsAlly(Actor otherActor)
+        {
+            FactionHandler.FactionType relationType = FactionHandler.GetFactionRelation(otherActor);
+            return relationType == FactionHandler.FactionType.Ally || relationType == FactionHandler.FactionType.Same;
+        }
+        
+        public bool IsEnemy(Actor otherActor)
+        {
+            return FactionHandler.GetFactionRelation(otherActor) == FactionHandler.FactionType.Enemy;
+        }
+        
         #endregion
     }
 }

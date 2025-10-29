@@ -94,7 +94,7 @@ namespace Kuantech.TowerDefense
             SetTowerHealth(GetMaxTowerHealth());
             CurrentWaveIndex = -1; //-1 so set next wave works
             //Set the starting gold
-            CurrencyManager.SetCurrency(StartingCurrencyAsset, LevelData.StartingGold);
+            CurrencyManager.SetCurrency(StartingCurrencyAsset, LevelData.StartingCurrency);
         }
         #endregion
 
@@ -111,8 +111,8 @@ namespace Kuantech.TowerDefense
         /// <param name="waveIndex"></param>
         public void SetWave(int waveIndex)
         {
-            if (waveIndex >= LevelData.WaveData.Count) return;
-            WaveData waveData = LevelData.WaveData[waveIndex];
+            if (waveIndex >= LevelData.WaveDatas.Count) return;
+            WaveData waveData = LevelData.WaveDatas[waveIndex];
             CurrentWaveIndex = waveIndex;
             _currentWaveQueue = new Queue<WaveEntry>();
             foreach (var entry in waveData.WaveEntries)
@@ -146,11 +146,11 @@ namespace Kuantech.TowerDefense
         }
         public WaveData GetCurrentWaveData()
         {
-            return LevelData.WaveData[CurrentWaveIndex];
+            return LevelData.WaveDatas[CurrentWaveIndex];
         }
         public bool IsActorEnemy(Actor actor)
         {
-            return actor.FactionId > 0;
+            return actor.FactionHandler.GetFactionRelation(actor) == FactionHandler.FactionType.Enemy;
         }
 
         public void SpawnNextWaveElement()
@@ -226,7 +226,7 @@ namespace Kuantech.TowerDefense
         /// </summary>
         public void CompleteWave()
         {
-            if (CurrentWaveIndex >= LevelData.WaveData.Count - 1)
+            if (CurrentWaveIndex >= LevelData.WaveDatas.Count - 1)
             {
                 CompleteLevel();
                 return;
@@ -306,7 +306,7 @@ namespace Kuantech.TowerDefense
         
         public void OnActorReachedEnd(Actor actor)
         {
-            if (actor.FactionId > 0)
+            if (actor.GetFactionId() > 0)
             {
                 ReceiveTowerDamage(1);
             }

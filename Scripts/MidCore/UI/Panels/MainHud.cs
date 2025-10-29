@@ -9,9 +9,10 @@ namespace Kuantech.Midcore.UI
 {
     public class MainHud : UIMenu
     {
-        [Header("Componentes")] 
+        [Header("Components")] 
         public LevelableFloatIndicator PlayerLevelBar;
         [SerializeField] private List<MenuOpenButton> MenuButtons;
+        
         public override void Initialize()
         {
             if (Initialized) return;

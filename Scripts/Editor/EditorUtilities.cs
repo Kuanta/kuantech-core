@@ -82,6 +82,10 @@ namespace Kuantech.Editor
             {
                 encodedData = textField.value;
             }
+            else if (fieldElement is Toggle toggleField)
+            {
+                encodedData = (toggleField.value ? 1 : 0).ToString();
+            }
             else if (fieldElement is EnumField enumField)
             {
                 encodedData = enumField.value.ToString();
@@ -123,6 +127,11 @@ namespace Kuantech.Editor
             {
                 textField.value = encodedValue;
             }
+            else if (fieldToLoad is Toggle toggleField)
+            {
+                int.TryParse(encodedValue, out int decodedValue);
+                toggleField.value = decodedValue > 0;
+            }
             else if (fieldToLoad is EnumField enumField)
             {
                 Type enumType = enumField.value.GetType();
@@ -154,18 +163,27 @@ namespace Kuantech.Editor
             {
                 // Add FloatField
                 return new FloatField(fieldName);
-   
             }
             else if (fieldType == typeof(string))
             {
                 return new TextField(fieldName);
-
             }
+      
             else if (fieldType.IsEnum)
             {
                 EnumField enumField = CreateEnumDropdownForType(fieldType);
                 enumField.label = fieldName;
                 return enumField;
+            }
+            else if (fieldType == typeof(bool))
+            {
+                // Add Toggle for boolean
+                return new Toggle(fieldName);
+            }
+            else if (fieldType == typeof(bool?)) // nullable bool için de basit destek
+            {
+                // UI Toolkit'te tri-state yok; null->false varsayımıyla Toggle kullanıyoruz.
+                return new Toggle(fieldName);
             }
             else if (fieldType.IsGenericType && fieldType.GetGenericTypeDefinition() == typeof(List<>))
             {

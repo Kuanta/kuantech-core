@@ -16,7 +16,7 @@ namespace Kuantech.Midcore
         [NonSaveableField]
         public List<CollectableAsset> DefaultDeck;
         
-        [SaveableField] public List<ProgressibleData> CurrentDeck;
+        [HideInInspector] [SaveableField] public List<ProgressibleData> CurrentDeck;
         private Dictionary<string, CollectableAsset> _equippedCollectiblesById = new Dictionary<string, CollectableAsset>();
 
         public void Initialize()
@@ -53,7 +53,24 @@ namespace Kuantech.Midcore
                 EquipCollectible(DefaultDeck[i]);
             }
         }
-
+        
+        /// <summary>
+        /// Checks deck integrity. If a colllectable with a missing collectible id, it will be removed
+        /// </summary>
+        public void CheckDeckIntegrity()
+        {
+            for (int i = 0; i < DeckSize; ++i)
+            {
+                if(CurrentDeck[i] == null) continue;
+                string collectibleId = CurrentDeck[i].Id;
+                if (ProgressionManager.GetCollectibleById(collectibleId) == null)
+                {
+                    //Clear
+                    ClearCollectibleAtIndex(i);
+                }
+            }   
+        }
+        
         public List<CollectableAsset> GetCurrentCollectableAssets()
         {
             List<CollectableAsset> equippedAssets = new List<CollectableAsset>();
@@ -109,6 +126,17 @@ namespace Kuantech.Midcore
             return false;
         }
 
+        public void ClearCollectibleAtIndex(int index)
+        {
+            if (!CurrentDeck.IsValidIndex(index)) return;
+            if (CurrentDeck[index] == null) return;
+            if (_equippedCollectiblesById.ContainsKey(CurrentDeck[index].Id))
+            {
+                _equippedCollectiblesById.Remove(CurrentDeck[index].Id);
+            }
+            CurrentDeck[index] = null;
+        }
+        
         public bool IsEquipped(CollectableAsset collectible)
         {
             return _equippedCollectiblesById.ContainsKey(collectible.GetId());

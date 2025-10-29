@@ -33,7 +33,7 @@ namespace Kuantech.Core
             {
                 Animator.SetTrigger(ShowHash);
             }
-            Text.text = damageInfo.DamageAmount.Stringfy(true);
+            Text.text = damageInfo.GetDamage().Stringfy(true);
 
             if (AdjustColors)
             {
@@ -63,6 +63,7 @@ namespace Kuantech.Core
                 Random.Range(RandomOffsetMin.y, RandomOffsetMax.y), Random.Range(RandomOffsetMin.z, RandomOffsetMax.z));
             StartCoroutine(_routine);
         }
+
 
         private IEnumerator DespawnRoutine()
         {

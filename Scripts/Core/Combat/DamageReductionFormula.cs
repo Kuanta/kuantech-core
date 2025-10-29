@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Kuantech.Core.Combat
 {
-    [CreateAssetMenu(fileName = "Damage Reduction Formula", menuName = "Kuantech/Core/Combat/Damage Reduction Formula")]
+    [CreateAssetMenu(fileName = "Damage Reduction Formula", menuName = "Kuantech/Combat/Damage Reduction Formula")]
     public class DamageReductionFormula : ScriptableObject
     {
         [SerializeField] private float DamageReductionFactor = 10;

@@ -6,21 +6,32 @@ namespace Kuantech.Core
     public class TargetSlot
     {
         public int Index;
-        public WorldPoint WorldPoint;
+        //public WorldPoint WorldPoint;
+        public Vector3 OffsetPosition;
         public Actor OccupyingActor;
+        public Actor ParentActor;
         public TargetSlotAllocator OwnerTargetSlotAllocator;
+
+        public WorldPoint GetWorldPoint()
+        {
+            return new WorldPoint()
+            {
+                Target = ParentActor.GetActorAnchor(),
+                OffsetPosition = OffsetPosition,
+            };
+        }
     }
     
     public class TargetSlotAllocator
     {
         private TargetSlot[] _slots;
-        private Transform _parent;
+        private Actor _parent;
         public Vector3 LocalForward;
         public Vector3 LocalUp;
         
-        public TargetSlotAllocator(Transform parent, int slotCount, float radius, Vector3 localForward, Vector3 localUp)
+        public TargetSlotAllocator(Actor parentActor, int slotCount, float radius, Vector3 localForward, Vector3 localUp)
         {
-            _parent = parent;
+            _parent = parentActor;
             _slots = new TargetSlot[slotCount];
             LocalUp = localUp;
             LocalForward = localForward;
@@ -31,14 +42,22 @@ namespace Kuantech.Core
                 _slots[i] = new TargetSlot
                 {
                     Index= i,
-                    WorldPoint = new WorldPoint()
-                    {
-                        OffsetPosition = offset, //If we want to rotate the slots with the parent actor, use LocalPosition
-                        Target = parent,
-                    },
+                    OffsetPosition = offset,
+                    ParentActor = parentActor,
                     OccupyingActor = null,
                     OwnerTargetSlotAllocator = this,
                 };
+            }
+        }
+
+        public void SetRadius(float radius)
+        {
+            if (_slots == null || _slots.Length == 0) return;
+            for (int i = 0; i < _slots.Length; i++)
+            {
+                float angle = (360f / _slots.Length) * i;
+                Vector3 offset = Quaternion.AngleAxis(angle, LocalUp) * LocalForward * radius;
+                _slots[i].OffsetPosition = offset;
             }
         }
         
@@ -59,7 +78,7 @@ namespace Kuantech.Core
                     continue;
                 }
 
-                Vector3 slotPos = _slots[i].WorldPoint.GetTargetPosition();
+                Vector3 slotPos = _slots[i].GetWorldPoint().GetTargetPosition();
                 float score = 1/Vector3.Distance(attackingActor.transform.position, slotPos);
                 if (score > bestScore)
                 {
@@ -80,7 +99,7 @@ namespace Kuantech.Core
             if (occupyingActor == null || !slot.OccupyingActor.IsAlive()) return false;
             
             //Check if occupying actor actually targeting this
-            TargetManager tm = occupyingActor.GetModule<TargetManager>();
+            SurroundManager tm = occupyingActor.GetModule<SurroundManager>();
             if (tm == null) return true;
             if (tm.CurrentTargetSlot == slot) return true;
             return false; //Not the same slot

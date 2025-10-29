@@ -4,6 +4,7 @@ using System.Linq;
 using Kuantech.Core.UI;
 using Kuantech.Utils;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Kuantech.Core
 {
@@ -26,6 +27,13 @@ namespace Kuantech.Core
         public LevelPhase OldPhase;
         public LevelPhase NewPhase;
     }
+
+    public struct LevelIdentificationData
+    {
+        public string WorldID;
+        public int WorldIndex;
+        public int LevelIndex;
+    }
     
     public class Level : MonoBehaviour
     {
@@ -35,6 +43,13 @@ namespace Kuantech.Core
         [Header("Components")] 
         public bool AutoDetectLevelElements = false;
         public List<LevelElement> LevelElements;
+
+        [FormerlySerializedAs("UseWorldIndex")]
+        [Header("Analytics")] 
+        [Tooltip("Should world index be sent to analytics")]
+        public bool TriggerEventWithWorldIndex = false;
+        [Tooltip("Should event with linear level number be triggered")]
+        public bool TriggerEventWithLinearLevelNumber = true;
         
         //Runtime
         public LevelPhaseSystem PhaseSystem;
@@ -46,7 +61,7 @@ namespace Kuantech.Core
         //World Data
         [NonSerialized] public WorldDataAsset WorldDataAsset = null;
         [NonSerialized] public int WorldIndex; //Index in the levels array. 
-        [NonSerialized] public int WorldNumber; //Actual world number. can be usedas power level
+        [NonSerialized] public int WorldNumber; //Actual world number. Number of world the player is at. There may be 5 worlds but player can be at 50th world. Used to provide infinite gameplay
         
         //Spawnables
         public HashSet<ISpawnable> SpawnedActors = new HashSet<ISpawnable>();
@@ -99,20 +114,31 @@ namespace Kuantech.Core
         
         public virtual void SetupLevel()
         {
-            DetectModules();
-            SetupPhaseSystem();
-            SetupComponents();
             LevelUI = UIManager.GetLevelUI();
             if (LevelUI != null)
             {
                 LevelUI.OnLevelSetup(this);
             }
+            DetectModules();
+            SetupPhaseSystem();
+            SetupComponents();
             ChangeLevelState(LevelState.Waiting);
             
             //Call post level setup
             foreach(var module in LevelModules)
             {
                 module.PostLevelSetup();
+            }
+            
+                        
+            //Trigger analytics
+            if (TriggerEventWithWorldIndex)
+            {
+                Analytics.Analytics.OnWorldLevelStarted(WorldNumber, LevelIndex);
+            }
+            if(TriggerEventWithLinearLevelNumber)
+            {
+                Analytics.Analytics.OnLevelStarted(GetLevelNumber());
             }
         }
         
@@ -174,6 +200,16 @@ namespace Kuantech.Core
             {
                 component.OnCompleteLevel();
             }
+            
+            //Trigger analytics
+            if (TriggerEventWithWorldIndex)
+            {
+                Analytics.Analytics.OnWorldLevelEnded(WorldNumber, LevelIndex, true, GetCurrentScore());
+            }
+            if(TriggerEventWithLinearLevelNumber)
+            {
+                Analytics.Analytics.OnLevelEnded(GetLevelNumber(), true, GetCurrentScore());
+            }
         }
 
         public virtual void FailLevel()
@@ -184,8 +220,36 @@ namespace Kuantech.Core
             {
                 component.OnFailLevel();
             }
+            
+            //Trigger analytics
+            if (TriggerEventWithWorldIndex)
+            {
+                Analytics.Analytics.OnWorldLevelEnded(WorldNumber, LevelIndex, false, GetCurrentScore());
+            }
+            if(TriggerEventWithLinearLevelNumber )
+            {
+                Analytics.Analytics.OnLevelEnded(GetLevelNumber(), false, GetCurrentScore());
+            }
         }
         
+        /// <summary>
+        /// Quits from current level
+        /// </summary>
+        public virtual void QuitLevel()
+        {
+            ClearLevel();
+            
+            //Trigger analytics
+            if (TriggerEventWithWorldIndex)
+            {
+                Analytics.Analytics.OnWorldLevelEnded(WorldNumber, LevelIndex, false, GetCurrentScore());
+            }
+            if(TriggerEventWithLinearLevelNumber)
+            {
+                Analytics.Analytics.OnLevelEnded(GetLevelNumber(), false, GetCurrentScore());
+            }
+        }
+
         /// <summary>
         /// Restarts the level
         /// </summary>
@@ -322,6 +386,21 @@ namespace Kuantech.Core
         #endregion
         
         #region Level Info
+        
+        /// <summary>
+        /// Returns the number of level. Not array index, the number
+        /// </summary>
+        /// <returns></returns>
+        public int GetLevelNumber()
+        {
+            int levelNumber = LevelNumber;
+            if (WorldDataAsset != null)
+            {
+                levelNumber = LevelManager.GetContext<LevelManager>().GetTotalLevelIndex(WorldNumber, LevelIndex);
+            }
+            return levelNumber;
+        }
+        
         public virtual float GetCurrentScore()
         {
             return 0f;
@@ -329,11 +408,7 @@ namespace Kuantech.Core
 
         public virtual int GetPowerLevel()
         {
-            if (WorldDataAsset != null)
-            {
-                return WorldDataAsset.GetPowerLevel(WorldNumber, LevelNumber);
-            }
-            return LevelNumber;
+            return GetLevelNumber();
         }
         #endregion
 

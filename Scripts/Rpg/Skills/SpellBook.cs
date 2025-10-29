@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Kuantech.Core;
+using Kuantech.Core.Combat;
+using Kuantech.Core.Utils;
 using Kuantech.Utils;
 using UnityEngine;
 
@@ -8,13 +10,26 @@ namespace Kuantech.Rpg.Skills
 {
     public class SpellBook : ActorModule
     {
-        //public Skill CurrentlyCastedSkill;
-        public float GlobalCooldown;
+        [Header("Positionings")] 
+        public string DefaultCastSlotName;
+        
+        [Header("Lock")]
+        public LockVariable SkillLock = new LockVariable();
+        
         private Dictionary<string, Skill> _skills = new Dictionary<string, Skill>();
         private List<Skill> _activeSkills = new(); 
         
+       
+
         //Runtime
         private float _lastSkillCastTime;
+        private HealthcareModule _healthcareModule;
+
+        public override void OnModulesInitialized()
+        {
+            base.OnModulesInitialized();
+            _healthcareModule = Actor.GetModule<HealthcareModule>();
+        }
 
         public override void ModuleUpdate()
         {
@@ -35,6 +50,20 @@ namespace Kuantech.Rpg.Skills
             }
         }
 
+        #region Slot
+
+        public Vector3 GetDefaultCastPosition()
+        {
+            ActorSlotsHandler slotsHander = Actor.GetModule<ActorSlotsHandler>();
+            if(slotsHander != null)
+            { 
+                Transform slot = slotsHander.GetSlot(DefaultCastSlotName);
+                if (slot != null) return slot.position;
+            }
+            return Actor.transform.position;
+        }
+
+        #endregion
         
         #region Skill Management
 
@@ -59,6 +88,12 @@ namespace Kuantech.Rpg.Skills
             return true;
         }
 
+        public bool HasSkill(string skillId)
+        {
+            Skill skill = GetSkillById(skillId);
+            return skill != null;
+        }
+        
         public Skill GetSkillByDataAsset(SkillDataAsset skillDataAsset)
         {
             return GetSkillById(skillDataAsset.SkillId);
@@ -69,22 +104,64 @@ namespace Kuantech.Rpg.Skills
             if (_skills.IsNullOrEmpty() || !_skills.ContainsKey(skillId)) return null;
             return _skills[skillId];
         }
-        
-        public bool CastSkill(SkillDataAsset skillDataAsset, SkillCastData skillCastData)
+
+        public bool CastSkill(Skill skillToCast, ActionCastData skillCastData)
         {
-            if (!CanCastSkill(skillDataAsset)) return false;
+            if (skillToCast == null || skillToCast.SkillDataAsset == null) return false;
+            return CastSkill(skillToCast.SkillDataAsset, skillCastData);
+        }
+        
+        public bool CastSkill(SkillDataAsset skillDataAsset, ActionCastData skillCastData)
+        {
+            if (SkillLock.IsLocked()) return false;
+            if (!CanCastSkill(skillDataAsset, skillCastData)) return false;
             Skill skillToCast = GetSkillByDataAsset(skillDataAsset);
             if (skillToCast == null) return false;
             if (!_activeSkills.Contains(skillToCast))
             {
                 _activeSkills.Add(skillToCast);
             }
+            
+            //Spend resource
+            if (_healthcareModule != null && skillDataAsset.RequiredResource != null)
+            {
+                _healthcareModule.RemoveResource(skillDataAsset.RequiredResource, skillDataAsset.RequiredResourceAmount);
+            }
+            
+            //Turn towards skill direction?
+            if (skillCastData.Target != null)
+            {
+                Actor.MotionVectorsHandler.SetTargetObject(skillCastData.Target.transform);
+            }
+            else
+            {
+                Actor.MotionVectorsHandler.SetTargetVector(skillCastData.Direction);
+            }
             return skillToCast.Cast(skillCastData);
         }
 
-        public bool CanCastSkill(SkillDataAsset skillDataAsset)
+        public bool CanCastSkill(SkillDataAsset skillDataAsset, ActionCastData skillCastData)
+        {
+            if (!CanSkillBeCasted(skillDataAsset)) return false;
+            Skill skill = GetSkillByDataAsset(skillDataAsset);
+            return skill.CanBeCast(skillCastData);
+        }
+        
+        /// <summary>
+        /// Checks cooldown, skill availability and resource availability
+        /// </summary>
+        /// <param name="skillDataAsset"></param>
+        /// <returns></returns>
+        public bool CanSkillBeCasted(SkillDataAsset skillDataAsset)
         {
             if (!HasSkill(skillDataAsset)) return false;
+            
+            //Check resource
+            if (_healthcareModule != null && skillDataAsset.RequiredResource != null)
+            {
+                if(_healthcareModule.GetCurrentResource(skillDataAsset.RequiredResource) < skillDataAsset.RequiredResourceAmount) return false;
+            }
+
             return true;
         }
 

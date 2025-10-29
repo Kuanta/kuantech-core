@@ -31,18 +31,24 @@ namespace Kuantech.Utils
             OnConfigSheetRead(data);
         }
         
+        /// <summary>
+        /// On sheets, configs are set in two columns. First row is header row, first column is config key, second column is config value
+        /// </summary>
+        /// <param name="sheetData"></param>
         private void OnConfigSheetRead(JObject sheetData)
         {
             if (sheetData == null) return;
             JArray array = (JArray) sheetData["values"];
-            JArray headerRow = array[0] as JArray;
-            JArray valuesRow = array[1] as JArray;
             
-            for (int i = 0; i < headerRow.Count; ++i)
+            //Config Count
+            int configCount = array.Count - 1;
+            if (configCount <= 0) return;
+            for (int i = 0; i < configCount; ++i)
             {
-                string configKey = headerRow[i].ToString();
-                string value = valuesRow[i].ToString();
-                
+                JArray configRow = array[i + 1] as JArray;
+                if(configRow == null || configRow.Count < 2) continue;
+                string configKey = configRow[0].ToString();
+                string value = configRow[1].ToString();
                 //Update ConfigEntries list
                 for(int j=0;j<ConfigEntries.Count; ++j)
                 {
@@ -54,7 +60,6 @@ namespace Kuantech.Utils
                         break;
                     }
                 }
-
             }
         }
 

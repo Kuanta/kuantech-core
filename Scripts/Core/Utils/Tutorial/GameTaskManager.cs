@@ -6,13 +6,44 @@ using UnityEngine;
 
 namespace Kuantech.Core
 {
-    public class GameTaskManager : MonoBehaviour 
+    [Serializable]
+    public struct TasksCollection
     {
         public List<GameTask> Tasks;
+    }
+    
+    public class GameTaskManager : MonoBehaviour 
+    {
+        public List<TasksCollection> TasksCollection;
         [NonSerialized] public int CurrentTaskIndex = -1;
         public float TasksStartDelay = 0.5f;
         public float StartNextTaskDelay = 0.5f;
+        
+        //Runtime
+        [NonSerialized] public List<GameTask> Tasks;
 
+        public void SetTasks(int tasksIndex)
+        {
+            Tasks = new List<GameTask>();
+            if (TasksCollection.IsNullOrEmpty() || tasksIndex < 0) return;
+            if (TasksCollection.IsValidIndex(tasksIndex))
+            {
+                Tasks = TasksCollection[tasksIndex].Tasks;
+            }
+            else
+            {
+                Tasks = TasksCollection[0].Tasks;
+            }
+            
+            SetupTasks();
+        }
+        
+        public void SetTasks(List<GameTask> tasks)
+        {
+            Tasks = tasks;
+            SetupTasks();
+        }
+        
         public void SetupTasks()
         {
             foreach (var task in Tasks)
@@ -23,6 +54,7 @@ namespace Kuantech.Core
         
         public virtual void StartTasks(int taskToStart=0)
         {
+            if (Tasks.IsNullOrEmpty()) return;
             StartCoroutine(_StartTasks(taskToStart));
         }
 

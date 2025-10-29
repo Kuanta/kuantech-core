@@ -12,6 +12,7 @@ namespace Kuantech.Core.Combat
         public bool AutoDetectTargets = true;
         public float AutoDetectFrequency;
         private float _lastDetectTime;
+        public bool Is2D = true;
         
         [NonSerialized] public List<Actor> DetectedEnemies;
         [NonSerialized] public List<Actor> DetectedAllies;
@@ -24,14 +25,25 @@ namespace Kuantech.Core.Combat
         /// </summary>
         public void DetectTargets()
         {
-            List<Actor> actors = CombatUtilities.GetActorsInCircle2D(transform.position, DetectionRadius, TargetLayerMask);
+            List<Actor> actors;
+            if (Is2D)
+            {
+                actors = CombatUtilities.GetActorsInCircle2D(transform.position, DetectionRadius, TargetLayerMask);
+
+            }
+            else
+            {
+                actors = CombatUtilities.GetActorsInSphere(transform.position, DetectionRadius, TargetLayerMask);
+            }
+            
             DetectedAllies = new List<Actor>();
             DetectedEnemies = new List<Actor>();
             foreach (var actor in actors)
             {
                 if(actor == Actor || !actor.IsAlive()) continue;
-                if (actor.FactionId == Actor.FactionId)
+                if (actor.IsAlly(Actor) && actor != Actor) 
                 {
+                    //Is ally and not self
                     DetectedAllies.Add(actor);
                 }
                 else
@@ -97,7 +109,18 @@ namespace Kuantech.Core.Combat
         public Actor GetEnemyTarget()
         {
             if (DetectedEnemies.IsNullOrEmpty()) return null;
-            return DetectedEnemies[0];
+            foreach (var enemy in DetectedEnemies)
+            {
+                if (!enemy.IsAlive())
+                {
+                    Debug.LogError("Dead enemy in DetectedEnemies list");
+                    continue;
+                }
+
+                return enemy;
+            }
+            
+            return null;
         }
         
         /// <summary>
@@ -107,7 +130,17 @@ namespace Kuantech.Core.Combat
         public Actor GetAllyTarget()
         {
             if (DetectedAllies.IsNullOrEmpty()) return null;
-            return DetectedAllies[0];
+            foreach (var ally in DetectedAllies)
+            {
+                if (!ally.IsAlive())
+                {
+                    Debug.LogError("Dead ally in detected allies list");
+                    continue;
+                }
+
+                return ally;
+            }
+            return null;
         }
         
         private void Update()

@@ -27,7 +27,7 @@ namespace Kuantech.TowerDefense
                 _unitsManager.SpawnActor(actorTemplate);
             if (createdActor == null) return null;
             createdActor.Spawn();
-            createdActor.FactionId = ActorFactionId;
+            createdActor.SetFactionId(ActorFactionId);
 
 
             createdActor.transform.position = GetSpawnPoint(order).position;
@@ -38,7 +38,7 @@ namespace Kuantech.TowerDefense
             return createdActor;
         }
 
-        private Transform GetSpawnPoint(int order)
+        protected virtual Transform GetSpawnPoint(int order)
         {
             if (SpawnPoints.IsNullOrEmpty()) return transform;
             return SpawnPoints[order % SpawnPoints.Count];

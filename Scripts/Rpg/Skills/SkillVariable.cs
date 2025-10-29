@@ -3,7 +3,7 @@
 namespace Kuantech.Rpg.Skills
 {
     [Serializable]
-    public struct SkillVariableData
+    public class SkillVariableData
     {
         public string VariableId;
         public string VariableName;

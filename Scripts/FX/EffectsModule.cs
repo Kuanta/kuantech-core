@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using Kuantech.Core.Combat;
 using Kuantech.Utils;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace Kuantech.Core.FX
 {
@@ -11,8 +12,28 @@ namespace Kuantech.Core.FX
     /// </summary>
     public class EffectsModule : ActorModule
     {
+        #region Shader Defaults
+        [Serializable]
+        public struct Param
+        {
+            public enum ParamType { Float, Int, Color }
+            
+            public string Property;          // Shader property name (e.g., "_Cutoff", "_TintColor")
+            public ParamType Type;
+            public float FloatValue;         // Used when Type == Float
+            public int IntValue;             // Used when Type == Int
+            public Color ColorValue;         // Used when Type == Color
+        }
+
+        [Header("Defaults")]
+        [Tooltip("Property → default value pairs to apply when resetting.")]
+        public List<Param> Defaults = new List<Param>();
+
+        #endregion
+
         [Header("Pre-defined Effects")]
         public Effect DamageReceiveEffect;
+        public Effect HealEffect;
         public Effect JumpEffect;
         public Effect DodgeEffect;
         public Effect DeathEffect;
@@ -31,8 +52,9 @@ namespace Kuantech.Core.FX
         public List<ShaderEffect> ExistingShaderEffects;
         public HashSet<ShaderEffect> ShaderEffects = new HashSet<ShaderEffect>();
         private Dictionary<string, ShaderEffect> _shaderEffectsById = new Dictionary<string, ShaderEffect>();
-        [NonSerialized] public HashSet<Effect> ActiveEffects = new HashSet<Effect>();
+        public List<Effect> ActiveEffects = new List<Effect>();
 
+        private HealthcareModule _healthcareModule;
         private CombatModule _combatModule;
 
         public override void Initialize()
@@ -60,20 +82,28 @@ namespace Kuantech.Core.FX
             //Set shader effects
             foreach (var shaderEffect in ExistingShaderEffects)
             {
+                if(shaderEffect == null) continue;
                 AddShaderEffect(shaderEffect);
             }
             
             _combatModule = Actor.GetModule<CombatModule>();
+            _healthcareModule = Actor.GetModule<HealthcareModule>();
             if(_combatModule != null)
             {
                 _combatModule.AttackStartedEvent += AttackStartedEvent;
                 _combatModule.AttackCompletedEvent += AttackEndedEvent;
+            }
+
+            if (_healthcareModule != null)
+            {
+                _healthcareModule.OnHealReceived += OnHealReceived;
             }
         }
 
         private void SetEffectPlayers()
         {
             _effectPlayerComponentsByTag = new Dictionary<int, EffectPlayerComponent>();
+            ExistingEffectPlayerComponents = Actor.transform.GetComponentsInChildren<EffectPlayerComponent>().ToList();
             foreach (var effectPlayerComponent in ExistingEffectPlayerComponents)
             {
                 _effectPlayerComponentsByTag[effectPlayerComponent.EffectPlayer.EffectTag] = effectPlayerComponent;
@@ -107,15 +137,26 @@ namespace Kuantech.Core.FX
 
         private void AttackEndedEvent(CombatModule cm)
         {
-            if(_attackEffect != null)
+            if(_attackEffect != null && _attackEffect.Duration < 0) //If attack vfx is looping, we stop it
             {
                 _attackEffect.Stop();
-                _attackEffect = null;
-            }   
+            }
+            _attackEffect = null;
         }
         #endregion
+        
+        public override void OnActorStateChanged(ActorState oldState, ActorState newState)
+        {
+            base.OnActorStateChanged(oldState, newState);
+            if (newState == ActorState.Dead)
+            {
+                OnDeath();
+            }
+        }
+        
         public void OnActorVisualSet(ActorVisual actorVisual)
         {
+            SetEffectPlayers();
             UpdateShaderEffectRenderers(actorVisual.gameObject);
             ActorVisualEffectsModule actorVisualEffectsModule = actorVisual.GetModule<ActorVisualEffectsModule>();
             if (actorVisualEffectsModule == null) return;
@@ -123,17 +164,35 @@ namespace Kuantech.Core.FX
             {
                 _effectPlayerComponentsByTag[effectComp.EffectPlayer.EffectTag] = effectComp;
             }
+            ApplyDefaults(actorVisual);
         }
 
-        
+
+        private EffectPlaySettings GetEffectPlaySettings()
+        {
+            EffectPlaySettings settings = EffectPlaySettings.GetDefaultSettings();
+            if (Actor.VisualHandler != null && Actor.VisualHandler.GetActorVisual() != null)
+            {
+                settings.EffectParent = Actor.VisualHandler.GetActorVisual().transform;
+            }
+
+            return settings;
+        }
         private void OnReceiveDamage(HitInfo hitInfo)
         {
             if (DamageReceiveEffect != null)
             {
-                DamageReceiveEffect.Play();
+                DamageReceiveEffect.Play(GetEffectPlaySettings());
             }
         }
 
+        private void OnHealReceived(float heal)
+        {
+            if (HealEffect != null)
+            {
+                HealEffect.Play(GetEffectPlaySettings());
+            }
+        }
         private void OnDodge(object sender, EventArgs args)
         {
             if (DodgeEffect != null)
@@ -149,7 +208,7 @@ namespace Kuantech.Core.FX
             }
         }
         
-        private void OnDeath(object sender, EventArgs empty)
+        private void OnDeath()
         {
             if (DeathEffect != null)
             {
@@ -163,8 +222,20 @@ namespace Kuantech.Core.FX
             if(DeathEffect != null) DeathEffect.Stop();
             if(DamageReceiveEffect != null) DamageReceiveEffect.Stop();
             
+            //Clear active effects
+            ClearActiveEffects();
+            
+            //Clear Shader parameters
+            
+            
         }
-        
+
+        public override void Cleanup()
+        {
+            base.Cleanup();
+            ClearActiveEffects();
+        }
+
         #region Fx Players
         public Effect GetExistingEffect(string effectId)
         {
@@ -184,9 +255,9 @@ namespace Kuantech.Core.FX
             return null;
         }
 
-        public void PlayEffectByTag(int tag)
+        public void PlayEffectByTag(int tag, EffectPlaySettings settings)
         {
-            GetEffectPlayerByTag(tag)?.PlayEffect(Actor);
+            GetEffectPlayerByTag(tag)?.PlayEffect(settings);
         }
         #endregion
 
@@ -287,7 +358,8 @@ namespace Kuantech.Core.FX
         /// <param name="effect"></param>
         public void AddActiveEffect(Effect effect)
         {
-            if (ActiveEffects == null) ActiveEffects = new HashSet<Effect>();
+            if (ActiveEffects == null) ActiveEffects = new List<Effect>();
+            effect.OwnerEffectModule = this;
             ActiveEffects.Add(effect);
         }
         
@@ -297,19 +369,75 @@ namespace Kuantech.Core.FX
         /// <param name="effect"></param>
         public void StopActiveEffect(Effect effect)
         {
-            if (ActiveEffects.IsNullOrEmpty() || !ActiveEffects.Contains(effect)) return;
-            ActiveEffects.Remove(effect);
+            RemoveActiveEffect(effect);
+
             effect.Stop();
         }
 
-        public void StopActiveEffects()
+        public void ClearActiveEffects()
         {
             foreach (var activeFx in ActiveEffects)
             {
-                activeFx.Stop();
+                activeFx.Cleanup();
             }
             ActiveEffects.Clear();
         }
+
+        public void RemoveActiveEffect(Effect effect)
+        {
+            if (!ActiveEffects.IsNullOrEmpty() && ActiveEffects.Contains(effect) && effect.OwnerEffectModule == this)
+            {
+                effect.Stop();
+                ActiveEffects.Remove(effect);
+                effect.OwnerEffectModule = null;
+            }
+        }
         #endregion
+        
+        /// <summary>
+        /// Applies default values to all configured properties.
+        /// </summary>
+        public void ApplyDefaults(ActorVisual visual)
+        {
+            var renderers = visual != null ? visual.GetComponentsInChildren<Renderer>() : GetComponentsInChildren<Renderer>();
+            
+
+            if (Defaults == null || Defaults.Count == 0 || renderers.IsNullOrEmpty())
+                return;
+            foreach (var renderer in renderers)
+            {
+                // Directly modify materials (this can instantiate them if you access .materials)
+                for(int i=0;i<renderer.materials.Length;++i)
+                {
+                    ApplyParamsToMaterial(renderer.materials[i]);
+                }
+
+            }
+        }
+        
+        private void ApplyParamsToMaterial(Material mat)
+        {
+            if (mat == null) return;
+
+            foreach (var p in Defaults)
+            {
+                if (string.IsNullOrEmpty(p.Property)) continue;
+                if (!mat.HasProperty(p.Property)) continue;
+                switch (p.Type)
+                {
+                        
+                    case Param.ParamType.Float:
+                        mat.SetFloat(p.Property, p.FloatValue);
+                        break;
+                    case Param.ParamType.Int:
+                        // Material.SetInt exists widely; fallback to SetFloat if needed
+                        mat.SetInt(p.Property, p.IntValue);
+                        break;
+                    case Param.ParamType.Color:
+                        mat.SetColor(p.Property, p.ColorValue);
+                        break;
+                }
+            }
+        }
     }
 }

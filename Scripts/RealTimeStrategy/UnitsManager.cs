@@ -21,20 +21,21 @@ namespace Kuantech.RealTimeStrategy
     {
         [Header("Unit Counts")] 
         public List<MaxUnitPerFactionEntry> MaxUnitsPerFaction;
-        public int MaxUnitCount = 50;
-
         private Dictionary<int, HashSet<Actor>> _actorsByFaction;
         private Dictionary<int, int> _maxUnitsPerFaction;
+        private Dictionary<int, float> _maxUnitsFactorPerFaction;
         public HashSet<Actor> SpawnedActors = new HashSet<Actor>();
+        public HashSet<Actor> DeadActors = new HashSet<Actor>();
         
 
         //todo(rts): Factions management here. Something like factions lookup table
 
-        public UnityAction OnActorRemoved;
+        public UnityAction<Actor> OnActorRemoved;
         
         public override void Initialize()
         {
             _actorsByFaction = new Dictionary<int, HashSet<Actor>>();
+            _maxUnitsFactorPerFaction = new Dictionary<int, float>();
             if (!MaxUnitsPerFaction.IsNullOrEmpty())
             {
                 foreach (var entry in MaxUnitsPerFaction)
@@ -53,25 +54,34 @@ namespace Kuantech.RealTimeStrategy
         {
             if (!CanSpawnActor(actorBlueprint)) return null;
             Actor spawned = actorBlueprint.CreateActor();
-            SpawnedActors.Add(spawned);
             if (spawned == null) return null;
+            RegisterActor(spawned, true);
             return spawned;
         }
-
 
         public int GetSpawnedActorCount()
         {
             return SpawnedActors.Count;
         }
 
-        
-        public void RegisterActor(Actor actor)
+        /// <summary>
+        /// Registers an actor.
+        /// </summary>
+        /// <param name="actor"></param>
+        /// <param name="spawned">For actors spawned during the game. Actors like towers, hearts should be marked as false</param>
+        public void RegisterActor(Actor actor, bool spawned)
         {
             if (actor == null) return;
             if (AddActor(actor))
             {
                 actor.OnDeathEvent -= OnActorDeath;
                 actor.OnDeathEvent += OnActorDeath;
+                actor.OnDespawnedEvent -= OnActorDespawn;
+                actor.OnDespawnedEvent += OnActorDespawn;
+                if (spawned)
+                {
+                    SpawnedActors.Add(actor);
+                }
             }
         }
         
@@ -81,7 +91,7 @@ namespace Kuantech.RealTimeStrategy
         /// <param name="actor"></param>
         private bool AddActor(Actor actor)
         {
-            int factionId = actor.FactionId;
+            int factionId = actor.GetFactionId();
             if(_actorsByFaction == null)
                 _actorsByFaction = new Dictionary<int, HashSet<Actor>>();
             if (!_actorsByFaction.ContainsKey(factionId))
@@ -105,22 +115,28 @@ namespace Kuantech.RealTimeStrategy
         /// <param name="actor"></param>
         public void RemoveActor(Actor actor)
         {
-            int factionId = actor.FactionId;
+            int factionId = actor.GetFactionId();
             if (_actorsByFaction == null || !_actorsByFaction.ContainsKey(factionId))
                 return;
             if(SpawnedActors != null && SpawnedActors.Contains(actor))
                 SpawnedActors.Remove(actor);
             UnregisterActor(actor);
-            OnActorRemoved?.Invoke();
+            OnActorRemoved?.Invoke(actor);
         }
-
+        
+        
         private void UnregisterActor(Actor actor)
         {
-            int factionId = actor.FactionId;
+            int factionId = actor.GetFactionId();
             if (_actorsByFaction.ContainsKey(factionId) && _actorsByFaction[factionId].Contains(actor))
             {
                 _actorsByFaction[factionId].Remove(actor);
             }
+        }
+
+        public HashSet<Actor> GetAllActors()
+        {
+            return SpawnedActors;
         }
         
         /// <summary>
@@ -136,23 +152,41 @@ namespace Kuantech.RealTimeStrategy
         }
         
         /// <summary>
-        /// Gets all enemy actors
+        /// Returns actors by faction Ids
         /// </summary>
-        /// <param name="factionId"></param>
+        /// <param name="factionIds"></param>
         /// <returns></returns>
-        public HashSet<Actor> GetEnemyActors(int factionId)
+        public HashSet<Actor> GetActorsByFactions(List<int> factionIds)
         {
-            //For now, get all actors that are not in the faction
-            HashSet<Actor> enemyActors = new HashSet<Actor>();
-            foreach (var kvp in _actorsByFaction)
+            HashSet<Actor> actors = new HashSet<Actor>();
+            foreach (var factionId in factionIds)
             {
-                if (kvp.Key != factionId)
-                {
-                    enemyActors.UnionWith(kvp.Value);
-                }
+                if (_actorsByFaction == null || !_actorsByFaction.ContainsKey(factionId))
+                    continue;
+                actors.UnionWith(_actorsByFaction[factionId]);
             }
-            return enemyActors;
+
+            return actors;
         }
+        
+        // /// <summary>
+        // /// Gets all enemy actors
+        // /// </summary>
+        // /// <param name="factionId"></param>
+        // /// <returns></returns>
+        // public HashSet<Actor> GetEnemyActors(HashSet<int> enemyFactionIds)
+        // {
+        //     //For now, get all actors that are not in the faction
+        //     HashSet<Actor> enemyActors = new HashSet<Actor>();
+        //     foreach (var kvp in _actorsByFaction)
+        //     {
+        //         if (kvp.Key != factionId)
+        //         {
+        //             enemyActors.UnionWith(kvp.Value);
+        //         }
+        //     }
+        //     return enemyActors;
+        // }
         
         /// <summary>
         /// Clears all spawned actors. Spawned ac
@@ -164,43 +198,67 @@ namespace Kuantech.RealTimeStrategy
             {
                 if (actor != null)
                 {
-                    //Play a vfx here?
                     actor.Despawn(0.0f);
                     UnregisterActor(actor);
                 }
             }
             SpawnedActors.Clear();
+            
+            //To clear all dead actors that are not despawned yet
+            foreach (var actor in DeadActors)
+            {
+                if (actor != null)
+                {
+                    actor.Despawn(0.0f);
+                }
+            }
+            DeadActors.Clear();
+        }
+
+        public void ClearSpawnedActorsByFaction(int faction)
+        {
+            HashSet<Actor> originalActorsSet = GetActorsByFaction(faction);
+            if (originalActorsSet.IsNullOrEmpty()) return;
+            HashSet<Actor> actors = new HashSet<Actor>(originalActorsSet);
+            if(actors.IsNullOrEmpty()) return; 
+            foreach (var actor in actors)
+            {
+                actor.Despawn();
+                UnregisterActor(actor);
+            }
         }
         
         #region Pop limit
         
         public bool CanSpawnActor(ActorBlueprint actorBlueprint)
         {
-            if (GetSpawnedActorCount() >= MaxUnitCount && MaxUnitCount >= 0) return false;
-            int actorPerFaction = GetSpawnedActorIdByFaction(actorBlueprint.FactionId);
+            if (actorBlueprint == null) return false;
+            int maxUnitCount = GetMaxActorCountByFaction(actorBlueprint.FactionId);
+            if (GetSpawnedActorCountByFaction(actorBlueprint.FactionId) >= maxUnitCount && maxUnitCount >= 0) return false;
+            int actorPerFaction = GetSpawnedActorCountByFaction(actorBlueprint.FactionId);
             int maxActorPerFaction = GetMaxActorCountByFaction(actorBlueprint.FactionId);
             if (maxActorPerFaction >= 0 && actorPerFaction >= maxActorPerFaction)
             {
                 return false;
             }
-
             return true;
         }
-        
+
         public int GetMaxActorCountByFaction(int faction)
         {
-            if (_maxUnitsPerFaction.ContainsKey(faction))
+            if (!_maxUnitsPerFaction.IsNullOrEmpty() && _maxUnitsPerFaction.ContainsKey(faction))
             {
-                return _maxUnitsPerFaction[faction];
+                float factor = GetMaxUnitFactorPerFaction(faction);
+                return Mathf.FloorToInt(_maxUnitsPerFaction[faction] * factor);
             }
 
-            return -1;
+            return -1; //Limitless
         }
         
-        public int GetSpawnedActorIdByFaction(int faction)
+        public int GetSpawnedActorCountByFaction(int faction)
         {
             if (_actorsByFaction == null || !_actorsByFaction.ContainsKey(faction))
-                return -1; //Limitless
+                return 0;
             return _actorsByFaction[faction].Count;    
         }
         
@@ -210,6 +268,21 @@ namespace Kuantech.RealTimeStrategy
             _maxUnitsPerFaction[faction] = actorCount;
         }
 
+        public void SetMaxUnitFactorPerFaction(int faction, float factor)
+        {
+            if (_maxUnitsFactorPerFaction == null) _maxUnitsFactorPerFaction = new Dictionary<int, float>();
+            _maxUnitsFactorPerFaction[faction] = factor;
+        }
+
+        public float GetMaxUnitFactorPerFaction(int faction)
+        {
+            if (_maxUnitsFactorPerFaction.ContainsKey(faction))
+            {
+                return _maxUnitsFactorPerFaction[faction];
+            }
+
+            return 1;
+        }
         #endregion
 
         #region Event Handlers
@@ -229,8 +302,17 @@ namespace Kuantech.RealTimeStrategy
         {
             if (actor == null) return;
             RemoveActor(actor);
+            DeadActors.Add(actor);
         }
 
+        public void OnActorDespawn(Actor actor)
+        {
+            if (actor == null) return;
+            if (DeadActors != null && DeadActors.Contains(actor))
+            {
+                DeadActors.Remove(actor);
+            }
+        }
         public override void OnLevelStateChange(LevelStateChangeData levelStateChangeData)
         {
             base.OnLevelStateChange(levelStateChangeData);
