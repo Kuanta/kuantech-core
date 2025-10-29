@@ -37,17 +37,22 @@ namespace Kuantech.Core.Data
                 try
                 {
                     using UnityWebRequest request = UnityWebRequest.Get(RemoteUrl);
+                    request.SetRequestHeader("Accept", "application/json");
                     await request.SendWebRequest();
 
                     if (request.result == UnityWebRequest.Result.Success)
                     {
                         json = request.downloadHandler.text;
                     }
-              
+
+                    json = SanitizeJson(json);
+                    _data = JsonUtility.FromJson(json, SerializeType);
+                    return;
                 }
                 catch (Exception e)
                 {
                     Debug.LogWarning($"JsonData: Remote load error: {e.Message}");
+                    json = null;
                 }
             }
 
@@ -61,12 +66,36 @@ namespace Kuantech.Core.Data
                 }
 
                 json = await UniTask.Run(() => BetterStreamingAssets.ReadAllText(FilePath));
+                _data = JsonUtility.FromJson(json, SerializeType);
                 Debug.Log("JsonData: Loaded from local.");
             }
 
-            _data = JsonUtility.FromJson(json, SerializeType);
         }
-        
+        static string SanitizeJson(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return s;
+
+            // 1) UTF-8 BOM (Zero-Width No-Break Space)
+            s = s.TrimStart('\ufeff');
+
+            // 2) Google XSSI guard ("])}'" ile başlıyorsa ilk satırı at)
+            if (s.StartsWith(")]}'"))
+            {
+                int nl = s.IndexOf('\n');
+                s = nl >= 0 ? s[(nl + 1)..] : string.Empty;
+            }
+
+            // 3) Güvenlik: ilk { veya [’ten önceki çöpü at
+            int i = 0;
+            while (i < s.Length && char.IsWhiteSpace(s[i])) i++;
+            if (i < s.Length && s[i] != '{' && s[i] != '[')
+            {
+                int j = s.IndexOfAny(new[] { '{', '[' }, i);
+                if (j > i) s = s[j..];
+            }
+
+            return s;
+        }
         public string GetFullFilePath()
         {
             return FilePath;

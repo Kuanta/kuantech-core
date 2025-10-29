@@ -23,7 +23,6 @@ namespace Kuantech.Core.Database
                 int rowCount = MaxRow;
                 int colCount = table.Schema.Count;
                 string sheetRange = GetSheetRange(tableName, rowCount+1, colCount+1); //+1 to include header row, +1 to include column id
-                
                 //Read sheet
                 var task = ReadAndApply(table, sheetRange);
                 tasks.Add(task);
