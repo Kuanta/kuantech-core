@@ -6,6 +6,7 @@ using Kuantech.Core.Utils;
 using Kuantech.Rpg;
 using Kuantech.Rpg.Skills;
 using Kuantech.Utils;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -160,8 +161,6 @@ namespace Kuantech.Core
         private int _currentComboIndex;
 
         private ActionCastData _currentCastData;
-        
-        public HashSet<int> FactionFilter = new HashSet<int>(); //Faction filter for the attack, if empty, all actors are valid targets
         
         #region Lifecycle
         public override void OnModulesInitialized()
@@ -353,7 +352,7 @@ namespace Kuantech.Core
             Vector3 forward = GetAttackDirection().normalized;
             float range = currPattern.Range;
             float angle = currPattern.Angle;
-            List<Actor> actors = CombatUtilities.GetActorsInArc3D(attackPoint, forward, range, angle, Targets, FactionFilter);
+            List<Actor> actors = CombatUtilities.GetActorsInArc3D(attackPoint, forward, range, angle, Targets, GetEnemyFactions());
 
             foreach (var actor in actors)
             {
@@ -368,7 +367,7 @@ namespace Kuantech.Core
             Vector3 forward = GetAttackDirection().normalized;
             float range = currPattern.Range;
             float angle = currPattern.Angle;
-            List<Actor> actors = CombatUtilities.GetActorsInArc2D(attackPoint, forward, range, angle, Targets, FactionFilter);
+            List<Actor> actors = CombatUtilities.GetActorsInArc2D(attackPoint, forward, range, angle, Targets, GetEnemyFactions());
 
             foreach (var actor in actors)
             {
@@ -399,7 +398,7 @@ namespace Kuantech.Core
             Vector3 direction = GetAttackDirection();
             AttackPattern attackPattern = GetCurrentAttackPattern();
             
-            List<Actor> actors = CombatUtilities.GetActorsInRaycast2D(startPoint, direction, attackPattern.Range, Targets, FactionFilter);
+            List<Actor> actors = CombatUtilities.GetActorsInRaycast2D(startPoint, direction, attackPattern.Range, Targets, GetEnemyFactions());
             foreach (var actor in actors)
             {
                 DamageActor(actor);
@@ -694,6 +693,11 @@ namespace Kuantech.Core
         #endregion
         
         #region Queries
+
+        public HashSet<int> GetEnemyFactions()
+        {
+            return Actor.FactionHandler.GetEnemyFactions().ToHashSet();
+        }
         
         /// <summary>
         /// Checks if attack pattern is melee

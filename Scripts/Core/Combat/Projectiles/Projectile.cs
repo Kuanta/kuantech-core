@@ -425,7 +425,11 @@ namespace Kuantech.Core
             if (CastBy != null && triggeredObject == CastBy.gameObject) return;
 
             Actor targetActor = triggeredObject.GetComponent<Actor>();
-            if (targetActor != null && (!targetActor.IsAlive())) return;
+            if (targetActor != null && (!targetActor.IsAlive()))
+            {
+                CheckDespawn();
+                return;
+            }
 
             if (CastBy != null && CastBy.IsAlly(targetActor))
             {
