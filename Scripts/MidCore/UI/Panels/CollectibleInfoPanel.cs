@@ -4,7 +4,6 @@ using Kuantech.Core;
 using Kuantech.Core.UI;
 using Kuantech.LegendsGuild;
 using Kuantech.Rpg;
-using Kuantech.Rpg.UI;
 using Kuantech.Utils;
 using TMPro;
 using UnityEngine;
@@ -66,7 +65,8 @@ namespace Kuantech.Midcore.UI
                 }
             }
             ActorBlueprint actorBlueprint = collectableAsset.ActorBlueprint;
-            int collectableLevel = ProgressionManager.GetCurrentRank(collectableAsset);
+            
+            int collectableLevel = collectableAsset.GetCollectableRank();
 
             if (actorBlueprint != null)
             {

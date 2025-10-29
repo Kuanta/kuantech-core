@@ -57,6 +57,7 @@ namespace Kuantech.Core
             if (montage.FadeTime <= 0f)
             {
                 Animator.Play(hash, layer, t0);
+                return;
             }
             else
             {
