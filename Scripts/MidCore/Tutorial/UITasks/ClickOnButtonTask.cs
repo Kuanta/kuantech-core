@@ -11,7 +11,8 @@ namespace Kuantech.Midcore.Tutorial
         [SerializeField] protected KtButton ButtonToClick;
         [SerializeField] protected ButtonFocusToggler FocusToggler;
         [SerializeField] protected int SortingOrder = 1000;
-
+        
+        [SerializeField] protected bool HideTintOnComplete = true;
         public override void StartTask()
         {
             base.StartTask();
@@ -35,7 +36,7 @@ namespace Kuantech.Midcore.Tutorial
         {
             base.EndTask();
             if(FocusToggler != null) FocusToggler.ToggleFocus(false);
-            if(TintObject != null) TintObject.SetActive(false);
+            if(TintObject != null && HideTintOnComplete) TintObject.SetActive(false);
         }
 
         private void OnButtonClicked(KtButton button)

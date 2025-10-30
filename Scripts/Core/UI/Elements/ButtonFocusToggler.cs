@@ -28,7 +28,6 @@ namespace Kuantech.Core.UI
 
             if (!gameObject.activeInHierarchy)
             {
-                // Şimdi değil; enable olunca uygulanacak
                 return;
             }
 
@@ -49,10 +48,10 @@ namespace Kuantech.Core.UI
 
         void ApplyFocus(bool toggle)
         {
+            if (ClickMeIndicator) ClickMeIndicator.SetActive(toggle);
             if (!Canvas) return;
             Canvas.overrideSorting = toggle;
             Canvas.sortingOrder    = toggle ? 1000 : 0;
-            if (ClickMeIndicator) ClickMeIndicator.SetActive(toggle);
         }
     }
 }

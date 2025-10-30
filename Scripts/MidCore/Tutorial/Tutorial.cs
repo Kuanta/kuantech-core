@@ -10,7 +10,7 @@ namespace Kuantech.Midcore.Tutorial
     {
         public string TutorialId;
         [NonSerialized] public List<GameTask> TutorialTasks;
-
+        
         public void SetTasks(GameTaskManager taskManager)
         {
             TutorialTasks = GetComponentsInChildren<GameTask>().ToList();
