@@ -1,7 +1,6 @@
 ﻿using System;
 using Kuantech.Core.Camera;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 namespace Kuantech.Core.Controller
 {
@@ -65,11 +64,6 @@ namespace Kuantech.Core.Controller
         #endregion
 
         #region Inputs
-
-        public void SetInputAction(InputActionAsset action)
-        {
-            
-        }
 
         public void AddYaw(float yaw)
         {

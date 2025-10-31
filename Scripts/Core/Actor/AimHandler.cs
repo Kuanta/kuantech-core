@@ -4,12 +4,13 @@ namespace Kuantech.Core
 {
     public class AimHandler : ActorModule
     {
+        [SerializeField] private bool PrioritizeMovementForTargetVector;
         [SerializeField] private float rotateSpeedDegPerSec = 720f;
         public override void ModuleUpdate()
         {
             base.ModuleUpdate();
             if (!Actor.IsAlive()) return;
-            Vector3 aimVector = Actor.MotionVectorsHandler.GetTargetVector();
+            Vector3 aimVector = Actor.MotionVectorsHandler.GetTargetVector(PrioritizeMovementForTargetVector);
             Transform t = Actor.transform;
             if (aimVector.sqrMagnitude < 1e-8f)
                 return;

@@ -159,6 +159,8 @@ namespace Kuantech.Core
             {
                 module.Reset();
             }
+
+            MotionVectorsHandler.Reset();
         }
 
         public virtual void Cleanup()
@@ -397,7 +399,6 @@ namespace Kuantech.Core
 
         public virtual WorldPoint GetHitPoint(Actor attackingActor)
         {
-            
             WorldPoint hitPoint = new WorldPoint()
             {
                 Target =  GetActorAnchor(),
@@ -405,8 +406,10 @@ namespace Kuantech.Core
             };
             ActorSlotsHandler actorSlotsHandler = GetModule<ActorSlotsHandler>();
             if (actorSlotsHandler == null) return hitPoint;
+            
             Transform hitPointSlot =  actorSlotsHandler.GetSlot("HitPoint");
-            if (hitPointSlot != null)
+            if (hitPointSlot != null) //Hit point is not null, return it instead
+
             {
                 hitPoint.Target = hitPointSlot;
                 hitPoint.Radius = ActorRadius;
