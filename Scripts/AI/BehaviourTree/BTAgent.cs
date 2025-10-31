@@ -86,14 +86,24 @@ namespace Kuantech.AI
             if (firstDelay > 0f) yield return new WaitForSeconds(firstDelay);
 
             Bt.OwnerAgent = this; 
-            
+            bool shouldExecuteImmediately = false;
+
             while (AgentRunning)
             {
                 if (!AgentPaused)
                 {
+                    shouldExecuteImmediately |= Bt.ShouldExecuteNodeImmediately();
                     Bt.Process();         
                 }
-                yield return _waitForSeconds; 
+
+                if (!shouldExecuteImmediately)
+                {
+                    yield return _waitForSeconds; 
+                }
+                else
+                {
+                    yield return null; //next frame
+                }
             }
         }
 

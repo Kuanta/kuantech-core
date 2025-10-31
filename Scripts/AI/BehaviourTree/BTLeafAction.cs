@@ -7,6 +7,8 @@ namespace Kuantech.AI
     {
         public virtual void EnterNode(BehaviourTree ownerTree){}
         public BTLeaf ParentNode;
+        public bool ExecuteNextImmediately = false;
+        
         public virtual BTNode.NodeStatus Tick(BehaviourTree ownerTree)
         {
             //Non overriden Ticks should return successs
