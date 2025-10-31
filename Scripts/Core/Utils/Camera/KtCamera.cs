@@ -1,7 +1,6 @@
 ﻿using DG.Tweening;
 using Kuantech.Utils;
 using UnityEngine;
-using UnityEngine.Events;
 
 namespace Kuantech.Core.Camera
 {

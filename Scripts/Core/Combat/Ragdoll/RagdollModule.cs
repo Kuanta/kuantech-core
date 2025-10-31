@@ -57,5 +57,11 @@ namespace Kuantech.Core
                 Ragdoll.TurnoffRagdollState(); //Turnoff ragdoll state without any animation
             }
         }
+
+        public override void Cleanup()
+        {
+            base.Cleanup();
+            Actor.SetActorAnchor(Actor.transform);
+        }
     }
 }
