@@ -25,6 +25,11 @@ namespace Kuantech.Core
             Ragdoll.EnableRagdoll();
             Actor.SetActorAnchor(Ragdoll.PelvisRigidbody.transform);
         }
+
+        public bool IsInRagdoll()
+        {
+            return Ragdoll.IsInRagdoll();
+        }
         
         public void StandUpFromRagdoll()
         {

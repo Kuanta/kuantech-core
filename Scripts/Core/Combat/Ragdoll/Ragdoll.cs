@@ -1,18 +1,41 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using Kuantech.Utils;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Kuantech.Core
 {
     public class Ragdoll : MonoBehaviour
     {
+        [Serializable]
+        public struct DefaultTransformState
+        {
+            public Transform Transform;
+            [FormerlySerializedAs("Position")] public Vector3 LocalPosition;
+            public Vector3 LocalEulerAngles;
+            public Vector3 LocalScale;
+
+            public void ApplyDefaults()
+            {
+                if (Transform == null) return;
+                Transform.localScale = LocalScale;
+                Transform.localPosition = LocalPosition;
+                Transform.localEulerAngles = LocalEulerAngles;
+            }
+        }
+        
         [Header("Refs")]
         public Animator Animator;
         public Rigidbody PelvisRigidbody;     // hips/pelvis RB
         public Transform ParentActor;         // logic root (Actor)
         public List<Rigidbody> Rigidbodies = new();
         public List<Collider>  RagdollColliders = new();
+        
+        [Tooltip("Because of the ragdoll, if hierarchy is very nested, some transforms may need to be reset manually.")]
+        public List<DefaultTransformState> TransformsToReset;
         
         [Header("Animation Settings")]
         [SerializeField] private string standingUpStateName = "GetUp";
@@ -36,6 +59,11 @@ namespace Kuantech.Core
         bool _ragdollEnabled;
         private static readonly int GetUp = Animator.StringToHash("GetUp");
 
+        public bool IsInRagdoll()
+        {
+            return _ragdollEnabled;
+        }
+        
         [Button("Enable Ragdoll")]
         public void EnableRagdoll()
         {
@@ -93,6 +121,15 @@ namespace Kuantech.Core
                 rb.interpolation = RagdollInterpolation;
             }
         }
+
+        public void ResetDefaultTransforms()
+        {
+            if (TransformsToReset.IsNullOrEmpty()) return;
+            foreach (var transformToReset in TransformsToReset)
+            {
+                transformToReset.ApplyDefaults();
+            }
+        }
         
         [Button("Disable Ragdoll")]
         public void TurnoffRagdollState()
@@ -113,6 +150,8 @@ namespace Kuantech.Core
                 Animator.Rebind();
                 Animator.enabled = true;
             }
+
+            ResetDefaultTransforms();
         }
         
         Vector3 ComputeSnappedPosition(Vector3 current, Vector3 pelvisWorld)
