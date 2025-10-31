@@ -11,7 +11,9 @@ namespace Kuantech.Core
         public Actor OccupyingActor;
         public Actor ParentActor;
         public TargetSlotAllocator OwnerTargetSlotAllocator;
-
+        
+        public GameObject DebugVisualizationObject;
+        
         public WorldPoint GetWorldPoint()
         {
             return new WorldPoint()
@@ -24,22 +26,25 @@ namespace Kuantech.Core
     
     public class TargetSlotAllocator
     {
-        private TargetSlot[] _slots;
+        public TargetSlot[] Slots;
         private Actor _parent;
         public Vector3 LocalForward;
         public Vector3 LocalUp;
         
+        public GameObject DebugVisualizationObjectPrefab;
+        private static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
+
         public TargetSlotAllocator(Actor parentActor, int slotCount, float radius, Vector3 localForward, Vector3 localUp)
         {
             _parent = parentActor;
-            _slots = new TargetSlot[slotCount];
+            Slots = new TargetSlot[slotCount];
             LocalUp = localUp;
             LocalForward = localForward;
             for (int i = 0; i < slotCount; i++)
             {
                 float angle = (360f / slotCount) * i;
                 Vector3 offset = Quaternion.AngleAxis(angle, localUp) * localForward * radius;
-                _slots[i] = new TargetSlot
+                Slots[i] = new TargetSlot
                 {
                     Index= i,
                     OffsetPosition = offset,
@@ -52,12 +57,12 @@ namespace Kuantech.Core
 
         public void SetRadius(float radius)
         {
-            if (_slots == null || _slots.Length == 0) return;
-            for (int i = 0; i < _slots.Length; i++)
+            if (Slots == null || Slots.Length == 0) return;
+            for (int i = 0; i < Slots.Length; i++)
             {
-                float angle = (360f / _slots.Length) * i;
+                float angle = (360f / Slots.Length) * i;
                 Vector3 offset = Quaternion.AngleAxis(angle, LocalUp) * LocalForward * radius;
-                _slots[i].OffsetPosition = offset;
+                Slots[i].OffsetPosition = offset;
             }
         }
         
@@ -70,15 +75,15 @@ namespace Kuantech.Core
         {
             float bestScore = float.MinValue;
             int bestSlotIndex = -1;
-            for(int i=0;i<_slots.Length; i++)
+            for(int i=0;i<Slots.Length; i++)
             {
-                if (IsSlotOccupied(_slots[i]))
+                if (IsSlotOccupied(Slots[i]))
                 {
                     //todo: Maybe check the targeted actor of occupying actor. If its null this slot is free
                     continue;
                 }
 
-                Vector3 slotPos = _slots[i].GetWorldPoint().GetTargetPosition();
+                Vector3 slotPos = Slots[i].GetWorldPoint().GetTargetPosition();
                 float score = 1/Vector3.Distance(attackingActor.transform.position, slotPos);
                 if (score > bestScore)
                 {
@@ -88,7 +93,7 @@ namespace Kuantech.Core
             }
 
             if (bestSlotIndex < 0) return null;
-            return _slots[bestSlotIndex];
+            return Slots[bestSlotIndex];
         }
 
         public bool IsSlotOccupied(TargetSlot slot)
@@ -107,12 +112,27 @@ namespace Kuantech.Core
         
         public void RegisterActorToSlot(Actor attackingActor, int slotIndex)
         {
-            _slots[slotIndex].OccupyingActor = attackingActor;
+            Slots[slotIndex].OccupyingActor = attackingActor;
         }
 
         public void RemoveActorFromSlot(int slotIndex)
         {
-            _slots[slotIndex].OccupyingActor = null;
+            Slots[slotIndex].OccupyingActor = null;
+        }
+
+        public void VisualizeSlots()
+        {
+            foreach (var slot in Slots)
+            {
+                if (slot.DebugVisualizationObject == null)
+                {
+                    if (DebugVisualizationObjectPrefab == null) return;
+                    slot.DebugVisualizationObject = GameObject.Instantiate(DebugVisualizationObjectPrefab);
+                }
+                slot.DebugVisualizationObject.transform.position = slot.GetWorldPoint().GetTargetPosition();
+                var renderer = slot.DebugVisualizationObject.GetComponentInChildren<MeshRenderer>();
+                renderer.material.SetColor(BaseColor, IsSlotOccupied(slot) ? Color.red : Color.green);
+            }
         }
     }
 }
