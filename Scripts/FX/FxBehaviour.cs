@@ -12,6 +12,7 @@ namespace Kuantech.Core.FX
         
         public void StartFxBehaviour(Effect parentFx)
         {
+            ParentFx = parentFx;
             _fxStartTime = Time.time;
             _behaviourStarted = false;
         }

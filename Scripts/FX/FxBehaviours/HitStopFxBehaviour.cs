@@ -1,15 +1,39 @@
-﻿namespace Kuantech.Core.FX
+﻿using System.Collections.Generic;
+using Kuantech.Utils;
+using UnityEngine;
+
+namespace Kuantech.Core.FX
 {
     public class HitStopFxBehaviour : FxBehaviour
     {
-        public float HitStopDuration = 0.1f;
-        public float HitStopTimeScale = 0.2f;
+        
+        [Header("Default HitStops")]
+        public CombatManager.HitStopEntry DefaultHitStop;
+        
 
+
+        [Header("HitStops By Combo")]
+        public List<CombatManager.HitStopEntry> HitStopsByCombo;
+        
         protected override void OnFxStarted(Effect parentFx)
         {
+            int comboIndex = parentFx.EffectPlaySettings.ComboIndex;
             CombatManager cm = CombatManager.GetContext<CombatManager>();
             if (cm == null) return;
-            cm.PushHitStop(HitStopTimeScale, HitStopDuration);
+            if (comboIndex < 0 || HitStopsByCombo.IsNullOrEmpty())
+            {
+                if (DefaultHitStop.Duration == 0) return;
+                cm.PushHitStop(DefaultHitStop.TimeScale, DefaultHitStop.Duration, DefaultHitStop.PushType, DefaultHitStop.Priority);
+            }
+            else
+            {
+                comboIndex %= HitStopsByCombo.Count;
+                Debug.Log("Playing hit stop with combo index: " + comboIndex);
+                CombatManager.HitStopEntry hitStop = HitStopsByCombo[comboIndex];
+                if(hitStop.Duration == 0) return;
+                cm.PushHitStop(hitStop.TimeScale, hitStop.Duration, hitStop.PushType, hitStop.Priority);
+            }
+         
         }
     }
 }

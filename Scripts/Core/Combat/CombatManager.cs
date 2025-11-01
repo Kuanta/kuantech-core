@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
@@ -11,12 +12,34 @@ namespace Kuantech.Core
         [SerializeField]
         private FloatingDamageText HealTextPrefab;
         
+        /// <summary>
+        /// Struct to be used by other classes
+        /// </summary>
+        [Serializable]
+        public struct HitStopEntry
+        {
+            public float Duration;
+            public float TimeScale;
+            public float Priority;
+            public CombatManager.HitStopPushType PushType;
+        }
+        
         //Hit stop
         private class HitStop
         {
             public float TargetScale;
             public float EndUnscaledTime;
+            public float Priority = 0;
         }
+
+        public enum HitStopPushType
+        {
+            Default,     // Add to queue
+            AddIfEmpty,  // If empty, add
+            Replace,      // Clear all, add this
+            ReplaceIfPrior
+        }
+        
         private readonly List<HitStop> _stops = new List<HitStop>();
 
         private float _baseFixedDeltaTime;
@@ -63,12 +86,7 @@ namespace Kuantech.Core
 
         private void UpdateHitStops()
         {
-            float now = Time.unscaledTime;
-            for (int i = _stops.Count - 1; i >= 0; i--)
-            {
-                if (now >= _stops[i].EndUnscaledTime)
-                    _stops.RemoveAt(i);
-            }
+            ClearExpiredStops();
             float newScale = 1f;
             for (int i = 0; i < _stops.Count; i++)
                 newScale = Mathf.Min(newScale, _stops[i].TargetScale);
@@ -77,6 +95,40 @@ namespace Kuantech.Core
                 ApplyTimeScale(newScale);
         }
         
+        private bool HasActiveHitStop()
+        {
+            float now = Time.unscaledTime;
+            for (int i = 0; i < _stops.Count; i++)
+                if (_stops[i].EndUnscaledTime > now)
+                    return true;
+            return false;
+        }
+
+        private float GetCurrentActivePriority()
+        {
+            float now = Time.unscaledTime;
+            float maxPrior = float.NegativeInfinity;
+            bool any = false;
+
+            for (int i = 0; i < _stops.Count; i++)
+            {
+                var s = _stops[i];
+                if (s.EndUnscaledTime > now)
+                {
+                    any = true;
+                    if (s.Priority > maxPrior) maxPrior = s.Priority;
+                }
+            }
+            return any ? maxPrior : float.NegativeInfinity;
+        }
+        
+        private void ClearExpiredStops()
+        {
+            float now = Time.unscaledTime;
+            for (int i = _stops.Count - 1; i >= 0; i--)
+                if (now >= _stops[i].EndUnscaledTime)
+                    _stops.RemoveAt(i);
+        }
         private void ClearHitStops()
         {
             ApplyTimeScale(1f);
@@ -89,16 +141,55 @@ namespace Kuantech.Core
             Time.timeScale = _appliedScale;
             Time.fixedDeltaTime = _baseFixedDeltaTime * Mathf.Max(_appliedScale, 0.0001f);
         }
+
+        public void PushHitStop(HitStopEntry entry)
+        {
+            PushHitStop(entry.TimeScale, entry.Duration, entry.PushType, entry.Priority);
+        }
         
-        /// <summary>
-        /// timeScale’i belirli süre (unscaled) için düşürür. 
-        /// Örn: scale=0 => tam “hit-stop”, scale=0.1 => ağır çekim.
-        /// </summary>
-        public void PushHitStop(float scale, float durationSeconds)
+        public void PushHitStop(float scale, float durationSeconds, HitStopPushType pushType = HitStopPushType.Default, float priority=0f)
         {
             scale = Mathf.Clamp(scale, 0f, 1f);
-            float end = Time.unscaledTime + Mathf.Max(0f, durationSeconds);
+            float now = Time.unscaledTime;
+            float end = now + Mathf.Max(0f, durationSeconds);
+
+            // Önce süresi bitenleri temizle
+            ClearExpiredStops();
+
+            switch (pushType)
+            {
+                case HitStopPushType.AddIfEmpty:
+                    if (_stops.Count > 0 || HasActiveHitStop())
+                        return; 
+                    break;
+
+                case HitStopPushType.Replace:
+                    _stops.Clear(); // Clear all
+                    break;
+
+                case HitStopPushType.ReplaceIfPrior:
+                {
+                    float currentPrior = GetCurrentActivePriority(); // -∞ ise aktif yok
+                    // Yalnızca "daha yüksek" öncelikte ise replace et (eşitse dokunma)
+                    if (priority > currentPrior)
+                    {
+                        _stops.Clear();
+                    }
+                    else
+                    {
+                        return; // daha öncelikli değil → ekleme
+                    }
+                    break;
+                }
+
+                case HitStopPushType.Default:
+                default:
+                    // Add to queue
+                    break;
+            }
+
             _stops.Add(new HitStop { TargetScale = scale, EndUnscaledTime = end });
+
             // Hemen uygula (bir sonraki Update’i beklemeyelim)
             float newScale = Mathf.Min(_appliedScale, scale);
             if (!Mathf.Approximately(newScale, _appliedScale))
