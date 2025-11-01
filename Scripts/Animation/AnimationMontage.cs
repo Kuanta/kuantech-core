@@ -16,8 +16,6 @@ namespace Kuantech.Core
     public class AnimationMontage : ScriptableObject
     {
         [Header("Animation Timing")] 
-        [Tooltip("Total duration of the montage")]
-        public float MontageDuration = 1.0f;
         
         [Header("Where (Layer)")]
         [Tooltip("Animator layer name (e.g., \"Attack\"). If set, overrides layerIndex.")]

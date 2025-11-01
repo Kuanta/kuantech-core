@@ -134,18 +134,6 @@ namespace Kuantech.Core
             animator.SetFloat(TargetTime, speedMultiplier);
             MontagePlayer.PlayMontage(animationMontage);
         }
-        
-        /// <summary>
-        /// Plays an animation montage
-        /// </summary>
-        /// <param name="animationMontage">Motnage to play</param>
-        /// <param name="montageDuration">Desired play duration</param>
-        private void PlayAnimationMontageByDuration(AnimationMontage animationMontage, float montageDuration)
-        {
-            float baseAnimationDuration = animationMontage.MontageDuration;
-            float multiplier = baseAnimationDuration / montageDuration;
-            PlayAnimationMontage(animationMontage, multiplier);
-        }
 
         public void PlayAnimationData(AnimationData animationData, float animationDuration)
         {
@@ -158,10 +146,8 @@ namespace Kuantech.Core
             //Play montage
             if (animationData.AttackMontage != null)
             {
-                PlayAnimationMontageByDuration(animationData.AttackMontage, animationDuration);
+                PlayAnimationMontage(animationData.AttackMontage);
             }
-            
-   
         }
         #endregion
   
