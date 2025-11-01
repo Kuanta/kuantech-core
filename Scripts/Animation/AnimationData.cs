@@ -8,7 +8,7 @@ namespace Kuantech.Core
     {
         [Header("Animation Timing")]
         public float AnimationTime;
-        public string AnimationTimeMultiplierParameterName;
+        public string AnimationTimeParameterName;
         
         [Header("Play By State")] 
         public string AnimationStateName;
@@ -40,7 +40,7 @@ namespace Kuantech.Core
             {
                 animator.SetFloat(FloatParameterName, FloatParameterValue);
             }
-
+            
             if (!string.IsNullOrEmpty(BoolParemeterName))
             {
                 animator.SetBool(BoolParemeterName, BoolParameterValue);
@@ -54,6 +54,11 @@ namespace Kuantech.Core
             if (!string.IsNullOrEmpty(IntegerParameterName))
             {
                 animator.SetInteger(IntegerParameterName, IntegerParameterValue);
+            }
+
+            if (!string.IsNullOrEmpty(AnimationTimeParameterName))
+            {
+                animator.SetFloat(AnimationTimeParameterName, AnimationTime);
             }
         }
     }

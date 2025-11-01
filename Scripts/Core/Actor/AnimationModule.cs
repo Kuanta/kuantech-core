@@ -46,7 +46,6 @@ namespace Kuantech.Core
         private static readonly int Land = Animator.StringToHash("Land");
         private static readonly int Cast = Animator.StringToHash("Cast");
         private static readonly int CastIndex = Animator.StringToHash("CastIndex");
-        private static readonly int AttackSpeedMultiplier = Animator.StringToHash("AttackSpeedMultiplier");
 
     
         public override void Initialize()
@@ -132,7 +131,7 @@ namespace Kuantech.Core
             Animator animator = GetAnimator();
             if (animator == null) return;
             if (MontagePlayer == null) return;
-            animator.SetFloat(AttackSpeedMultiplier, speedMultiplier);
+            animator.SetFloat(TargetTime, speedMultiplier);
             MontagePlayer.PlayMontage(animationMontage);
         }
         
@@ -148,13 +147,13 @@ namespace Kuantech.Core
             PlayAnimationMontage(animationMontage, multiplier);
         }
 
-        public void PlayAnimationData(AnimationData animationData, float animationDuration, float speedMultiplier)
+        public void PlayAnimationData(AnimationData animationData, float animationDuration)
         {
             Animator animator = GetAnimator();
             if (animator == null) return;
             //Set parameters
             animationData.SetParameters(animator);
-            animator.SetFloat(AttackSpeedMultiplier, speedMultiplier);
+            animator.SetFloat(TargetTime, animationDuration);
             
             //Play montage
             if (animationData.AttackMontage != null)

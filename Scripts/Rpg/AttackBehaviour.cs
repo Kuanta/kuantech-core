@@ -1,5 +1,4 @@
 ﻿using Kuantech.Core;
-using Kuantech.Rpg;
 using UnityEngine;
 
 public class AttackBehaviour : StateMachineBehaviour

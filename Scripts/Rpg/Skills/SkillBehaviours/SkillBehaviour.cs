@@ -115,7 +115,7 @@ namespace Kuantech.Rpg.Skills
             AnimationModule am = ParentSkill.ParentSpellBook.Actor.GetModule<AnimationModule>();
             if (am != null)
             {
-                am.PlayAnimationData(BehaviourData.BehaviourStartAnimationData, BehaviourData.CastAnimationDuration, 1f); //todo: 
+                am.PlayAnimationData(BehaviourData.BehaviourStartAnimationData, BehaviourData.CastAnimationDuration); //todo: 
             }
         }
 

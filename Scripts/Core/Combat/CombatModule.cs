@@ -780,7 +780,7 @@ namespace Kuantech.Core
             AttackPattern currPattern = GetCurrentAttackPattern();
             //Set timings
             _attackDuration = GetAttackDuration();
-            float timeMultiplier = GetAttackSpeedMultiplier();
+            float timeMultiplier = Mathf.Max(0.01f,GetAttackSpeedMultiplier());
             _effectPlayTime = GetAttackFxPlayTime();
             _attackImplementationTime = GetAttackImplementationTime();
             _maxContinuousAttackTime = GetContinuousAttackMaxTime();
@@ -791,7 +791,7 @@ namespace Kuantech.Core
             _effectPlayed = false;
             if(_animationModule != null)
             {
-                _animationModule.PlayAnimationData(currPattern.AttackAnimationData, _attackDuration, timeMultiplier);
+                _animationModule.PlayAnimationData(currPattern.AttackAnimationData, _attackDuration/timeMultiplier);
             }
   
             //todo(networking): Check server auth
