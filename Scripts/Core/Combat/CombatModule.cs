@@ -69,6 +69,7 @@ namespace Kuantech.Core
         public float EffectPlayTime;
         public float ContinuousAttackMaxTime;
         public bool ScaleAttackImplementationTimeWithAttackSpeed = true;
+        public float AnimationTime;
         public float AttackDuration;
         public bool Continious; //Continious will attack every 'attack time' during the attack
 
@@ -697,6 +698,16 @@ namespace Kuantech.Core
         
         #region Queries
 
+        public int GetCurrentComboIndex()
+        {
+            float timeSinceLastAttack = Time.time - _lastAttackCompleteTime;
+            if (timeSinceLastAttack >= ComboRefreshTime)
+            {
+                return 0;
+            }
+
+            return _currentComboIndex;
+        }
         public HashSet<int> GetEnemyFactions()
         {
             return Actor.FactionHandler.GetEnemyFactions().ToHashSet();
@@ -789,9 +800,12 @@ namespace Kuantech.Core
             _attacked = false;
             _attackStartTime = Time.time;
             _effectPlayed = false;
+
+            float animationTime = currPattern.AnimationTime;
+            animationTime = Mathf.Clamp(animationTime, 0, _attackDuration);
             if(_animationModule != null)
             {
-                _animationModule.PlayAnimationData(currPattern.AttackAnimationData, _attackDuration/timeMultiplier);
+                _animationModule.PlayAnimationData(currPattern.AttackAnimationData,  animationTime/timeMultiplier);
             }
   
             //todo(networking): Check server auth
@@ -845,6 +859,7 @@ namespace Kuantech.Core
             playSettings.SetPosition = GetCurrentAttackPattern().SetAttackFxPosition;
             playSettings.SetRotation = GetCurrentAttackPattern().SetAttackFxRotation;
             playSettings.Caster = Actor;
+            playSettings.ComboIndex = GetCurrentComboIndex();
             attackEffect.PlayEffect(playSettings);
         }
         
