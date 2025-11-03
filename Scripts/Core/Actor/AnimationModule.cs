@@ -130,12 +130,12 @@ namespace Kuantech.Core
             Animator.SetTrigger(hash);
         }
 
-        private void PlayAnimationMontage(AnimationMontage animationMontage, float speedMultiplier = 1.0f)
+        private void PlayAnimationMontage(AnimationMontage animationMontage, float targetTime = 1.0f)
         {
             Animator animator = GetAnimator();
             if (animator == null) return;
             if (MontagePlayer == null) return;
-            animator.SetFloat(TargetTime, speedMultiplier);
+            animator.SetFloat(TargetTime, targetTime);
             MontagePlayer.PlayMontage(animationMontage);
         }
 
@@ -155,7 +155,7 @@ namespace Kuantech.Core
             //Play montage
             if (animationData.AttackMontage != null)
             {
-                PlayAnimationMontage(animationData.AttackMontage);
+                PlayAnimationMontage(animationData.AttackMontage, animationDuration);
             }
         }
         #endregion
