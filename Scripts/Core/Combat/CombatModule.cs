@@ -150,6 +150,7 @@ namespace Kuantech.Core
         private AnimationModule _animationModule;
         private ActorSlotsHandler _slotsHandler;
         private HealthcareModule _healthcareModule;
+        private SpellBook _spellBook;
         
         //Runtime
         private float _attackStartTime;
@@ -173,6 +174,7 @@ namespace Kuantech.Core
             _surroundManager = Actor.GetModule<SurroundManager>();
             _slotsHandler = Actor.GetModule<ActorSlotsHandler>();
             _healthcareModule = Actor.GetModule<HealthcareModule>();
+            _spellBook = Actor.GetModule<SpellBook>();
         }
         
 
@@ -730,6 +732,7 @@ namespace Kuantech.Core
         /// <returns></returns>
         public bool CanAttack()
         {
+            if (_spellBook != null && _spellBook.IsCastingSkill()) return false;
             return CanUseAttack(GetCurrentAttackPattern());
         }
         
@@ -740,6 +743,7 @@ namespace Kuantech.Core
         /// <returns></returns>
         public bool CanUseAttack(AttackPattern attackPattern)
         {
+            if (_spellBook != null && _spellBook.IsCastingSkill()) return false;
             if (attackPattern.AttackType == AttackTypes.Target && GetCurrentTarget() == null) return false;
             if (!Actor.IsAlive() || AttackLock.IsLocked() || _isAttacking) return false;
             //Check resource

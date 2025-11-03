@@ -66,7 +66,12 @@ namespace Kuantech.Rpg.Skills
         #endregion
         
         #region Skill Management
-
+        
+        public bool IsCastingSkill()
+        {
+            return _activeSkills.Any(skill => skill.IsCasting());
+        }
+        
         public Skill[] GetSkills()
         {
             return _skills.Values.ToArray();
