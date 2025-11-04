@@ -1,5 +1,4 @@
 ﻿using Kuantech.Rpg.Inventory;
-using Unity.Entities;
 using UnityEngine;
 
 namespace Kuantech.Core
