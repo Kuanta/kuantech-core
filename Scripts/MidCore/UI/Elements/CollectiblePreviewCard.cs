@@ -1,7 +1,5 @@
 ﻿using System;
 using Kuantech.Core.UI;
-using Kuantech.LegendsGuild;
-using Kuantech.Rpg.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Serialization;
