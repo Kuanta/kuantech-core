@@ -114,6 +114,12 @@ namespace Kuantech.Rpg.Skills
 
             return true;
         }
+
+        public float GetLastCastTime()
+        {
+            return _lastCastTime;
+        }
+        
         #endregion
 
         #region Lifecycle
