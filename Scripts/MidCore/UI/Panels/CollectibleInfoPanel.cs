@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using Kuantech.Core;
 using Kuantech.Core.UI;
-using Kuantech.LegendsGuild;
 using Kuantech.Rpg;
 using Kuantech.Utils;
 using TMPro;
