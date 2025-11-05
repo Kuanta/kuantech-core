@@ -7,10 +7,21 @@ namespace Kuantech.Core.UI
     {
         public UnityAction<KtButton> OnPreButtonClicked; //Before calling actions
         public UnityAction<KtButton> OnPostButtonClicked; //After calling actions
-        
+
+        public UnityAction<KtButton> OnPositiveEffect;
+        public UnityAction<KtButton> OnNegativeEffect;
+
         public interface IUIButtonAction
         {
-            void OnClick();
+            public void OnClick();
+
+            public void PositiveEffect()
+            {
+            }
+
+            public void NegativeEffect()
+            {
+            }
         }
     
         private IUIButtonAction[] _actions;
@@ -30,6 +41,11 @@ namespace Kuantech.Core.UI
                 action.OnClick();
             }
             OnPostButtonClicked?.Invoke(this);
+        }
+
+        public void TriggerPositiveEffect()
+        {
+            
         }
     }
 }

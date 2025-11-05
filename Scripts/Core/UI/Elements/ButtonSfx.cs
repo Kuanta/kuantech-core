@@ -1,29 +1,46 @@
 ﻿using Kuantech.Core.FX;
 using Kuantech.Utils;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Kuantech.Core.UI
 {
     public class ButtonSfx : MonoBehaviour, KtButton.IUIButtonAction
     {
-        [SerializeField] private Sound Audio;
-        [KTTag("AudioTag")]
-        [SerializeField] private int AudioTag;
+        [SerializeField] private Sound DefaultAudio;
+        [SerializeField] private Sound PositiveSound;
+        [SerializeField] private Sound NegativeSound;
 
         private void ButtonPressHandler()
         {
-            if(Audio != null)
+            if(DefaultAudio != null)
             {
-                Audio.Play();
+                DefaultAudio.Play();
                 return;
             }
-            AudioLibrary audioLibrary = EffectsLibrary.GetAudioLibrary();
-            if(audioLibrary != null) audioLibrary.PlaySound(AudioTag);
         }
 
         public void OnClick()
         {
             ButtonPressHandler();
+        }
+        
+        public void PositiveEffect()
+        {
+            // Optional: Implement positive effect sound
+            if (PositiveSound != null)
+            {
+                PositiveSound.Play();
+            }
+        }
+        
+        public void NegativeEffect()
+        {
+            // Optional: Implement negative effect sound
+            if (NegativeSound != null)
+            {
+                NegativeSound.Play();
+            }
         }
     }
 }

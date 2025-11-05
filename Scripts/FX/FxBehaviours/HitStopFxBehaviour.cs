@@ -28,7 +28,6 @@ namespace Kuantech.Core.FX
             else
             {
                 comboIndex %= HitStopsByCombo.Count;
-                Debug.Log("Playing hit stop with combo index: " + comboIndex);
                 CombatManager.HitStopEntry hitStop = HitStopsByCombo[comboIndex];
                 if(hitStop.Duration == 0) return;
                 cm.PushHitStop(hitStop.TimeScale, hitStop.Duration, hitStop.PushType, hitStop.Priority);
