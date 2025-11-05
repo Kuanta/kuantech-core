@@ -27,7 +27,8 @@ namespace Kuantech.Midcore.UI
             ProgressableDataAsset = dataAsset;
             
             int currentRank = ProgressionManager.GetCurrentRank(dataAsset);
-            if (ProgressableDataAsset.BuyableInfo.PricesInfo.IsNullOrEmpty())
+            BuyableInfo buyableInfo = ProgressableDataAsset.GetBuyableInfo();
+            if (buyableInfo.PricesInfo.IsNullOrEmpty())
             {
                 if (CurrencyIcon != null) CurrencyIcon.gameObject.SetActive(false);
                 if (PriceText != null) PriceText.gameObject.SetActive(false);
@@ -35,8 +36,8 @@ namespace Kuantech.Midcore.UI
             }
             if (CurrencyIcon != null) CurrencyIcon.gameObject.SetActive(true);
             if (PriceText != null) PriceText.gameObject.SetActive(true);
-            CurrencyAsset currencyAsset = ProgressableDataAsset.BuyableInfo.PricesInfo[0].CurrencyAsset;
-            BuyableInfo buyableInfo = dataAsset.BuyableInfo;
+            CurrencyAsset currencyAsset = buyableInfo.PricesInfo[0].CurrencyAsset;
+           
             int price = buyableInfo.GetPrice(currencyAsset.GetId(), currentRank + 1, currentRank);
             if (CurrencyIcon != null)
             {

@@ -179,8 +179,9 @@ namespace Kuantech.Midcore
         {
            StoreManager sm = StoreManager.GetContext<StoreManager>();
            if (sm == null) return true; //No stroe manager
-           if (asset.BuyableInfo.Id.IsNullOrEmpty() && asset.BuyableInfo.PricesInfo.IsNullOrEmpty()) return true; //No buyable info
-           return sm.CanBeBought(asset.BuyableInfo, rank, startRank); //Rank is used to calculate the price
+           BuyableInfo buyableInfo = asset.GetBuyableInfo();
+           if (buyableInfo.Id.IsNullOrEmpty() && buyableInfo.PricesInfo.IsNullOrEmpty()) return true; //No buyable info
+           return sm.CanBeBought(buyableInfo, rank, startRank); //Rank is used to calculate the price
         }
         
         /// <summary>
@@ -277,7 +278,7 @@ namespace Kuantech.Midcore
         {
             StoreManager sm = StoreManager.GetContext<StoreManager>();
             if (sm == null) return;
-            sm.BuyItem(asset.BuyableInfo, rankToBuy, startRank);
+            sm.BuyItem(asset.GetBuyableInfo(), rankToBuy, startRank);
         }
         
         /// <summary>

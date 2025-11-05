@@ -16,7 +16,7 @@ namespace Kuantech.Midcore
         public List<ProgressableDataAsset> SubUpgrades;
         
         [Header("Store Entry")]
-        public BuyableInfo BuyableInfo;
+        [SerializeField] protected BuyableInfo BuyableInfo;
 
         [Header("Progressible Level")] 
         public LevelVariableData LevelVariableData;
@@ -31,6 +31,11 @@ namespace Kuantech.Midcore
         public virtual int GetMaxRank()
         {
             return MaxRank;
+        }
+
+        public virtual BuyableInfo GetBuyableInfo()
+        {
+            return BuyableInfo;
         }
     }
 }
