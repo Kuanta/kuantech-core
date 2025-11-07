@@ -33,11 +33,19 @@ namespace Kuantech.Core
             
         }
 
+        public virtual void ModuleFixedUpdate()
+        {
+            
+        }
         public virtual void ModuleUpdate()
         {
             
         }
 
+        public virtual void ModuleLateUpdate()
+        {
+            
+        }
         public virtual void OnActorStateChanged(ActorState oldState, ActorState newState)
         {
             

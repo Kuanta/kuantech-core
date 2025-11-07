@@ -16,12 +16,12 @@ namespace Kuantech.AI.ActionSequencer
         [SerializeField] private float MoveSpeed = 1;
 
         private Actor _actor;
-        private RigidbodyMovementModule _mm;
+        private MovementModule _mm;
         public override void Execute()
         {
             base.Execute();
             if(_actor == null) _actor = Parent.GetComponent<Actor>();
-            _mm = _actor.GetModule<RigidbodyMovementModule>();
+            _mm = _actor.GetModule<MovementModule>();
             if (_mm != null) return;
             IsComplete = true;
         }
@@ -38,14 +38,14 @@ namespace Kuantech.AI.ActionSequencer
             if (diffVec.sqrMagnitude <= Threshold * Threshold)
             {
                 IsComplete = true;
-                _mm.Stop();
+                _mm.SetMovementVector(Vector3.zero);
                 return;
             }
 
             diffVec.y = 0;
             diffVec.Normalize();
-            _mm.SetGlobalMovementVector(new Vector2(diffVec.x, diffVec.z));
-            _mm.SetMaxSpeed(MoveSpeed);
+            _mm.SetMovementVector(new Vector2(diffVec.x, diffVec.z));
+            _mm.SetSpeed(MoveSpeed);
             
         }
     }

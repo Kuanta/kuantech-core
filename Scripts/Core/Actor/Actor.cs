@@ -143,7 +143,16 @@ namespace Kuantech.Core
                 module.OnModulesInitialized();
             }
         }
-
+        
+        protected virtual void FixedUpdate()
+        {
+            if (!Initialized) return;
+            foreach (var module in ActorModulesList)
+            {
+                module.ModuleFixedUpdate();
+            }
+        }
+        
         protected virtual void Update()
         {
             if (!Initialized) return;
@@ -152,7 +161,16 @@ namespace Kuantech.Core
                 module.ModuleUpdate();
             }
         }
-
+        
+        protected virtual void LateUpdate()
+        {
+            if (!Initialized) return;
+            foreach (var module in ActorModulesList)
+            {
+                module.ModuleLateUpdate();
+            }
+        }
+        
         public virtual void Reset()
         {
             foreach (var module in ActorModulesList)

@@ -47,9 +47,11 @@ namespace Kuantech.Core
         private static readonly int AlternativeAttack = Animator.StringToHash("AlternativeAttack");
         private static readonly int Jump = Animator.StringToHash("Jump");
         private static readonly int Land = Animator.StringToHash("Land");
+        private static readonly int IsGrounded = Animator.StringToHash("IsGrounded");
         private static readonly int Cast = Animator.StringToHash("Cast");
         private static readonly int CastIndex = Animator.StringToHash("CastIndex");
-        
+
+        [NonSerialized] public bool IsGroundedFlag;
         
     
         public override void Initialize()
@@ -103,6 +105,8 @@ namespace Kuantech.Core
                 Animator.SetFloat(Sideways, _movementParameters.x);
                 Animator.SetFloat(Forward, _movementParameters.y);
             }
+            
+            Animator.SetFloat(IsGrounded, IsGroundedFlag ? 1f : 0f);
         }
 
         public Animator GetAnimator()
@@ -178,7 +182,7 @@ namespace Kuantech.Core
 
         private void UpdateMovementParameters()
         {
-            Vector3 localMovement = Actor.MotionVectorsHandler.GetLocalMovementVector();
+            Vector3 localMovement = Actor.MotionVectorsHandler.GetLocalMovementVector() * Actor.MotionVectorsHandler.GetMovementMultiplier();
             _targetMovementParameters = new Vector2(localMovement.x, localMovement.z);
         }
         
@@ -199,7 +203,7 @@ namespace Kuantech.Core
                 }
                 movement = movement.normalized * 2;
             }
-            _targetMovementParameters = movement;
+            _targetMovementParameters = movement * Actor.MotionVectorsHandler.GetMovementMultiplier();
             if (!forced) return;
             _movementParameters.x = movement.x *  _movementParametersScale.x;
             _movementParameters.y = movement.y * _movementParametersScale.y;

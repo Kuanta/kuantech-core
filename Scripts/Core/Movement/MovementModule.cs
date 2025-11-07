@@ -12,7 +12,9 @@ namespace Kuantech.Core
         public AttributeAsset SpeedAttribute;
         [Tooltip("Fallback speed if speed attribute cant get")]
         public float Speed = 1f;
-        
+
+        public float SprintMultiplier = 2;
+
         //Lock
         public LockVariable MovementLock = new LockVariable();
 
@@ -44,11 +46,45 @@ namespace Kuantech.Core
         {
             if (IsMovementLocked()) return 0f;
             StatsModule sm = Actor.GetModule<StatsModule>();
-            if (sm == null) return Speed;
+            if (sm == null) return Speed * GetSpeedMultiplier();
             Attribute speedAtt = sm.GetAttribute(SpeedAttribute);
             if (speedAtt == null) return Speed;
-            return speedAtt.GetValue(sm.GetActorLevel());
+            return speedAtt.GetValue(sm.GetActorLevel()) * GetSpeedMultiplier();
         }
+
+        public void SetSpeed(float speed)
+        {
+            Speed = speed;
+        }
+
+        public void SetSprint()
+        {
+            SetSpeedMultiplier(SprintMultiplier);
+        }
+
+        public void StopSprint()
+        {
+            SetSpeedMultiplier(1);
+        }
+        
+        public float GetSpeedMultiplier()
+        {
+            return Actor.MotionVectorsHandler.GetMovementMultiplier();
+        }
+
+        public void SetSpeedMultiplier(float speedMultiplier)
+        {
+            Actor.MotionVectorsHandler.SetMovementMultiplier(speedMultiplier);
+        }
+        #endregion
+
+        #region Jump
+
+        public void Jump()
+        {
+            
+        }
+
         #endregion
         
         #region Locks
@@ -139,10 +175,15 @@ namespace Kuantech.Core
         }
         #endregion
 
+        public void Stop()
+        {
+            SetMovementVector(Vector3.zero);
+        }
+        
         public override void Reset()
         {
             base.Reset();
-            
+            Stop();
             //Zero out the knockback vectors
             foreach (var routine in _knockbackRoutines)
             {
@@ -150,6 +191,8 @@ namespace Kuantech.Core
             }
             _knockbackRoutines.Clear();
             Actor.MotionVectorsHandler.ForceMoveVector = Vector3.zero;
+            
+            SetSpeedMultiplier(1);
         }
     }
 }

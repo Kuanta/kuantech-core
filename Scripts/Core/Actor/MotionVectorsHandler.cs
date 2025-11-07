@@ -15,6 +15,7 @@ namespace Kuantech.Core
         [NonSerialized] public Vector3 MovementVector;
         [NonSerialized] public Vector3 ForceMoveVector = Vector3.zero; //Force move vector is used for knockback and other forceful movements        
         [NonSerialized] public Vector3 TargetVector = Vector3.zero;
+        [NonSerialized] public float MovementMultiplier = 1f;
 
         //Target
         public Transform TargetedObject;
@@ -43,6 +44,16 @@ namespace Kuantech.Core
         public void SetMovementVector(Vector3 movementVector)
         {
             MovementVector = movementVector;
+        }
+        
+        public float GetMovementMultiplier()
+        {
+            return MovementMultiplier;
+        }
+        
+        public void SetMovementMultiplier(float multiplier)
+        {
+            MovementMultiplier = multiplier;
         }
         
         /// <summary>
