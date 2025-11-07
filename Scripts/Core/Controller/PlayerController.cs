@@ -11,7 +11,6 @@ namespace Kuantech.Core.Controller
     public class PlayerController
     {
         [Header("Flags")]
-        
         [NonSerialized] public Actor CurrentPlayer;
         [NonSerialized] public KtCamera ControllerCamera;
 
@@ -32,6 +31,7 @@ namespace Kuantech.Core.Controller
         private float _targetYaw,  _targetPitch; 
         private float _yawVel, _pitchVel;
 
+        
         public void Tick(float dt)
         {
             _currentYaw = Mathf.SmoothDampAngle(
@@ -101,6 +101,24 @@ namespace Kuantech.Core.Controller
         {
             target = Mathf.Clamp(target, min, max);
             return Mathf.SmoothDamp(current, target, ref vel, smoothTime, Mathf.Infinity, dt);
+        }
+        #endregion
+
+        #region Camera
+        public Vector3 GetControllerDirection()
+        {
+            KtCamera camera = GetControllerCamera();
+            if (camera == null) return Vector3.zero;
+            return GetControllerCamera().transform.forward;
+        }
+        
+        public KtCamera GetControllerCamera()
+        {
+            if (ControllerCamera == null)
+            {
+                return CameraManager.GetKtCamera();
+            }
+            return ControllerCamera;
         }
         #endregion
 

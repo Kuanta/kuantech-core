@@ -38,7 +38,7 @@ namespace Kuantech.Core.Utils
         private float _currentPitchAngle;
         private float _currentYawAngle;
         private float _currentRadius;
-        
+
         [SerializeField] private float _targetPitchAngle;
         [SerializeField] private float _targetYawAngle;
         [SerializeField] private float _targetRadius = 5;
@@ -128,13 +128,20 @@ namespace Kuantech.Core.Utils
             float pitchRad = Mathf.Deg2Rad * _currentPitchAngle;
 
             float cp = Mathf.Cos(pitchRad);
-            Vector3 offset = new Vector3(
+            Vector3 sphericalOffset = new Vector3(
                 _currentRadius * cp * Mathf.Sin(yawRad),
                 _currentRadius * Mathf.Sin(pitchRad),
                 _currentRadius * cp * Mathf.Cos(yawRad)
             );
+            
+            return anchor.position + sphericalOffset + GetAnchorOffset();
+        }
 
-            return anchor.position + AnchorOffset + offset;
+        public Vector3 GetAnchorOffset()
+        {
+            float yawRad   = Mathf.Deg2Rad * _currentYawAngle + YawOffset * Mathf.Deg2Rad;
+            return (new Vector3(-1*Mathf.Cos(yawRad), 0, Mathf.Sin(yawRad))) * AnchorOffset.x + Vector3.up * AnchorOffset.y +
+                                  (new Vector3(Mathf.Sin(yawRad), 0, -1*Mathf.Cos(yawRad))) * AnchorOffset.z;
         }
         
         public Quaternion GetTargetRotation()
@@ -143,7 +150,7 @@ namespace Kuantech.Core.Utils
             if (!anchor) return transform.rotation;
 
             Vector3 targetPos = GetTargetPosition();
-            Vector3 toAnchor  = (anchor.position + AnchorOffset) - targetPos;
+            Vector3 toAnchor  = (anchor.position + GetAnchorOffset()) - targetPos;
             if (toAnchor.sqrMagnitude < 1e-8f) return transform.rotation;
 
             return Quaternion.LookRotation(toAnchor.normalized, Vector3.up);
