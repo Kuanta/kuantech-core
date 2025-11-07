@@ -38,17 +38,13 @@ namespace Kuantech.Core
             if(Rigidbody == null)
             {
                 t.rotation = Quaternion.RotateTowards(t.rotation, _targetRot, rotateSpeedDegPerSec * Time.deltaTime);
-
             }
-        }
-
-        public override void ModuleFixedUpdate()
-        {
-            if (Rigidbody == null || !Actor.IsAlive()) return;
-            
-            var next = Quaternion.RotateTowards(
-                Rigidbody.rotation, _targetRot, rotateSpeedDegPerSec * Time.fixedDeltaTime);
-            Rigidbody.MoveRotation(next);
+            else
+            {
+                var next = Quaternion.RotateTowards(
+                    Rigidbody.rotation, _targetRot, rotateSpeedDegPerSec * Time.fixedDeltaTime);
+                Rigidbody.MoveRotation(next);
+            }
         }
     }
 }
