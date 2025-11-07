@@ -47,6 +47,7 @@ namespace Kuantech.Core
         private static readonly int AlternativeAttack = Animator.StringToHash("AlternativeAttack");
         private static readonly int Jump = Animator.StringToHash("Jump");
         private static readonly int Land = Animator.StringToHash("Land");
+        private static readonly int Crouching = Animator.StringToHash("Crouching");
         private static readonly int IsGrounded = Animator.StringToHash("IsGrounded");
         private static readonly int AirTimeHash = Animator.StringToHash("AirTime");
         private static readonly int Cast = Animator.StringToHash("Cast");
@@ -232,6 +233,12 @@ namespace Kuantech.Core
         public void OnLand(object sender, EventArgs args)
         {
             Animator.SetTrigger(Land);
+        }
+
+        public void ToggleCrouching(bool toggle)
+        {
+            if (Animator == null) return;
+            Animator.SetBool(Crouching, toggle);
         }
         #endregion
         

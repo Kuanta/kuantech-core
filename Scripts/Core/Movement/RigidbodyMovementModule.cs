@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using Kuantech.AI.Pathfinding;
 using Kuantech.Core.Utils;
 using UnityEngine;
 using UnityEngine.Events;
@@ -248,16 +247,8 @@ namespace Kuantech.Core
         
         public void HandleJump(Vector3 jumpVector)
         {
-
             Rigidbody.linearVelocity = Vector3.zero;
-
             Rigidbody.AddForce(jumpVector, ForceMode.Impulse);
-
-            CombatModule cm = Actor.GetModule<CombatModule>();
-            if (cm != null)
-            {
-                cm.AttackLock.Lock(this);
-            }
         }
  
         #endregion

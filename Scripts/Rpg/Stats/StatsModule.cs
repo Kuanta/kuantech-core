@@ -148,6 +148,7 @@ namespace Kuantech.Rpg
 
         public Attribute GetAttribute(AttributeAsset attributeAsset)
         {
+            if (attributeAsset == null) return null;
             return GetAttribute(attributeAsset.Id);
         }
         

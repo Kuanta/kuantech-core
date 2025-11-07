@@ -423,6 +423,7 @@ namespace Kuantech.Core
         protected virtual void HandleOnTriggerEnter(GameObject triggeredObject)
         {
             if (CastBy != null && triggeredObject == CastBy.gameObject) return;
+            if (_useArc && !_reachedPeak && RequireReachPeakForImpact) return; //Wait for peak
 
             Actor targetActor = triggeredObject.GetComponent<Actor>();
             if (targetActor != null && (!targetActor.IsAlive()))
@@ -430,13 +431,11 @@ namespace Kuantech.Core
                 CheckDespawn();
                 return;
             }
-
-            if (CastBy != null && CastBy.IsAlly(targetActor))
+  
+            if (CastBy != null && targetActor != null && CastBy.IsAlly(targetActor))
             {
                 return;
             }
-            
-            if (_useArc && !_reachedPeak && RequireReachPeakForImpact) return; //Wait for peak
 
             if (ImpactEffect != null) ImpactEffect.PlayEffectAtPosition(transform.position, Quaternion.identity);
             OnImpactEvent?.Invoke(this);

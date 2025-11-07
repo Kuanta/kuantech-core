@@ -16,7 +16,14 @@ namespace Kuantech.Core
         public float Speed = 1f;
         public float SprintMultiplier = 2;
 
+        [Header("Crouch")] 
+        public float CrouchSpeedMultiplier = 0.5f;
+
+        [SerializeReference] private CrouchHandler CrouchHandler;
+        private bool _crouching;
+        
         [Header("Jump")]
+        [SerializeField] private bool LockAttackOnJump = true;
         public bool GroundCheckEnabled = false;
         public bool Jumping;
         public float CheckGroundedRadius = 0.2f;
@@ -112,6 +119,7 @@ namespace Kuantech.Core
         
         public float GetSpeedMultiplier()
         {
+            if (_crouching) return CrouchSpeedMultiplier;
             return Actor.MotionVectorsHandler.GetMovementMultiplier();
         }
 
@@ -167,6 +175,13 @@ namespace Kuantech.Core
             Jumping = true;
             _jumpTime = Time.time;
             JumpHandler?.Invoke(jumpVector);
+            
+            
+            CombatModule cm = Actor.GetModule<CombatModule>();
+            if (cm != null && LockAttackOnJump)
+            {
+                cm.AttackLock.Lock(this);
+            }
         }
 
         public Vector3 GetJumpVector()
@@ -260,7 +275,26 @@ namespace Kuantech.Core
             
         }
         #endregion
-        
+
+        #region Crouch
+
+        public void Crouch()
+        {
+            if (CrouchHandler == null) return;
+            CrouchHandler.OnCrouchStarted();
+            _animationModule.ToggleCrouching(true);
+            _crouching = true;
+        }
+
+        public void Standup()
+        {
+            if (CrouchHandler == null) return;
+            CrouchHandler.OnCrouchEnd();
+            _animationModule.ToggleCrouching(false);
+            _crouching = false;
+        }
+
+        #endregion
         #region Knockback
         private HashSet<IEnumerator> _knockbackRoutines = new HashSet<IEnumerator>();
         
@@ -322,6 +356,13 @@ namespace Kuantech.Core
             Jumping = false;
             JumpLock.Reset();
             _lastGroundedTime = Time.time;
+            
+            if(_animationModule != null) _animationModule.ToggleCrouching(false);
+            _crouching = false;
+            if (CrouchHandler != null)
+            {
+                CrouchHandler.Reset();
+            }
         }
     }
 }
