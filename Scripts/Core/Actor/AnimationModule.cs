@@ -48,10 +48,12 @@ namespace Kuantech.Core
         private static readonly int Jump = Animator.StringToHash("Jump");
         private static readonly int Land = Animator.StringToHash("Land");
         private static readonly int IsGrounded = Animator.StringToHash("IsGrounded");
+        private static readonly int AirTimeHash = Animator.StringToHash("AirTime");
         private static readonly int Cast = Animator.StringToHash("Cast");
         private static readonly int CastIndex = Animator.StringToHash("CastIndex");
 
         [NonSerialized] public bool IsGroundedFlag;
+        [NonSerialized] public float AirTime;
         
     
         public override void Initialize()
@@ -63,7 +65,7 @@ namespace Kuantech.Core
         public override void OnModulesInitialized()
         {
             base.OnModulesInitialized();
-            RigidbodyMovementModule mm = Actor.GetModule<RigidbodyMovementModule>();
+            MovementModule mm = Actor.GetModule<MovementModule>();
             if (mm != null)
             {
                 mm.OnJumpEvent += OnJump;
@@ -107,6 +109,7 @@ namespace Kuantech.Core
             }
             
             Animator.SetFloat(IsGrounded, IsGroundedFlag ? 1f : 0f);
+            Animator.SetFloat(AirTimeHash, AirTime);
         }
 
         public Animator GetAnimator()
@@ -172,6 +175,8 @@ namespace Kuantech.Core
                 Animator.SetFloat(Forward, 0);
                 Animator.SetFloat(Sideways, 0);
                 Animator.SetBool(Death, false);
+                Animator.SetFloat(IsGrounded, 1f);
+                Animator.SetFloat(AirTimeHash, 0f);
                 Animator.Rebind();
             }
             _targetMovementParameters = Vector2.zero;

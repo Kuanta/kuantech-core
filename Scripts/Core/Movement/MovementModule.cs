@@ -1,8 +1,10 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using Kuantech.Core.Utils;
 using Kuantech.Rpg;
 using UnityEngine;
+using Attribute = Kuantech.Rpg.Attribute;
 
 namespace Kuantech.Core
 {
@@ -12,12 +14,53 @@ namespace Kuantech.Core
         public AttributeAsset SpeedAttribute;
         [Tooltip("Fallback speed if speed attribute cant get")]
         public float Speed = 1f;
-
         public float SprintMultiplier = 2;
+
+        [Header("Jump")]
+        public bool GroundCheckEnabled = false;
+        public bool Jumping;
+        public float CheckGroundedRadius = 0.2f;
+        public LayerMask GroundCheckMask;
+        public float JumpHeight = 2f;
+        [Tooltip("A max air time to do normalization")]
+        public float MaxAirTime = 5f;
+        private bool _isGrounded;
+        private float _jumpTime;
+        private float _lastFallStartTime;
+        private float _lastGroundedTime;
+        private float _lastLandTime;
 
         //Lock
         public LockVariable MovementLock = new LockVariable();
+        public LockVariable JumpLock = new LockVariable();
+        
+        //Events
+        public EventHandler OnJumpEvent;
+        public EventHandler OnJumpLandEvent;
+        
+        //Handlers
+        public Action<Vector3> JumpHandler;
 
+        private AnimationModule _animationModule;
+        
+        public override void OnModulesInitialized()
+        {
+            base.OnModulesInitialized();
+            _animationModule = Actor.GetModule<AnimationModule>();
+        }
+        
+        public override void ModuleUpdate()
+        {
+            base.ModuleUpdate();
+            if (!Actor.IsAlive()) return;
+            HandleJumpLogic();
+
+            if (IsGrounded())
+            {
+                _lastGroundedTime = Time.time;
+            }
+        }
+        
         #region Movement Vector
         /// <summary>
         /// Sets the actor movement vector
@@ -80,11 +123,90 @@ namespace Kuantech.Core
 
         #region Jump
 
+        private void HandleJumpLogic()
+        {
+            if (GroundCheckEnabled)
+            {
+                bool grounded = CheckGrounded();
+                if (_isGrounded && !grounded)
+                {
+                    _lastFallStartTime = Time.time;
+                }else if (!_isGrounded && grounded)
+                {
+                    _lastLandTime = Time.time;
+                }
+
+                _isGrounded = grounded;
+            }
+            if (_animationModule != null)
+            {
+                _animationModule.IsGroundedFlag = _isGrounded;
+                _animationModule.AirTime = GetNormalizedAirTime();
+            }
+            if (Jumping && Time.time - _jumpTime > 0.5f && _isGrounded)
+            {
+                //Land
+                Land();
+            }
+        }
+        public bool IsGrounded()
+        {
+            if (!GroundCheckEnabled) return true;
+            return _isGrounded;
+        }
         public void Jump()
         {
-            
+            if (Jumping || !IsGrounded() || JumpLock.IsLocked()) return;
+            if (JumpHandler == null)
+            {
+                Debug.LogWarning("Jump handler is null");
+                return;
+            }
+            //Did we land?
+            Vector3 jumpVector = GetJumpVector();
+            Jumping = true;
+            _jumpTime = Time.time;
+            JumpHandler?.Invoke(jumpVector);
         }
 
+        public Vector3 GetJumpVector()
+        {
+            float jumpForce = Mathf.Sqrt(Mathf.Abs(2 * JumpHeight * UnityEngine.Physics.gravity.y));
+            Vector3 currMovement = GetMovementVector();
+            float speed = GetSpeed();
+            return currMovement * speed + Vector3.up * jumpForce;
+        }
+        
+        private void Land()
+        {
+            Jumping = false;
+            OnJumpLandEvent?.Invoke(this, EventArgs.Empty);
+            CombatModule cm = Actor.GetModule<CombatModule>();
+            if (cm != null)
+            {
+                cm.AttackLock.Unlock(this);
+            }
+        }
+
+        public float GetAirTime()
+        {
+            if (!IsGrounded())
+            {
+                return Time.time - _lastGroundedTime;
+            }
+
+            return _lastLandTime - _lastFallStartTime;
+        }
+
+        public float GetNormalizedAirTime()
+        {
+            return Mathf.Clamp01(GetAirTime() / Mathf.Max(MaxAirTime, 0.1f));
+        }
+        private bool CheckGrounded()
+        {
+            Vector3 center = transform.position;
+            return UnityEngine.Physics.CheckSphere(center, CheckGroundedRadius, GroundCheckMask);
+        }
         #endregion
         
         #region Locks
@@ -183,6 +305,8 @@ namespace Kuantech.Core
         public override void Reset()
         {
             base.Reset();
+            MovementLock.Reset();
+
             Stop();
             //Zero out the knockback vectors
             foreach (var routine in _knockbackRoutines)
@@ -193,6 +317,11 @@ namespace Kuantech.Core
             Actor.MotionVectorsHandler.ForceMoveVector = Vector3.zero;
             
             SetSpeedMultiplier(1);
+            
+            //Reset jump
+            Jumping = false;
+            JumpLock.Reset();
+            _lastGroundedTime = Time.time;
         }
     }
 }
