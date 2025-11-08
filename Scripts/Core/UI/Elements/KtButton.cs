@@ -45,7 +45,18 @@ namespace Kuantech.Core.UI
 
         public void TriggerPositiveEffect()
         {
-            
+            foreach (var action in _actions)
+            {
+                action.PositiveEffect();
+            }
+        }
+
+        public void TriggerNegativeEffect()
+        {
+            foreach (var action in _actions)
+            {
+                action.NegativeEffect();
+            }
         }
     }
 }
