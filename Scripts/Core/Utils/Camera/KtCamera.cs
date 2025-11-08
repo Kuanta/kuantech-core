@@ -101,7 +101,7 @@ namespace Kuantech.Core.Camera
         public bool RaycastWorld(float maxDistance, LayerMask layerMask, out RaycastHit hit)
         {
             Ray ray = GetCenterRay();
-            return UnityEngine.Physics.Raycast(ray, out hit, maxDistance, layerMask, QueryTriggerInteraction.Ignore);
+            return UnityEngine.Physics.Raycast(ray, out hit, maxDistance, layerMask, QueryTriggerInteraction.Collide);
         }
         public Vector3 GetAimPoint(float maxDistance, LayerMask mask, out bool hitSomething, out GameObject hitObject, float hitRadius=0f)
         {
@@ -142,7 +142,7 @@ namespace Kuantech.Core.Camera
         public bool SpherecastWorld(float radius, float maxDistance, LayerMask mask, out RaycastHit hit)
         {
             var ray = GetCenterRay();
-            return UnityEngine.Physics.SphereCast(ray, radius, out hit, maxDistance, mask, QueryTriggerInteraction.Ignore);
+            return UnityEngine.Physics.SphereCast(ray, radius, out hit, maxDistance, mask, QueryTriggerInteraction.Collide);
         }
         #endregion
         public void SetCameraPosition(WorldPoint point)
