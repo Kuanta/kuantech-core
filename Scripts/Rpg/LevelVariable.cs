@@ -24,6 +24,11 @@ namespace Kuantech.Rpg
 
         public EventHandler<(int, int)> OnLevelUp;
 
+        public LevelVariable()
+        {
+            baseRequirement = 100f;
+            growthFactor = 1.5f;
+        }
         public LevelVariable(LevelVariableData lvd)
         {
             baseRequirement = lvd.BaseRequirement;
