@@ -24,15 +24,27 @@ namespace Kuantech.Core
         static readonly JsonSerializerSettings JsonSettings = new JsonSerializerSettings
         {
             TypeNameHandling = TypeNameHandling.Auto,
-            ContractResolver = new UnitySerializeFieldContractResolver()
+            ContractResolver = new UnitySerializeFieldContractResolver(),
+            Converters = new List<JsonConverter>(){new SaveableJsonConverter()}, 
         };
 
         public static byte[] SerializePoco<T>(T value)
         {
+            if (value is ISaveable saveable)
+            {
+                return Serialize(saveable);
+            }
+            
             string json = JsonConvert.SerializeObject(value, Formatting.None, JsonSettings);
             return System.Text.Encoding.UTF8.GetBytes(json);
         }
-
+        
+        /// <summary>
+        /// Deserializes 
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
         public static T DeserializePoco<T>(byte[] bytes)
         {
             if (bytes == null) return default;
@@ -104,12 +116,7 @@ namespace Kuantech.Core
                 case ISaveable nested:
                     return Serialize(nested); // Recursive
                 default:
-                    string json = JsonConvert.SerializeObject(value, Formatting.None, new JsonSerializerSettings
-                    {
-                        TypeNameHandling = TypeNameHandling.Auto,
-                        ContractResolver = new UnitySerializeFieldContractResolver()
-                    });
-
+                    string json = JsonConvert.SerializeObject(value, Formatting.None, JsonSettings); //Save with custom json settings
                     return System.Text.Encoding.UTF8.GetBytes(json);
             }
         }
@@ -131,11 +138,7 @@ namespace Kuantech.Core
             else
             {
                 string json = System.Text.Encoding.UTF8.GetString(bytes);
-                var obj = JsonConvert.DeserializeObject(json, fieldType, new JsonSerializerSettings
-                {
-                    TypeNameHandling = TypeNameHandling.Auto,
-                    ContractResolver = new UnitySerializeFieldContractResolver()
-                });
+                var obj = JsonConvert.DeserializeObject(json, fieldType, JsonSettings);
 
                 field.SetValue(owner, obj);
             }

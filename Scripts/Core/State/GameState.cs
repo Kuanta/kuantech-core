@@ -6,25 +6,63 @@ using UnityEngine;
 
 namespace Kuantech.Core
 {
+    /// <summary>
+    /// Class that represents the game state
+    /// </summary>
     public class GameState
     {
         private readonly Dictionary<string, byte[]> _loadedData = new();
-        private string SavePath => Path.Combine(Application.persistentDataPath, "gameState.bin");
+        private string SavePath => Path.Combine(Application.persistentDataPath, "gameState.bin"); //todo: Don't hardcode the save file name
 
         public bool Dirtied = false;
-   
-        public void UpdateData(string id, byte[] data)
-        {
-            _loadedData[id] = data;
-            Dirtied = true;
-        }
-
+        
+        #region CRUD
+        /// <summary>
+        /// Gets data with given id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         public byte[] GetData(string id)
         {
             if (_loadedData.IsNullOrEmpty() || !_loadedData.ContainsKey(id)) return null;
             return _loadedData[id];
         }
         
+        /// <summary>
+        /// Updates/Creates data with given id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="data"></param>
+        public void UpdateData(string id, byte[] data)
+        {
+            _loadedData[id] = data;
+            Dirtied = true;
+        }
+
+        /// <summary>
+        /// Clears data with the given id
+        /// </summary>
+        /// <param name="id"></param>
+        public void ClearData(string id)
+        {
+            if (_loadedData.ContainsKey(id))
+            {
+                _loadedData.Remove(id);
+                Dirtied = true;
+            }
+        }
+        
+        /// <summary>
+        /// Clears all data
+        /// </summary>
+        public void ClearAllData()
+        {
+            _loadedData.Clear();
+            Dirtied = true;
+        }
+        #endregion
+        
+
         /// <summary>
         /// Writes the entire loaded data dictionary to disk.
         /// Called periodically or on application quit.
@@ -70,20 +108,9 @@ namespace Kuantech.Core
                 _loadedData[id] = data;
             }
         }
+        
 
-        public void ClearData(string id)
-        {
-            if (_loadedData.ContainsKey(id))
-            {
-                _loadedData.Remove(id);
-                Dirtied = true;
-            }
-        }
+        
 
-        public void ClearAllData()
-        {
-            _loadedData.Clear();
-            Dirtied = true;
-        }
     }
 }
