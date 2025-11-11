@@ -1,4 +1,5 @@
 using Cysharp.Threading.Tasks;
+using IngameDebugConsole;
 using Kuantech.Core;
 using UnityEngine;
 
@@ -71,6 +72,15 @@ public class GameStateManager : SubManager
         var ctx = GetContext<GameStateManager>();
         ctx.GameState.ClearAllData();
     }
+
+    [ConsoleMethod("clearState", "Clears game state")]
+    public static void ClearStateSS()
+    {
+        var ctx = GameStateManager.GetContext<GameStateManager>();
+        if (ctx == null) return;
+        ctx.ClearState();
+    }
+    
     public static void ClearSaveData(ISaveable saveable)
     {
         string id = GetSaveableId(saveable);
