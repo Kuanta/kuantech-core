@@ -580,5 +580,6 @@ namespace Kuantech.Midcore
             ctx.FreshUnlockedCollectibles.Clear();
         }
         #endregion
+        
     }
 }
