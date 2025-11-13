@@ -17,7 +17,7 @@ namespace Kuantech.Core
             SurroundManager tm = a.GetModule<SurroundManager>();
             if(tm != null && tm.SlotAllocator != null)
             {
-                TargetSlot bestSlot = tm.SlotAllocator.GetBestSlot(a);
+                TargetSlot bestSlot = tm.SlotAllocator.GetBestSlot(a, TargetDetectionSlotType.ByDistance);
                 if (bestSlot != null)
                 {
                     distToSelf = (self.transform.position - bestSlot.GetWorldPoint().GetTargetPosition()).sqrMagnitude;
