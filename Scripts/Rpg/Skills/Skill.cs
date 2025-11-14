@@ -108,7 +108,7 @@ namespace Kuantech.Rpg.Skills
                     //Check range
                     float dist =
                         Vector3.SqrMagnitude(castData.TargetPosition - ParentSpellBook.Actor.GetActorLocation());
-                    return dist <= SkillDataAsset.SkillRange;
+                    return dist <= (SkillDataAsset.SkillRange * SkillDataAsset.SkillRange);
                     break;
             }
 
@@ -235,7 +235,6 @@ namespace Kuantech.Rpg.Skills
             return variable.GetValueByRank(SkillRank);
         }
         #endregion
-
 
         public void Reset()
         {

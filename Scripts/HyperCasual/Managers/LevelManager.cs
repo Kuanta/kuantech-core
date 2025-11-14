@@ -187,6 +187,7 @@ namespace Kuantech.Core
         /// <param name="repeatCount">How many levels to repeat at the end of level array</param>
         /// <param name="powerLevel">Power level, means the iteration count.(Count of repeat) </param>
         /// <returns></returns>
+        [Button("Get ArrayIndex")]
         public static int GetArrayIndexFromLevelIndex(int levelIndex, int arraySize, int repeatCount, out int powerLevel)
         {
             powerLevel = 0;
@@ -201,7 +202,7 @@ namespace Kuantech.Core
             
             int a = levelIndex - arraySize;
             powerLevel = 1 + Mathf.FloorToInt(a / (float) repeatCount);
-            int remainder = a % repeatCount - 1;
+            int remainder = a % repeatCount;
             return remainder + (arraySize - repeatCount);
         }
         
