@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using Kuantech.Utils;
+using Unity.VisualScripting;
 using UnityEngine;
 
 namespace Kuantech.Core
@@ -6,6 +9,7 @@ namespace Kuantech.Core
     public class RagdollModule : ActorModule
     {
         [NonSerialized] public Ragdoll Ragdoll;
+        [SerializeField] private List<GameObject> ObjectsToHideWhenRagdoll = new List<GameObject>();
 
         public override void OnModulesInitialized()
         {
@@ -24,6 +28,7 @@ namespace Kuantech.Core
             Ragdoll.ParentActor = Actor.transform;
             Ragdoll.EnableRagdoll();
             Actor.SetActorAnchor(Ragdoll.PelvisRigidbody.transform);
+            ToggleObjectsVisibility(false);
         }
 
         public bool IsInRagdoll()
@@ -36,8 +41,20 @@ namespace Kuantech.Core
             if (Ragdoll == null) return;
             Ragdoll.GetUpFromRagdoll();
             Actor.SetActorAnchor(Actor.transform);
+            ToggleObjectsVisibility(true);
         }
-
+        
+        private void ToggleObjectsVisibility(bool visible)
+        {
+            if (ObjectsToHideWhenRagdoll.IsNullOrEmpty()) return;
+            foreach (var obj in ObjectsToHideWhenRagdoll)
+            {
+                if (obj != null)
+                {
+                    obj.SetActive(visible);
+                }
+            }
+        }
         public void ApplyRagdollForce(Vector3 force)
         {
             FallIntoRagdoll();
