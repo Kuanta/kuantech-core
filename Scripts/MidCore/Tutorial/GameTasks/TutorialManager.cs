@@ -34,7 +34,7 @@ namespace Kuantech.Core.MidCore
             CheckTutorialToStart();
         }
 
-        private void CheckTutorialToStart()
+        public void CheckTutorialToStart()
         {
             foreach (var tut in Tutorials)
             {

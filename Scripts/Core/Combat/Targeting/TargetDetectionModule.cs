@@ -89,17 +89,59 @@ namespace Kuantech.Core.Combat
         public void SortActors()
         {
             //Sort enemies
-            if (!DetectedEnemies.IsNullOrEmpty() && DetectedEnemies.Count > 1 && EnemyDetectingBehaviour != null)
-            {
-                DetectedEnemies.Sort((a, b) => EnemyDetectingBehaviour.Compare(a, b, Actor));
-            }
-            
+            SortEnemies(EnemyDetectingBehaviour);
+
             //Sort allies
-            if (!DetectedAllies.IsNullOrEmpty() && DetectedAllies.Count > 1 && allyTargetPriorityBehaviour != null)
+            SortAllies(allyTargetPriorityBehaviour);
+        }
+        
+        public void SortEnemies(TargetPriorityBehaviour priorityBehaviour)
+        {
+            if (!DetectedEnemies.IsNullOrEmpty() && DetectedEnemies.Count > 1 && priorityBehaviour != null)
             {
-                DetectedAllies.Sort((a,b)=>allyTargetPriorityBehaviour.Compare(a, b, Actor));
+                DetectedEnemies.Sort((a, b) => priorityBehaviour.Compare(a, b, Actor));
             }
-            
+        }
+        
+        public void SortAllies(TargetPriorityBehaviour priorityBehaviour)
+        {
+            if (!DetectedAllies.IsNullOrEmpty() && DetectedAllies.Count > 1 && priorityBehaviour != null)
+            {
+                DetectedAllies.Sort((a, b) => priorityBehaviour.Compare(a, b, Actor));
+            }
+        }
+        
+        /// <summary>
+        /// Gets enemy without touching original enemies list
+        /// </summary>
+        /// <param name="priorityBehaviour"></param>
+        /// <returns></returns>
+        public Actor GetEnemyByTargetPriority(TargetPriorityBehaviour priorityBehaviour)
+        {
+            if (DetectedEnemies.IsNullOrEmpty() || priorityBehaviour == null) return null;
+            List<Actor> sortedEnemies = new List<Actor>(DetectedEnemies);
+            sortedEnemies.Sort((a, b) => priorityBehaviour.Compare(a, b, Actor));
+            return sortedEnemies[0];
+        }
+        
+        /// <summary>
+        /// Gets ally without touching original ally list
+        /// </summary>
+        /// <param name="priorityBehaviour"></param>
+        /// <returns></returns>
+        public Actor GetAllyByTargetPriority(TargetPriorityBehaviour priorityBehaviour)
+        {
+            if (DetectedAllies.IsNullOrEmpty() || priorityBehaviour == null) return null;
+            List<Actor> sortedAllies = new List<Actor>(DetectedAllies);
+            sortedAllies.Sort((a, b) => priorityBehaviour.Compare(a, b, Actor));
+            return sortedAllies[0];
+        }
+
+        public static Actor SortActorsByPriority(Actor self, List<Actor> actors, TargetPriorityBehaviour priorityBehaviour)
+        {
+            if (actors.IsNullOrEmpty() || priorityBehaviour == null) return null;
+            actors.Sort((a, b) => priorityBehaviour.Compare(a, b, self));
+            return actors[0];
         }
         
         /// <summary>

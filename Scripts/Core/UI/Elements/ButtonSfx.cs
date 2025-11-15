@@ -1,13 +1,13 @@
 ﻿using Kuantech.Core.FX;
 using Kuantech.Utils;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace Kuantech.Core.UI
 {
     public class ButtonSfx : MonoBehaviour, KtButton.IUIButtonAction
     {
-        [SerializeField] private Sound DefaultAudio;
+        [KTTag("AudioTag")]
+        [SerializeField] private int DefaultAudioaTag;
         [KTTag("AudioTag")]
         [SerializeField] private int PositiveSound;
         [KTTag("AudioTag")]
@@ -15,11 +15,7 @@ namespace Kuantech.Core.UI
 
         private void ButtonPressHandler()
         {
-            if(DefaultAudio != null)
-            {
-                DefaultAudio.Play();
-                return;
-            }
+            AudioLibrary.PlaySoundByTag(DefaultAudioaTag);
         }
 
         public void OnClick()

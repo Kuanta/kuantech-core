@@ -34,7 +34,7 @@ namespace Kuantech.Midcore
         [Header("Dependencies")]
         public List<ProgressableDependencyEntry> UpgradeDependencies;
         
-        [SaveableField] private Dictionary<string, ProgressibleData> _progressibleDatas;
+        [SerializeField] [SaveableField] private Dictionary<string, ProgressibleData> _progressibleDatas;
         private Dictionary<(ProgressableDataAsset, int), ProgressableDependencyEntry> _unlockConditions;
 
         public void Initilaze()

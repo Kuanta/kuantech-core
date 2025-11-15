@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
@@ -19,7 +20,8 @@ namespace Kuantech.Core
         public bool GameIsPaused = false;
         protected bool SubManagersInitialized = false;
 
-        [Header("Loading Screen")]
+        [Header("Loading Screen")] 
+        public float LoadingScreenCloseDelay = 0f;
         public GameObject LoadingScreen;
 
         [NonSerialized] public LevelTransitionData LevelTransitionData;
@@ -133,9 +135,15 @@ namespace Kuantech.Core
             {
                 subManager.OnSubmanagersInitialized();
             }
-            if (LoadingScreen != null) LoadingScreen.SetActive(false);
+
+            StartCoroutine(CloseLoadingScreen());
         }
 
+        private IEnumerator CloseLoadingScreen()
+        {
+            yield return new WaitForSeconds(LoadingScreenCloseDelay);
+            if (LoadingScreen != null) LoadingScreen.SetActive(false);
+        }
         public void ToggleSubManager<T>(bool toggle)
         {
             GetSubManagerByType<T>().enabled = toggle;

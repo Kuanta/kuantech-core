@@ -55,8 +55,8 @@ namespace Kuantech.Core
         
         [Header("Splash Damage")]
         public DamageInfo SplashDamage;
-        public AttributeAsset AttributeToScaleSplashDamage;
-
+        public List<DamageInfo> AdditionalSplashDamages;
+        
         public float SplashRadius;
         public AttributeAsset AttributeToScaleSplashRadius;
         
@@ -424,6 +424,7 @@ namespace Kuantech.Core
             projectile.Damage = GetDamage(critMultiplier);
             projectile.AdditionalDamages = GetAdditionalDamageInfos(critMultiplier);
             projectile.SplashDamage = GetSplashDamage();
+            projectile.AdditionalSplashDamages = GetAdditionalSplashDamages();
             projectile.SplashRadius = GetSplashDamageRadius();
             projectile.Range = GetCurrentAttackPattern().Range;
             projectile.Knockback = GetCurrentAttackPattern().Knockback;
@@ -574,6 +575,22 @@ namespace Kuantech.Core
             damageInfo.SetAttributeValue(_statModule);
             damageInfo.CritMultiplier = critMultiplier;
             return damageInfo;
+        }
+
+        public List<DamageInfo> GetAdditionalSplashDamages()
+        {
+            float critMultiplier = GetCriticalMultiplier();
+            AttackPattern attackPattern = GetCurrentAttackPattern();
+            List<DamageInfo> additionalDamages = new List<DamageInfo>();
+            foreach (var splashDamage in attackPattern.AdditionalSplashDamages)
+            {
+                DamageInfo damageInfo = splashDamage;
+                damageInfo.SetAttributeValue(_statModule);
+                damageInfo.CritMultiplier = critMultiplier;
+                additionalDamages.Add(damageInfo);
+            }
+
+            return additionalDamages;
         }
         
         /// <summary>
