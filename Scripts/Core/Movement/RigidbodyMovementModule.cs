@@ -13,7 +13,6 @@ namespace Kuantech.Core
     {
         [SerializeField] private Rigidbody Rigidbody;
         [SerializeField] private float _speed;
-        public Vector3 ForceMoveVector = Vector3.zero;
         private bool _movementLocked = false;
         
         //Waypoint
@@ -102,9 +101,9 @@ namespace Kuantech.Core
                 vel = Vector3.zero;
             }
             
-            if (ForceMoveVector.sqrMagnitude >= 0.001f)
+            if (Actor.MotionVectorsHandler.ForceMoveVector.sqrMagnitude >= 0.001f)
             {
-                vel = ForceMoveVector;
+                vel = Actor.MotionVectorsHandler.ForceMoveVector;
             }
 
             vel.y = downSpeed;
@@ -330,25 +329,6 @@ namespace Kuantech.Core
         {
             Vector3 center = transform.position;
             return UnityEngine.Physics.CheckSphere(center, 0.1f, GroundCheckMask);
-        }
-        #endregion
-        
-        #region Knockback
-        private HashSet<IEnumerator> _knockbackRoutines = new HashSet<IEnumerator>();
-        public void Knockback(Vector3 direction, float knockback, float knockbackTime)
-        {
-            IEnumerator routine = KnockbackRoutine(direction, knockback, knockbackTime);
-            _knockbackRoutines.Add(routine);
-            StartCoroutine(routine);
-        }
-        private IEnumerator KnockbackRoutine(Vector3 direction, float knockback, float knockbackTime)
-        {
-            direction.y = 0f;
-            direction.Normalize();
-            direction *= knockback;
-            ForceMoveVector += direction;
-            yield return new WaitForSeconds(knockbackTime);
-            ForceMoveVector -= direction;
         }
         #endregion
     }
