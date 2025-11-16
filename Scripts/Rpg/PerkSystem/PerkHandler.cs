@@ -8,7 +8,7 @@ namespace Kuantech.Rpg
     public class PerkHandler
     {
         //Perk container
-        public Dictionary<PerkAsset, PerkData> PerkDatas;
+        public Dictionary<PerkAsset, Perk> PerkDatas;
         
         public bool IsPerkUnlocked(PerkAsset perkAsset)
         {
@@ -16,7 +16,7 @@ namespace Kuantech.Rpg
             return PerkDatas.ContainsKey(perkAsset);
         }
         
-        public PerkData GetPerkData(PerkAsset perkAsset)
+        public Perk GetPerk(PerkAsset perkAsset)
         {
             if (PerkDatas != null && PerkDatas.ContainsKey(perkAsset))
             {
@@ -33,43 +33,44 @@ namespace Kuantech.Rpg
         public int GetCurrentPerkRank(PerkAsset perkAsset)
         {
             if (!IsPerkUnlocked(perkAsset)) return -1;
-            return GetPerkData(perkAsset).CurrentRank;
+            return GetPerk(perkAsset).CurrentRank;
         }
         
         /// <summary>
         /// Adds a perk if its not already unlocked. If its unlocked, increases the rank
         /// </summary>
         /// <param name="perkAsset"></param>
-        public void AddPerk(PerkAsset perkAsset)
+        public Perk AddPerk(PerkAsset perkAsset)
         {
             if (IsPerkUnlocked(perkAsset))
             {
                 RankUpPerk(perkAsset);
-                return;
+                return null;
             }
 
-            PerkData perkData = new PerkData()
+            Perk perk = new Perk()
             {
                 PerkAsset = perkAsset,
                 CurrentRank = 0,
             };
             if (PerkDatas == null)
             {
-                PerkDatas = new Dictionary<PerkAsset, PerkData>();
+                PerkDatas = new Dictionary<PerkAsset, Perk>();
             }
-            PerkDatas.Add(perkAsset, perkData);
-            perkData.Apply();
+            PerkDatas.Add(perkAsset, perk);
+            perk.UpdatePerkEffect();
+            return perk;
         }
 
         public void RankUpPerk(PerkAsset perkAsset)
         {
-            PerkData perkData = GetPerkData(perkAsset);
-            if (perkData == null)
+            Perk perk = GetPerk(perkAsset);
+            if (perk == null)
             {
                 AddPerk(perkAsset);
                 return;
             }
-            perkData.IncreaseRank();
+            perk.IncreaseRank();
         }
         
         /// <summary>

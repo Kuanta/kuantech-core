@@ -1,4 +1,5 @@
 ﻿using System;
+using Kuantech.Core;
 using UnityEngine;
 
 namespace Kuantech.Rpg
@@ -22,12 +23,21 @@ namespace Kuantech.Rpg
     /// A perk data
     /// </summary>
     [Serializable]
-    public class PerkData
+    public class Perk
     {
         [NonSerialized] public int CurrentRank;
         [NonSerialized] public PerkAsset PerkAsset;
-
-        public virtual void Apply()
+        
+        /// <summary>
+        /// If perk is added to actor, this will be called to make necessary changes
+        /// </summary>
+        /// <param name="actor"></param>
+        public virtual void ApplyToActor(Actor actor)
+        {
+            
+        }
+        
+        public virtual void UpdatePerkEffect()
         {
             //Any logic to apply the perk
         }
@@ -45,7 +55,7 @@ namespace Kuantech.Rpg
         public void IncreaseRank()
         {
             SetCurrentRank(GetCurrentRank()+1);
-            Apply(); //todo: Is this necessary?
+            UpdatePerkEffect(); //todo: Is this necessary?
         }
     }
 }

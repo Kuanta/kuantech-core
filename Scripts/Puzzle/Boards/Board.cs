@@ -448,6 +448,14 @@ namespace Kuantech.Puzzle
                 MaskedCoordinates.Remove(coordinate);
             }
         }
+
+        public virtual void ClearMasks(List<BoardTileCoordinate> coordinates)
+        {
+            foreach (var coord in coordinates)
+            {
+                ClearMask(coord);
+            }
+        }
         #endregion 
         
         #region State
