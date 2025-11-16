@@ -16,7 +16,7 @@ namespace Kuantech.Rpg
     {
         [SerializeField] private float baseRequirement = 100f;
         [SerializeField] private float growthFactor = 1.5f;
-        public float TotalValue = 0.0f;
+        [SaveableField] public float TotalValue = 0.0f;
         public int CurrentLevel => CalculateLevel(TotalValue);
         public float ValueIntoCurrentLevel => TotalValue - GetTotalRequiredForLevel(CurrentLevel);
         public float ValueToNextLevel => GetTotalRequiredForLevel(CurrentLevel + 1) - TotalValue;
@@ -24,6 +24,11 @@ namespace Kuantech.Rpg
 
         public EventHandler<(int, int)> OnLevelUp;
 
+        public LevelVariable()
+        {
+            baseRequirement = 100f;
+            growthFactor = 1.5f;
+        }
         public LevelVariable(LevelVariableData lvd)
         {
             baseRequirement = lvd.BaseRequirement;

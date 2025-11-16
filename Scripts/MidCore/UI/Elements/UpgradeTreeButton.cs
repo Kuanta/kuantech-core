@@ -65,7 +65,7 @@ namespace Kuantech.Midcore.UI
             if(Name != null) Name.text = UpgradeDataAsset.GetName();
             if (PriceTag != null)
             {
-                BuyableInfo bi = UpgradeDataAsset.BuyableInfo;
+                BuyableInfo bi = UpgradeDataAsset.GetBuyableInfo();
                 if (bi == null)
                 {
                     if(PriceTag != null) PriceTag.gameObject.SetActive(false);

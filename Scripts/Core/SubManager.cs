@@ -7,7 +7,7 @@ namespace Kuantech.Core
     public class SubManager : MonoBehaviour, ISaveable
     {
         protected GameManager ParentManager;
-
+        protected bool Initialized = false;
         [Header("SubManager")]
         public bool LoadAfterInitialize = false;
         
@@ -15,6 +15,7 @@ namespace Kuantech.Core
         {
             //Subscribe to events
             ParentManager = gameManager;
+            Initialized = true;
         }
 
         public virtual void OnSubmanagersInitialized()

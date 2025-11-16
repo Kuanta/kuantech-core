@@ -36,6 +36,16 @@ namespace Kuantech.Core
             return AlliedFactions;
         }
         
+        /// <summary>
+        /// Returns allied and own faction.
+        /// </summary>
+        /// <returns></returns>
+        public List<int> GetFriendlyFactions()
+        {
+            List<int> allies = new List<int>(this.AlliedFactions) {BelongingFaction};
+            return allies;
+        }
+        
         public FactionType GetFactionRelation(Actor other)
         {
             if (BelongingFaction == other.FactionHandler.BelongingFaction) return FactionType.Same; //They belong in same faction

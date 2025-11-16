@@ -26,6 +26,13 @@ namespace Kuantech.AI
         {
             SUCCESS, RUNNING, FAILURE,
         }
+
+        public struct NodeResult
+        {
+            public NodeStatus NodeStatus;
+            public bool WaitAfter;
+        }
+        
         [NonSerialized] public BehaviourTree Owner;
         [NonSerialized] public NodeStatus CurrentStatus;
         [SerializeField] public List<BTNode> Children = new List<BTNode>();
@@ -73,7 +80,15 @@ namespace Kuantech.AI
 
         public virtual NodeStatus Process()
         {
-            return NodeStatus.SUCCESS;}
+            return NodeStatus.SUCCESS;
+        }
+        
+        public virtual bool ShouldExecuteNodeImmediately()
+        {
+            BTNode node = GetCurrentChild();
+            if (node != null) return node.ShouldExecuteNodeImmediately();
+            return false;
+        }
         
         [Button("Add Node")]
         public void AddChildNode(NodeTypes nodeType, string nodeName = "", string actionName = "")
@@ -126,7 +141,17 @@ namespace Kuantech.AI
             Name = name;
             _leafAction = leafAction;
         }
-
+        
+        /// <summary>
+        /// For leaf nodes, if execute immediately is set, the next node will be executed without waiting for the next tick.
+        /// </summary>
+        /// <returns></returns>
+        public override bool ShouldExecuteNodeImmediately()
+        {
+            if (_leafAction == null) return false;
+            return _leafAction.ExecuteNextImmediately;
+        }
+        
         public void ParseNodeData(BtGraphNodeData nodeData)
         {
             Type type = Type.GetType(nodeData.ActionClassName);

@@ -178,6 +178,33 @@ namespace Kuantech.Core
             levelArrayIndex = Mathf.Clamp(levelArrayIndex, 0, LevelDictionary.Count - 1);
             return LevelDictionary[levelArrayIndex];
         }
+
+        /// <summary>
+        /// Returns the array index in an array given the level index, array size and repeat count
+        /// </summary>
+        /// <param name="levelIndex">Unbounded level index. For example 1000th level</param>
+        /// <param name="arraySize">Size of levels list</param>
+        /// <param name="repeatCount">How many levels to repeat at the end of level array</param>
+        /// <param name="powerLevel">Power level, means the iteration count.(Count of repeat) </param>
+        /// <returns></returns>
+        [Button("Get ArrayIndex")]
+        public static int GetArrayIndexFromLevelIndex(int levelIndex, int arraySize, int repeatCount, out int powerLevel)
+        {
+            powerLevel = 0;
+            if (levelIndex < arraySize) return levelIndex;
+
+            if (repeatCount <= 0)
+            {
+                return arraySize - 1;
+            }
+
+            repeatCount = Mathf.Clamp(repeatCount, 0, arraySize);
+            
+            int a = levelIndex - arraySize;
+            powerLevel = 1 + Mathf.FloorToInt(a / (float) repeatCount);
+            int remainder = a % repeatCount;
+            return remainder + (arraySize - repeatCount);
+        }
         
         /// <summary>
         /// Sets the level with the given index

@@ -11,7 +11,7 @@ namespace Kuantech.Core.FX
         [SerializeField] private float StartPointMoveStartDelay = 0.2f;
         private CombatModule _caster = null;
         private float _fxStartTime;
-        public override void OnFxStarted(Effect parentFx)
+        protected override void OnFxStarted(Effect parentFx)
         {
             base.OnFxStarted(parentFx);
             _caster = null;
@@ -23,7 +23,7 @@ namespace Kuantech.Core.FX
             LightningObject.SetActive(true);
         }
 
-        private void Update()
+        public override void UpdateFx()
         {
             if (EndPoint == null || _caster == null) return;
             EndPoint.transform.position = Vector3.MoveTowards(EndPoint.transform.position, GetTargetPosition(), PointsMoveSpeed * Time.deltaTime);

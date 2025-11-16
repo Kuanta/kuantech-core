@@ -12,10 +12,14 @@ namespace Kuantech.Core
     {
         public AnimatorOverrideController DefaultAnimationSet;
         public Animator Animator;
+        public AnimationMontagePlayer MontagePlayer;
 
         [Header("Settings")]
         [Tooltip("If set to true, movement will be sent to animator as a single float")]
         public bool UseOneDimensionalMovement;
+        
+        [Header("Animation Parameters")]
+        [SerializeField] private AnimationData DamageReceivedAnimationData;
         
         private Vector2 _targetMovementParameters = Vector2.zero;
         private Vector2 _movementParameters = Vector2.zero;
@@ -27,8 +31,8 @@ namespace Kuantech.Core
         public UnityEvent OnDamageFrameEvent;
         
         //Animation Hashes
-        private static readonly int X = Animator.StringToHash("Forward");
-        private static readonly int Y = Animator.StringToHash("Right");
+        private static readonly int Forward = Animator.StringToHash("Forward");
+        private static readonly int Sideways = Animator.StringToHash("Right");
         private static readonly int Movement = Animator.StringToHash("Movement");
         private static readonly int Attack = Animator.StringToHash("Attack");
         private static readonly int Hold = Animator.StringToHash("Hold");
@@ -37,22 +41,21 @@ namespace Kuantech.Core
         public static readonly int AttackSpeed = Animator.StringToHash("AttackSpeed");
         public static readonly int TargetTime = Animator.StringToHash("TargetTime");
         private static readonly int Death = Animator.StringToHash("Dead");
-        private static readonly int DamageReceived = Animator.StringToHash("DamageReceived");
-        private static readonly int DamageReceivedIndex = Animator.StringToHash("DamageReceivedIndex");
+        // private static readonly int DamageReceived = Animator.StringToHash("DamageReceived");
+        // private static readonly int DamageReceivedIndex = Animator.StringToHash("DamageReceivedIndex");
         private static readonly int Aiming = Animator.StringToHash("Aiming");
         private static readonly int AlternativeAttack = Animator.StringToHash("AlternativeAttack");
         private static readonly int Jump = Animator.StringToHash("Jump");
         private static readonly int Land = Animator.StringToHash("Land");
         private static readonly int Cast = Animator.StringToHash("Cast");
         private static readonly int CastIndex = Animator.StringToHash("CastIndex");
-        private static readonly int AttackSpeedMultiplier = Animator.StringToHash("AttackSpeedMultiplier");
-
-
+        
+        
+    
         public override void Initialize()
         {
             base.Initialize();
             ApplyDefaultAnimationSet();
-            Actor.OnHitEvent += OnDamageReceive;
         }
         
         public override void OnModulesInitialized()
@@ -97,8 +100,8 @@ namespace Kuantech.Core
             }
             else
             {
-                Animator.SetFloat(X, _movementParameters.x);
-                Animator.SetFloat(Y, _movementParameters.y);
+                Animator.SetFloat(Sideways, _movementParameters.x);
+                Animator.SetFloat(Forward, _movementParameters.y);
             }
         }
 
@@ -127,12 +130,33 @@ namespace Kuantech.Core
             Animator.SetTrigger(hash);
         }
 
-        public void PlayAnimation(AnimationData animationData, float speedMultiplier = 1.0f)
+        private void PlayAnimationMontage(AnimationMontage animationMontage, float targetTime = 1.0f)
         {
             Animator animator = GetAnimator();
             if (animator == null) return;
+            if (MontagePlayer == null) return;
+            animator.SetFloat(TargetTime, targetTime);
+            MontagePlayer.PlayMontage(animationMontage);
+        }
+
+        public void PlayAnimationData(AnimationData animationData, float animationDuration = -1)
+        {
+            Animator animator = GetAnimator();
+            if (animator == null) return;
+            
+            //Set parameters
             animationData.SetParameters(animator);
-            animator.SetFloat(AttackSpeedMultiplier, speedMultiplier);
+
+            if (animationDuration > 0)
+            {
+                animator.SetFloat(TargetTime, animationDuration);
+            }
+            
+            //Play montage
+            if (animationData.AttackMontage != null)
+            {
+                PlayAnimationMontage(animationData.AttackMontage, animationDuration);
+            }
         }
         #endregion
   
@@ -141,8 +165,8 @@ namespace Kuantech.Core
             base.Reset();
             if (Animator != null)
             {            
-                Animator.SetFloat(X, 0);
-                Animator.SetFloat(Y, 0);
+                Animator.SetFloat(Forward, 0);
+                Animator.SetFloat(Sideways, 0);
                 Animator.SetBool(Death, false);
                 Animator.Rebind();
             }
@@ -275,9 +299,7 @@ namespace Kuantech.Core
         }
         public void OnDamageReceive(HitInfo hitInfo)
         {
-            if (Animator == null) return;
-            Animator.SetInteger(DamageReceivedIndex, 0);
-            Animator.SetTrigger(DamageReceived);
+            PlayAnimationData(DamageReceivedAnimationData);
         }
 
         public void OnActorVisualChanged(ActorVisual newVisual)
@@ -290,6 +312,10 @@ namespace Kuantech.Core
             }
             Animator = newVisual.Animator;
             if(Animator != null) Animator.logWarnings = false;
+            if (MontagePlayer != null)
+            {
+                MontagePlayer.Animator = Animator;
+            }
         }
 
         #endregion

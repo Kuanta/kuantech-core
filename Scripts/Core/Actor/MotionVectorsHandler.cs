@@ -131,14 +131,23 @@ namespace Kuantech.Core
         /// Target vector is the direction actor is facing
         /// </summary>
         /// <returns></returns>
-        public Vector3 GetTargetVector()
+        public Vector3 GetTargetVector(bool prioritizeMovementOverTarget = false)
         {
             //If target manager has a target...
-            if (ParentActor != null && ParentActor.GetModule<TargetManager>() != null)
+            // if (ParentActor != null && ParentActor.GetModule<SurroundManager>() != null)
+            // {
+            //     Actor target = ParentActor.GetModule<SurroundManager>().GetCurrentTarget();
+            //     if (target != null) TargetedObject = target.transform;
+            // }
+            
+            
+            //Check movement priority
+            if (prioritizeMovementOverTarget && MovementVector.sqrMagnitude > float.Epsilon)
             {
-                Actor target = ParentActor.GetModule<TargetManager>().GetCurrentTarget();
-                if (target != null) TargetedObject = target.transform;
+                return MovementVector;
             }
+            
+            //Buisness as usual
             if (TargetedObject != null)
             {
                 return (TargetedObject.position - ParentActor.transform.position).normalized;
@@ -147,9 +156,15 @@ namespace Kuantech.Core
             {
                 return TargetVector;
             }
-            return MovementVector; //same as movement
+
+            if (MovementVector.sqrMagnitude > float.Epsilon)
+            {
+                return MovementVector;
+            }
+
+            return ParentActor.transform.forward;
         }
- 
+        
         public void SetTargetObject(Transform targetObject)
         {
             TargetedObject = targetObject;
@@ -159,9 +174,12 @@ namespace Kuantech.Core
         {
             TargetVector = targetVector;
         }
+
+        public void ClearTargetVector()
+        {
+            TargetVector = Vector3.zero;
+        }
         #endregion
-
-
         
         /// <summary>
         /// Projects a vector to the forward plane of the actor

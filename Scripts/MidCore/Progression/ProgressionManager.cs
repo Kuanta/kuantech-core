@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Kuantech.Core;
+using Kuantech.Core.Combat;
 using Kuantech.Core.HyperCasual;
 using Kuantech.Rpg;
 using Kuantech.Utils;
@@ -86,7 +87,10 @@ namespace Kuantech.Midcore
             base.SetDefaultState();
             
             //Player Level
-            SetRank(PlayerLevelDataAsset, 0);
+            if(PlayerLevelDataAsset != null)
+            {
+                SetRank(PlayerLevelDataAsset, 0);
+            }
             SetDefaultProgressables();
         }
         
@@ -449,7 +453,19 @@ namespace Kuantech.Midcore
             {
                 if (traitUpgrade == null) continue;
                 traitUpgrade.ApplyToActor(actor);
-            }            
+            }
+
+            StatsModule statsModule = actor.GetModule<StatsModule>();
+            if (statsModule != null)
+            {
+                statsModule.UpdateStatModifiers();
+            }
+            
+            HealthcareModule healthcareModule = actor.GetModule<HealthcareModule>();
+            if (healthcareModule != null)
+            {
+                healthcareModule.Refresh();
+            }
         }
 
         public static TraitUpgradeProgressable GetTraitUpgradeProgressable(string id)
@@ -564,5 +580,6 @@ namespace Kuantech.Midcore
             ctx.FreshUnlockedCollectibles.Clear();
         }
         #endregion
+        
     }
 }

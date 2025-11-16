@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Kuantech.Core;
 using Kuantech.Core.FX;
 using Kuantech.Utils;
-using Unity.Entities;
 using UnityEngine;
 
 namespace Kuantech.Rpg.Skills
@@ -31,7 +30,10 @@ namespace Kuantech.Rpg.Skills
         public SkillBehaviourFxPlayType PlayType;
         public EffectPlayer EffectPlayer;
         public bool StopOnBehaviourEnd;
-        public string ActorSlotName; //If PlayType is AtSlot, this is the slot name to play the effect at
+        [Tooltip("Useful for OnCaster or AtCaster. If play type is OnTarget, effect will be played attached to given slot")]
+        public string ActorSlotName;
+        [Tooltip("If set to true, will face the effect towards the direction")]
+        public bool RotateTowardsDirection;
     }
     
     [Serializable]
@@ -43,16 +45,24 @@ namespace Kuantech.Rpg.Skills
         [Tooltip("Behaviour specific config data")]
         [SerializeReference]
         [SubclassSelector]
-        public SkillBehaviourConfigData ConfigData; 
-        
-        [Header("Common Properties")]
+        public SkillBehaviourConfigData ConfigData;
+
+        [Header("Common Properties")] 
+        public float CastTime;
+        public float CastAnimationDuration;
         public float Duration;
+        public float EffectPlayTime;
+        [Tooltip("If set to true, skill will wait for rotation alignment before starting the behaviour")]
+        public float WaitForRotationAlign;
 
         [Header("Effects")] 
         public List<FxPlayData> SkillBehaviourFxDatas;
         
         //Animation data
         public AnimationData BehaviourStartAnimationData;
+        
+        [Tooltip("If any animation parameters needed to be cleared('Like clearing a channeled boolean') do it with these")]
+        public AnimationData AnimationParametersToClear;
     }
     
     public class SkillBehaviour
@@ -60,10 +70,11 @@ namespace Kuantech.Rpg.Skills
         //Runtime
         [NonSerialized] public Skill ParentSkill;
         [NonSerialized] public SkillBehaviourData BehaviourData;
-        [NonSerialized] public SkillCastData CurrentSkillCastData;
+        [NonSerialized] public ActionCastData CurrentSkillCastData;
     
-        private bool _isCompleted;
+        protected bool _isCompleted;
         private float _castStartTime;
+        protected bool _playedEffect;
         public HashSet<Effect> PlayedEffects = new HashSet<Effect>();
         
         /// <summary>
@@ -85,19 +96,17 @@ namespace Kuantech.Rpg.Skills
             BehaviourData = behaviourData;
         }
 
-        public virtual void StartBehaviour(SkillCastData skillCastData)
+        public virtual void StartBehaviour(ActionCastData skillCastData)
         {
             PlayedEffects.Clear();
             CurrentSkillCastData = skillCastData;
             _castStartTime = Time.time;
             _isCompleted = false;
+            _playedEffect = false;
             
             //Play animation
             PlayBehaviourAnimation();
-            
-            //Play effects
-            PlayBehaviourEffects();
-            
+
             OnBehaviourStarted();
         }
 
@@ -106,10 +115,19 @@ namespace Kuantech.Rpg.Skills
             AnimationModule am = ParentSkill.ParentSpellBook.Actor.GetModule<AnimationModule>();
             if (am != null)
             {
-                BehaviourData.BehaviourStartAnimationData.SetParameters(am.Animator);
+                am.PlayAnimationData(BehaviourData.BehaviourStartAnimationData, BehaviourData.CastAnimationDuration);
             }
         }
 
+        protected virtual void ClearAnimationParameters()
+        {
+            AnimationModule am = ParentSkill.ParentSpellBook.Actor.GetModule<AnimationModule>();
+            if (am != null)
+            {
+                BehaviourData.AnimationParametersToClear.SetParameters(am.GetAnimator());
+            }
+        }
+        
         protected virtual void PlayBehaviourEffects()
         {
             foreach (var fx in BehaviourData.SkillBehaviourFxDatas)
@@ -120,35 +138,61 @@ namespace Kuantech.Rpg.Skills
                 //Can effet be played at slot
                 Actor playerActor = ParentSkill.ParentSpellBook.Actor;
                 ActorSlotsHandler slotsHandler = playerActor.GetModule<ActorSlotsHandler>();
-                if (slotsHandler != null)
+
+                switch(fx.PlayType)
                 {
-                    Transform slot = slotsHandler.GetSlot(fx.ActorSlotName);
-                    if (slot != null)
-                    {
-                        effect = PlayEffectAtActorSlot(slot, fx.EffectPlayer);
-                    }
+                    case FxPlayData.SkillBehaviourFxPlayType.OnCaster:
+                        if (slotsHandler != null)
+                        {
+                            Transform slot = slotsHandler.GetSlot(fx.ActorSlotName);
+                            if (slot != null)
+                            {
+                                effect = PlayEffectAtActorSlot(slot, fx.EffectPlayer);
+                                break;
+                            }
+                        }
+                        effect = PlayEffectOnCaster(fx.EffectPlayer);
+
+                        break;
+                    case FxPlayData.SkillBehaviourFxPlayType.AtCaster:
+                        if (slotsHandler != null)
+                        {
+                            Transform slot = slotsHandler.GetSlot(fx.ActorSlotName);
+                            if (slot != null)
+                            {
+                                effect = PlayEffectAtActorSlotLocation(slot, fx.EffectPlayer);
+                                break;
+                            }
+                        }
+                        effect  = PlayEffectAtCasterPosition(fx.EffectPlayer);
+
+                        break;
+                    case FxPlayData.SkillBehaviourFxPlayType.OnTarget:
+                        if (CurrentSkillCastData.Target != null)
+                        {
+                            ActorSlotsHandler targetSlotsHandler = CurrentSkillCastData.Target.GetModule<ActorSlotsHandler>();
+                            if (targetSlotsHandler != null)
+                            {
+                                Transform slot = targetSlotsHandler.GetSlot(fx.ActorSlotName);
+                                if (slot != null)
+                                {
+                                    effect = PlayEffectAtActorSlot(slot, fx.EffectPlayer);
+                                    break;
+                                }
+                            }
+                        }
+             
+                        effect = PlayEffectAtTarget(fx.EffectPlayer);
+                        break;
+                    case FxPlayData.SkillBehaviourFxPlayType.AtCastPoint:
+                        effect = PlayEffectAtCastPosition(fx.EffectPlayer);
+                        break;
                 }
 
-                if (effect == null)
+                if (effect != null && fx.RotateTowardsDirection)
                 {
-                    switch(fx.PlayType)
-                    {
-                        case FxPlayData.SkillBehaviourFxPlayType.OnCaster:
-                            effect = PlayEffectOnCaster(fx.EffectPlayer);
-                            break;
-                        case FxPlayData.SkillBehaviourFxPlayType.AtCaster:
-                            effect  = PlayEffectAtCasterPosition(fx.EffectPlayer);
-                            break;
-                        case FxPlayData.SkillBehaviourFxPlayType.OnTarget:
-                            effect = PlayEffectAtTarget(fx.EffectPlayer);
-                            break;
-                        case FxPlayData.SkillBehaviourFxPlayType.AtCastPoint:
-                            effect = PlayEffectAtCastPosition(fx.EffectPlayer);
-                            break;
-                    }
+                    effect.transform.forward = CurrentSkillCastData.Direction;
                 }
-          
-
                 if (effect != null && fx.StopOnBehaviourEnd)
                 {
                     PlayedEffects.Add(effect);
@@ -164,10 +208,19 @@ namespace Kuantech.Rpg.Skills
         {
             if (_isCompleted) return;
             float duration = GetDuration();
-            
+            float elapsedTime = GetElapsedTime();
                   
             //Behaviour
-            BehaviourImplementation();
+            if (elapsedTime >= BehaviourData.CastTime)
+            {
+                BehaviourImplementation();
+            }
+            
+            if(!_playedEffect && GetElapsedTime() > BehaviourData.EffectPlayTime)
+            {
+                PlayBehaviourEffects();
+                _playedEffect = true;
+            }
             
             //ıf duration is less than 0, it means the behaviour is infinite
             if (GetElapsedTime() >= duration && duration >= 0)
@@ -186,6 +239,7 @@ namespace Kuantech.Rpg.Skills
         {
             _isCompleted = true;
             OnBehaviourEnded();
+            ClearAnimationParameters();
             ParentSkill.OnSkillBehaviourCompleted();
         }
 
@@ -205,8 +259,8 @@ namespace Kuantech.Rpg.Skills
             playSettings.Caster = caster;
             playSettings.PlayEndPoint = GetSkillCastPoint();
             
-            Vector3 effectStarPosition = CurrentSkillCastData.CastStartPosition;
-            Vector3 effectStartDir = CurrentSkillCastData.CastDirection;
+            Vector3 effectStarPosition = CurrentSkillCastData.StartPosition;
+            Vector3 effectStartDir = CurrentSkillCastData.Direction;
             
             Quaternion playRot = Quaternion.identity;
             if (effectStartDir.sqrMagnitude >= 0.001f)
@@ -243,9 +297,9 @@ namespace Kuantech.Rpg.Skills
         {
             WorldPoint castPoint = new WorldPoint
             {
-                Position = CurrentSkillCastData.CastPosition,
-                Rotation = Quaternion.LookRotation(CurrentSkillCastData.CastDirection),
-                Target = CurrentSkillCastData.CastTarget != null ? CurrentSkillCastData.CastTarget.transform : null,
+                Position = CurrentSkillCastData.TargetPosition,
+                Rotation = Quaternion.LookRotation(CurrentSkillCastData.Direction),
+                Target = CurrentSkillCastData.Target != null ? CurrentSkillCastData.Target.transform : null,
             };
 
             return castPoint;
@@ -253,8 +307,8 @@ namespace Kuantech.Rpg.Skills
         public Effect PlayEffectAtCastPosition(EffectPlayer effectPlayer)
         {
             if (effectPlayer.IsNull()) return null;
-            Vector3 effectPos = CurrentSkillCastData.CastPosition;
-            Vector3 effectDir = CurrentSkillCastData.CastDirection;
+            Vector3 effectPos = CurrentSkillCastData.TargetPosition;
+            Vector3 effectDir = CurrentSkillCastData.Direction;
             Quaternion playRot = Quaternion.identity;
             if (effectDir.sqrMagnitude >= 0.001f)
             {
@@ -269,19 +323,25 @@ namespace Kuantech.Rpg.Skills
         public Effect PlayEffectAtTarget(EffectPlayer effectPlayer)
         {
             if (effectPlayer.IsNull()) return null;
-            Transform target = CurrentSkillCastData.CastTarget != null 
-                ? CurrentSkillCastData.CastTarget.transform 
+            Transform target = CurrentSkillCastData.Target != null 
+                ? CurrentSkillCastData.Target.transform 
                 : null;
             if (target == null) return PlayEffectAtCastPosition(effectPlayer);
             EffectPlaySettings playSettings =
                 EffectPlaySettings.GetPlayAtObjectSettings(target, Vector3.zero, Quaternion.identity);
             return effectPlayer.PlayEffect(playSettings);
         }
-
+        
+        /// <summary>
+        /// Plays effect attached to actor slot
+        /// </summary>
+        /// <param name="actorSlot"></param>
+        /// <param name="effectPlayer"></param>
+        /// <returns></returns>
         public Effect PlayEffectAtActorSlot(Transform actorSlot, EffectPlayer effectPlayer)
         {
             if (effectPlayer.IsNull()) return null;
-            Vector3 effectDir = CurrentSkillCastData.CastDirection;
+            Vector3 effectDir = CurrentSkillCastData.Direction;
             Quaternion playRot = Quaternion.identity;
             if (effectDir.sqrMagnitude >= 0.001f)
             {
@@ -291,6 +351,28 @@ namespace Kuantech.Rpg.Skills
             //Local rot compared to actorSLot
             Quaternion localRot = Quaternion.Inverse(actorSlot.rotation) * playRot;
             EffectPlaySettings playSettings = EffectPlaySettings.GetPlayAtObjectSettings(actorSlot, Vector3.zero, localRot);
+
+            playSettings.Caster = ParentSkill.ParentSpellBook.Actor;
+            return effectPlayer.PlayEffect(playSettings);
+        }
+        
+        /// <summary>
+        /// Plays effect at actor slot location (world position)
+        /// </summary>
+        /// <param name="actorSlot"></param>
+        /// <param name="effectPlayer"></param>
+        /// <returns></returns>
+        public Effect PlayEffectAtActorSlotLocation(Transform actorSlot, EffectPlayer effectPlayer)
+        {
+            if (effectPlayer.IsNull()) return null;
+            Vector3 effectDir = CurrentSkillCastData.Direction;
+            Quaternion playRot = Quaternion.identity;
+            if (effectDir.sqrMagnitude >= 0.001f)
+            {
+                playRot = Quaternion.LookRotation(effectDir);
+            }
+           
+            EffectPlaySettings playSettings = EffectPlaySettings.GetPlayAtPositionSettings(actorSlot.position, playRot);
 
             playSettings.Caster = ParentSkill.ParentSpellBook.Actor;
             return effectPlayer.PlayEffect(playSettings);

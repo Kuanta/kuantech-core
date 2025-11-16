@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Kuantech.Core;
 using Kuantech.Core.UI;
 using Kuantech.Rpg;
-using Kuantech.Rpg.UI;
 using Kuantech.Utils;
 using TMPro;
 using UnityEngine;
@@ -17,7 +16,7 @@ namespace Kuantech.Midcore.UI
         [SerializeField] private TMP_Text Name;
         [SerializeField] private TMP_Text Description;
         [SerializeField] private Image Icon;
-        [SerializeField] private LevelableFloatIndicator CollectibleLevelIndicator;
+        [SerializeField] private CollectableRankIndicator CollectibleLevelIndicator;
         [SerializeField] private UpgradeButton UpgradeButton;
         
         public List<AttributeIndicator> AttributeIndicators;
@@ -50,7 +49,7 @@ namespace Kuantech.Midcore.UI
 
             if (CollectibleLevelIndicator != null)
             {
-                CollectibleLevelIndicator.UpdateValue(ProgressionManager.GetCurrentRank(dataAsset));
+                CollectibleLevelIndicator.SetCollectableRank(dataAsset);
             }
         }
 
@@ -65,7 +64,8 @@ namespace Kuantech.Midcore.UI
                 }
             }
             ActorBlueprint actorBlueprint = collectableAsset.ActorBlueprint;
-            int collectableLevel = ProgressionManager.GetCurrentRank(collectableAsset);
+            
+            int collectableLevel = collectableAsset.GetCollectableRank();
 
             if (actorBlueprint != null)
             {
@@ -88,7 +88,7 @@ namespace Kuantech.Midcore.UI
 
             if (CollectibleLevelIndicator != null)
             {
-                CollectibleLevelIndicator.UpdateValue(ProgressionManager.GetCurrentRank(CurrentDataAsset));
+                CollectibleLevelIndicator.SetCollectableRank(CurrentDataAsset);
             }
             
             ParentDeckSelectionMenu.UpdateCards();

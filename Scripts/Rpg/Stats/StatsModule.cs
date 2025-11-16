@@ -28,7 +28,8 @@ namespace Kuantech.Rpg
         private Dictionary<string, Attribute> _statMap;
         public static float LevelFormulaX = 0.4f;
 
-        [Header("Resources")] public List<ResourceDefinition> ResourceDefinitions;
+        [Header("Resources")] 
+        public List<ResourceDefinition> ResourceDefinitions;
         public ResourceManager ResourceManager;
         
         //Level
@@ -53,11 +54,16 @@ namespace Kuantech.Rpg
         public override void Reset()
         {
             base.Reset();
+            UpdateStatModifiers();
             ResourceManager.Refresh();
-            
-            //Remove temporary modifiers?
+        }
+
+        public override void Cleanup()
+        {
+            base.Cleanup();
             ClearModifiers();
         }
+        
         public void ApplyStatsTable(List<AttributeDefinition> defaultAttributes)
         {
             if (defaultAttributes.IsNullOrEmpty()) return;

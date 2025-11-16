@@ -1,4 +1,6 @@
-﻿using Kuantech.Core;
+﻿using System.Collections;
+using System.Collections.Generic;
+using Kuantech.Core;
 using Kuantech.Core.Store;
 using Kuantech.Core.UI;
 using Kuantech.Utils;
@@ -15,7 +17,8 @@ namespace Kuantech.HyperCasual.UI
 
         [SerializeField] private Image CurrencyIcon;
         [SerializeField] private TMP_Text CurrencyAmount;
-
+        [SerializeField] private float InitializeOnStartDelay = 0f;
+        
         public bool CanGetCurrency()
         {
             if (!AutoUpdate || !GameManager.InstanceExists()) return false;
@@ -24,10 +27,27 @@ namespace Kuantech.HyperCasual.UI
         protected virtual void Start()
         {
             //Set currency icon
+            if (InitializeOnStartDelay > 0)
+            {
+                StartCoroutine(StartInitializeDelayRoutine());
+            }
+            else
+            {
+                StartInitialize();
+            }
+        }
+
+        private IEnumerator StartInitializeDelayRoutine()
+        {
+            yield return new WaitForSeconds(InitializeOnStartDelay);
+            StartInitialize();
+        }
+
+        private void StartInitialize()
+        {
             SetCurrency(CurrencyAsset);
             if (CanGetCurrency()) Initialize();
         }
-
         public void SetCurrency(CurrencyAsset currencyAsset)
         {
             if(currencyAsset == null) return;
