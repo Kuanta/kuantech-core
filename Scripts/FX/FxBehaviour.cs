@@ -7,8 +7,8 @@ namespace Kuantech.Core.FX
         public float Delay;
         
         protected Effect ParentFx;
-        private float _fxStartTime;
-        private bool _behaviourStarted;
+        protected float _fxStartTime;
+        protected bool _behaviourStarted;
         
         public void StartFxBehaviour(Effect parentFx)
         {
