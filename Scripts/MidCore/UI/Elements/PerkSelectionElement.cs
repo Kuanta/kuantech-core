@@ -20,7 +20,7 @@ namespace Kuantech.Midcore.UI
         [SerializeField] private TMP_Text PerkDescriptionText;
 
         [NonSerialized] public PerkSelectionPanel ParentPanel;
-        [NonSerialized] public PerkData CurrentPerkData;
+        [NonSerialized] public Perk CurrentPerk;
         private static readonly int Selected = Animator.StringToHash("Selected");
         private static readonly int Unselected = Animator.StringToHash("Unselected");
 
@@ -32,14 +32,14 @@ namespace Kuantech.Midcore.UI
             SelectPerkButton.onClick.AddListener(SelectPerk);    
         }
         
-        public void SetPerk(PerkData perkData)
+        public void SetPerk(Perk perk)
         {
-            if(PerkNameText != null) PerkNameText.text = perkData.PerkAsset.GetName();
-            if (Icon != null) Icon.sprite = perkData.PerkAsset.GetIcon();
-            if(PerkRankText != null) PerkRankText.text = $"{perkData.CurrentRank + 1}";
-            if(IconRankIndicator != null) IconRankIndicator.SetRank(perkData.CurrentRank);
-            if(PerkDescriptionText != null) PerkDescriptionText.text = perkData.PerkAsset.BuildDescription(perkData.CurrentRank);
-            CurrentPerkData = perkData;
+            if(PerkNameText != null) PerkNameText.text = perk.PerkAsset.GetName();
+            if (Icon != null) Icon.sprite = perk.PerkAsset.GetIcon();
+            if(PerkRankText != null) PerkRankText.text = $"{perk.CurrentRank + 1}";
+            if(IconRankIndicator != null) IconRankIndicator.SetRank(perk.CurrentRank);
+            if(PerkDescriptionText != null) PerkDescriptionText.text = perk.PerkAsset.BuildDescription(perk.CurrentRank);
+            CurrentPerk = perk;
         }
 
         private void SelectPerk()
