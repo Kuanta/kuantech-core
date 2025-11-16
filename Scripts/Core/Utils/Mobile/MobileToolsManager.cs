@@ -3,12 +3,9 @@ using System.Collections.Generic;
 using Kuantech.Core;
 using UnityEngine;
 using IngameDebugConsole;
+using MoreMountains.NiceVibrations;
 using Sirenix.OdinInspector;
 using UnityEditor;
-
-#if ENABLE_UNITYHAPTICS
-using Lofelt.NiceVibrations;
-#endif
 
 namespace Kuantech.Utils.Mobile
 {
@@ -17,6 +14,7 @@ namespace Kuantech.Utils.Mobile
         public float Intensity;
         public float Magitude;
         public float Duration;
+        public int HapticType;
     }
     
     public class MobileToolsManager : SubManager
@@ -27,6 +25,7 @@ namespace Kuantech.Utils.Mobile
         public float DefaultHapticMagnitude = 1;
         public float DefaultHapticDuration = 0.1f;
         public float DefaultHapticFrequency = 1;
+        public int DefaultHapticType;
         [SerializeField] private float VibrationCooldown = 0.2f;
         private Queue<HapticPlayData> HapticQueue;
         private float _lastVibrationTime;
@@ -39,6 +38,10 @@ namespace Kuantech.Utils.Mobile
             DefaultHapticMagnitude = ConfigManager.GetFloatConfig("HapticMagnitude");
             DefaultHapticDuration = ConfigManager.GetFloatConfig("HapticDuration");
             DefaultHapticFrequency = ConfigManager.GetFloatConfig("HapticFrequency");
+            DefaultHapticType = ConfigManager.GetIntConfig("HapticType", 0);
+            
+            Debug.Log($"Haptics supported: {MMVibrationManager.HapticsSupported()}");
+            Debug.Log($"Can vibrate: {MMVibrationManager.Android()}");
         }
         
         [Button("Enable Haptics")]
@@ -77,7 +80,29 @@ namespace Kuantech.Utils.Mobile
 #endif
 
         }
-        
+
+        public static void ApplyHapticByType(int hapticType)
+        {
+#if (UNITY_ANDROID || UNITY_IOS) && ENABLE_UNITYHAPTICS
+            var context = GetContext<MobileToolsManager>();
+            if (context == null)
+            {
+                Debug.LogWarning("Add Mobile tools manager to apply haptic feedback");
+                return;
+            }
+
+            if (!context.HapticsToggled) return;
+
+            context.PlayHapticEffect(new HapticPlayData()
+            {
+                Magitude = context.DefaultHapticMagnitude,
+                Intensity = context.DefaultHapticFrequency,
+                Duration = context.DefaultHapticDuration,
+                HapticType = hapticType,
+            });
+#endif
+        }
+
         public static void ApplyHaptic()
         {
 #if (UNITY_ANDROID || UNITY_IOS) && ENABLE_UNITYHAPTICS
@@ -110,6 +135,7 @@ namespace Kuantech.Utils.Mobile
                 Magitude = DefaultHapticMagnitude,
                 Duration = DefaultHapticDuration,
                 Intensity = DefaultHapticFrequency,
+                HapticType = DefaultHapticType,
             };
             HapticQueue.Enqueue(defaultData);
             if (!_isHapticsPlaying)
@@ -144,8 +170,8 @@ namespace Kuantech.Utils.Mobile
             while (HapticQueue.Count > 0)
             {
                 HapticPlayData playData = HapticQueue.Dequeue();
-                //HapticPatterns.PlayPreset(HapticPatterns.PresetType.LightImpact);
-                HapticPatterns.PlayConstant(playData.Magitude, playData.Intensity, playData.Duration);
+                MMVibrationManager.Haptic((HapticTypes)playData.HapticType);
+                //MMVibrationManager.ContinuousHaptic(playData.Intensity, playData.Magitude, playData.Duration);
                 yield return new WaitForSeconds(playData.Duration);
             }
             _isHapticsPlaying = false;
@@ -166,10 +192,7 @@ namespace Kuantech.Utils.Mobile
             context.HapticsToggled = toggle;
         }
 #if ENABLE_UNITYHAPTICS
-        public static void ApplyHaptic(HapticClip clip)
-        {
-            HapticController.Play(clip);
-        }
+
 #endif
         [ConsoleMethod("setHapticCooldown", "Sets haptic feedback cooldown")]
         public static void SetHapticCooldown(float cooldown)
