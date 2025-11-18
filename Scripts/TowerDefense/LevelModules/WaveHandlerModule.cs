@@ -76,7 +76,8 @@ namespace Kuantech.TowerDefense
         {
             if (waveDatas.IsNullOrEmpty())
             {
-                GenerateWaves(ParentLevel.GetPowerLevel(), waveCount);
+                WaveGeneratorConfig config = TowerDefenseLevelDataManager.GetWaveGeneratorConfig();
+                WaveDatas = WaveGenerator.Generate(config, SpawnablesCollection, ParentLevel.GetPowerLevel(), waveCount);
             }
             else
             {
@@ -462,11 +463,18 @@ namespace Kuantech.TowerDefense
         
         #region Debug
         [Button("Generate Wave Datas")]
-        public void GenerateWaves(int difficultyLevel, int waveCount)
+        public void GenerateWaves(WaveGeneratorConfig config, int difficultyLevel, int waveCount)
         {
             //Generate
-            WaveGeneratorConfig config = TowerDefenseLevelDataManager.GetWaveGeneratorConfig();
             WaveDatas = WaveGenerator.Generate(config, SpawnablesCollection, difficultyLevel, waveCount);
+            foreach (var wave in WaveDatas)
+            {
+                Debug.Log("===Wave===");
+                foreach (var entry in wave.WaveEntries)
+                {
+                    Debug.Log($"Entry: SpawnableIndex={entry.SpawnableIndex}, SpawnerIndex={entry.SpawnerIndex}, Amount={entry.Amount}");
+                }
+            }
         }
         #endregion
     }
