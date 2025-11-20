@@ -19,6 +19,11 @@ namespace Kuantech.Core
         [Header("Crouch")] 
         public float CrouchSpeedMultiplier = 0.5f;
 
+        [Header("Dash")] 
+        public float DashStrength = 3f;
+        public float DashDuration = 0.5f;
+        [SerializeReference] public DashHandler DashHandler;
+        
         [SerializeReference] private CrouchHandler CrouchHandler;
         private bool _crouching;
         
@@ -44,6 +49,7 @@ namespace Kuantech.Core
         //Events
         public EventHandler OnJumpEvent;
         public EventHandler OnJumpLandEvent;
+        public EventHandler OnDashEvent;
         
         //Handlers
         public Action<Vector3> JumpHandler;
@@ -292,6 +298,16 @@ namespace Kuantech.Core
             CrouchHandler.OnCrouchEnd();
             _animationModule.ToggleCrouching(false);
             _crouching = false;
+        }
+
+        #endregion
+
+        #region Dash
+
+        public void Dash()
+        {
+            DashHandler.HandleDash(this);
+            OnDashEvent?.Invoke(this, EventArgs.Empty);
         }
 
         #endregion

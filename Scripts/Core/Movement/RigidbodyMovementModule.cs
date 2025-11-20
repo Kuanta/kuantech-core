@@ -90,13 +90,9 @@ namespace Kuantech.Core
             movement *= _movementModule.GetSpeed();
             float downSpeed = Rigidbody.linearVelocity.y;
             movement.y = downSpeed;
+            ;
+            Vector3 vel = movement + Actor.MotionVectorsHandler.ForceMoveVector;
             
-            Vector3 vel = movement + ForceMoveVector;
-
-            if (_dodging)
-            {
-                vel = _dodgeDirection * _dodgeSpeed + ForceMoveVector;
-            }
             if (_movementLocked)
             {
                 vel = Vector3.zero;
@@ -187,12 +183,7 @@ namespace Kuantech.Core
             currentRbVelocity.z = 0;
             Rigidbody.linearVelocity = currentRbVelocity;
             _movementModule.SetMovementVector(Vector3.zero);
-            ForceMoveVector = Vector3.zero;
-            foreach (var routine in _knockbackRoutines)
-            {
-                StopCoroutine(routine);
-            }
-            _knockbackRoutines.Clear();
+            
             _dodging = false;
             _dodgeSpeed = 0f;
         }
@@ -247,7 +238,17 @@ namespace Kuantech.Core
         public void HandleJump(Vector3 jumpVector)
         {
             Rigidbody.linearVelocity = Vector3.zero;
-            Rigidbody.AddForce(jumpVector, ForceMode.Impulse);
+            Vector3 direction3d = new Vector3(direction.x, 0, direction.y);
+            direction3d = transform.rotation * direction3d;
+            Rigidbody.AddForce(Vector3.up * jumpForce + direction3d * Rigidbody.mass, ForceMode.Impulse);
+
+            CombatModule cm = Actor.GetModule<CombatModule>();
+            if (cm != null)
+            {
+                cm.AttackLock.Lock(this);
+            }
+       
+            _movement = Vector2.zero;
         }
  
         #endregion
