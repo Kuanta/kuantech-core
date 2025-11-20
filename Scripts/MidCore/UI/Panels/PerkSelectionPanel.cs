@@ -16,7 +16,7 @@ namespace Kuantech.Midcore.UI
         private List<PerkSelectionElement> _perkSelectionElements = new List<PerkSelectionElement>();
         
         //Events
-        public EventHandler<PerkData> OnPerkChosen;
+        public EventHandler<Perk> OnPerkChosen;
 
         public override void Open()
         {
@@ -30,7 +30,7 @@ namespace Kuantech.Midcore.UI
             GameManager.ResumeGame();
         }
         
-        public void SetPerks(List<PerkData> perkDatas)
+        public void SetPerks(List<Perk> perkDatas)
         {
             Helpers.DestroyAllChildren(PerkSelectionContainer);
 
@@ -59,7 +59,7 @@ namespace Kuantech.Midcore.UI
             }
             
             //Notify the perk handler level module of the selected perk
-            OnPerkChosen?.Invoke(this, perkSelectionElement.CurrentPerkData);
+            OnPerkChosen?.Invoke(this, perkSelectionElement.CurrentPerk);
             Close(); //Close the panel
         }
     }

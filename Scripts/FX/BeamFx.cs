@@ -34,7 +34,12 @@ namespace Kuantech.Core.FX
                 }
             }
 
-            EndPoint.forward = (EndPoint.position - StartPoint.position).normalized;
+            Vector3 dist = EndPoint.position - StartPoint.position;
+            if (dist.sqrMagnitude >= 0.0001f)
+            {
+                EndPoint.forward = (EndPoint.position - StartPoint.position).normalized;
+            }
+            
             if (MuzzleFx != null && MuzzleFx != null)
             {
                 MuzzleFx.transform.position = StartPoint.position;
