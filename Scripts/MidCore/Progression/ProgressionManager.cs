@@ -89,8 +89,7 @@ namespace Kuantech.Midcore
             //Player Level
             if(PlayerLevelDataAsset != null)
             {
-            SetRank(PlayerLevelDataAsset, 0);
-            
+                SetRank(PlayerLevelDataAsset, 0);
             }
             SetDefaultProgressables();
         }
@@ -581,5 +580,6 @@ namespace Kuantech.Midcore
             ctx.FreshUnlockedCollectibles.Clear();
         }
         #endregion
+        
     }
 }

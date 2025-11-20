@@ -10,6 +10,7 @@ namespace Kuantech.Rpg
     [CreateAssetMenu(fileName = "Perk", menuName="Kuantech/Rpg/Perk")]
     public class PerkAsset : MetadataAsset
     {
+        [Tooltip("For description building")]
         public List<PerkVariable> PerkVariables;
         public int MaxRank = 5;
         public PerkVariable GetPerkVariable(string variableName)

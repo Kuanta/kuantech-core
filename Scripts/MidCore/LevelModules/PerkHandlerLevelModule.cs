@@ -13,16 +13,16 @@ namespace Kuantech.Midcore
     {
 
         public List<PerkAsset> AvailablePerks; //All available perks to choose from
-        public List<PerkData> PerkSelectionList; //For predefined order of perk selection
+        public List<Perk> PerkSelectionList; //For predefined order of perk selection
         private PerkHandler _perkHandler;
-        private Queue<PerkData> _perkSelectionQueue;
+        private Queue<Perk> _perkSelectionQueue;
         private List<PerkAsset> _availablePerks;
         private PerkSelectionPanel _perkSelectionPanel;
 
         public int PerkSelectionCount = 3;
         
         //Events
-        public EventHandler<PerkData> OnPerkChosen;
+        public EventHandler<Perk> OnPerkChosen;
         
         public override void Initialize()
         {
@@ -59,7 +59,7 @@ namespace Kuantech.Midcore
         /// </summary>
         public void ShowPerkSelectionMenu()
         {
-            List<PerkData> perkDatas = GetPerkSelectionHand(PerkSelectionCount);
+            List<Perk> perkDatas = GetPerkSelectionHand(PerkSelectionCount);
             if (perkDatas.IsNullOrEmpty())
             {
                 return;
@@ -74,9 +74,9 @@ namespace Kuantech.Midcore
         /// Gets a selection of perks to choose from
         /// </summary>
         /// <returns></returns>
-        public List<PerkData> GetPerkSelectionHand(int selectionCount)
+        public List<Perk> GetPerkSelectionHand(int selectionCount)
         {
-            List<PerkData> perkDatas = new List<PerkData>(selectionCount);
+            List<Perk> perkDatas = new List<Perk>(selectionCount);
             for (int i = 0; i < selectionCount; ++i)
             {
                 if (!_perkSelectionQueue.IsNullOrEmpty())
@@ -105,7 +105,7 @@ namespace Kuantech.Midcore
 
             return probArray;
         }
-        public PerkData GetRandomPerkData()
+        public Perk GetRandomPerkData()
         {
             if (_perkSelectionArray == null || _perkSelectionArray.IsNullOrEmpty())
             {
@@ -114,7 +114,7 @@ namespace Kuantech.Midcore
 
             PerkAsset perkAsset = _perkSelectionArray.Sample();
             _perkSelectionArray.RemoveElement(perkAsset);
-            return new PerkData()
+            return new Perk()
             {
                 PerkAsset = perkAsset,
                 CurrentRank = _perkHandler.GetCurrentPerkRank(perkAsset) + 1,
@@ -130,7 +130,7 @@ namespace Kuantech.Midcore
         private void Reset()
         {
             _perkHandler.ClearPerks();
-            _perkSelectionQueue = new Queue<PerkData>();
+            _perkSelectionQueue = new Queue<Perk>();
             if (!PerkSelectionList.IsNullOrEmpty())
             {
                 foreach (var perkData in PerkSelectionList)
@@ -140,7 +140,7 @@ namespace Kuantech.Midcore
             }
         }
 
-        private void OnPerkChosenHandler(object sender, PerkData selectedPerk)
+        private void OnPerkChosenHandler(object sender, Perk selectedPerk)
         {
             //Add perk
             AddPerk(selectedPerk.PerkAsset);

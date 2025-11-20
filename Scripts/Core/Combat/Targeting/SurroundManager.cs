@@ -82,7 +82,10 @@ namespace Kuantech.Core
         public bool SetCurrentTarget(Actor target)
         {
             ClearTarget();
-            Actor.MotionVectorsHandler.SetTargetObject(target.transform);
+            if (target != null)
+            {
+                Actor.MotionVectorsHandler.SetTargetObject(target.transform);
+            }
             CurrentTarget = target;
             return true;
         }
@@ -124,14 +127,14 @@ namespace Kuantech.Core
         /// <summary>
         /// Tries to assign this actor to a 'melee slot' 
         /// </summary>
-        public void AssignToTargetSlot(Actor otherActor)
+        public void AssignToTargetSlot(Actor otherActor, TargetDetectionSlotType detectionSlotType = TargetDetectionSlotType.ByDistance, bool inverted = false)
         {
             UnsetCurrentTargetSlot();
             SurroundManager otherManager = otherActor.GetModule<SurroundManager>();
             TargetSlot slot = null;
             if (otherManager != null && otherManager.SlotAllocator != null)
             {
-                slot = otherManager.SlotAllocator.GetBestSlot(Actor);
+                slot = otherManager.SlotAllocator.GetBestSlot(Actor, detectionSlotType, inverted);
                 if (slot == null) return;
                 //Register to slot
                 otherManager.SlotAllocator.RegisterActorToSlot(Actor, slot.Index);

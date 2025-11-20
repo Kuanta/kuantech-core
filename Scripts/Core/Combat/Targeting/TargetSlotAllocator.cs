@@ -3,6 +3,12 @@ using UnityEngine;
 
 namespace Kuantech.Core
 {
+
+    public enum TargetDetectionSlotType
+    {
+        ByDistance, //Checks by distance of attacking actor to the slot
+        ByDirection, //Checks by target actors facing direction
+    }
     public class TargetSlot
     {
         public int Index;
@@ -71,9 +77,9 @@ namespace Kuantech.Core
         /// </summary>
         /// <param name="attackingActor"></param>
         /// <returns></returns>
-        public TargetSlot GetBestSlot(Actor attackingActor)
+        public TargetSlot GetBestSlot(Actor attackingActor, TargetDetectionSlotType detectionType, bool inverted = false)
         {
-            float bestScore = float.MinValue;
+            float bestScore = inverted ? float.MaxValue : float.MinValue;
             int bestSlotIndex = -1;
             for(int i=0;i<Slots.Length; i++)
             {
@@ -83,18 +89,57 @@ namespace Kuantech.Core
                     continue;
                 }
 
-                Vector3 slotPos = Slots[i].GetWorldPoint().GetTargetPosition();
-                float score = 1/Vector3.Distance(attackingActor.transform.position, slotPos);
-                if (score > bestScore)
+                float score = 0;
+                switch (detectionType)
                 {
-                    bestSlotIndex = i;
-                    bestScore = score;
+                 
+                    case TargetDetectionSlotType.ByDirection:
+                        score = GetDirectionScore(attackingActor, Slots[i]);
+                        break;
+                    default:
+                    case TargetDetectionSlotType.ByDistance:
+                        score = GetDistanceScore(attackingActor, Slots[i]);
+                        break;
                 }
+
+                if (inverted)
+                {
+                    if (score < bestScore)
+                    {
+                        bestSlotIndex = i;
+                        bestScore = score;
+                    }
+                }
+                else
+                {
+                    if (score > bestScore)
+                    {
+                        bestSlotIndex = i;
+                        bestScore = score;
+                    }
+                }
+             
             }
 
             if (bestSlotIndex < 0) return null;
             return Slots[bestSlotIndex];
         }
+    
+        #region Detection Score
+        private float GetDistanceScore(Actor attackingActor, TargetSlot slot)
+        {
+            Vector3 slotPos = slot.GetWorldPoint().GetTargetPosition();
+            return  1/Vector3.Distance(attackingActor.transform.position, slotPos);
+        }
+
+        private float GetDirectionScore(Actor attackingActor, TargetSlot slot)
+        {
+            Vector3 targetVector = _parent.MotionVectorsHandler.GetTargetVector();
+            Vector3 targetSlot = slot.GetWorldPoint().GetTargetPosition();
+            Vector3 vecToSlot = targetSlot - _parent.GetActorLocation();
+            return Vector3.Dot(vecToSlot, targetVector);
+        }
+        #endregion
 
         public bool IsSlotOccupied(TargetSlot slot)
         {

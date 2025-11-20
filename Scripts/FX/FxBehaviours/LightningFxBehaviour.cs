@@ -10,13 +10,11 @@ namespace Kuantech.Core.FX
         [SerializeField] private float PointsMoveSpeed = 100f;
         [SerializeField] private float StartPointMoveStartDelay = 0.2f;
         private CombatModule _caster = null;
-        private float _fxStartTime;
         protected override void OnFxStarted(Effect parentFx)
         {
             base.OnFxStarted(parentFx);
             _caster = null;
             if (ParentFx == null || ParentFx.EffectPlaySettings.Caster == null) return;
-            _fxStartTime = Time.time;
             _caster = ParentFx.EffectPlaySettings.Caster.GetModule<CombatModule>();
             StartPoint.transform.position = parentFx.transform.position;
             EndPoint.transform.position = parentFx.transform.position;
@@ -25,7 +23,8 @@ namespace Kuantech.Core.FX
 
         public override void UpdateFx()
         {
-            if (EndPoint == null || _caster == null) return;
+            base.UpdateFx();
+            if (EndPoint == null || _caster == null || !_behaviourStarted) return;
             EndPoint.transform.position = Vector3.MoveTowards(EndPoint.transform.position, GetTargetPosition(), PointsMoveSpeed * Time.deltaTime);
             if (Time.time - _fxStartTime > StartPointMoveStartDelay)
             {

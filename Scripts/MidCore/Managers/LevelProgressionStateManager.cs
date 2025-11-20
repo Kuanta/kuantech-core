@@ -83,13 +83,13 @@ namespace Kuantech.Midcore
                 LevelIndex = levelNumber,
             };
             
-            //Set next level
-            LevelManager lm = LevelManager.GetContext<LevelManager>();
-            if (lm != null)
-            {
-                LevelIndexData correctedData = lm.GetCorrectedLevelIndex(ctx.CurrentLevelNumberData);
-                ctx.SetCurrentLevel(correctedData.WorldIndex, correctedData.LevelIndex);
-            }
+            // //Set next level
+            // LevelManager lm = LevelManager.GetContext<LevelManager>();
+            // if (lm != null)
+            // {
+            //     LevelIndexData correctedData = lm.GetCorrectedLevelIndex(ctx.CurrentLevelNumberData);
+            //     ctx.SetCurrentLevel(correctedData.WorldIndex, correctedData.LevelIndex);
+            // }
         }
 
         public static  LevelIndexData GetLevelProgressionData()

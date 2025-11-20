@@ -46,6 +46,7 @@ namespace Kuantech.Core
         private static readonly int Aiming = Animator.StringToHash("Aiming");
         private static readonly int AlternativeAttack = Animator.StringToHash("AlternativeAttack");
         private static readonly int Jump = Animator.StringToHash("Jump");
+        private static readonly int Dash = Animator.StringToHash("Dash");
         private static readonly int Land = Animator.StringToHash("Land");
         private static readonly int Crouching = Animator.StringToHash("Crouching");
         private static readonly int IsGrounded = Animator.StringToHash("IsGrounded");
@@ -71,6 +72,7 @@ namespace Kuantech.Core
             {
                 mm.OnJumpEvent += OnJump;
                 mm.OnJumpLandEvent += OnLand;
+                mm.OnDashEvent += OnDash;
             }
             
             ActorVisualHandler visualHandler = Actor.GetModule<ActorVisualHandler>();
@@ -230,6 +232,11 @@ namespace Kuantech.Core
             Animator.SetTrigger(Jump);
         }
 
+        private void OnDash(object sender, EventArgs args)
+        {
+            Animator.SetTrigger(Dash);
+        }
+        
         public void OnLand(object sender, EventArgs args)
         {
             Animator.SetTrigger(Land);

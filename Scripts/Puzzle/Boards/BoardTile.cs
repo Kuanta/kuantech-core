@@ -135,8 +135,8 @@ namespace Kuantech.Puzzle
                 foreach(var coord in coords)
                 {
                     coord.Layer = layer;
-                    ParentBoard.ClearMask(coord);
                 }
+                ParentBoard.ClearMasks(coords);
             }
             ParentBoard.UpdateBackgroundTileVisibilities();
         }
