@@ -85,17 +85,17 @@ namespace Kuantech.Core
                 Rigidbody.linearVelocity = Vector3.zero;
                 return;
             }
-            if (Rigidbody == null || Jumping) return;
-            
-            //Rigidbody movement
-            float downSpeed = Rigidbody.linearVelocity.y;
-            Vector3 vel = transform.right * (_speed * _movement.x) +
-                          transform.forward * (_movement.y * _speed) + ForceMoveVector;
+            if (Rigidbody == null || !_movementModule.IsGrounded()) return;
 
-            if (_dodging)
-            {
-                vel = _dodgeDirection * _dodgeSpeed + ForceMoveVector;
-            }
+            Vector3 movement = _movementModule.GetMovementVector();
+            movement.y = 0;
+            movement.Normalize();
+            movement *= _movementModule.GetSpeed();
+            float downSpeed = Rigidbody.linearVelocity.y;
+            movement.y = downSpeed;
+            ;
+            Vector3 vel = movement + Actor.MotionVectorsHandler.ForceMoveVector;
+            
             if (_movementLocked)
             {
                 vel = Vector3.zero;
@@ -215,13 +215,8 @@ namespace Kuantech.Core
             currentRbVelocity.x = 0;
             currentRbVelocity.z = 0;
             Rigidbody.linearVelocity = currentRbVelocity;
-            SetMovementVector(Vector2.zero, forced:true);
-            ForceMoveVector = Vector3.zero;
-            foreach (var routine in _knockbackRoutines)
-            {
-                StopCoroutine(routine);
-            }
-            _knockbackRoutines.Clear();
+            _movementModule.SetMovementVector(Vector3.zero);
+            
             _dodging = false;
             _dodgeSpeed = 0f;
         }
@@ -313,23 +308,7 @@ namespace Kuantech.Core
        
             _movement = Vector2.zero;
         }
-
-        private void Land()
-        {
-            Jumping = false;
-            OnJumpLandEvent?.Invoke(this, EventArgs.Empty);
-            CombatModule cm = Actor.GetModule<CombatModule>();
-            if (cm != null)
-            {
-                cm.AttackLock.Unlock(this);
-            }
-        }
-
-        private bool CheckGrounded()
-        {
-            Vector3 center = transform.position;
-            return UnityEngine.Physics.CheckSphere(center, 0.1f, GroundCheckMask);
-        }
+ 
         #endregion
     }
 }

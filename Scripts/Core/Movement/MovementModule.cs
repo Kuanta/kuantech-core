@@ -12,9 +12,30 @@ namespace Kuantech.Core
         public AttributeAsset SpeedAttribute;
         [Tooltip("Fallback speed if speed attribute cant get")]
         public float Speed = 1f;
+        public float SprintMultiplier = 2;
+
+        [Header("Crouch")] 
+        public float CrouchSpeedMultiplier = 0.5f;
+
+        [Header("Dash")] 
+        public float DashStrength = 3f;
+        public float DashDuration = 0.5f;
+        [SerializeReference] public DashHandler DashHandler;
+        
+        [SerializeReference] private CrouchHandler CrouchHandler;
+        private bool _crouching;
         
         //Lock
         public LockVariable MovementLock = new LockVariable();
+        public LockVariable JumpLock = new LockVariable();
+        
+        //Events
+        public EventHandler OnJumpEvent;
+        public EventHandler OnJumpLandEvent;
+        public EventHandler OnDashEvent;
+        
+        //Handlers
+        public Action<Vector3> JumpHandler;
 
         #region Movement Vector
         /// <summary>
@@ -102,7 +123,36 @@ namespace Kuantech.Core
             
         }
         #endregion
-        
+
+        #region Crouch
+
+        public void Crouch()
+        {
+            if (CrouchHandler == null) return;
+            CrouchHandler.OnCrouchStarted();
+            _animationModule.ToggleCrouching(true);
+            _crouching = true;
+        }
+
+        public void Standup()
+        {
+            if (CrouchHandler == null) return;
+            CrouchHandler.OnCrouchEnd();
+            _animationModule.ToggleCrouching(false);
+            _crouching = false;
+        }
+
+        #endregion
+
+        #region Dash
+
+        public void Dash()
+        {
+            DashHandler.HandleDash(this);
+            OnDashEvent?.Invoke(this, EventArgs.Empty);
+        }
+
+        #endregion
         #region Knockback
         private HashSet<IEnumerator> _knockbackRoutines = new HashSet<IEnumerator>();
         
