@@ -33,11 +33,19 @@ namespace Kuantech.Core
             
         }
 
+        public virtual void ModuleFixedUpdate()
+        {
+            
+        }
         public virtual void ModuleUpdate()
         {
             
         }
 
+        public virtual void ModuleLateUpdate()
+        {
+            
+        }
         public virtual void OnActorStateChanged(ActorState oldState, ActorState newState)
         {
             
@@ -84,6 +92,19 @@ namespace Kuantech.Core
         public virtual void SetDefaultValues()
         {
 
+        }
+        #endregion
+
+        #region Networking
+
+        public virtual void OnLocalPlayerStart()
+        {
+            
+        }
+
+        public virtual void OnLocalPlayerStop()
+        {
+            
         }
         #endregion
 

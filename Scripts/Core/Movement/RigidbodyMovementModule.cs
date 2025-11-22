@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using Kuantech.AI.Pathfinding;
 using Kuantech.Core.Utils;
 using UnityEngine;
 using UnityEngine.Events;
@@ -22,7 +21,6 @@ namespace Kuantech.Core
         private float _movementThreshold = 0.001f;
         
         //Movement Lock
-        public LockVariable MovementLock = new LockVariable();
         
         //Dodge
         [Header("Dodge")]
@@ -39,48 +37,46 @@ namespace Kuantech.Core
         
         //Jumping
         [Header("Jumping")]
-        public float JumpEnergyCost = 0f;
-        public LockVariable JumpLock = new LockVariable();
-        public bool GroundCheckEnabled = false;
-        public bool Jumping;
-        public EventHandler OnJumpEvent;
-        public EventHandler OnJumpLandEvent;
-        public LayerMask GroundCheckMask;
-        [SerializeField] private bool _isGrounded;
-        private float _jumpTime;
 
-        [Header("Path Follower")] [SerializeField]
-        private PathFollower PathFollower;
-        
-        private Vector2 _movement;
+        [Tooltip("Factor to multiply movement speed to add to jump force")]
+        public float MovementSpeedToJumpForceFactor = 1.0f;
+  
         private float _dodgeMomentumPreserveTime = 0.5f;
+        private MovementModule _movementModule;
+        private AnimationModule _animationModule;
         
+        public override void OnModulesInitialized()
+        {
+            base.OnModulesInitialized();
+            if (Rigidbody == null)
+            {
+                Rigidbody = GetComponent<Rigidbody>();
+            }
+
+            _movementModule = Actor.GetModule<MovementModule>();
+            _animationModule = Actor.GetModule<AnimationModule>();
+            _movementModule.JumpHandler = HandleJump;
+        }
     
         private void FixedUpdate()
         {
             HandleMovement();
         }
 
-        private void Update()
-        {
-            if (MovementLock.IsLocked())
-            {
-                SetMovementVector(new Vector2(0,0));
-            }
-            
-            //Dodge timer
-            if (_dodging && (Time.time - _dodgeStartTime) >= _dodgeDuration)
-            {
-                _dodging = false;
-                _lastDodgeTime = Time.time;
-            }
-            
-            HandleJumpLogic();
-        }
+        // private void Update()
+        // {
+        //
+        //     //Dodge timer
+        //     if (_dodging && (Time.time - _dodgeStartTime) >= _dodgeDuration)
+        //     {
+        //         _dodging = false;
+        //         _lastDodgeTime = Time.time;
+        //     }
+        // }
         private void HandleMovement()
         {
             if (Actor == null) return;
-            if (GameManager.IsGamePaused() || !Actor.IsAlive())
+            if (GameManager.IsGamePaused() || !Actor.IsAlive() || _movementModule == null)
             {
                 Rigidbody.linearVelocity = Vector3.zero;
                 return;
@@ -117,6 +113,7 @@ namespace Kuantech.Core
                 Rigidbody.linearVelocity = vel;
             }
             
+            
         }
 
         #region Queries
@@ -139,16 +136,7 @@ namespace Kuantech.Core
             //todo: Implement aim mechanics
             return transform.forward;
         }
-                
-        public float GetForwardMovement()
-        {
-            return _movement.y;
-        }
 
-        public float GetSideMovement()
-        {
-            return _movement.x;
-        }
         public Vector3 GetMomentumVector()
         {
             Vector3 dodgeMomentum = Vector3.zero;
@@ -186,28 +174,6 @@ namespace Kuantech.Core
         {
             
         }
-        
-        /// <summary>
-        /// Sets the global movement vector
-        /// </summary>
-        /// <param name="movement"></param>
-        public void SetGlobalMovementVector(Vector2 movement)
-        {
-            if (_goingToWaypoint || Jumping || MovementLock.IsLocked()) return;
-            Vector3 relative = transform.InverseTransformDirection(new Vector3(movement.x, 0, movement.y));
-            SetMovementVector(new Vector2(relative.x, relative.z));
-        }
-
-        /// <summary>
-        /// Sets the local movement vector. For local movement vectors, z = 1 always means forward
-        /// </summary>
-        /// <param name="movement"></param>
-        /// <param name="forced">If set to true, no conditions will be checked</param>
-        public void SetMovementVector(Vector2 movement, bool forced = false)
-        {
-            if (!forced && (_goingToWaypoint || Jumping || MovementLock.IsLocked())) return;
-            _movement = movement;
-        }
 
         public void Stop()
         {
@@ -230,10 +196,8 @@ namespace Kuantech.Core
             _goingToWaypoint = false;
             _dodging = false;
             _lastDodgeTime = 0;
-            Jumping = false;
-            JumpLock.Reset();
+
             DodgeLock.Reset();
-            MovementLock.Reset();
         }
         
         # region Dodge
@@ -244,7 +208,7 @@ namespace Kuantech.Core
         }
         public void Dodge(Vector3 dodgeDirection, float dodgeDuration, float dodgeSpeed)
         {
-            if (_dodging || Jumping || DodgeLock.IsLocked()) return;
+            if (_dodging || DodgeLock.IsLocked()) return;
             if (Time.time - _lastDodgeTime < DodgeCooldown) return; //Wait for cooldown
             
             //Check energy cost
@@ -269,46 +233,11 @@ namespace Kuantech.Core
             return 0; //Jump should be energy freee
         }
 
-        private void HandleJumpLogic()
+        
+        public void HandleJump(Vector3 jumpVector)
         {
-            if (!GroundCheckEnabled) return;
-            _isGrounded = CheckGrounded();
-            
-            //Did we land
-            if (Jumping && Time.time - _jumpTime > 0.5f && _isGrounded)
-            {
-                //Land
-                Land();
-            }
+             Rigidbody.AddForce(jumpVector, ForceMode.Impulse);
         }
-
-        public void Jump(float jumpHeight, Vector2 direction)
-        {
-            if (Jumping || !_isGrounded || JumpLock.IsLocked()) return;
-            
-            //Check energy cost
-            float energyCost = GetJumpEnergyCost();
-            // if (Actor.Energy < energyCost) return;
-            // Actor.SpendEnergy(energyCost);
-            
-            Jumping = true;
-            OnJumpEvent?.Invoke(this, EventArgs.Empty);
-            _jumpTime = Time.time;
-            float jumpForce = Mathf.Sqrt(Mathf.Abs(2 * jumpHeight * UnityEngine.Physics.gravity.y)) * Rigidbody.mass;
-            Rigidbody.linearVelocity = Vector3.zero;
-            Vector3 direction3d = new Vector3(direction.x, 0, direction.y);
-            direction3d = transform.rotation * direction3d;
-            Rigidbody.AddForce(Vector3.up * jumpForce + direction3d * Rigidbody.mass, ForceMode.Impulse);
-
-            CombatModule cm = Actor.GetModule<CombatModule>();
-            if (cm != null)
-            {
-                cm.AttackLock.Lock(this);
-            }
-       
-            _movement = Vector2.zero;
-        }
- 
         #endregion
     }
 }

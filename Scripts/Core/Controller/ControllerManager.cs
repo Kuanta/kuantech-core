@@ -1,4 +1,5 @@
 ﻿using Cysharp.Threading.Tasks;
+using UnityEngine;
 
 namespace Kuantech.Core.Controller
 {
@@ -19,6 +20,12 @@ namespace Kuantech.Core.Controller
             var ctx = GetContext<ControllerManager>();
             if (ctx == null) return null;
             return ctx.CurrentController;
+        }
+        
+        private void Update()
+        {
+            if (!Initialized) return;
+            CurrentController?.Tick(Time.deltaTime);
         }
     }
 }

@@ -23,7 +23,9 @@ namespace Kuantech.Core
             if (CurrentActorVisual != null)
             {
                 CurrentActorVisual.Initialize();
+                CurrentActorVisual.OnAttachedToActor(Actor);
                 CurrentActorVisual.ParentActor = Actor;
+                OnActorVisualSet?.Invoke(CurrentActorVisual);
             }
         }
 

@@ -46,6 +46,9 @@ namespace Kuantech.Core
             {
                 _actorVisualHandler.OnActorVisualSet += OnActorVisualSet;
                 _actorVisualHandler.OnActorVisualRemoved += OnActorVisualRemoved;
+
+                if (_actorVisualHandler.CurrentActorVisual != null)
+                    OnActorVisualSet(_actorVisualHandler.CurrentActorVisual);
             }
         }
         

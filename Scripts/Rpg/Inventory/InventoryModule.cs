@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using Kuantech.Core;
-using Kuantech.Data;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -27,7 +26,7 @@ namespace Kuantech.Rpg.Inventory
             {
                 items.Add(null);
             }
-            equipment = GetComponent<Equipment>();
+            if(equipment == null) equipment = GetComponent<Equipment>();
             equipment.Initialize(this);
             _initialized = true;
         }
@@ -51,7 +50,7 @@ namespace Kuantech.Rpg.Inventory
         /// Adds an item to the inventory of the player
         /// </summary>
         /// <param name="item"></param>
-        public void AddItem(Item item, int amount=1)
+        public bool AddItem(Item item, int amount=1)
         {
             amount = Mathf.Max(1, amount);
             if (item.Data.stackable)
@@ -60,7 +59,7 @@ namespace Kuantech.Rpg.Inventory
                 if (stackable != null)
                 {
                     stackable.Amount += amount;
-                    return;
+                    return true;
                 }
             }
             else
@@ -68,12 +67,13 @@ namespace Kuantech.Rpg.Inventory
                 amount = 1;
             }
             int availableId = GetAvailableSlotId();
-            if (availableId < 0) return;
+            if (availableId < 0) return false;
             items[availableId] = item;
             item.StateData.InventoryId = availableId;
             item.StateData.IsNew = true;
             //Add the item data
             item.ParentInvetory = this;
+            return true;
         }
         
           /// <summary>

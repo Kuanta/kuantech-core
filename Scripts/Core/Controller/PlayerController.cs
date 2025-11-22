@@ -7,14 +7,39 @@ namespace Kuantech.Core.Controller
     /// <summary>
     /// Player controller, handles the 
     /// </summary>
+    [Serializable]
     public class PlayerController
     {
         [Header("Flags")]
-        
         [NonSerialized] public Actor CurrentPlayer;
         [NonSerialized] public KtCamera ControllerCamera;
 
         public Vector3 ControllerAim;
+        
+        [Header("Yaw - Pitch")]
+        public float YawSmoothTime   = 0.08f;
+        public float PitchSmoothTime = 0.08f;
+        public float PitchMin = -89f;
+        public float PitchMax =  89f;
+        public float Yaw   => _currentYaw;
+        public float Pitch => _currentPitch;
+        
+        public float TargetPitch => _targetPitch;
+        
+        public float TargetYaw => _targetYaw;
+        private float _currentYaw, _currentPitch;   
+        private float _targetYaw,  _targetPitch; 
+        private float _yawVel, _pitchVel;
+
+        
+        public void Tick(float dt)
+        {
+            _currentYaw = Mathf.SmoothDampAngle(
+                _currentYaw, _targetYaw, ref _yawVel, YawSmoothTime, Mathf.Infinity, dt);
+
+            _currentPitch = SmoothDampClamped(
+                _currentPitch, _targetPitch, ref _pitchVel, PitchSmoothTime, dt, PitchMin, PitchMax);
+        }
         
         #region Player Actor
 
@@ -35,25 +60,33 @@ namespace Kuantech.Core.Controller
         #endregion
 
         #region Yaw - Pitch
-        private float _yaw;
-        private float _pitch;
-
-        public float Yaw => _yaw;
-        public float Pitch => _pitch;
-
-        public void SetYaw(float yaw)
+        public void AddYaw(float deltaYawDeg)
         {
-            _yaw = yaw;
+            _targetYaw = Normalize360(_targetYaw + deltaYawDeg);
         }
 
-        public void SetPitch(float pitch)
+        public void AddPitch(float deltaPitchDeg)
         {
-            _pitch = Mathf.Clamp(pitch, -80f, 80f); // limitler sende
+            _targetPitch = Mathf.Clamp(_targetPitch + deltaPitchDeg, PitchMin, PitchMax);
+        }
+
+        public void SetYawImmediate(float yawDeg)
+        {
+            _targetYaw   = Normalize360(yawDeg);
+            _currentYaw  = _targetYaw;
+            _yawVel      = 0f;
+        }
+
+        public void SetPitchImmediate(float pitchDeg)
+        {
+            _targetPitch  = Mathf.Clamp(pitchDeg, PitchMin, PitchMax);
+            _currentPitch = _targetPitch;
+            _pitchVel     = 0f;
         }
 
         public Quaternion GetRotation()
         {
-            return Quaternion.Euler(_pitch, _yaw, 0f);
+            return Quaternion.Euler(_currentPitch, _currentYaw, 0f);
         }
 
         public Vector3 GetLookDirection()
@@ -61,20 +94,33 @@ namespace Kuantech.Core.Controller
             return GetRotation() * Vector3.forward;
         }
 
+        // --- Helpers ---
+        private static float Normalize360(float a) => (a % 360f + 360f) % 360f;
+
+        private static float SmoothDampClamped(float current, float target, ref float vel, float smoothTime, float dt, float min, float max)
+        {
+            target = Mathf.Clamp(target, min, max);
+            return Mathf.SmoothDamp(current, target, ref vel, smoothTime, Mathf.Infinity, dt);
+        }
         #endregion
 
-        #region Inputs
-
-        public void AddYaw(float yaw)
+        #region Camera
+        public Vector3 GetControllerDirection()
         {
-            SetYaw(Yaw  + yaw);
+            KtCamera camera = GetControllerCamera();
+            if (camera == null) return Vector3.zero;
+            return GetControllerCamera().transform.forward;
         }
         
-        public void AddPitch(float pitch)
+        public KtCamera GetControllerCamera()
         {
-            SetPitch(Mathf.Clamp(Pitch + pitch, -89.0f, 89.0f));
+            if (ControllerCamera == null)
+            {
+                return CameraManager.GetKtCamera();
+            }
+            return ControllerCamera;
         }
-        
         #endregion
+
     }
 }

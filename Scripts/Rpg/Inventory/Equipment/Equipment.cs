@@ -9,7 +9,7 @@ namespace Kuantech.Rpg.Inventory
     [Serializable]
     public class EquipmentSlot
     {
-        [FormerlySerializedAs("Type")] public EquipmentSlotType SlotType;
+        public EquipmentSlotType SlotType;
         [SerializeReference] public Item item = null;
     }
 
@@ -84,7 +84,7 @@ namespace Kuantech.Rpg.Inventory
             //If actor visual isn't null, slot the visual
             if (visual != null)
             {
-                visual.SlotItem(itemSlotType, item);
+                item.ItemVisual = visual.SlotItem(itemSlotType, item);
             }
  
 
@@ -111,9 +111,11 @@ namespace Kuantech.Rpg.Inventory
             item.StateData.Equipped = false;
             Encumbrance -= item.Data.weight;
             Encumbrance = Mathf.Max(Encumbrance, 0f);
-            ActorVisual actorVisual = GetActorVisual();
-            if (actorVisual != null) actorVisual.ClearSlot(item.CurrentSlot);
 
+            if (item.ItemVisual != null)
+            {
+                PoolManager.PoolObject(item.ItemVisual.gameObject);
+            }
             
             //UI handler
             try

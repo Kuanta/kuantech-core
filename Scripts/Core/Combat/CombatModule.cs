@@ -631,7 +631,7 @@ namespace Kuantech.Core
 
             _currentCastData.StartPosition = GetAttackPosition();
 
-            Actor.MotionVectorsHandler.SetTargetVector(_currentCastData.Direction);
+            //Actor.MotionVectorsHandler.SetTargetVector(_currentCastData.Direction);
             
             OnAttackStarted(castData);
 
@@ -900,9 +900,18 @@ namespace Kuantech.Core
         public Vector3 GetAttackDirection()
         {
             Actor target = GetCurrentTarget();
-            if(target == null) return GetActionCastData().Direction;
-            Vector3 direction = target.transform.position - GetActionCastData().StartPosition;
-            return direction.normalized;
+            if (target != null)
+            {
+                Vector3 direction = target.transform.position - GetActionCastData().StartPosition;
+                return direction.normalized;
+            }
+            ActionCastData castData =  GetActionCastData();
+            if (castData.Direction.sqrMagnitude > 0.01f)
+            {
+                return castData.Direction;
+            }
+
+            return (castData.TargetPosition - GetAttackPosition()).normalized;
         }
         
         /// <summary>

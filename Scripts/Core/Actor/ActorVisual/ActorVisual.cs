@@ -8,20 +8,7 @@ using UnityEngine;
 
 namespace Kuantech.Core
 {
-    [Serializable]
-    public class ItemSocket
-    {
-        public EquipmentSlotType SlotType;
-        public Transform Socket;
-        public ItemVisual CurrentObject;
-    }
-    
-    [Serializable]
-    public struct InPlaceItemEntry
-    {
-        public ItemVisual Visual;
-        public ItemDataAsset ItemData;
-    }
+
 
     [Serializable]
     public struct ActorVisualSerializableData
@@ -41,14 +28,9 @@ namespace Kuantech.Core
         [Header("Animations")] 
         public Animator Animator;
 
-        [Header("Bones")] 
-        public List<ItemSocket> ObjectSlots;
-
         [Header("Visual Parts")] 
         public ActorVisualPartsHandler VisualPartsHandler;
-        
-        [Header("Inplace Items")]
-        public List<InPlaceItemEntry> InPlaceItemsList;
+
 
         [Header("Shader Effects")] 
         public List<ShaderEffect> ShaderEffects;
@@ -59,10 +41,6 @@ namespace Kuantech.Core
         //Runtime
         [NonSerialized] public bool Initialized;
         [NonSerialized] public Actor ParentActor;
-        private Dictionary<string, InPlaceItemEntry> _inPlaceItemsMap;
-
-        //Equipment Slot Types To Bone Slots
-        private Dictionary<EquipmentSlotType, ItemSocket> _slotsToBoneSlots;
 
         #region Lifecycle
 
@@ -73,12 +51,7 @@ namespace Kuantech.Core
         {
             if (Initialized) return;
             Initialized = true;
-            _inPlaceItemsMap = new Dictionary<string, InPlaceItemEntry>();
-            foreach (var inplace in InPlaceItemsList)
-            {
-                _inPlaceItemsMap[inplace.ItemData.GetItemId()] = inplace;
-                inplace.Visual.IsInPlace = true;
-            }
+
             VisualPartsHandler.Initialize();
 
             ModuleHandler = new ModuleHandler<ActorVisualModule>();
@@ -115,32 +88,30 @@ namespace Kuantech.Core
         #endregion
 
         #region Item Slotting
+        /// <summary>
+        /// Checks whether actor visual has the slot
+        /// </summary>
+        /// <param name="slotType"></param>
+        /// <returns></returns>
         public bool HasSlotFor(EquipmentSlotType slotType)
         {
-            if (_slotsToBoneSlots == null) return false;
-            return _slotsToBoneSlots.ContainsKey(slotType);
+            ActorSlotsHandler slotsHandler = ParentActor.GetModule<ActorSlotsHandler>();
+            if (slotsHandler == null) return false;
+            var slot = slotsHandler.GetSlot(slotType.SlotName);
+            return slot != null;
         }
-        
-        /// <summary>
-        /// Checks whether slot is available for given equipment slot type
-        /// </summary>
-        /// <param name="slot"></param>
-        /// <returns></returns>
-        public bool IsSlotAvailable(EquipmentSlotType slot)
-        {
-            if (!HasSlotFor(slot)) return false;
-            return GetObjectSlot(slot)?.CurrentObject;
-        }
+
         
         /// <summary>
         /// Gets the object slot for equipment type
         /// </summary>
         /// <param name="equipmentSlotType"></param>
         /// <returns></returns>
-        public ItemSocket GetObjectSlot(EquipmentSlotType equipmentSlotType)
+        public Transform GetObjectSlot(EquipmentSlotType equipmentSlotType)
         {
-            if (!HasSlotFor(equipmentSlotType)) return null;
-            return _slotsToBoneSlots[equipmentSlotType];
+            ActorSlotsHandler slotsHandler = ParentActor.GetModule<ActorSlotsHandler>();
+            if (slotsHandler == null) return null;
+            return slotsHandler.GetSlot(equipmentSlotType.SlotName);
         }
         
         /// <summary>
@@ -149,57 +120,23 @@ namespace Kuantech.Core
         /// <param name="slot"></param>
         /// <param name="objectToSlot"></param>
         /// <returns></returns>
-        public bool SlotItem(EquipmentSlotType slot, Item itemToSlot)
+        public ItemVisual SlotItem(EquipmentSlotType slot, Item itemToSlot)
         {
-            if (!HasSlotFor(slot)) return false;
+            if (!HasSlotFor(slot)) return null;
             
             //Clear occupying slots
             foreach (var occupying in itemToSlot.GetOccupyingSlots(slot))
             {
-                ClearSlot(occupying);
                 ToggleVisualPartForSlot(occupying, false);
             }
 
-            ItemSocket socket = GetObjectSlot(slot);
+            Transform socket = GetObjectSlot(slot);
 
             //is in place?
-            if (_inPlaceItemsMap.ContainsKey(itemToSlot.Data.Id))
-            {
-                InPlaceItemEntry entry = _inPlaceItemsMap[itemToSlot.Data.Id];
-                socket.CurrentObject = entry.Visual;
-                ToggleInplaceItem(itemToSlot.GetId(), true);
-            }
-            else
-            {
-                ItemVisual visual = itemToSlot.SpawnItemVisual();
-                visual.gameObject.AttachToParent(socket.Socket);
-                socket.CurrentObject = visual;
-            }
-
-            return true;
-        }
-        
-        /// <summary>
-        /// Unslots an item
-        /// </summary>
-        /// <param name="itemToUnslot"></param>
-        public void UnslotItem(Item itemToUnslot)
-        {
-            EquipmentSlotType slotType = itemToUnslot.CurrentSlot;
-            foreach (var occupying in itemToUnslot.GetOccupyingSlots(slotType))
-            {
-                ClearSlot(occupying);
-                ToggleVisualPartForSlot(occupying, false);
-            }
-        }
-        /// <summary>
-        /// Toggles in place item
-        /// </summary>
-        /// <param name="itemId"></param>
-        /// <param name="toggle"></param>
-        private void ToggleInplaceItem(string itemId, bool toggle)
-        {
-            _inPlaceItemsMap[itemId].Visual.gameObject.SetActive(toggle);
+            ItemVisual visual = itemToSlot.SpawnItemVisual();
+            if (visual == null) return null;
+            visual.gameObject.AttachToParent(socket);
+            return visual;
         }
         
         /// <summary>
@@ -212,20 +149,6 @@ namespace Kuantech.Core
             VisualPartsHandler.ToggleVisualPart(slot, toggle);
         }
 
-      
-        /// <summary>
-        /// Clears an item socket
-        /// </summary>
-        /// <param name="slotType"></param>
-        public void ClearSlot(EquipmentSlotType slotType)
-        {
-            ItemSocket slot = GetObjectSlot(slotType);
-            if (slot == null || slot.CurrentObject == null) return;
-            slot.CurrentObject.Despawn();
-            
-            //Toggles the default visual part
-            ToggleVisualPartForSlot(slotType, true);
-        }
         #endregion
 
         #region Shader Effects

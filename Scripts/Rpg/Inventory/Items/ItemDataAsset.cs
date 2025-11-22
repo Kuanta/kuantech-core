@@ -5,11 +5,13 @@ namespace Kuantech.Rpg.Inventory
     [CreateAssetMenu(fileName = "ItemData", menuName = "Kuantech/Rpg/ItemData")]
     public class ItemDataAsset : ScriptableObject
     {
-        public ItemData ItemData;
+        [SerializeReference] public ItemData ItemData;
+        public ItemVisual ItemVisual;
 
         public string GetItemId()
         {
             return ItemData.Id;
         }
+
     }
 }
