@@ -55,7 +55,6 @@ namespace Kuantech.Core
 
             _movementModule = Actor.GetModule<MovementModule>();
             _animationModule = Actor.GetModule<AnimationModule>();
-
             _movementModule.JumpHandler = HandleJump;
         }
     
@@ -237,20 +236,8 @@ namespace Kuantech.Core
         
         public void HandleJump(Vector3 jumpVector)
         {
-            Rigidbody.linearVelocity = Vector3.zero;
-            Vector3 direction3d = new Vector3(direction.x, 0, direction.y);
-            direction3d = transform.rotation * direction3d;
-            Rigidbody.AddForce(Vector3.up * jumpForce + direction3d * Rigidbody.mass, ForceMode.Impulse);
-
-            CombatModule cm = Actor.GetModule<CombatModule>();
-            if (cm != null)
-            {
-                cm.AttackLock.Lock(this);
-            }
-       
-            _movement = Vector2.zero;
+             Rigidbody.AddForce(jumpVector, ForceMode.Impulse);
         }
- 
         #endregion
     }
 }

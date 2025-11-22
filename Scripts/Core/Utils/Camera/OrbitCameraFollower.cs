@@ -53,6 +53,7 @@ namespace Kuantech.Core.Utils
 
         private void LateUpdate()
         {
+            if (Anchor == null) return;
             // 1) Update targets
             if (UseControllerYawPitch)
             {
@@ -121,7 +122,6 @@ namespace Kuantech.Core.Utils
         public Vector3 GetTargetPosition()
         {
             Transform anchor = GetAnchor();
-            if (!anchor) return transform.position;
 
             // Spherical coordinates → cartesian (Yaw: around Y, Pitch: around X)
             float yawRad   = Mathf.Deg2Rad * _currentYawAngle + YawOffset * Mathf.Deg2Rad;

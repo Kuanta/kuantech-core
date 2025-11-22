@@ -95,5 +95,18 @@ namespace Kuantech.Core
         }
         #endregion
 
+        #region Networking
+
+        public virtual void OnLocalPlayerStart()
+        {
+            
+        }
+
+        public virtual void OnLocalPlayerStop()
+        {
+            
+        }
+        #endregion
+
     }
 }
