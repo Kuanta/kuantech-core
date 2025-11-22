@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Kuantech.Core;
 using UnityEngine;
 using IngameDebugConsole;
-using MoreMountains.NiceVibrations;
 using Sirenix.OdinInspector;
 using UnityEditor;
 
@@ -39,9 +38,6 @@ namespace Kuantech.Utils.Mobile
             DefaultHapticDuration = ConfigManager.GetFloatConfig("HapticDuration");
             DefaultHapticFrequency = ConfigManager.GetFloatConfig("HapticFrequency");
             DefaultHapticType = ConfigManager.GetIntConfig("HapticType", 0);
-            
-            Debug.Log($"Haptics supported: {MMVibrationManager.HapticsSupported()}");
-            Debug.Log($"Can vibrate: {MMVibrationManager.Android()}");
         }
         
         [Button("Enable Haptics")]
@@ -170,7 +166,6 @@ namespace Kuantech.Utils.Mobile
             while (HapticQueue.Count > 0)
             {
                 HapticPlayData playData = HapticQueue.Dequeue();
-                MMVibrationManager.Haptic((HapticTypes)playData.HapticType);
                 //MMVibrationManager.ContinuousHaptic(playData.Intensity, playData.Magitude, playData.Duration);
                 yield return new WaitForSeconds(playData.Duration);
             }
