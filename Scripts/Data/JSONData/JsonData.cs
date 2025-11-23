@@ -69,7 +69,18 @@ namespace Kuantech.Core.Data
                 _data = JsonUtility.FromJson(json, SerializeType);
                 Debug.Log("JsonData: Loaded from local.");
             }
+        }
 
+        public object ReadData()
+        {
+            if (!BetterStreamingAssets.FileExists(GetFullFilePath()))
+            {
+                Debug.LogError($"JsonData: File not found locally at {FilePath}");
+                return null;
+            }
+
+            var json =BetterStreamingAssets.ReadAllText(FilePath);
+            return JsonUtility.FromJson(json, SerializeType);
         }
         static string SanitizeJson(string s)
         {

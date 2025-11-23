@@ -35,5 +35,17 @@ namespace Kuantech.Core.Data
             }
             return null;
         }
+
+        public T GetDataNonStatic<T>() where T : class
+        {
+            Type key = typeof(T);
+
+            foreach (var data in JsonDatas)
+            {
+                if(data.SerializeType != key) continue;
+                return data.ReadData() as T;
+            }
+            return null;
+        }
     }
 }
