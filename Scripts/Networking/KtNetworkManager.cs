@@ -1,11 +1,14 @@
-﻿using Cysharp.Threading.Tasks;
-using FishNet.Managing;
-using FishNet.Transporting;
-using Kuantech.Core;
-using UnityEngine;
+﻿
 
 namespace Kuantech.Networking
 {
+#if NETWORKING_FISHNET
+    using Cysharp.Threading.Tasks;
+    using FishNet.Managing;
+    using FishNet.Transporting;
+    using Kuantech.Core;
+    using UnityEngine;
+
     public class KtNetworkManager : SubManager
     {
         [SerializeField] private NetworkManager NetworkManager;
@@ -31,4 +34,5 @@ namespace Kuantech.Networking
         }
         #endregion
     }
+#endif
 }

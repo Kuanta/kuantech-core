@@ -32,6 +32,7 @@ namespace Kuantech.Core.Camera
 
         private void Update()
         {
+            if(ZoomAnchor == null) return;
             //Zoom
             float currentFOV = Camera.fieldOfView;
             currentFOV = Mathf.SmoothDamp(currentFOV, GetTargetFOV(), ref _fovVel, ZoomSmoothDampTime);

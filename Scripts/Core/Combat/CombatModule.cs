@@ -250,7 +250,7 @@ namespace Kuantech.Core
         /// <returns></returns>
         public float GetAttackDuration()
         {
-            return  CombatUtilities.GetAttackDuration(GetAttackSpeed(), GetBaseAttackTime(), MinAttackTime, MaxAttackTime);;
+            return  CombatUtilities.GetAttackDuration(GetAttackSpeed(), GetBaseAttackTime(), MinAttackTime, MaxAttackTime);
         }
                 
         /// <summary>

@@ -288,6 +288,20 @@ namespace Kuantech.Rpg.Skills
                     playSettings.PlayStartPosition = effectStarPosition;
                     playSettings.PlayStartRotation = playRot;
                     break;
+                case FxPlayData.SkillBehaviourFxPlayType.OnTarget:
+                    if (CurrentSkillCastData.Target != null)
+                    {
+                        playSettings.EffectParent = CurrentSkillCastData.Target.GetActorAnchor();
+                        playSettings.LocalPlayPosition = Vector3.zero;
+                        playSettings.LocalPlayRotation = localRot;
+                    }
+                    else
+                    {
+                        playSettings.SetPosition = true;
+                        playSettings.PlayStartPosition = effectStarPosition;
+                        playSettings.PlayStartRotation = playRot;
+                    }
+                    break;
             }
 
             return playSettings;

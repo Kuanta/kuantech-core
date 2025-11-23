@@ -40,6 +40,7 @@ namespace Kuantech.Rpg.Skills
             foreach(var skillVariableData in skillDataAsset.SkillVariableDatas)
             {
                 SkillVariable skillVariable = new SkillVariable(skillVariableData);
+                skillVariable.ParentSkill = this;
                 if (_skillVariables == null)
                 {
                     _skillVariables = new Dictionary<string, SkillVariable>();
@@ -129,7 +130,9 @@ namespace Kuantech.Rpg.Skills
         public bool Cast(ActionCastData castData)
         {
             if (!CanBeCast(castData) || ParentSpellBook == null) return false;
-            CurrentSkillCastData = castData;
+            _lastCastTime = Time.time;
+           
+           CurrentSkillCastData = castData;
             _isCasting = true;
             CurrentSkilLBehaviourIndex = 0;
             ParentSpellBook.OnSkillCastStarted(this);
@@ -141,7 +144,6 @@ namespace Kuantech.Rpg.Skills
             }
             
             StartSkillBehaviour(CurrentSkilLBehaviourIndex);
-            _lastCastTime = Time.time;
             return true;
         }
 

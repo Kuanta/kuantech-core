@@ -11,6 +11,7 @@ namespace Kuantech.Rpg.Skills
         public float ValuePerRank;
         public AttributeAsset AttributeToScaleWith;
         public float AttributeScalingFactor;
+        public bool UsedForDPS; //To calculate dps
     }
     
     /// <summary>
