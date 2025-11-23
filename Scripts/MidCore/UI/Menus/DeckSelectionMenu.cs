@@ -63,6 +63,13 @@ namespace Kuantech.Midcore.UI
             CancelEquipButton.gameObject.SetActive(false);
 
             CollectibleInfoPanel.ParentDeckSelectionMenu = this;
+            
+            DeckBuildingManager.GetContext<DeckBuildingManager>().OnDeckChanged += OnDeckChangedHandler;
+        }
+        
+        private void OnDeckChangedHandler(object sender, int index)
+        {
+            UpdateCards();
         }
         
         public override void Open()

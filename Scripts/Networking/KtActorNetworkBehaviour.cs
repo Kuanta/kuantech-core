@@ -1,11 +1,12 @@
 ﻿using System.Collections.Generic;
-using FishNet.Connection;
-using FishNet.Object;
 using Kuantech.Core;
 using UnityEngine;
 
 namespace Kuantech.Networking
 {
+#if NETWORKING_FISHNET
+    using FishNet.Connection;
+    using FishNet.Object;
     public class KtActorNetworkBehaviour : NetworkBehaviour
     {
         [SerializeField] protected Actor ParentActor;
@@ -162,5 +163,9 @@ namespace Kuantech.Networking
         }
 
     }
-
+#else
+    public class KtActorNetworkBehaviour : MonoBehaviour
+    {
+    }
+#endif
 }

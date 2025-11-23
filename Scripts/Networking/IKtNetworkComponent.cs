@@ -1,9 +1,12 @@
-﻿using FishNet.Connection;
+﻿#if NETWORKING_FISHNET
+    using FishNet.Connection;
+#endif
 
 namespace Kuantech.Networking
 {
     public interface IKtNetworkComponent
     {
+#if NETWORKING_FISHNET
         public void OnStartNetwork(KtActorNetworkBehaviour parentBehavior);
         void OnStopNetwork();
         
@@ -17,5 +20,6 @@ namespace Kuantech.Networking
        public void OnStopLocalPlayer();
        
        void OnOwnershipChanged(NetworkConnection prevOwner, NetworkConnection newOwner);
+#endif
     }
 }

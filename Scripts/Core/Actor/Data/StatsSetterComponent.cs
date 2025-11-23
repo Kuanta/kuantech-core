@@ -63,6 +63,9 @@ namespace Kuantech.Core
                 string attributeId = attribDefinition.AttributeAsset.Id;
                 try
                 {
+                    attribDefinition.BaseValue = 0;
+                    attribDefinition.ValuePerLevel = 0;
+                    attribDefinition.ValuePerRank = 0;
                     string attributeStringVal = rowData.GetValue<string>(attributeId);
                     if (attributeStringVal.IsNullOrEmpty() || attributeStringVal == "") continue;
                     string[] parts = attributeStringVal.Split('/');
