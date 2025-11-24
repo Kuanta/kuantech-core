@@ -6,6 +6,10 @@ using IngameDebugConsole;
 using Sirenix.OdinInspector;
 using UnityEditor;
 
+#if ENABLE_UNITYHAPTICS
+using MoreMountains.NiceVibrations;
+#endif
+
 namespace Kuantech.Utils.Mobile
 {
     public struct HapticPlayData
@@ -167,6 +171,7 @@ namespace Kuantech.Utils.Mobile
             {
                 HapticPlayData playData = HapticQueue.Dequeue();
                 //MMVibrationManager.ContinuousHaptic(playData.Intensity, playData.Magitude, playData.Duration);
+                MMVibrationManager.Haptic((HapticTypes) playData.HapticType);
                 yield return new WaitForSeconds(playData.Duration);
             }
             _isHapticsPlaying = false;
