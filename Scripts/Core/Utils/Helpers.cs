@@ -161,7 +161,23 @@ namespace Kuantech.Utils
             string signString = number < 0 ? "- " : "";
             string numberString = "";
             string quantitySuffix = "";
-            if (abs >= 1E9)
+            
+            if (abs >= 1E18f)
+            {
+                abs /= 1E18f;
+                quantitySuffix = "qi"; // quintillion
+            }
+            else if (abs >= 1E15f)
+            {
+                abs /= 1E15f;
+                quantitySuffix = "q"; // quadrillion
+            }
+            else if (abs >= 1E12f)
+            {
+                abs /= 1E12f;
+                quantitySuffix = "t"; // trillion
+            }
+            else if (abs >= 1E9f)
             {
                 abs /= 1E9f;
                 quantitySuffix = "b";

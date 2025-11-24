@@ -227,11 +227,11 @@ namespace Kuantech.AI
                     }
                     else if(fieldType == typeof(GameObject) || typeof(Component).IsAssignableFrom(fieldType))
                     {
-                        Debug.LogWarning("Couldn't find a way to handle this for now");
+                        //Debug.LogWarning("Couldn't find a way to handle this for now");
                     }
                     else if(typeof(ScriptableObject).IsAssignableFrom(fieldType))
                     {
-                        Debug.LogWarning("Couldn't find a way to handle this for now");
+                        //Debug.LogWarning("Couldn't find a way to handle this for now");
                     }
                     // ... Add more types as necessary ...
                 }

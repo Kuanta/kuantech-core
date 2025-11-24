@@ -98,7 +98,7 @@ namespace Kuantech.Core.Utils
         private Transform GetTransformToUpdatePosition()
         {
             if (Camera == null) return transform;
-            return transform;
+            return Camera.transform;
         }
         
         public void SetPitch(float pitch, bool immediate = false)
