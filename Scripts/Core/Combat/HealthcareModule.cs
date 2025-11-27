@@ -251,6 +251,11 @@ namespace Kuantech.Core.Combat
             return _resourceBars[resourceType];
         }
 
+        public Healthbar GetHealhbar()
+        {
+            return Healthbar;
+        }
+
         #endregion
 
         public ResourceAsset GetAffectedResource(DamageInfo damageInfo)
