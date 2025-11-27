@@ -64,6 +64,17 @@ namespace Kuantech.Midcore
         {
             return Rewards;
         }
+
+        public void SetRewards(List<Reward> rewards)
+        {
+            Rewards = rewards;
+        }
+        
+        
+        public void SetFailedRewards(List<Reward> rewards)
+        {
+            FailedRewards = rewards;
+        }
         
         protected virtual RewardsPanel GetRewardsPanelFromCompletePanel()
         {
