@@ -9,7 +9,7 @@ namespace Kuantech.TowerDefense
     {
         public abstract float GetDPS(ActorBlueprint actorBlueprint, int level);
 
-        public abstract float GetAttributrValue(ActorBlueprint actorBlueprint, AttributeAsset attributeAsset,
+        public abstract float GetAttributeValue(ActorBlueprint actorBlueprint, AttributeAsset attributeAsset,
             int level);
     }
 }
