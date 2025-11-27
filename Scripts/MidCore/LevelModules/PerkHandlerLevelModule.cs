@@ -98,7 +98,7 @@ namespace Kuantech.Midcore
             foreach (var perks in AvailablePerks)
             {
                 int currentRank = _perkHandler.GetCurrentPerkRank(perks);
-                if(currentRank >= perks.MaxRank) continue; //Don't include max ranked perks
+                if(currentRank >= perks.MaxRank && perks.MaxRank > 0) continue; //Don't include max ranked perks
                 float weight = Mathf.Pow(probDecayPerRank, currentRank); //1 * 0.5^Rank
                 probArray.AddElement(perks, weight);
             }

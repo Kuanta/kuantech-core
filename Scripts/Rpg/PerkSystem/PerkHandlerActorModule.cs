@@ -22,7 +22,7 @@ namespace Kuantech.Rpg
             if (perk == null) return;
             perk.ApplyToActor(Actor);
         }
-
+        
         public void IncreasePerkRank(PerkAsset perkAsset)
         {
             if (!_perkHandler.IsPerkUnlocked(perkAsset))
