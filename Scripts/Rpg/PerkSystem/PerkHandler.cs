@@ -47,12 +47,8 @@ namespace Kuantech.Rpg
                 RankUpPerk(perkAsset);
                 return null;
             }
-
-            Perk perk = new Perk()
-            {
-                PerkAsset = perkAsset,
-                CurrentRank = 0,
-            };
+            Perk perk = perkAsset.CreatePerk();
+            perk.CurrentRank = 0;
             if (PerkDatas == null)
             {
                 PerkDatas = new Dictionary<PerkAsset, Perk>();
@@ -74,11 +70,26 @@ namespace Kuantech.Rpg
         }
         
         /// <summary>
+        /// Updates all perk effects
+        /// </summary>
+        public void UpdatePerkEffects()
+        {
+            foreach (var pair in PerkDatas)
+            {
+                pair.Value.UpdatePerkEffect();
+            }
+        }
+        
+        /// <summary>
         /// Removes all perks
         /// </summary>
         public void ClearPerks()
         {
             if (PerkDatas == null) return;
+            foreach (var perk in PerkDatas.Values)
+            {
+                perk.ClearPerk();
+            }
             PerkDatas.Clear();
         }
         

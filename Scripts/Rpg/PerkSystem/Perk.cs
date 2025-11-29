@@ -1,9 +1,14 @@
 ﻿using System;
-using Kuantech.Core;
 using UnityEngine;
 
 namespace Kuantech.Rpg
 {
+    [Serializable]
+    public abstract class PerkConfig
+    {
+        
+    }
+    
     [Serializable]
     public class PerkVariable
     {
@@ -12,10 +17,16 @@ namespace Kuantech.Rpg
         [SerializeReference] public float ValuePerRank;
         public Color TextColor;
         public bool IsPercentage = false;
+        public bool DisplayOnlyBaseValue = false;
         
         public float GetValue(int rank)
         {
             return BaseValue + ValuePerRank * rank;
+        }
+
+        public float GetDisplayValue(int rank)
+        {
+            return DisplayOnlyBaseValue ? BaseValue : GetValue(rank);
         }
     }
     
@@ -27,12 +38,13 @@ namespace Kuantech.Rpg
     {
         [NonSerialized] public int CurrentRank;
         [NonSerialized] public PerkAsset PerkAsset;
-        
-        /// <summary>
-        /// If perk is added to actor, this will be called to make necessary changes
-        /// </summary>
-        /// <param name="actor"></param>
-        public virtual void ApplyToActor(Actor actor)
+
+        public virtual void Initialize(PerkAsset parentAsset)
+        {
+            PerkAsset = parentAsset;
+        }
+
+        public virtual void ApplyToTarget(object target)
         {
             
         }
@@ -56,6 +68,11 @@ namespace Kuantech.Rpg
         {
             SetCurrentRank(GetCurrentRank()+1);
             UpdatePerkEffect(); //todo: Is this necessary?
+        }
+
+        public virtual void ClearPerk()
+        {
+            
         }
     }
 }

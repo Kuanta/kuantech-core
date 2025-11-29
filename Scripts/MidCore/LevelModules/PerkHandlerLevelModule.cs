@@ -49,9 +49,9 @@ namespace Kuantech.Midcore
             return AvailablePerks;
         }
         
-        public void AddPerk(PerkAsset perkAsset)
+        public Perk AddPerk(PerkAsset perkAsset)
         {
-            _perkHandler.AddPerk(perkAsset);
+            return _perkHandler.AddPerk(perkAsset);
         }
         
         /// <summary>
@@ -143,9 +143,13 @@ namespace Kuantech.Midcore
         private void OnPerkChosenHandler(object sender, Perk selectedPerk)
         {
             //Add perk
-            AddPerk(selectedPerk.PerkAsset);
+            Perk addedPerk = AddPerk(selectedPerk.PerkAsset);
+            if(addedPerk != null) addedPerk.ApplyToTarget(ParentLevel);
             
             OnPerkChosen?.Invoke(this, selectedPerk);
+            
+            //Update perk effects
+            _perkHandler.UpdatePerkEffects();
         }
     }
 }

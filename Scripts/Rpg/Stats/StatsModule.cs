@@ -394,7 +394,25 @@ namespace Kuantech.Rpg
                 RemoveModifier(modifier);
             }
         }
+        
+        public List<StatModifier> GetModifierByTag(string tag)
+        {
+            List<StatModifier> taggedModifiers = new List<StatModifier>();
+            if (Modifiers == null) return taggedModifiers;
+            foreach (var pair in Modifiers)
+            {
+                foreach (var modifier in pair.Value)
+                {
+                    if (modifier.ModifierTag == tag)
+                    {
+                        taggedModifiers.Add(modifier);
+                    }
+                }
+            }
 
+            return taggedModifiers;
+        }
+        
         /// <summary>
         /// Clears all modifiers. A tag can be given to filter out desired modifiers.
         /// </summary>
@@ -432,7 +450,7 @@ namespace Kuantech.Rpg
 
         private void LateUpdate()
         {
-            UpdateStatModifiers();
+            UpdateStatModifiers(); 
         }
 
         /// <summary>

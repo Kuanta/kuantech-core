@@ -20,7 +20,7 @@ namespace Kuantech.Rpg
         {
             Perk perk = _perkHandler.AddPerk(perkAsset);
             if (perk == null) return;
-            perk.ApplyToActor(Actor);
+            perk.ApplyToTarget(Actor);
         }
         
         public void IncreasePerkRank(PerkAsset perkAsset)

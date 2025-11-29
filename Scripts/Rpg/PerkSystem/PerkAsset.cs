@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Kuantech.Core;
 using Kuantech.Utils;
@@ -10,6 +11,10 @@ namespace Kuantech.Rpg
     [CreateAssetMenu(fileName = "Perk", menuName="Kuantech/Rpg/Perk")]
     public class PerkAsset : MetadataAsset
     {
+        [Header("Perk class")]
+        [SerializeField] private string PerkClassName;
+        [SerializeReference] public PerkConfig PerkConfig;
+        
         [Tooltip("For description building")]
         public List<PerkVariable> PerkVariables;
         public int MaxRank = 5;
@@ -34,13 +39,37 @@ namespace Kuantech.Rpg
                     return "";
                 }
 
-                float value = variable.GetValue(rank);
+                float value = variable.GetDisplayValue(rank);
 
                 string valueString = variable.IsPercentage ? ((value * 100).Stringfy()) + '%' : value.Stringfy();
                 return "<color=#" + ColorUtility.ToHtmlStringRGBA(variable.TextColor) + ">" + valueString + "</color>";
             
             });
             return result;
+        }
+
+        public Perk CreatePerk()
+        {
+            if (string.IsNullOrEmpty(PerkClassName))
+            {
+                return null;
+            }
+
+            string fullClassName = PerkClassName;
+
+            Type perkType = Type.GetType(fullClassName);
+
+            if (perkType == null)
+            {
+                Debug.LogError($"PerkAsset ({name}): '{fullClassName}' adında bir sınıf bulunamadı! Yazım hatasını kontrol et.");
+                return null;
+            }
+
+            Perk instance = (Perk)Activator.CreateInstance(perkType);
+
+            instance.Initialize(this); 
+
+            return instance;
         }
     }
 }
