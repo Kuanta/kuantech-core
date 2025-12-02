@@ -205,6 +205,7 @@ namespace Kuantech.Rpg
         /// <param name="insertAttribute"></param>
         public void SetAttribute(AttributeDefinition attributeDefinition, bool insertAttribute=false)
         {
+            if (attributeDefinition.AttributeAsset == null) return;
             Attribute att = GetAttribute(attributeDefinition.AttributeAsset);
             if (att == null)
             {
