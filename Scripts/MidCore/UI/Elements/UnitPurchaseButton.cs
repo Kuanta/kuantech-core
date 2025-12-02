@@ -61,9 +61,7 @@ namespace Kuantech.Midcore.UI
         #region Transactions
         public bool CanAfford()
         {
-            StoreManager sm = StoreManager.GetContext<StoreManager>();
-            if (sm == null) return true; //todo: Maybe we can 'not' use store manager
-            return sm.CanBeBought(UnitToSpawn.BuyableInfo);
+            return StoreManager.CanBeBought(UnitToSpawn.BuyableInfo);
         }
 
         public void BuyUnit()

@@ -88,6 +88,7 @@ namespace Kuantech.Midcore.UI
                 foreach (var indicator in AttributeIndicators)
                 {
                     AttributeDefinition definition = statsSetter.GetAttributeDefinition(indicator.AttributeAsset);
+                    if(definition == null) continue;
                     indicator.SetAttribute(definition, collectableLevel);
                 }
             }

@@ -1,6 +1,6 @@
 using Kuantech.Core;
+using Kuantech.Core.HyperCasual.UI;
 using Kuantech.Core.UI;
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -11,10 +11,8 @@ namespace Kuantech.Midcore.UI
         [Header("Components")] [SerializeField]
         private Button PlayButton;
 
-        [Header("World Theme")] 
-        [SerializeField] private TMP_Text WorldNameText;
-        [SerializeField] private TMP_Text StageNameText;
-        [SerializeField] private Image WorldThemeImage;
+        [Header("World Theme")] [SerializeField]
+        private LevelIndicator LevelIndicator;
         
         //Runtime
         private int _worldToPlay = -1;
@@ -39,7 +37,7 @@ namespace Kuantech.Midcore.UI
             SetCurrentWorldTheme();
         }
         
-        private void SetCurrentWorldTheme()
+        protected virtual void SetCurrentWorldTheme()
         {
             LevelIndexData currentLevelData
                 = LevelProgressionStateManager.GetLevelProgressionData();
@@ -58,25 +56,12 @@ namespace Kuantech.Midcore.UI
                 levelToGet = 0;
                 worldToGet += 1;
             }
-            
-            WorldDataAsset worldToPlay = lm.GetWorld(worldToGet);
-            _worldToPlay = worldToGet;
-            _levelToPlay = levelToGet;
-
-            if (StageNameText != null)
+            if (LevelIndicator != null)
             {
-                StageNameText.text = $"Stage {_levelToPlay+1}";
+                LevelIndicator.SetLevel(currentLevelData);
             }
-            SetWorldTheme(worldToPlay);
         }
 
-        private void SetWorldTheme(WorldDataAsset worldDataAsset)
-        {
-            if (worldDataAsset == null) return;
-            if (WorldNameText != null) WorldNameText.text = worldDataAsset.GetName();
-            if (WorldThemeImage != null) WorldThemeImage.sprite = worldDataAsset.GetIcon();
-        }
-        
         #region Handlers
 
         private void OnPlayButtonClicked()

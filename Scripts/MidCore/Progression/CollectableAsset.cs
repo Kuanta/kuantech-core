@@ -27,5 +27,17 @@ namespace Kuantech.Midcore
         {
             return ProgressionManager.GetCurrentRank(this);
         }
+
+        public override Sprite GetIcon()
+        {
+            Sprite sprite = base.GetIcon();
+            if (sprite != null) return sprite;
+            if (sprite == null && ActorBlueprint != null && ActorBlueprint.GetIcon() != null)
+            {
+                return ActorBlueprint.GetIcon();
+            }
+
+            return null;
+        }
     }
 }

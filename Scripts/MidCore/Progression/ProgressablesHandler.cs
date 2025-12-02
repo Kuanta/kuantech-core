@@ -177,11 +177,9 @@ namespace Kuantech.Midcore
         /// <returns></returns>
         public bool CanBeAfforded(ProgressableDataAsset asset, int rank, int startRank)
         {
-           StoreManager sm = StoreManager.GetContext<StoreManager>();
-           if (sm == null) return true; //No stroe manager
            BuyableInfo buyableInfo = asset.GetBuyableInfo();
            if (buyableInfo.Id.IsNullOrEmpty() && buyableInfo.PricesInfo.IsNullOrEmpty()) return true; //No buyable info
-           return sm.CanBeBought(buyableInfo, rank, startRank); //Rank is used to calculate the price
+           return StoreManager.CanBeBought(buyableInfo, rank, startRank); //Rank is used to calculate the price
         }
         
         /// <summary>
