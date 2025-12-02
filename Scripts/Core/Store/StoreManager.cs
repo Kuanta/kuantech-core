@@ -104,7 +104,7 @@ namespace Kuantech.Core.HyperCasual
             return true;
         }
         
-        public bool CanBeBought(BuyableInfo info, int rank=0, int startRank=-1)
+        public static bool CanBeBought(BuyableInfo info, int rank=0, int startRank=-1)
         {
             bool hasCurrency = true;
             for(int i=0;i< info.PricesInfo.Count;++i)
