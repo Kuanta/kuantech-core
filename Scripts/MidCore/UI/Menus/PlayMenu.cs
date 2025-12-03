@@ -42,20 +42,6 @@ namespace Kuantech.Midcore.UI
             LevelIndexData currentLevelData
                 = LevelProgressionStateManager.GetLevelProgressionData();
 
-            int worldToGet = currentLevelData.WorldIndex;
-            int levelToGet = currentLevelData.LevelIndex;
-            
-            LevelManager lm = LevelManager.GetContext<LevelManager>();
-            if (lm == null) return;
-            
-            WorldDataAsset worldDataAsset = lm.GetWorld(worldToGet);
-
-            if (worldDataAsset.Levels.Count <= levelToGet)
-            {
-                //Get next world
-                levelToGet = 0;
-                worldToGet += 1;
-            }
             if (LevelIndicator != null)
             {
                 LevelIndicator.SetLevel(currentLevelData);
