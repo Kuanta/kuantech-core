@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Kuantech.Core.Combat;
 using Kuantech.Core.FX;
 using Kuantech.Rpg.Inventory;
@@ -10,7 +11,7 @@ namespace Kuantech.Core
 {
     public class Projectile : MonoBehaviour
     {
-         [Header("World Axes")]
+        [Header("World Axes")]
         public Vector3 WorldForward = Vector3.forward; // Forward axis of the model (default Unity +Z)
         public Vector3 WorldUp = Vector3.up;
         [Tooltip("World right. Needed for arc calculations")]
@@ -69,7 +70,7 @@ namespace Kuantech.Core
         // Events
         public UnityAction<Projectile> ShotEvent;
         public UnityAction<Projectile> LifetimeEndEvent;
-        public UnityAction<Projectile> OnImpactEvent;
+        public EventHandler<GameObject> OnImpactEvent;
 
         // Runtime state
         protected bool Despawned = false;
@@ -438,7 +439,7 @@ namespace Kuantech.Core
             }
 
             if (ImpactEffect != null) ImpactEffect.PlayEffectAtPosition(transform.position, Quaternion.identity);
-            OnImpactEvent?.Invoke(this);
+            OnImpactEvent?.Invoke(this, triggeredObject);
             
             //Check impact override
             if (ImpactOverride != null)

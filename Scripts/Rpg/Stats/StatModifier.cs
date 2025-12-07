@@ -5,8 +5,9 @@ namespace Kuantech.Rpg
 {
     public enum ModifierTypes
     {
-        Addition,
-        Multiplication,
+        Flat,
+        PercentAdd,
+        PercentMult,
     }
     
     [Serializable]

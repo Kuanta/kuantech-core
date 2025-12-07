@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Kuantech.Core.Combat
 {
     [Serializable]
-    public class StatModifierStatusEffectData : StatusEffectData
+    public class StatModifierStatusEffectApplyData : StatusEffectApplyData
     {
         public StatModifierData StatModifierData;
     }
@@ -15,10 +15,10 @@ namespace Kuantech.Core.Combat
     {
         public StatModifier Modifier;
 
-        public override void Initialize(StatusEffectAsset statusEffectAsset, StatusEffectData applyData)
+        public override void Initialize(StatusEffectAsset statusEffectAsset, StatusEffectApplyData applyApplyData)
         {
-            base.Initialize(statusEffectAsset, applyData);
-            if (applyData is StatModifierStatusEffectData modifierData)
+            base.Initialize(statusEffectAsset, applyApplyData);
+            if (applyApplyData is StatModifierStatusEffectApplyData modifierData)
             {
                 Modifier = new StatModifier(modifierData.StatModifierData);
             }

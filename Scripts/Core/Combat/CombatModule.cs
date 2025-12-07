@@ -9,6 +9,7 @@ using Kuantech.Utils;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Serialization;
 
 namespace Kuantech.Core
 {
@@ -48,6 +49,7 @@ namespace Kuantech.Core
         [Header("Required Resource")]
         public ResourceAsset RequiredResource;
         public float RequiredResourceAmount = 0;
+
         
         [Header("Damage")]
         public DamageInfo DamageInfo;
@@ -121,6 +123,7 @@ namespace Kuantech.Core
         [Header("Attributes")]
         public AttributeAsset CriticalChanceAttribute;
         public AttributeAsset CriticalMultiplierAttribute;
+        public AttributeAsset RangeAttributeAsset; //Range attribute
 
         [Header("Collision")]
         private Collider[] _results = new Collider[32];
@@ -353,7 +356,7 @@ namespace Kuantech.Core
             AttackPattern currPattern = GetCurrentAttackPattern();
             Vector3 attackPoint = GetAttackPosition();
             Vector3 forward = GetAttackDirection().normalized;
-            float range = currPattern.Range;
+            float range = GetAttackRange();
             float angle = currPattern.Angle;
             List<Actor> actors = CombatUtilities.GetActorsInArc3D(attackPoint, forward, range, angle, Targets, GetEnemyFactions());
 
@@ -368,7 +371,7 @@ namespace Kuantech.Core
             AttackPattern currPattern = GetCurrentAttackPattern();
             Vector3 attackPoint = GetAttackPosition();
             Vector3 forward = GetAttackDirection().normalized;
-            float range = currPattern.Range;
+            float range = GetAttackRange();
             float angle = currPattern.Angle;
             List<Actor> actors = CombatUtilities.GetActorsInArc2D(attackPoint, forward, range, angle, Targets, GetEnemyFactions());
 
@@ -401,7 +404,7 @@ namespace Kuantech.Core
             Vector3 direction = GetAttackDirection();
             AttackPattern attackPattern = GetCurrentAttackPattern();
             
-            List<Actor> actors = CombatUtilities.GetActorsInRaycast2D(startPoint, direction, attackPattern.Range, Targets, GetEnemyFactions());
+            List<Actor> actors = CombatUtilities.GetActorsInRaycast2D(startPoint, direction, GetAttackRange(), Targets, GetEnemyFactions());
             foreach (var actor in actors)
             {
                 DamageActor(actor);
@@ -426,7 +429,7 @@ namespace Kuantech.Core
             projectile.SplashDamage = GetSplashDamage();
             projectile.AdditionalSplashDamages = GetAdditionalSplashDamages();
             projectile.SplashRadius = GetSplashDamageRadius();
-            projectile.Range = GetCurrentAttackPattern().Range;
+            projectile.Range = GetAttackRange();
             projectile.Knockback = GetCurrentAttackPattern().Knockback;
             projectile.KnockbackTime = GetCurrentAttackPattern().KnockbackTime;
             
@@ -552,6 +555,14 @@ namespace Kuantech.Core
             }
 
             return additionalDamages;
+        }
+
+        public float GetAttackRange()
+        {
+            float patternRange = GetCurrentAttackPattern().Range;
+            Rpg.Attribute att = _statModule.GetAttribute(RangeAttributeAsset);
+            if (att == null) return patternRange;
+            return _statModule.GetAttributeValue(RangeAttributeAsset);
         }
         
         /// <summary>
@@ -709,7 +720,7 @@ namespace Kuantech.Core
                 StartPosition = startPosition,
                 Direction = attackDireciton.normalized,
                 Target = null,
-                TargetPosition = startPosition + attackDireciton * GetCurrentAttackPattern().Range,
+                TargetPosition = startPosition + attackDireciton * GetAttackRange(),
             };
             return Attack(castData);
         }
@@ -785,7 +796,7 @@ namespace Kuantech.Core
         public bool IsInAttackRange(WorldPoint target)
         {
             float dist = Vector3.Magnitude(target.GetTargetPosition() - Actor.GetActorLocation()) - target.Radius;
-            return dist <= (GetCurrentAttackPattern().Range + RangeTolerance);
+            return dist <= (GetAttackRange() + RangeTolerance);
         }
         
         public AttackPattern GetCurrentAttackPattern()
@@ -942,7 +953,7 @@ namespace Kuantech.Core
                 return getTarget.GetHitPoint(Actor).GetTargetPosition();
             }
 
-            return startPosition + attackDireciton * GetCurrentAttackPattern().Range;
+            return startPosition + attackDireciton * GetAttackRange();
         }
         #endregion
         

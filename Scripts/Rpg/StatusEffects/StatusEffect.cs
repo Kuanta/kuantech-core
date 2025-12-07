@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using Kuantech.Core.FX;
+using Kuantech.Rpg.Skills;
+using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Core.Combat
@@ -7,8 +10,9 @@ namespace Kuantech.Core.Combat
     /// <summary>
     /// Stores parameters for status effect
     /// </summary>
-    public class StatusEffectData
+    public class StatusEffectApplyData
     {
+        public Actor Applier;
         public float TickPeriod;
         public float Duration;
     }
@@ -24,15 +28,27 @@ namespace Kuantech.Core.Combat
         
         //Runtime
         public StatusEffectAsset StatusEffectAsset;
-        public StatusEffectData ApplyData;
+        public StatusEffectApplyData ApplyApplyData;
         public int Rank;
         
         [NonSerialized] public Effect StatusFx; //The effect that is played when the status effect is applied
 
-        public virtual void Initialize(StatusEffectAsset asset, StatusEffectData applyData)
+        private Dictionary<string, StatusEffectVariable> _statusEffectVariables;
+
+        public virtual void Initialize(StatusEffectAsset asset, StatusEffectApplyData applyApplyData)
         {
             StatusEffectAsset = asset;
-            ApplyData = applyData;
+            ApplyApplyData = applyApplyData;
+            _statusEffectVariables = new Dictionary<string, StatusEffectVariable>();
+            if (!asset.StatusEffectVariables.IsNullOrEmpty())
+            {
+                foreach (var variableData in asset.StatusEffectVariables)
+                {
+                    StatusEffectVariable variable = new StatusEffectVariable(variableData);
+                    variable.ParentStatusEffect = this;
+                    _statusEffectVariables[variable.StatusEffectVariableData.VariableId] = variable;
+                }
+            }
         }
         
         public string GetId()
@@ -67,7 +83,7 @@ namespace Kuantech.Core.Combat
 
         public float GetDuration()
         {
-            return ApplyData.Duration;
+            return ApplyApplyData.Duration;
         }
 
         public float GetElapsedTime()
@@ -77,7 +93,7 @@ namespace Kuantech.Core.Combat
 
         public float GetTickRate()
         {
-            return ApplyData.TickPeriod;
+            return ApplyApplyData.TickPeriod;
         }
                 
         /// <summary>
@@ -104,8 +120,6 @@ namespace Kuantech.Core.Combat
             return Mathf.Clamp01(elapsed / duration);
         }
         #endregion
- 
-
         
         /// <summary>
         /// Checks if effect is expired
@@ -133,5 +147,16 @@ namespace Kuantech.Core.Combat
         {
             ApplyTime = Time.time;
         }
+
+        #region Status Effect Variables
+
+        public float GetVariable(string key, float defaultValue = 0)
+        {
+            if (_statusEffectVariables.IsNullOrEmpty() || _statusEffectVariables.ContainsKey(key)) return defaultValue;
+            StatusEffectVariable variable = _statusEffectVariables[key];
+            return variable.GetValue();
+        }
+
+        #endregion
     }
 }

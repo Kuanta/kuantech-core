@@ -377,7 +377,7 @@ namespace Kuantech.Rpg
         public void AddModifier(StatModifier modifier)
         {
             Modifiers ??= new Dictionary<AttributeAsset, HashSet<StatModifier>>();
-
+            
             if (!Modifiers.ContainsKey(modifier.AttributeAsset))
             {
                 Modifiers.Add(modifier.AttributeAsset, new HashSet<StatModifier>());
@@ -457,56 +457,62 @@ namespace Kuantech.Rpg
         /// <summary>
         /// Updates the modifier value of dirtied stats
         /// </summary>
-        public void UpdateStatModifiers()
+       public void UpdateStatModifiers()
         {
             if (DirtiedStats == null || DirtiedStats.Count == 0) return;
-            AttributeAsset type = DirtiedStats.Dequeue();
-            while (type != null)
+            
+            // Kuyruk bitene kadar dön
+            while (DirtiedStats.Count > 0)
             {
-                float additionMultipliersSum = 0;
-                float multiplicationModifiersSum = 1;
-                //Handle Stat type
-                foreach (var statModifier in Modifiers[type])
-                {
-                    if (statModifier.ModifierType == ModifierTypes.Addition)
-                    {
-                        additionMultipliersSum += statModifier.GetValue();
-                    }
-                    else if (statModifier.ModifierType == ModifierTypes.Multiplication)
-                    {
-                        multiplicationModifiersSum += statModifier.GetValue();
-                    }
+                AttributeAsset type = DirtiedStats.Dequeue();
+                
+                // Eğer stat haritada yoksa atla
+                if (!_statMap.ContainsKey(type.Id)) continue;
 
+                float finalFlat = 0;
+                float finalPercentAdd = 1f; // %100 (1.0) ile başlar
+                float finalPercentMult = 1f; // Çarpım etkisiz elemanı 1 ile başlar
+
+                // O statın tüm modifierlarını gez
+                if (Modifiers.ContainsKey(type))
+                {
+                    foreach (var statModifier in Modifiers[type])
+                    {
+                        float val = statModifier.GetValue();
+
+                        switch (statModifier.ModifierType)
+                        {
+                            case ModifierTypes.Flat:
+                                finalFlat += val;
+                                break;
+                                
+                            case ModifierTypes.PercentAdd:
+                                // %10 artış için 0.1, %10 azalış için -0.1 gönderilmeli
+                                finalPercentAdd += val;
+                                break;
+
+                            case ModifierTypes.PercentMult:
+                                // 2 katına çıkarmak için 2.0
+                                // Yarıya indirmek (%50 debuff) için 0.5 gönderilmeli
+                                finalPercentMult *= val;
+                                break;
+                        }
+                    }
                 }
 
-                multiplicationModifiersSum = Mathf.Max(0.1f, multiplicationModifiersSum);
-                try
-                {
-                    if (!_statMap.ContainsKey(type.Id))
-                    {
-                        Debug.LogWarning($"Trying to set value of {type.ToString()} while {name} doesn't have a field for it");
-                    }
-                    else
-                    {
-                        Attribute currAttribute = _statMap[type.Id];
-                        currAttribute.AdditionModifier = additionMultipliersSum;
-                        currAttribute.MultiplicationModifier = multiplicationModifiersSum;
-                        _statMap[type.Id] = currAttribute;
-                    }
+                // PercentAdd toplamı 0'ın altına düşerse stat negatif olmasın (oyun kuralına göre değişir)
+                finalPercentAdd = Mathf.Max(0, finalPercentAdd);
 
-                    if (DirtiedStats.IsNullOrEmpty())
-                    {
-                        break;
-                    }
-                    type = DirtiedStats.Dequeue();
-                }
-                catch (KeyNotFoundException e)
-                {
-                    Debug.LogError($"Key {type} somehow not in stats");
-                    type = DirtiedStats.Dequeue();
-                }
+                Attribute currAttribute = _statMap[type.Id];
+                
+                // Attribute sınıfına bu değerleri set ediyoruz
+                // Not: Attribute sınıfında alanların isimlerini güncellemen gerekebilir
+                currAttribute.FlatModifier = finalFlat;
+                currAttribute.PercentAddModifier = finalPercentAdd;
+                currAttribute.PercentMultModifier = finalPercentMult;
+                
+                _statMap[type.Id] = currAttribute;
             }
-
         }
         #endregion
 
