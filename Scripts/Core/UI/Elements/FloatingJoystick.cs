@@ -110,16 +110,6 @@ namespace Kuantech.Core.UI.Kuantech.Input
 
                 if (timeElapsed <= swipeTimeLimit)
                 {
-                    if (totalDelta.magnitude > swipeThreshold)
-                    {
-                        _isSwiping = true;
-
-                        // Reset Joystick Input
-                        Direction = Vector2.zero;
-                        background.gameObject.SetActive(false);
-
-                        OnSwipeDetected?.Invoke(totalDelta.normalized);
-                    }
                     return;
 
                 }
@@ -174,7 +164,17 @@ namespace Kuantech.Core.UI.Kuantech.Input
             {
                 background.gameObject.SetActive(false);
             }
-            
+
+            float dragTime = Time.time - _touchStartTime;
+            Vector2 totalDelta = eventData.position - _touchStartPos;
+            float totalTraversed = totalDelta.magnitude;
+        
+            Debug.Log("Drag Time: " + dragTime + ", Total Traversed: " + totalTraversed );
+            if (detectSwipe && dragTime < swipeTimeLimit && totalTraversed >= swipeThreshold)
+            {
+                OnSwipeDetected?.Invoke(totalDelta.normalized);
+
+            }
             // If it is Fixed and we moved it (which shouldn't happen in Fixed mode logic, but safe to check),
             // reset visual state. 
             // Note: Fixed joysticks usually stay visible, so check your 'hideOnRelease' setting in inspector.
