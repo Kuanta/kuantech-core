@@ -14,6 +14,8 @@ namespace Kuantech.Core
         public AttributeAsset SpeedAttribute;
         [Tooltip("Fallback speed if speed attribute cant get")]
         public float Speed = 1f;
+        [Tooltip("Normalized speed for animations, wont cap at max speed")]
+        public float MaxSpeed;
         public float SprintMultiplier = 2;
 
         [Header("Crouch")] 
@@ -108,6 +110,10 @@ namespace Kuantech.Core
             return speedAtt.GetValue(sm.GetActorLevel()) * GetSpeedMultiplier();
         }
 
+        public float GetNormalizedSpeed()
+        {
+            return GetSpeed() / Mathf.Max(0.1f, MaxSpeed);
+        }
         public void SetSpeed(float speed)
         {
             Speed = speed;

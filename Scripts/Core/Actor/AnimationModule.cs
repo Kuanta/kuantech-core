@@ -10,7 +10,7 @@ namespace Kuantech.Core
     /// </summary>
     public class AnimationModule : ActorModule
     {
-        public AnimatorOverrideController DefaultAnimationSet;
+        public RuntimeAnimatorController DefaultAnimationSet;
         public Animator Animator;
         public AnimationMontagePlayer MontagePlayer;
 
@@ -24,6 +24,7 @@ namespace Kuantech.Core
         private Vector2 _targetMovementParameters = Vector2.zero;
         private Vector2 _movementParameters = Vector2.zero;
         private Vector2 _movementParametersScale = Vector2.one;
+        private MovementModule _movementModule;
 
         public float LerpFactor = 10f;
     
@@ -67,12 +68,12 @@ namespace Kuantech.Core
         public override void OnModulesInitialized()
         {
             base.OnModulesInitialized();
-            MovementModule mm = Actor.GetModule<MovementModule>();
-            if (mm != null)
+            MovementModule _movementModule = Actor.GetModule<MovementModule>();
+            if (_movementModule != null)
             {
-                mm.OnJumpEvent += OnJump;
-                mm.OnJumpLandEvent += OnLand;
-                mm.OnDashEvent += OnDash;
+                _movementModule.OnJumpEvent += OnJump;
+                _movementModule.OnJumpLandEvent += OnLand;
+                _movementModule.OnDashEvent += OnDash;
             }
             
             ActorVisualHandler visualHandler = Actor.GetModule<ActorVisualHandler>();
@@ -126,7 +127,12 @@ namespace Kuantech.Core
             if (DefaultAnimationSet == null || Animator == null) return; 
             Animator.runtimeAnimatorController = DefaultAnimationSet;
         }
-
+        
+        public void ApplyAnimationSet(RuntimeAnimatorController animationSet)
+        {
+            if (animationSet == null || Animator == null) return; 
+            Animator.runtimeAnimatorController = animationSet;
+        }
         #endregion
 
         #region Animation Play
@@ -191,6 +197,12 @@ namespace Kuantech.Core
         private void UpdateMovementParameters()
         {
             Vector3 localMovement = Actor.MotionVectorsHandler.GetLocalMovementVector() * Actor.MotionVectorsHandler.GetMovementMultiplier();
+            float movementScaler = 1;
+            if (_movementModule != null)
+            {
+                movementScaler = _movementModule.GetNormalizedSpeed();
+            }
+            localMovement *= movementScaler;
             _targetMovementParameters = new Vector2(localMovement.x, localMovement.z);
         }
         

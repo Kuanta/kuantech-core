@@ -80,7 +80,7 @@ namespace Kuantech.Core
             if (Initialized) return;
             
             //Motions vector handler
-            MotionVectorsHandler = new MotionVectorsHandler(this, ActorUpVector, ActorForwardVector);
+            MotionVectorsHandler = new MotionVectorsHandler(this, ActorForwardVector, ActorUpVector);
             
             //Modules
             ActorModulesList = GetComponentsInChildren<ActorModule>().ToList();
@@ -557,6 +557,18 @@ namespace Kuantech.Core
             return FactionHandler.GetFactionRelation(otherActor) == FactionHandler.FactionType.Enemy;
         }
         
+        #endregion
+
+        #region Networking
+
+        public void StartLocalPlayer()
+        {
+            foreach (var module in ActorModulesList)
+            {
+                module.OnLocalPlayerStart();
+            }
+        }
+
         #endregion
     }
 }

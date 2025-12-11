@@ -15,6 +15,13 @@ namespace Kuantech.Core
             await base.Initialize(gameManager);
         }
         
+        public static T GetObjectFromPool<T>(T prefab) where T : Component
+        {
+            GameObject gameObj = GetObjectFromPool(prefab.gameObject);
+            if (gameObj == null) return null;
+            return gameObj.GetComponent<T>();
+        }
+        
         public static GameObject GetObjectFromPool(GameObject prefab)
         {
             PoolManager pm = GetContext<PoolManager>();

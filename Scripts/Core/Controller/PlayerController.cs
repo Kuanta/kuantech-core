@@ -1,6 +1,7 @@
 ﻿using System;
 using Kuantech.Core.Camera;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace Kuantech.Core.Controller
 {
@@ -30,8 +31,10 @@ namespace Kuantech.Core.Controller
         private float _currentYaw, _currentPitch;   
         private float _targetYaw,  _targetPitch; 
         private float _yawVel, _pitchVel;
+            
+        //Events
+        public UnityAction<Actor> OnCurrentActorChanged;
 
-        
         public void Tick(float dt)
         {
             _currentYaw = Mathf.SmoothDampAngle(
@@ -46,11 +49,13 @@ namespace Kuantech.Core.Controller
         public void SetPlayerActor(Actor actor)
         {
             CurrentPlayer = actor;
+            OnCurrentActorChanged?.Invoke(actor);
         }
 
         public void ClearPlayerActor()
         {
             CurrentPlayer = null;
+            OnCurrentActorChanged?.Invoke(null);
         }
 
         public bool IsActorPlayer(Actor actor)

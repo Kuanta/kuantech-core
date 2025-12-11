@@ -36,6 +36,18 @@ namespace Kuantech.Core
             {
                 _slots[entry.SlotName] = entry.Slot;
             }
+            
+            //Get slots
+            ActorSlot[] slots = Actor.GetComponentsInChildren<ActorSlot>();
+            foreach (var slot in slots)
+            {
+                if (_slots.ContainsKey(slot.ActorSlotName))
+                {
+                    Debug.LogWarning("Duplicate slot name found: " + slot.ActorSlotName + ". Overriding existing slot.");
+                    continue;
+                }
+                _slots[slot.ActorSlotName] = slot.transform;
+            }
         }
         
         public override void OnModulesInitialized()

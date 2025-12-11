@@ -123,16 +123,16 @@ namespace Kuantech.Core
         public Vector3 GetLocalMovementVector()
         {
             Vector3 projectedMovement = ProjectToForwardPlane(GetMovementVector());
-            Vector3 projectedTarget = ProjectToForwardPlane(TargetVector);
+            Vector3 projectedTarget = ProjectToForwardPlane(GetTargetVector());
 
             if (projectedMovement.sqrMagnitude <= float.Epsilon)
             {
                 return Vector3.zero;
             }
-            
             //Get angle from projectedTarget to projectedMovement
             float angleDiff = Vector3.SignedAngle(projectedTarget, projectedMovement, ActorUpVector);
-            return new Vector3(Mathf.Sin(angleDiff * Mathf.Deg2Rad), 0, Mathf.Cos(angleDiff * Mathf.Deg2Rad));
+            Vector3 localMovement = new Vector3(Mathf.Sin(angleDiff * Mathf.Deg2Rad), 0, Mathf.Cos(angleDiff * Mathf.Deg2Rad));
+            return localMovement;
         }
         #endregion
 
@@ -200,10 +200,7 @@ namespace Kuantech.Core
         public Vector3 ProjectToForwardPlane(Vector3 vector)
         {
             Vector3 up = ActorUpVector;
-            Vector3 forward = ActorForwardVector;
-
-            Vector3 projected = Helpers.ProjectVectorOnPlane(vector, up, Vector3.zero);
-            return projected;
+            return Vector3.ProjectOnPlane(vector, up).normalized;
         }
 
         public void Reset()

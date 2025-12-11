@@ -63,16 +63,6 @@ namespace Kuantech.Core
             HandleMovement();
         }
 
-        // private void Update()
-        // {
-        //
-        //     //Dodge timer
-        //     if (_dodging && (Time.time - _dodgeStartTime) >= _dodgeDuration)
-        //     {
-        //         _dodging = false;
-        //         _lastDodgeTime = Time.time;
-        //     }
-        // }
         private void HandleMovement()
         {
             if (Actor == null) return;
