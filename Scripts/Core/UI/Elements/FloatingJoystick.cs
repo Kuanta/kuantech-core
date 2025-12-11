@@ -22,6 +22,7 @@ namespace Kuantech.Core.UI.Kuantech.Input
         [SerializeField] private JoystickType joystickType = JoystickType.Floating; // Select behavior here
         [SerializeField] private float handleRange = 100f; // Max distance the handle can move
         [SerializeField] private bool hideOnRelease = true; // Should it disappear when not in use?
+        [SerializeField] private bool resetPositionOnRelease = false; // For Fixed joysticks, reset to original position on release
 
         [Header("Swipe Settings")]
         [SerializeField] private bool detectSwipe = true;       
@@ -164,20 +165,21 @@ namespace Kuantech.Core.UI.Kuantech.Input
             {
                 background.gameObject.SetActive(false);
             }
+            
+            if(resetPositionOnRelease && joystickType == JoystickType.Fixed)
+            {
+                background.position = _fixedPosition;
+            }
 
             float dragTime = Time.time - _touchStartTime;
             Vector2 totalDelta = eventData.position - _touchStartPos;
             float totalTraversed = totalDelta.magnitude;
         
-            Debug.Log("Drag Time: " + dragTime + ", Total Traversed: " + totalTraversed );
             if (detectSwipe && dragTime < swipeTimeLimit && totalTraversed >= swipeThreshold)
             {
                 OnSwipeDetected?.Invoke(totalDelta.normalized);
 
             }
-            // If it is Fixed and we moved it (which shouldn't happen in Fixed mode logic, but safe to check),
-            // reset visual state. 
-            // Note: Fixed joysticks usually stay visible, so check your 'hideOnRelease' setting in inspector.
         }
     }
 }
