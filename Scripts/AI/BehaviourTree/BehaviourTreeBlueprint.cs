@@ -9,7 +9,7 @@ namespace Kuantech.AI
     {
         
     }
-    [CreateAssetMenu(menuName = "AI/Behavior Tree Graph Data")]
+    [CreateAssetMenu(menuName = "Kuantech/AI/Behavior Tree Graph Data")]
     public class BehaviourTreeBlueprint : ScriptableObject
     {
         public BtGraphNodeData RootNodeData;

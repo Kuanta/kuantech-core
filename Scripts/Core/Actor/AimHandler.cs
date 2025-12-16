@@ -55,12 +55,9 @@ namespace Kuantech.Core
         {
             Quaternion rot = DirectionToRotation(transform, direction);
             _targetAimVector = direction;
-            
-            if(Rigidbody == null)
-            {
-                transform.rotation = rot;
-            }
-            else
+
+            transform.rotation = rot;
+            if(Rigidbody != null)
             {
                 Rigidbody.rotation = rot;
             }

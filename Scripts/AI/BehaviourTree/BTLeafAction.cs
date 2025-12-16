@@ -8,11 +8,11 @@ namespace Kuantech.AI
         public virtual void EnterNode(BehaviourTree ownerTree){}
         public BTLeaf ParentNode;
         public bool ExecuteNextImmediately = false;
+        [NonSerialized] protected BTNode.NodeStatus CurrentStatus = BTNode.NodeStatus.SUCCESS;
         
         public virtual BTNode.NodeStatus Tick(BehaviourTree ownerTree)
         {
-            //Non overriden Ticks should return successs
-            return BTNode.NodeStatus.SUCCESS;
+            return CurrentStatus;
         }
 
         public virtual void ExitNode()

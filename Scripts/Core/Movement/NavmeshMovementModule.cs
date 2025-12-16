@@ -7,6 +7,7 @@ namespace Kuantech.Core
     public class NavmeshMovementModule : ActorModule
     {
         [SerializeField] private NavMeshAgent NavMeshAgent;
+        [SerializeField] private bool UpdateRotation = false;
         [Header("Knockback")]
         public float MinKnockbackForceRequired = 0.01f;
         
@@ -19,6 +20,7 @@ namespace Kuantech.Core
             {
                 SetRadius(radius);
             };
+            if(NavMeshAgent != null) NavMeshAgent.updateRotation = UpdateRotation;
         }
         public override void OnModulesInitialized()
         {
@@ -118,8 +120,7 @@ namespace Kuantech.Core
 
             if (NavMeshAgent.pathPending) return true;
             if (!NavMeshAgent.hasPath) return false;
-
-            return NavMeshAgent.remainingDistance > NavMeshAgent.stoppingDistance + 0.01f;
+            return !NavMeshAgent.isStopped;
         }
 
         public virtual bool IsOnNavmesh()
@@ -161,6 +162,10 @@ namespace Kuantech.Core
         public override void OnActorStateChanged(ActorState oldState, ActorState newState)
         {
             base.OnActorStateChanged(oldState, newState);
+            if (newState == ActorState.Spawned)
+            {
+                NavMeshAgent.Warp(transform.position);
+            }
             if (newState != ActorState.Spawned)
             {
                 //On actor state changed to something else than spawned, stop the agent
