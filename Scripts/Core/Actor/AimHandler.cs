@@ -20,7 +20,7 @@ namespace Kuantech.Core
                 return;
             
             _targetRot = DirectionToRotation(transform, _targetAimVector);
-            if(Rigidbody == null)
+            if(Rigidbody == null || Rigidbody.isKinematic)
             {
                 t.rotation = Quaternion.RotateTowards(t.rotation, _targetRot, rotateSpeedDegPerSec * Time.deltaTime);
             }

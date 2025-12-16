@@ -53,11 +53,11 @@ namespace Kuantech.Core
                     //Set animation vectors
                     Vector3 movementVector = !IsMoving() ? Vector3.zero : GetAgentVelocity().normalized;
                     _movementModule.SetMovementVector(movementVector);
-
-                    if (IsMoving())
-                    {
-                        Actor.MotionVectorsHandler.SetTargetVector(movementVector);
-                    }
+                    //
+                    // if (IsMoving())
+                    // {
+                    //     Actor.MotionVectorsHandler.SetTargetVector(movementVector);
+                    // }
                 }
             }
         }
