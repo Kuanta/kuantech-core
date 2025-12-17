@@ -19,6 +19,13 @@ namespace Kuantech.Core
 
     public class Actor : MonoBehaviour, IHittable, ISpawnable
     {
+        [Serializable]
+        public struct KillFeedData
+        {
+            public GameObject Killer;
+            public Actor DeadActor;
+        }
+ 
         [Header("Identifier")] 
         public string Id;
         public int ActorRank = 0;
@@ -61,7 +68,7 @@ namespace Kuantech.Core
         //Lifecycle events
         public UnityAction<ActorState> OnActorStateChanged;
         public UnityAction<Actor> OnSpawnedEvent;
-        public UnityAction<Actor> OnDeathEvent;
+        public UnityAction<KillFeedData> OnDeathEvent;
         public UnityAction<Actor> OnDespawnedEvent;
         public UnityAction<HitInfo> OnHitEvent;
         public UnityAction<int> OnRankSetEvent;
@@ -269,10 +276,14 @@ namespace Kuantech.Core
         /// <summary>
         /// Kills the actor state, sets its state to dead
         /// </summary>
-        public void KillActor()
+        public void KillActor(GameObject hitter = null)
         {
             ChangeActorState(ActorState.Dead);
-            OnDeathEvent?.Invoke(this);
+            OnDeathEvent?.Invoke(new KillFeedData()
+            {
+                Killer = hitter,
+                DeadActor = this,
+            });
         }
         
         /// <summary>

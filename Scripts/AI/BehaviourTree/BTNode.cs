@@ -103,6 +103,7 @@ namespace Kuantech.AI
                     break;
                 case NodeTypes.LEAF:
                     BTLeafAction action = (BTLeafAction) Assembly.GetExecutingAssembly().CreateInstance(actionName);
+                    if(action != null) action.Initialize(Owner);
                     AddChild(new BTLeaf(nodeName, action));
                     break;
                 case NodeTypes.RANDOM_SELECTOR:

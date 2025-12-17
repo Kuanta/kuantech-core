@@ -5,6 +5,7 @@ namespace Kuantech.AI
     [Serializable]
     public class BTLeafAction
     {
+        public virtual void Initialize(BehaviourTree ownerTree){}
         public virtual void EnterNode(BehaviourTree ownerTree){}
         public BTLeaf ParentNode;
         public bool ExecuteNextImmediately = false;

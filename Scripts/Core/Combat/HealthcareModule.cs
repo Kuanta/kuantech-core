@@ -127,7 +127,7 @@ namespace Kuantech.Core.Combat
             float currentHealth = GetCurrentResource(HealthResourceAsset);
             if (currentHealth <= 0.0f)
             {
-                Actor.KillActor();
+                Actor.KillActor(hitInfo.Hitter);
                 if (Healthbar != null)
                 {
                     Healthbar.ToggleVisual(false);
@@ -256,6 +256,10 @@ namespace Kuantech.Core.Combat
             return Healthbar;
         }
 
+        public void SetHealthbar(Healthbar healthbar)
+        {
+            SetResourceBar(HealthResourceAsset, healthbar);
+        }
         #endregion
 
         public ResourceAsset GetAffectedResource(DamageInfo damageInfo)

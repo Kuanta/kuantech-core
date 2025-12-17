@@ -10,6 +10,10 @@ namespace Kuantech.AI
 {
     public class ArenaPartitioner : MonoBehaviour
     {
+        [Header("Manual Bounds")]
+        [InfoBox("To notify area boundaries")]
+        public List<Transform> BoundaryMarkers = new List<Transform>();
+        
         [Header("Grid Settings")] 
         public float cellSize = 1.0f;     
         public LayerMask groundLayer;    
@@ -62,56 +66,41 @@ namespace Kuantech.AI
        [Button("Bake Arena Grid")]
         public void BakeGrid()
         {
-            validCells.Clear();
-
-            // 1. WORLD BOUNDS HESAPLA
-            Bounds worldBounds = new Bounds(transform.position, Vector3.zero);
-            Renderer[] renderers = GetComponentsInChildren<Renderer>();
-            
-            if (renderers.Length == 0)
+            if (BoundaryMarkers == null || BoundaryMarkers.Count < 2)
             {
-                Debug.LogError("ArenaPartitioner: Renderer bulunamadı!");
+                Debug.LogError("Lütfen en az 2 tane Boundary Marker (Köşe Noktası) atayın!");
                 return;
             }
 
-            foreach (Renderer r in renderers)
-            {
-                worldBounds.Encapsulate(r.bounds);
-            }
+            validCells.Clear();
 
-            // 2. LOCAL BOUNDS HESAPLA (Düzeltilen Kısım)
-            // World Bounds'un 4 alt köşesini alıp locale çeviriyoruz.
-            // Böylece objenin dönüşü ne olursa olsun en küçük x ve z'yi buluruz.
+            // 1. MANUEL SINIRLARI HESAPLA (LOCAL SPACE)
+            // Tüm markerları local uzaya çevirip en uç noktaları buluyoruz.
             
-            Vector3 center = worldBounds.center;
-            Vector3 extents = worldBounds.extents;
-
-            // Kutunun tabanındaki 4 köşe
-            Vector3[] worldCorners = new Vector3[]
-            {
-                new Vector3(center.x - extents.x, center.y - extents.y, center.z - extents.z), // Min-Min
-                new Vector3(center.x + extents.x, center.y - extents.y, center.z - extents.z), // Max-Min
-                new Vector3(center.x - extents.x, center.y - extents.y, center.z + extents.z), // Min-Max
-                new Vector3(center.x + extents.x, center.y - extents.y, center.z + extents.z)  // Max-Max
-            };
-
-            // Şimdi bu köşeleri locale çevirip en küçükleri (Min) ve en büyükleri (Max) bulalım
             float minX = float.MaxValue, minZ = float.MaxValue;
             float maxX = float.MinValue, maxZ = float.MinValue;
+            float maxY_World = float.MinValue; // Raycast'in başlayacağı yükseklik için
 
-            foreach (var corner in worldCorners)
+            foreach (var marker in BoundaryMarkers)
             {
-                Vector3 localPoint = transform.InverseTransformPoint(corner);
-                if (localPoint.x < minX) minX = localPoint.x;
-                if (localPoint.z < minZ) minZ = localPoint.z;
-                if (localPoint.x > maxX) maxX = localPoint.x;
-                if (localPoint.z > maxZ) maxZ = localPoint.z;
+                if(marker == null) continue;
+
+                // Marker'ın bu objeye göre local pozisyonu
+                Vector3 localPos = transform.InverseTransformPoint(marker.position);
+                
+                if (localPos.x < minX) minX = localPos.x;
+                if (localPos.z < minZ) minZ = localPos.z;
+                if (localPos.x > maxX) maxX = localPos.x;
+                if (localPos.z > maxZ) maxZ = localPos.z;
+
+                // En yüksek noktayı bul (Dünya koordinatında)
+                if (marker.position.y > maxY_World) maxY_World = marker.position.y;
             }
 
-            // Artık gerçek local origin'i biliyoruz
-            localGridOrigin = new Vector3(minX, 0, minZ); // Y'yi sıfır kabul edebiliriz, ray yukarıdan inecek
+            // Gridin sol alt köşesi (Local)
+            localGridOrigin = new Vector3(minX, 0, minZ);
             
-            // Grid boyutlarını hesapla
+            // Genişlik ve Uzunluk
             float width = maxX - minX;
             float length = maxZ - minZ;
 
@@ -119,20 +108,20 @@ namespace Kuantech.AI
             int rows = Mathf.CeilToInt(length / cellSize);
             gridSize = new Vector2Int(cols, rows);
 
-            Debug.Log($"Rotasyon: {transform.rotation.eulerAngles}. Local Origin: {localGridOrigin}. Grid: {cols}x{rows}");
+            Debug.Log($"Manual Bounds: {cols}x{rows}. Local Origin: {localGridOrigin}");
 
-            // 3. TARAMA (THE RAIN)
+            // 2. TARAMA (THE RAIN)
             int cellIDCounter = 0;
             float halfCell = cellSize * 0.5f;
             
-            // Raycast başlangıç Y yüksekliği (World Space)
-            float rayStartY = worldBounds.max.y + 2f; 
+            // Raycast yüksekliği: En yüksek marker'ın 2 metre üstü
+            float rayStartY = maxY_World + 2f; 
 
             for (int x = 0; x < cols; x++)
             {
                 for (int z = 0; z < rows; z++)
                 {
-                    // Local koordinatı hesapla
+                    // Local hedef
                     Vector3 localTarget = new Vector3(
                         localGridOrigin.x + (x * cellSize) + halfCell,
                         0, 
@@ -141,7 +130,6 @@ namespace Kuantech.AI
 
                     // World Space'e çevirip ışın at
                     Vector3 worldRayOrigin = transform.TransformPoint(localTarget);
-                    // Ray yüksekliğini world bounds'a göre sabitle (Local Y kullanma çünkü zemin eğimli olabilir)
                     worldRayOrigin.y = rayStartY;
 
                     // Işın at
@@ -155,7 +143,6 @@ namespace Kuantech.AI
                         if (UnityEngine.Physics.OverlapBox(boxCenter, boxHalfExtents, Quaternion.identity, obstacleLayer).Length > 0)
                             continue;
 
-                        // Kayıt
                         GridCell newCell = new GridCell
                         {
                             id = cellIDCounter++,
@@ -168,9 +155,14 @@ namespace Kuantech.AI
                     }
                 }
             }
-            Debug.Log($"Bake Tamamlandı! {validCells.Count} hücre.");
+            
+            // Lookup array'i güncelle
+            InitializeFastLookup();
+            
+            Debug.Log($"Bake Tamamlandı! {validCells.Count} hücre üretildi.");
         }
 
+        
         // --- RUNTIME METOTLAR ---
 
         /// <summary>
