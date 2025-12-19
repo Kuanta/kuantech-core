@@ -4,7 +4,7 @@ using System.Globalization;
 namespace Kuantech.Core.Database
 {
     [Serializable]
-    public abstract class KtDataType
+    public abstract class KtDataType : ISaveable
     {
         public abstract object GetValue();
         public abstract T Get<T>();
@@ -14,6 +14,9 @@ namespace Kuantech.Core.Database
         
         //Tries to parse a string representation of the data type.
         public abstract bool ParseString(string stringData);
+        public abstract byte[] Serialize();
+
+        public abstract void Deserialize(byte[] data);
     }
 
     [Serializable]
@@ -38,6 +41,18 @@ namespace Kuantech.Core.Database
 
             return false;
         }
+
+        public override byte[] Serialize()
+        {
+            //Serialize float value
+            return BitConverter.GetBytes(Value);
+        }
+
+        public override void Deserialize(byte[] data)
+        {
+            //Deserialize float value
+            Value = BitConverter.ToSingle(data, 0);
+        }
     }
 
     [Serializable]
@@ -60,6 +75,18 @@ namespace Kuantech.Core.Database
             }
             return false;
         }
+
+        public override byte[] Serialize()
+        {
+            //Serialize int value
+            return BitConverter.GetBytes(Value);
+        }
+
+        public override void Deserialize(byte[] data)
+        {
+            //Deserialize int value
+            Value = BitConverter.ToInt32(data, 0);
+        }
     }
 
     [Serializable]
@@ -77,6 +104,18 @@ namespace Kuantech.Core.Database
         {
             Value = stringData;
             return true;
+        }
+
+        public override byte[] Serialize()
+        {
+            //Serialize string to byte array using UTF8 encoding
+            return System.Text.Encoding.UTF8.GetBytes(Value);
+        }
+
+        public override void Deserialize(byte[] data)
+        {
+            //Deserialize byte array to string using UTF8 encoding
+            Value = System.Text.Encoding.UTF8.GetString(data);
         }
     }
 
@@ -99,6 +138,18 @@ namespace Kuantech.Core.Database
                 return true;
             }
             return false;
+        }
+
+        public override byte[] Serialize()
+        {
+            //Serialize bool value
+            return BitConverter.GetBytes(Value);
+        }
+
+        public override void Deserialize(byte[] data)
+        {
+            //Deserialize bool value
+            Value = BitConverter.ToBoolean(data, 0);
         }
     }
 }
