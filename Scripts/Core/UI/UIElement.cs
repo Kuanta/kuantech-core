@@ -1,9 +1,7 @@
-using System;
 using System.Collections;
 using Kuantech.Core.FX;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.Serialization;
 
 namespace Kuantech.Core.UI
 {
