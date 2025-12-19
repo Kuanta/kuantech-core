@@ -6,10 +6,10 @@ namespace Kuantech.Core
 {
     public class SubManager : MonoBehaviour, ISaveable
     {
-        protected GameManager ParentManager;
-        protected bool Initialized = false;
+        [NonSaveableField] protected GameManager ParentManager;
+        [NonSaveableField] protected bool Initialized = false;
         [Header("SubManager")]
-        public bool LoadAfterInitialize = false;
+        [NonSaveableField] public bool LoadAfterInitialize = false;
         
         public virtual async UniTask Initialize(GameManager gameManager)
         {
