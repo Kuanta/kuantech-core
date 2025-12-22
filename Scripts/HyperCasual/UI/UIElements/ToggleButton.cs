@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
 
-namespace Kuantech.Core.HyperCasual
+namespace Kuantech.Core.UI
 {
     public class ToggleButton : MonoBehaviour
     {

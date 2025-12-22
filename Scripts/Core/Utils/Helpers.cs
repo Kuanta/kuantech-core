@@ -20,6 +20,18 @@ namespace Kuantech.Utils
         
         #region Math
         
+        /// <summary>
+        /// Normalized the value between min and max
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="minValue"></param>
+        /// <param name="maxValue"></param>
+        /// <returns></returns>
+        public static float NormalizeBetweenValues(float value, float maxValue, float minValue = 0)
+        {
+            return Mathf.Clamp01((value - minValue) / Mathf.Max(maxValue - minValue, 0.01f));
+        }
+        
         //Snaps a value to increments
         public static float SnapToIncrements(float value, float increment)
         {
