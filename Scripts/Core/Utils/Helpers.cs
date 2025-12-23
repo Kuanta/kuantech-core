@@ -168,45 +168,49 @@ namespace Kuantech.Utils
         }
         
         #region String
-        public static string Stringfy(this float number, bool roundToInteger = false, bool roundSmallerToInteger = false)
+        public static string Stringfy(this float number, bool roundToInteger = false, bool roundSmallerToInteger = false, bool quantify = true)
         {
             float abs = Mathf.Abs(number);
             string signString = number < 0 ? "- " : "";
             string numberString = "";
             string quantitySuffix = "";
-            
-            if (abs >= 1E18f)
+
+            if (quantify)
             {
-                abs /= 1E18f;
-                quantitySuffix = "qi"; // quintillion
+                if (abs >= 1E18f)
+                {
+                    abs /= 1E18f;
+                    quantitySuffix = "qi"; // quintillion
+                }
+                else if (abs >= 1E15f)
+                {
+                    abs /= 1E15f;
+                    quantitySuffix = "q"; // quadrillion
+                }
+                else if (abs >= 1E12f)
+                {
+                    abs /= 1E12f;
+                    quantitySuffix = "t"; // trillion
+                }
+                else if (abs >= 1E9f)
+                {
+                    abs /= 1E9f;
+                    quantitySuffix = "b";
+                }else if (abs >= 1E6)
+                {
+                    abs /= 1E6f;
+                    quantitySuffix = "m";
+                }else if (abs >= 1E3)
+                {
+                    abs /= 1E3f;
+                    quantitySuffix = "k";
+                }
+                else if(roundSmallerToInteger)
+                {
+                    roundToInteger = true; //Round numbers smaller than 1k to integer
+                }
             }
-            else if (abs >= 1E15f)
-            {
-                abs /= 1E15f;
-                quantitySuffix = "q"; // quadrillion
-            }
-            else if (abs >= 1E12f)
-            {
-                abs /= 1E12f;
-                quantitySuffix = "t"; // trillion
-            }
-            else if (abs >= 1E9f)
-            {
-                abs /= 1E9f;
-                quantitySuffix = "b";
-            }else if (abs >= 1E6)
-            {
-                abs /= 1E6f;
-                quantitySuffix = "m";
-            }else if (abs >= 1E3)
-            {
-                abs /= 1E3f;
-                quantitySuffix = "k";
-            }
-            else if(roundSmallerToInteger)
-            {
-                roundToInteger = true; //Round numbers smaller than 1k to integer
-            }
+
 
             if (abs - Mathf.Floor(abs) == 0) roundToInteger = true; //If no value after decimal point, to integer
             if (roundToInteger)
@@ -222,9 +226,9 @@ namespace Kuantech.Utils
         }
 
         public static string Stringfy(this int number, bool roundToInteger = false,
-            bool roundSmallerToInteger = false)
+            bool roundSmallerToInteger = false, bool quantify = true)
         {
-            return ((float) number).Stringfy();
+            return ((float) number).Stringfy(roundToInteger, roundSmallerToInteger, quantify);
         }
         
         public static float TryParseFloat(this string text, float defaultVal)
@@ -636,6 +640,14 @@ return GameObject.Instantiate(prefab);
             }
         }
 
+        public static void ToggleChild(this Transform transform, int childIndex)
+        {
+            for (int i = 0; i < transform.childCount; ++i)
+            {
+                transform.GetChild(i).gameObject.SetActive(childIndex == i);
+            }
+        }
+        
         public static void PoolAllChildren(this Transform transform)
         {
             for (int i = transform.childCount - 1; i >= 0; i--)
@@ -671,6 +683,17 @@ return GameObject.Instantiate(prefab);
             {
                 children[i].SetSiblingIndex(i);
             }
+        }
+        
+        public static Transform FindDeepChild(this Transform aParent, string aName)
+        {
+            foreach(Transform child in aParent)
+            {
+                if(child.name == aName) return child;
+                var result = child.FindDeepChild(aName);
+                if (result != null) return result;
+            }
+            return null;
         }
         #endregion
         

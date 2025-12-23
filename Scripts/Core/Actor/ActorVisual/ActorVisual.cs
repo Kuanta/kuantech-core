@@ -107,11 +107,22 @@ namespace Kuantech.Core
         /// </summary>
         /// <param name="equipmentSlotType"></param>
         /// <returns></returns>
-        public Transform GetObjectSlot(EquipmentSlotType equipmentSlotType)
+        public Transform GetObjectSlot(string slotName)
         {
-            ActorSlotsHandler slotsHandler = ParentActor.GetModule<ActorSlotsHandler>();
-            if (slotsHandler == null) return null;
-            return slotsHandler.GetSlot(equipmentSlotType.SlotName);
+            // 1. Öncelik: Actor modülü üzerinden slot bulmak (Gameplay)
+            if (ParentActor != null)
+            {
+                var slotsHandler = ParentActor.GetModule<ActorSlotsHandler>();
+                if (slotsHandler != null)
+                {
+                    return slotsHandler.GetSlot(slotName);
+                }
+            }
+
+            // 2. Fallback: Actor yoksa (Manken modu), kendi çocuklarında ara (Menu)
+            // Recursive find yapabiliriz veya VisualPartsHandler içinden bakabiliriz.
+            // En basiti recursive aramadır:
+            return transform.FindDeepChild(slotName); 
         }
         
         /// <summary>
@@ -130,7 +141,7 @@ namespace Kuantech.Core
                 ToggleVisualPartForSlot(occupying, false);
             }
 
-            Transform socket = GetObjectSlot(slot);
+            Transform socket = GetObjectSlot(slot.SlotName);
 
             //is in place?
             ItemVisual visual = itemToSlot.SpawnItemVisual();
