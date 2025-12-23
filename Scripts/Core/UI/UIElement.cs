@@ -35,6 +35,7 @@ namespace Kuantech.Core.UI
             {
                 ElementAnimator.logWarnings = false;
                 if(!UseTimeScale) ElementAnimator.updateMode = AnimatorUpdateMode.UnscaledTime;
+                ElementAnimator.Rebind();
             }
             _rectTransform = GetComponent<RectTransform>();
         }

@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization.Formatters.Binary;
+using Kuantech.Core;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Events;
@@ -632,6 +633,14 @@ return GameObject.Instantiate(prefab);
 #else
                 GameObject.Destroy(transform.GetChild(i).gameObject);
 #endif
+            }
+        }
+
+        public static void PoolAllChildren(this Transform transform)
+        {
+            for (int i = transform.childCount - 1; i >= 0; i--)
+            {
+                PoolManager.PoolObject(transform.GetChild(i).gameObject);
             }
         }
         
