@@ -320,8 +320,6 @@ namespace Kuantech.Utils
         
         #endregion
 
-
-
         #region Time
 
         public static void GetMinSecMil(float elapsedTime, out int minutes, out int seconds, out int milliseconds)
