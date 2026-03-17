@@ -300,18 +300,15 @@ namespace Kuantech.Core
         #region Modules
         
         /// <summary>
-        /// Returns the first instance of a given mopdule type. Should only be used when searched for an explicit type and made sure that there is only a single instance of that component
+        /// Returns the first instance of a given module type. Should only be used when searched for an explicit type and made sure that there is only a single instance of that component
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
         public T GetModule<T>() where T : ActorModule
         {
-            foreach (var pair in Modules)
+            if (Modules.TryGetValue(typeof(T), out var moduleList) && moduleList.Count > 0)
             {
-                if (pair.Value.Count > 0 && pair.Value[0] is T)
-                {
-                    return pair.Value[0] as T;
-                }
+                return moduleList[0] as T;
             }
             return null;
         }
@@ -323,15 +320,11 @@ namespace Kuantech.Core
         /// <returns></returns>
         public List<T> GetModules<T>() where T : ActorModule
         {
-            List<T> result = new List<T>();
-            foreach (var pair in Modules)
+            if (Modules.TryGetValue(typeof(T), out var moduleList))
             {
-                if (pair.Value.Count > 0 && pair.Value[0] is T)
-                {
-                    result.AddRange(pair.Value);
-                }
+                return moduleList.Cast<T>().ToList();
             }
-            return result;
+            return new List<T>();
         }
 
         #endregion

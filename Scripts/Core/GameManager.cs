@@ -29,6 +29,8 @@ namespace Kuantech.Core
         //Submanagers
         private SubManager[] _subManagers;
         private SubManager[] _sceneSubManagers;
+        private readonly Dictionary<Type, SubManager> _persistentManagersByType = new Dictionary<Type, SubManager>();
+        private readonly Dictionary<Type, SubManager> _sceneManagersByType = new Dictionary<Type, SubManager>();
 
         private bool _startedGame = false;
         protected virtual void Awake()
@@ -58,6 +60,11 @@ namespace Kuantech.Core
             _startedGame = true;
             //Get and initialize persistent submanagers
             _subManagers = GetComponentsInChildren<SubManager>();
+            foreach (var subManager in _subManagers)
+            {
+                _persistentManagersByType[subManager.GetType()] = subManager;
+            }
+            
             SceneManager.sceneLoaded += OnSceneLoaded;
             await Initialize();
             OnNewScene();
@@ -105,27 +112,19 @@ namespace Kuantech.Core
             SubManagersInitialized = true;
         }
         
-        public SubManager GetSubManagerByType<T>()
+        public SubManager GetSubManagerByType<T>() where T : SubManager
         {
-            if(_subManagers == null) return null;
+            var type = typeof(T);
+            if (_persistentManagersByType.TryGetValue(type, out var manager))
+            {
+                return manager;
+            }
 
-            for (int i = 0; i < _subManagers.Length; i++)
+            if (_sceneManagersByType.TryGetValue(type, out manager))
             {
-                if (_subManagers[i] is T)
-                {
-                    return _subManagers[i];
-                }
+                return manager;
             }
-            if(_sceneSubManagers != null)
-            {
-                for (int i = 0; i < _sceneSubManagers.Length; i++)
-                {
-                    if (_sceneSubManagers[i] is T)
-                    {
-                        return _sceneSubManagers[i];
-                    }
-                }
-            }
+        
             return null; // Return null if no matching submanager is found
         }
 
@@ -173,6 +172,7 @@ namespace Kuantech.Core
                     sceneSubManager.Cleanup();
                 }
                 ctx._sceneSubManagers = null;
+                ctx._sceneManagersByType.Clear();
             }
             
             //Call scene leave for global managers
@@ -196,6 +196,13 @@ namespace Kuantech.Core
             SceneSubManagerContainer container = FindObjectOfType<SceneSubManagerContainer>();
             if(container == null) return;
             _sceneSubManagers = container.GetSubManagers();
+            
+            _sceneManagersByType.Clear();
+            foreach (var subManager in _sceneSubManagers)
+            {
+                _sceneManagersByType[subManager.GetType()] = subManager;
+            }
+            
             await InitializeSubManagers(_sceneSubManagers);
             container.ActivateManagerDependentSceneObjects();
             ResumeGame();
