@@ -33,9 +33,9 @@ namespace Kuantech.Core
         }
 
         private float _lastEnsureTime;
-        private void Update()
+        public override void ModuleUpdate()
         {
-            if (Actor == null || !Actor.IsAlive() || !Initialized || _movementModule.IsMovementLocked()) return;
+            if (!Actor.IsAlive() || _movementModule.IsMovementLocked()) return;
 
             if (!IsOnNavmesh() && Time.time - _lastEnsureTime > 0.5f)
             {
@@ -66,12 +66,10 @@ namespace Kuantech.Core
         protected virtual bool CheckKnockback()
         {
             Vector3 forceMove = Actor.MotionVectorsHandler.ForceMoveVector;
-            if (forceMove.sqrMagnitude >= MinKnockbackForceRequired)
-            {
-                Stop();
-                Actor.transform.position += forceMove * Time.deltaTime;
-            }
-            return false;
+            if (forceMove.sqrMagnitude < MinKnockbackForceRequired) return false;
+            Stop();
+            Actor.transform.position += forceMove * Time.deltaTime;
+            return true;
         }
         #endregion
 

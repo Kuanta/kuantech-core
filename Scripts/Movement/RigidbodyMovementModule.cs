@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Generic;
 using Kuantech.Core.Utils;
 using UnityEngine;
-using UnityEngine.Events;
 
 namespace Kuantech.Core
 {
@@ -11,39 +9,20 @@ namespace Kuantech.Core
     public class RigidbodyMovementModule : ActorModule
     {
         [SerializeField] private Rigidbody Rigidbody;
-        [SerializeField] private float _speed;
-        private bool _movementLocked = false;
-        
-        //Waypoint
-        private Transform _waypoint;
-        private bool _goingToWaypoint;
-        private UnityAction _waypointReachedHandler;
-        private float _movementThreshold = 0.001f;
-        
-        //Movement Lock
-        
+
         //Dodge
         [Header("Dodge")]
         public float DodgeEnergyCost;
         public LockVariable DodgeLock = new LockVariable();
         [SerializeField] private float DodgeCooldown = 0.5f;
         private bool _dodging;
-        private float _dodgeStartTime;
-        private float _dodgeDuration;
         private float _dodgeSpeed;
         private Vector3 _dodgeDirection;
         private float _lastDodgeTime;
         public EventHandler OnDodgeEvent;
-        
-        //Jumping
-        [Header("Jumping")]
 
-        [Tooltip("Factor to multiply movement speed to add to jump force")]
-        public float MovementSpeedToJumpForceFactor = 1.0f;
-  
         private float _dodgeMomentumPreserveTime = 0.5f;
         private MovementModule _movementModule;
-        private AnimationModule _animationModule;
         
         public override void OnModulesInitialized()
         {
@@ -54,18 +33,15 @@ namespace Kuantech.Core
             }
 
             _movementModule = Actor.GetModule<MovementModule>();
-            _animationModule = Actor.GetModule<AnimationModule>();
-            _movementModule.JumpHandler = HandleJump;
         }
     
-        private void FixedUpdate()
+        public override void ModuleFixedUpdate()
         {
             HandleMovement();
         }
 
         private void HandleMovement()
         {
-            if (Actor == null) return;
             if (GameManager.IsGamePaused() || !Actor.IsAlive() || _movementModule == null)
             {
                 Rigidbody.linearVelocity = Vector3.zero;
@@ -73,59 +49,40 @@ namespace Kuantech.Core
             }
             if (Rigidbody == null || !_movementModule.IsGrounded()) return;
 
-            Vector3 movement = _movementModule.GetMovementVector();
-            movement.y = 0;
-            movement.Normalize();
-            movement *= _movementModule.GetSpeed();
             float downSpeed = Rigidbody.linearVelocity.y;
-            movement.y = downSpeed;
-            ;
-            Vector3 vel = movement + Actor.MotionVectorsHandler.ForceMoveVector;
-            
-            if (_movementLocked)
+            Vector3 forceMove = Actor.MotionVectorsHandler.ForceMoveVector;
+
+            Vector3 vel;
+            if (forceMove.sqrMagnitude >= 0.001f)
+            {
+                vel = forceMove;
+            }
+            else if (_dodging)
+            {
+                vel = _dodgeDirection * _dodgeSpeed;
+            }
+            else if (_movementModule.IsMovementLocked())
             {
                 vel = Vector3.zero;
             }
-            
-            if (Actor.MotionVectorsHandler.ForceMoveVector.sqrMagnitude >= 0.001f)
+            else
             {
-                vel = Actor.MotionVectorsHandler.ForceMoveVector;
+                Vector3 movement = _movementModule.GetMovementVector();
+                movement.y = 0;
+                movement.Normalize();
+                movement *= _movementModule.GetSpeed();
+                vel = movement;
             }
 
             vel.y = downSpeed;
-            
+
             if (Rigidbody.isKinematic)
-            {
                 transform.position += vel * Time.deltaTime;
-            }
             else
-            {
                 Rigidbody.linearVelocity = vel;
-            }
-            
-            
         }
 
         #region Queries
-        
-        /// <summary>
-        /// Returns the movement speed
-        /// </summary>
-        /// <returns></returns>
-        public float GetMovementSpeed()
-        {
-            return _speed;
-        }
-                
-        /// <summary>
-        /// Returns the vector of the forward direction of the actor
-        /// </summary>
-        /// <returns></returns>
-        public Vector3 GetForwardVector()
-        {
-            //todo: Implement aim mechanics
-            return transform.forward;
-        }
 
         public Vector3 GetMomentumVector()
         {
@@ -136,10 +93,9 @@ namespace Kuantech.Core
             }
 
             Vector3 movementMomentum = Rigidbody.linearVelocity;
-
             return movementMomentum.sqrMagnitude > dodgeMomentum.sqrMagnitude ? movementMomentum : dodgeMomentum;
         }
-        
+
         public bool IsDodging()
         {
             return _dodging;
@@ -147,22 +103,12 @@ namespace Kuantech.Core
 
         #endregion
 
-
         #region Controls
 
         public void ToggleMovement(bool toggle)
         {
-            _movementLocked = !toggle;
-        }
-
-        public void SetMaxSpeed(float maxSpeed)
-        {
-            _speed = maxSpeed;
-        }
-
-        public void SetSpeed(float speed)
-        {
-            
+            if (toggle) _movementModule.Unlock(this);
+            else _movementModule.Lock(this);
         }
 
         public void Stop()
@@ -182,11 +128,8 @@ namespace Kuantech.Core
         public override void Reset()
         {
             Stop();
-            _movementLocked = false;
-            _goingToWaypoint = false;
             _dodging = false;
             _lastDodgeTime = 0;
-
             DodgeLock.Reset();
         }
         
@@ -199,34 +142,25 @@ namespace Kuantech.Core
         public void Dodge(Vector3 dodgeDirection, float dodgeDuration, float dodgeSpeed)
         {
             if (_dodging || DodgeLock.IsLocked()) return;
-            if (Time.time - _lastDodgeTime < DodgeCooldown) return; //Wait for cooldown
-            
-            //Check energy cost
-            float energyCost = GetDodgeEnergyCost();
-            // if (Actor.Energy < energyCost) return;
-            // Actor.SpendEnergy(energyCost);
+            if (Time.time - _lastDodgeTime < DodgeCooldown) return;
+
             _dodging = true;
+            _lastDodgeTime = Time.time;
             dodgeDirection.y = 0;
             dodgeDirection.Normalize();
             _dodgeDirection = dodgeDirection;
-            _dodgeDuration = dodgeDuration;
             _dodgeSpeed = dodgeSpeed;
-            _dodgeStartTime = Time.time;
+            _movementModule.Lock(this);
             OnDodgeEvent?.Invoke(this, EventArgs.Empty);
-        }
-        #endregion
-        
-        #region Jumping
-
-        private float GetJumpEnergyCost()
-        {
-            return 0; //Jump should be energy freee
+            Actor.StartCoroutine(DodgeRoutine(dodgeDuration));
         }
 
-        
-        public void HandleJump(Vector3 jumpVector)
+        private IEnumerator DodgeRoutine(float duration)
         {
-             Rigidbody.AddForce(jumpVector, ForceMode.Impulse);
+            yield return new WaitForSeconds(duration);
+            _dodging = false;
+            _dodgeSpeed = 0f;
+            _movementModule.Unlock(this);
         }
         #endregion
     }

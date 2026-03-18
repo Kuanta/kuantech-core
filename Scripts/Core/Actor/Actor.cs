@@ -84,11 +84,11 @@ namespace Kuantech.Core
         public virtual void Initialize(ActorSerializableData actorSerializableData = null)
         {
             if (Initialized) return;
-            
-            //Motions vector handler
+
+            //Motion vector handler
             MotionVectorsHandler = new MotionVectorsHandler(this, ActorForwardVector, ActorUpVector);
-            
-            //Modules
+
+            //Modules — discover all first so modules can reference each other during Initialize()
             ActorModulesList = GetComponentsInChildren<ActorModule>().ToList();
             ModulesById = new Dictionary<string, ActorModule>();
             foreach (ActorModule module in ActorModulesList)
@@ -101,8 +101,7 @@ namespace Kuantech.Core
                 module.Actor = this;
                 if(!string.IsNullOrEmpty(module.ModuleId)) ModulesById[module.ModuleId] = module;
             }
-            
-            //Initialize modules after getting them all so that they can require each other in their initialize methods
+
             foreach(var module in ActorModulesList)
             {
                 module.Initialize();
@@ -112,34 +111,27 @@ namespace Kuantech.Core
 
             if(actorSerializableData != null)
             {
-                //Load the data to the state
                 LoadActorState(actorSerializableData);
-            }else {
+            }
+            else
+            {
                 SetDefaultStateValues();
             }
 
-            OnModulesInitialized?.Invoke(this, EventArgs.Empty);
             Initialized = true;
-            
-            PostInitialize();
-            
-            ChangeActorState(ActorState.Inactive);
 
-            //Call reset method
-            Reset();
+            //Notify modules first, then external subscribers
+            PostInitialize();
+            OnModulesInitialized?.Invoke(this, EventArgs.Empty);
         }
 
         public void Spawn()
         {
             if (!Initialized)
-            {
                 Initialize();
-            }
-            else
-            {
-                Reset();
-            }
+            Reset();
             ChangeActorState(ActorState.Spawned);
+            OnSpawnedEvent?.Invoke(this);
         }
 
         public virtual void PostInitialize()
@@ -208,25 +200,30 @@ namespace Kuantech.Core
         public virtual void Despawn(float delay=0f)
         {
             if (_despawnCoroutine != null)
-            {
                 StopCoroutine(_despawnCoroutine);
+
+            if (!gameObject.activeInHierarchy)
+            {
+                Cleanup();
+                ChangeActorState(ActorState.Despawned);
+                OnDespawnedEvent?.Invoke(this);
+                if (VisualHandler != null) VisualHandler.ClearCurrentVisual();
+                PoolManager.PoolObject(gameObject);
+                return;
             }
+
             _despawnCoroutine = _DespawnRoutine(delay);
-            if (!gameObject.activeInHierarchy) return;
             StartCoroutine(_despawnCoroutine);
         }
         
         private IEnumerator _despawnCoroutine;
         private IEnumerator _DespawnRoutine(float delay)
         {
-            Cleanup();
             yield return new WaitForSeconds(delay);
+            Cleanup();
             ChangeActorState(ActorState.Despawned);
             OnDespawnedEvent?.Invoke(this);
-            if (VisualHandler != null)
-            {
-                VisualHandler.ClearCurrentVisual();
-            }
+            if (VisualHandler != null) VisualHandler.ClearCurrentVisual();
             PoolManager.PoolObject(gameObject);
             _despawnCoroutine = null;
         }

@@ -52,9 +52,8 @@ namespace Kuantech.Core
         public EventHandler OnJumpEvent;
         public EventHandler OnJumpLandEvent;
         public EventHandler OnDashEvent;
-        
-        //Handlers
-        public Action<Vector3> JumpHandler;
+
+        [SerializeReference] public JumpHandler JumpHandler;
 
         private AnimationModule _animationModule;
         
@@ -186,7 +185,7 @@ namespace Kuantech.Core
             Vector3 jumpVector = GetJumpVector();
             Jumping = true;
             _jumpTime = Time.time;
-            JumpHandler?.Invoke(jumpVector);
+            JumpHandler?.HandleJump(this, jumpVector);
             
             
             CombatModule cm = Actor.GetModule<CombatModule>();

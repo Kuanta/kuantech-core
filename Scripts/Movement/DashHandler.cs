@@ -1,13 +1,16 @@
+using System;
 using System.Collections;
 using UnityEngine;
 
 namespace Kuantech.Core
 {
+    [Serializable]
     public abstract class DashHandler
     {
         public abstract void HandleDash(MovementModule module);
     }
-    
+
+    [Serializable]
     public class RigidbodyDashHandler : DashHandler
     {
         public override void HandleDash(MovementModule module)
