@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Kuantech.Utils;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -100,7 +99,7 @@ namespace Kuantech.Core
                 }
                 Modules[module.GetType()].Add(module);
                 module.Actor = this;
-                if(!module.ModuleId.IsNullOrEmpty()) ModulesById[module.ModuleId] = module;
+                if(!string.IsNullOrEmpty(module.ModuleId)) ModulesById[module.ModuleId] = module;
             }
             
             //Initialize modules after getting them all so that they can require each other in their initialize methods
@@ -194,13 +193,13 @@ namespace Kuantech.Core
             {
                 module.Cleanup();
             }
-            
+
             //Cleanup events
             OnDeathEvent = null;
             OnActorStateChanged = null;
             OnSpawnedEvent = null;
-            OnDeathEvent = null;
             OnDespawnedEvent = null;
+            OnHitEvent = null;
         }
         
         /// <summary>
@@ -383,7 +382,7 @@ namespace Kuantech.Core
         {
             foreach(var pair in moduleStates)
             {
-                if (pair.Key.IsNullOrEmpty()) 
+                if (string.IsNullOrEmpty(pair.Key))
                 {
                     continue;
                 }
@@ -466,9 +465,7 @@ namespace Kuantech.Core
 
         public Vector3 GetActorDirection()
         {
-            RigidbodyMovementModule mm = GetModule<RigidbodyMovementModule>();
-            if (mm == null) return transform.forward;
-            return mm.GetForwardVector();
+            return MotionVectorsHandler?.GetTargetVector() ?? transform.forward;
         }
         #endregion
 
