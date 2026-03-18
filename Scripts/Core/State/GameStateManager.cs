@@ -1,4 +1,4 @@
-using System;
+using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using IngameDebugConsole;
 using Kuantech.Core;
@@ -6,132 +6,128 @@ using UnityEngine;
 
 public class GameStateManager : SubManager
 {
-    public GameState GameState { get; private set; }
-
     [SerializeField] private float SaveCheckFrequency = 1f;
-    [SerializeField] private bool SaveData = true;
+    [SerializeField] private bool AutoSave = true;
+    [SerializeField] private string DefaultBinaryProviderId = "local";
+
+    [SerializeReference] private List<DataStorageProvider> _storageProviders = new();
+
+    private readonly Dictionary<string, DataStorageProvider> _providerById = new();
     private float _lastCheckTime;
 
     public override async UniTask Initialize(GameManager gameManager)
     {
         await base.Initialize(gameManager);
-        GameState = new GameState();
-        await GameState.LoadData();
+
+        _providerById.Clear();
+        foreach (var provider in _storageProviders)
+        {
+            if (provider == null) continue;
+            _providerById[provider.Id] = provider;
+            provider.LoadData();
+        }
     }
 
     protected virtual void LateUpdate()
     {
-        if (GameState == null || !GameState.Dirtied) return;
+        if (!AutoSave) return;
         if (Time.time - _lastCheckTime < SaveCheckFrequency) return;
-        if (SaveData)
-        {
-            GameState.SaveData();
-            GameState.Dirtied = false;
-        }
         _lastCheckTime = Time.time;
+        FlushProviders();
     }
 
     private void OnApplicationQuit()
     {
-        if (SaveData && GameState != null) GameState.SaveData();
+        FlushProviders();
     }
 
-
-    public static void UpdateSaveData(ISaveable saveable)
+    private void FlushProviders()
     {
-        var ctx = GameStateManager.GetContext<GameStateManager>();
-        if (ctx == null || ctx.GameState == null || saveable == null) return;
-
-        string id = GetSaveableId(saveable);
-        var data = SaveUtility.Serialize(saveable);
-        ctx.GameState.UpdateData(id, data);
-    }
-    
-    /// <summary>
-    /// Tries to load state. Returns true if there exist any data to load
-    /// </summary>
-    /// <param name="saveable"></param>
-    /// <returns></returns>
-    public static bool LoadData(ISaveable saveable)
-    {
-        try
+        foreach (var provider in _storageProviders)
         {
-            var ctx = GameStateManager.GetContext<GameStateManager>();
-            if (ctx == null)
-            {
-                Debug.LogError("Game State Manager is null");
-                return false;
-            }
-            if (ctx.GameState == null || saveable == null) return false;
-            string id = GetSaveableId(saveable);
-            byte[] data = ctx.GameState.GetData(id);
-            if (data == null) return false;
-            SaveUtility.Deserialize(data,saveable);
-            return true;
-        }
-        catch (Exception e)
-        {
-            return false;
+            if (provider != null && provider.HasUnsavedChanges)
+                provider.SaveChanges();
         }
     }
 
-    public override void ClearState()
+    // --- Provider registry ---
+
+    public static T GetProvider<T>(string id) where T : DataStorageProvider
     {
         var ctx = GetContext<GameStateManager>();
-        ctx.GameState.ClearAllData();
+        if (ctx == null || string.IsNullOrEmpty(id)) return default;
+        ctx._providerById.TryGetValue(id, out var provider);
+        return provider as T;
     }
 
-    [ConsoleMethod("clearState", "Clears game state")]
+    public static DataStorageProvider GetProvider(string id)
+    {
+        var ctx = GetContext<GameStateManager>();
+        if (ctx == null || string.IsNullOrEmpty(id)) return null;
+        ctx._providerById.TryGetValue(id, out var provider);
+        return provider;
+    }
+
+    // --- Binary convenience statics (used by SubManager.SaveState / LoadState) ---
+
+    public static void UpdateSaveData(ISaveable saveable, string providerId = null)
+    {
+        var ctx = GetContext<GameStateManager>();
+        if (ctx == null) return;
+        GetProvider<BinaryStorageProvider>(providerId ?? ctx.DefaultBinaryProviderId)?.SaveData(saveable);
+    }
+
+    public static bool LoadData(ISaveable saveable, string providerId = null)
+    {
+        var ctx = GetContext<GameStateManager>();
+        if (ctx == null) return false;
+        return GetProvider<BinaryStorageProvider>(providerId ?? ctx.DefaultBinaryProviderId)?.LoadData(saveable) ?? false;
+    }
+
+    public static void ClearSaveData(ISaveable saveable, string providerId = null)
+    {
+        var ctx = GetContext<GameStateManager>();
+        if (ctx == null) return;
+        GetProvider<BinaryStorageProvider>(providerId ?? ctx.DefaultBinaryProviderId)?.ClearData(saveable);
+    }
+
+    [ConsoleMethod("clearState", "Clears all data in all providers")]
     public static void ClearStateSS()
     {
-        var ctx = GameStateManager.GetContext<GameStateManager>();
+        var ctx = GetContext<GameStateManager>();
         if (ctx == null) return;
-        ctx.ClearState();
-    }
-    
-    public static void ClearSaveData(ISaveable saveable)
-    {
-        string id = GetSaveableId(saveable);
-        ClearSaveData(id);
-    }
-    public static void ClearSaveData(string id)
-    {
-        var ctx = GetContext<GameStateManager>();
-        ctx.GameState.ClearData(id);
-    }
-    
-    private static string GetSaveableId(ISaveable module)
-    {
-        return module.GetType().FullName;
-    }
-    
-    #region POCO
-    public static void SaveObject<T>(string id, T data)
-    {
-        var ctx = GetContext<GameStateManager>();
-        if (ctx == null || ctx.GameState == null) return;
-        byte[] bytes = SaveUtility.SerializePoco(data);
-        ctx.GameState.UpdateData(id, bytes); // Dirtied otomatik true olmalı (senin GameState içinde)
+        foreach (var provider in ctx._storageProviders)
+            provider?.Clear();
     }
 
-    public static bool TryLoadObject<T>(string id, out T data)
+    // --- POCO helpers (raw key-value binary storage) ---
+
+    public static void SaveObject<T>(string key, T data, string providerId = null)
+    {
+        var ctx = GetContext<GameStateManager>();
+        if (ctx == null) return;
+        string id = providerId ?? ctx.DefaultBinaryProviderId;
+        byte[] bytes = SaveUtility.SerializePoco(data);
+        GetProvider<BinaryStorageProvider>(id)?.SaveRaw(key, bytes);
+    }
+
+    public static bool TryLoadObject<T>(string key, out T data, string providerId = null)
     {
         data = default;
         var ctx = GetContext<GameStateManager>();
-        if (ctx == null || ctx.GameState == null) return false;
-
-        byte[] bytes = ctx.GameState.GetData(id);
-        if (bytes == null) return false;
-
+        if (ctx == null) return false;
+        string id = providerId ?? ctx.DefaultBinaryProviderId;
+        var provider = GetProvider<BinaryStorageProvider>(id);
+        if (provider == null || !provider.TryLoadRaw(key, out var bytes)) return false;
         data = SaveUtility.DeserializePoco<T>(bytes);
         return true;
     }
 
-    public static void ClearObject(string id)
+    public static void ClearObject(string key, string providerId = null)
     {
         var ctx = GetContext<GameStateManager>();
-        if (ctx == null || ctx.GameState == null) return;
-        ctx.GameState.ClearData(id);
+        if (ctx == null) return;
+        string id = providerId ?? ctx.DefaultBinaryProviderId;
+        GetProvider<BinaryStorageProvider>(id)?.ClearData(key);
     }
-    #endregion
 }

@@ -10,7 +10,7 @@ namespace Kuantech.HyperCasual
     /// <summary>
     /// Handles the pre-level boosters that give permenant upgrades to the player
     /// </summary>
-    public class UpgradeManager : SubManager, ISaveable
+    public class UpgradeManager : SubManager
     {
         public List<UpgradeData> UpgradesList;
         private Dictionary<string, UpgradeData> _upgradesMap;
@@ -151,15 +151,6 @@ namespace Kuantech.HyperCasual
         {
             GameStateManager.ClearSaveData(UpgradeManager.GetContext<UpgradeManager>());
             UpgradeManager context = UpgradeManager.GetContext<UpgradeManager>();
-        }
-
-        public byte[] Serialize()
-        {
-            return null;
-        }
-
-        public void Deserialize(byte[] data)
-        {
         }
     }
 }

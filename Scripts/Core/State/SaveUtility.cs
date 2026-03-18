@@ -30,11 +30,6 @@ namespace Kuantech.Core
 
         public static byte[] SerializePoco<T>(T value)
         {
-            if (value is ISaveable saveable)
-            {
-                return Serialize(saveable);
-            }
-            
             string json = JsonConvert.SerializeObject(value, Formatting.None, JsonSettings);
             return System.Text.Encoding.UTF8.GetBytes(json);
         }
@@ -97,6 +92,7 @@ namespace Kuantech.Core
             foreach (var field in fields)
             {
                 if (!System.Attribute.IsDefined(field, typeof(SaveableFieldAttribute))) continue;
+                if (System.Attribute.IsDefined(field, typeof(NonSaveableFieldAttribute))) continue;
 
                 if (!data.FieldData.TryGetValue(field.Name, out var fieldBytes))
                 {

@@ -143,9 +143,12 @@ namespace Kuantech.Core
             yield return new WaitForSeconds(LoadingScreenCloseDelay);
             if (LoadingScreen != null) LoadingScreen.SetActive(false);
         }
-        public void ToggleSubManager<T>(bool toggle)
+
+        public void ToggleSubManager<T>(bool toggle) where T : SubManager
         {
-            GetSubManagerByType<T>().enabled = toggle;
+            T subManager = GetSubManagerByType<T>() as T;
+            if (subManager == null) return;
+            subManager.enabled = toggle;
         }
         #endregion
         

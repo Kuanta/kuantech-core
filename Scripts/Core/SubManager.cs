@@ -1,4 +1,4 @@
-﻿using Cysharp.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -8,43 +8,39 @@ namespace Kuantech.Core
     {
         [NonSaveableField] protected GameManager ParentManager;
         [NonSaveableField] protected bool Initialized = false;
+
         [Header("SubManager")]
-        [NonSaveableField] public bool LoadAfterInitialize = false;
-        
+        public string DataStorageProviderId;
+
         public virtual async UniTask Initialize(GameManager gameManager)
         {
-            //Subscribe to events
             ParentManager = gameManager;
             Initialized = true;
         }
 
         public virtual void OnSubmanagersInitialized()
         {
-            if(LoadAfterInitialize) LoadState();
         }
 
         /// <summary>
-        /// Called for scene specific submanagers, when the gamemanager enters a new scene
+        /// Called when the GameManager enters a new scene.
         /// </summary>
         public virtual void OnSceneEntry()
         {
-
         }
 
         /// <summary>
-        /// Called for scene specific submanagers, when the gamemanager leaves current scene.
+        /// Called when the GameManager leaves the current scene.
         /// </summary>
         public virtual void OnSceneLeave()
         {
-            
         }
 
         /// <summary>
-        /// Called for submanagers that are remvoed during a scene cleanup
+        /// Called when a scene-specific SubManager is removed during scene cleanup.
         /// </summary>
         public virtual void Cleanup()
         {
-
         }
 
         public static T GetContext<T>() where T : SubManager
@@ -59,39 +55,33 @@ namespace Kuantech.Core
             return null;
         }
 
-        public void Deserialize(byte[] data)
+        public virtual void Deserialize(byte[] data)
         {
-            
         }
-        
+
         public virtual void LoadState()
         {
-            if (this is GameStateManager) return;
-            if (!GameStateManager.LoadData(this))
-            {
+            if (!GameStateManager.LoadData(this, DataStorageProviderId))
                 SetDefaultState();
-            }
         }
 
         [Button("Save State")]
         public void SaveState()
         {
-            if (this is GameStateManager) return; //Gamestate manager shouldn't save itself
-            GameStateManager.UpdateSaveData(this);
+            GameStateManager.UpdateSaveData(this, DataStorageProviderId);
         }
-        
+
         public virtual void SetDefaultState()
         {
         }
-        
+
         [Button("Clear State")]
         public virtual void ClearState()
         {
-            if (this is GameStateManager) return; 
-            GameStateManager.ClearSaveData(this);
+            GameStateManager.ClearSaveData(this, DataStorageProviderId);
             SetDefaultState();
         }
-        #endregion
 
+        #endregion
     }
 }
