@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Kuantech.Networking;
 using Kuantech.Utils;
 using UnityEngine;
 using UnityEngine.Events;
@@ -558,6 +559,14 @@ namespace Kuantech.Core
         #endregion
 
         #region Networking
+        public bool HasAuthority()
+        {
+            if(!TryGetComponent(out KtActorNetworkBehaviour networkBehaviour))
+            {
+                return true;
+            }
+            return networkBehaviour.GetAuthority();
+        }
 
         public void StartLocalPlayer()
         {

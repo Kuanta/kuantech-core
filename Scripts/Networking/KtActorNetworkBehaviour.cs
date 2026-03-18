@@ -23,12 +23,13 @@ namespace Kuantech.Networking
 
             if (ParentActor != null)
             {
-                // true = inactive children'ları da tara istersen, istemezsen argümanı kaldır.
                 _networkComponents.AddRange(
                     ParentActor.GetComponentsInChildren<IKtNetworkComponent>(true)
                 );
             }
         }
+
+        public bool GetAuthority() => IsOwner;
 
         public override void OnStartNetwork()
         {
@@ -40,6 +41,8 @@ namespace Kuantech.Networking
                 return;
             
             //Spawn
+            ParentActor.Initialize();
+
             ParentActor.Spawn();
             
             CacheNetworkComponents();
@@ -166,6 +169,7 @@ namespace Kuantech.Networking
 #else
     public class KtActorNetworkBehaviour : MonoBehaviour
     {
+        public bool GetAuthority() => true;
     }
 #endif
 }

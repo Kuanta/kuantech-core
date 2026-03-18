@@ -1,25 +1,25 @@
 ﻿#if NETWORKING_FISHNET
-    using FishNet.Connection;
+using FishNet.Connection;
 #endif
 
 namespace Kuantech.Networking
 {
     public interface IKtNetworkComponent
     {
-#if NETWORKING_FISHNET
-        public void OnStartNetwork(KtActorNetworkBehaviour parentBehavior);
+        void OnStartNetwork(KtActorNetworkBehaviour parentBehaviour);
         void OnStopNetwork();
-        
-        public void OnStartServer();
-        public void OnStopServer();
-        
-        public void OnStartClient();
-        public void OnStopClient();
-        
-       public void OnStartLocalPlayer();
-       public void OnStopLocalPlayer();
-       
-       void OnOwnershipChanged(NetworkConnection prevOwner, NetworkConnection newOwner);
+
+        void OnStartServer();
+        void OnStopServer();
+
+        void OnStartClient();
+        void OnStopClient();
+
+        void OnStartLocalPlayer();
+        void OnStopLocalPlayer();
+
+#if NETWORKING_FISHNET
+        void OnOwnershipChanged(NetworkConnection prevOwner, NetworkConnection newOwner);
 #endif
     }
 }
