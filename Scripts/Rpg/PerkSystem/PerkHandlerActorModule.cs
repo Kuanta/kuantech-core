@@ -44,7 +44,7 @@ namespace Kuantech.Rpg
             return _perkHandler.GetPerk(perkAsset);
         }
 
-        public override void Reset()
+        public override void ResetModule()
         {
             _perkHandler.ClearPerks();
         }

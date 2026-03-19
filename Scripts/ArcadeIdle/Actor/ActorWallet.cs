@@ -91,7 +91,7 @@ namespace Kuantech.ArcadeIdle
         {
             HeldCurrencies[currencyId] -= amount;
         }
-        public override void Reset()
+        public override void ResetModule()
         {
 
         }

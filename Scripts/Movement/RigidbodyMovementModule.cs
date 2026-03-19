@@ -37,6 +37,7 @@ namespace Kuantech.Core
     
         public override void ModuleFixedUpdate()
         {
+            if (!Actor.IsOwner()) return;
             HandleMovement();
         }
 
@@ -125,7 +126,7 @@ namespace Kuantech.Core
 
         #endregion
 
-        public override void Reset()
+        public override void ResetModule()
         {
             Stop();
             _dodging = false;
@@ -162,6 +163,31 @@ namespace Kuantech.Core
             _dodgeSpeed = 0f;
             _movementModule.Unlock(this);
         }
+        #endregion
+
+        #region NETWORKING
+
+        public override void OnStartNetwork()
+        {
+            base.OnStartNetwork();
+            bool isOwner = Owner.IsLocalClient;
+            Rigidbody.isKinematic = !isOwner;
+            Debug.Log($"[RigidbodyMovementModule] OnStartNetwork | " +
+                      $"GameObject: {gameObject.name} | " +
+                      $"IsOwner: {isOwner} | " +
+                      $"IsServer: {IsServerStarted} | " +
+                      $"IsClient: {IsClientStarted} | " +
+                      $"IsKinematic: {Rigidbody.isKinematic}");
+        }
+
+#if NETWORKING_FISHNET
+        public override void OnOwnershipClient(FishNet.Connection.NetworkConnection prevOwner)
+        {
+            base.OnOwnershipClient(prevOwner);
+            Rigidbody.isKinematic = !IsOwner;
+        }
+#endif
+
         #endregion
     }
 }

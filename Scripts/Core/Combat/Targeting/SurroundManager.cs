@@ -170,9 +170,9 @@ namespace Kuantech.Core
         }
 
         
-        public override void Reset()
+        public override void ResetModule()
         {
-            base.Reset();
+            base.ResetModule();
             ClearTarget();
             if (CurrentTargetSlot != null && CurrentTargetSlot.OccupyingActor == Actor)
             {

@@ -51,9 +51,9 @@ namespace Kuantech.Core.Combat
         }
 
 
-        public override void Reset()
+        public override void ResetModule()
         {
-            base.Reset();
+            base.ResetModule();
             Refresh();
         }
 

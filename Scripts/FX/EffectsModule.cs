@@ -216,9 +216,9 @@ namespace Kuantech.Core.FX
             }
         }
 
-        public override void Reset()
+        public override void ResetModule()
         {
-            base.Reset();
+            base.ResetModule();
             if(DeathEffect != null) DeathEffect.Stop();
             if(DamageReceiveEffect != null) DamageReceiveEffect.Stop();
             

@@ -116,7 +116,7 @@ namespace Kuantech.AI
 
         #endregion
        
-        public override void Reset()
+        public override void ResetModule()
         {
             StopAgent();
         }

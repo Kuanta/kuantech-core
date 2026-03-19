@@ -51,9 +51,9 @@ namespace Kuantech.Rpg
             ResourceManager.Initialize(this);
         }
 
-        public override void Reset()
+        public override void ResetModule()
         {
-            base.Reset();
+            base.ResetModule();
             UpdateStatModifiers();
             ResourceManager.Refresh();
         }

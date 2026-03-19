@@ -142,9 +142,9 @@ namespace Kuantech.Core.Combat
             ClearStatusEffects();
         }
 
-        public override void Reset()
+        public override void ResetModule()
         {
-            base.Reset();
+            base.ResetModule();
             ClearStatusEffects();
         }
     }

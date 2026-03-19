@@ -18,7 +18,7 @@ namespace Kuantech.ArcadeIdle
         {
         }
 
-        public override void Reset()
+        public override void ResetModule()
         {
         }
         

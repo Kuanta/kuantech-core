@@ -121,7 +121,7 @@ namespace Kuantech.ArcadeIdle
         {
             RequiredResources.Clear();
         }
-        public override void Reset()
+        public override void ResetModule()
         {
             List<ResourceData> keys = RequiredResources.Keys.ToList();
             foreach (var key in keys)

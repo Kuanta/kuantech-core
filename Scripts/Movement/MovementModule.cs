@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using FishNet.Object;
+using FishNet.Object.Synchronizing;
 using Kuantech.Core.Utils;
 using Kuantech.Rpg;
 using UnityEngine;
@@ -76,15 +78,48 @@ namespace Kuantech.Core
         }
         
         #region Movement Vector
+
+        private readonly SyncVar<Vector3> _syncedMovement = new SyncVar<Vector3>();
+
+        public override void OnStartNetwork()
+        {
+            base.OnStartNetwork();
+            _syncedMovement.OnChange += OnSyncedMovementChanged;
+        }
+
+        public override void OnStopNetwork()
+        {
+            base.OnStopNetwork();
+            _syncedMovement.OnChange -= OnSyncedMovementChanged;
+        }
+
         /// <summary>
-        /// Sets the actor movement vector
+        /// Sets the actor movement vector. On owning client, sends to server.
+        /// On server, applies directly and SyncVar propagates to observers.
         /// </summary>
-        /// <param name="movementVector"></param>
         public void SetMovementVector(Vector3 movementVector)
         {
             Actor.MotionVectorsHandler.SetMovementVector(movementVector);
+
+            if (IsServerInitialized)
+                _syncedMovement.Value = movementVector;
+            else if (IsOwner)
+                ServerRpc_SetMovement(movementVector);
         }
-        
+
+        [ServerRpc]
+        private void ServerRpc_SetMovement(Vector3 movement)
+        {
+            _syncedMovement.Value = movement;
+            Actor.MotionVectorsHandler.SetMovementVector(movement);
+        }
+
+        private void OnSyncedMovementChanged(Vector3 prev, Vector3 next, bool asServer)
+        {
+            if (!asServer)
+                Actor.MotionVectorsHandler.SetMovementVector(next);
+        }
+
         /// <summary>
         /// Gets the movement vector
         /// </summary>
@@ -357,9 +392,9 @@ namespace Kuantech.Core
             SetMovementVector(Vector3.zero);
         }
         
-        public override void Reset()
+        public override void ResetModule()
         {
-            base.Reset();
+            base.ResetModule();
             MovementLock.Reset();
 
             Stop();

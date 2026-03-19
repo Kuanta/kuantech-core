@@ -1,16 +1,24 @@
 using System;
 using Kuantech.Rpg;
 using UnityEngine;
+#if NETWORKING_FISHNET
+using FishNet.Object;
+#endif
 
 namespace Kuantech.Core
 {
     [Serializable]
     public class ActorData
     {
-            
+
     }
-    
-    public abstract class ActorModule : MonoBehaviour {
+
+#if NETWORKING_FISHNET
+    public abstract class ActorModule : NetworkBehaviour
+#else
+    public abstract class ActorModule : MonoBehaviour
+#endif
+    {
         [NonSerialized] public Actor Actor;
         [NonSerialized] public bool Initialized;
         public string ModuleId;
@@ -55,7 +63,7 @@ namespace Kuantech.Core
         {
             
         }
-        public virtual void Reset(){}
+        public virtual void ResetModule(){}
 
         public virtual void Cleanup(){}
 
@@ -97,16 +105,27 @@ namespace Kuantech.Core
 
         #region Networking
 
-        public virtual void OnLocalPlayerStart()
-        {
-            
-        }
+        // Called by KtActorNetworkBehaviour when this actor becomes the local player
+        public virtual void OnLocalPlayerStart() { }
+        public virtual void OnLocalPlayerStop() { }
 
-        public virtual void OnLocalPlayerStop()
-        {
-            
-        }
+#if !NETWORKING_FISHNET
+        // Stub callbacks — no-op in offline builds.
+        // When NETWORKING_FISHNET is defined, NetworkBehaviour provides these.
+        public virtual void OnStartNetwork() { }
+        public virtual void OnStopNetwork() { }
+        public virtual void OnStartServer() { }
+        public virtual void OnStopServer() { }
+        public virtual void OnStartClient() { }
+        public virtual void OnStopClient() { }
+
+        public bool IsOwner => true;
+        public bool IsServer => true;
+        public bool IsClient => true;
+        public bool IsServerStarted => true;
+        public bool IsClientStarted => true;
+        public bool IsClientOnlyInitialized => false;
+#endif
         #endregion
-
     }
 }

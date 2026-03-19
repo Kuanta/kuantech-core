@@ -29,7 +29,7 @@ namespace Kuantech.ArcadeIdle
             _statModule = Actor.GetModule<StatsModule>();
         }
 
-        public override void Reset()
+        public override void ResetModule()
         {
         }
 

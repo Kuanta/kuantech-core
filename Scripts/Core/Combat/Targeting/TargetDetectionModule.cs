@@ -193,9 +193,9 @@ namespace Kuantech.Core.Combat
             DetectTargets();
         }
 
-        public override void Reset()
+        public override void ResetModule()
         {
-            base.Reset();
+            base.ResetModule();
             if(DetectedEnemies != null) DetectedEnemies.Clear();
             if(DetectedAllies != null) DetectedAllies.Clear();
         }

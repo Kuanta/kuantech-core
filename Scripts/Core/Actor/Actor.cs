@@ -174,7 +174,7 @@ namespace Kuantech.Core
         {
             foreach (var module in ActorModulesList)
             {
-                module.Reset();
+                module.ResetModule();
             }
 
             MotionVectorsHandler.Reset();
@@ -559,13 +559,76 @@ namespace Kuantech.Core
         #endregion
 
         #region Networking
-        public bool HasAuthority()
+
+        public KtActorNetworkBehaviour NetworkBehaviour;
+        /// <summary>
+        /// Checks if is server
+        /// </summary>
+        /// <returns></returns>
+        public bool IsServer()
         {
-            if(!TryGetComponent(out KtActorNetworkBehaviour networkBehaviour))
+            if (NetworkBehaviour == null)
             {
                 return true;
             }
-            return networkBehaviour.GetAuthority();
+            return NetworkBehaviour.IsServerInitialized;
+        }
+
+        /// <summary>
+        /// Checks if is client
+        /// </summary>
+        /// <returns></returns>
+        public bool IsClient()
+        {
+            if (NetworkBehaviour == null)
+            {
+                return true;
+            }
+            return NetworkBehaviour.IsClientInitialized;
+        }
+
+        /// <summary>
+        /// Checks if is only client no server
+        /// </summary>
+        /// <returns></returns>
+        public bool IsOnlyClient()
+        {
+            if (NetworkBehaviour == null)
+            {
+                return false;
+            }
+            return NetworkBehaviour.IsClientOnlyInitialized;
+        }
+
+        /// <summary>
+        /// Checks if client controls this actor
+        /// </summary>
+        /// <returns></returns>
+        public bool IsOwner()
+        {
+            if(NetworkBehaviour == null)
+            {
+                return true;
+            }
+            return NetworkBehaviour.IsOwner;
+        }
+
+        /// <summary>
+        /// Checks if this Actor is local player
+        /// </summary>
+        /// <returns></returns>
+        public bool IsLocalPlayer()
+        {
+            if (NetworkBehaviour == null)
+            {
+                return true;
+            }
+            return NetworkBehaviour.IsOwner;
+        }
+
+        public bool HasAuthority()
+        {
+            return IsOwner() || IsServer();
         }
 
         public void StartLocalPlayer()
@@ -573,6 +636,14 @@ namespace Kuantech.Core
             foreach (var module in ActorModulesList)
             {
                 module.OnLocalPlayerStart();
+            }
+        }
+
+        public void StopLocalPlayer()
+        {
+            foreach (var module in ActorModulesList)
+            {
+                module.OnLocalPlayerStop();
             }
         }
 

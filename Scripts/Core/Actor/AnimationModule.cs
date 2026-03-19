@@ -176,9 +176,9 @@ namespace Kuantech.Core
         }
         #endregion
   
-        public override void Reset()
+        public override void ResetModule()
         {
-            base.Reset();
+            base.ResetModule();
             if (Animator != null)
             {            
                 Animator.SetFloat(Forward, 0);

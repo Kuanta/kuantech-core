@@ -67,7 +67,7 @@ namespace Kuantech.Core
             Ragdoll = visual.GetComponentInChildren<Ragdoll>();
         }
 
-        public override void Reset()
+        public override void ResetModule()
         {
             if (Ragdoll != null)
             {
