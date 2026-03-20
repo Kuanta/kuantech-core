@@ -55,7 +55,8 @@ namespace Kuantech.Core
         //Events
         public EventHandler OnJumpEvent;
         public EventHandler OnJumpLandEvent;
-        public EventHandler OnDashEvent;
+        public EventHandler<Vector3> DashStartEvent;
+        public EventHandler DashEndEvent;
 
         [SerializeReference] public JumpHandler JumpHandler;
 
@@ -147,8 +148,8 @@ namespace Kuantech.Core
 
         private void HandleJumpLogic()
         {
-            // Ground check only meaningful on owner/server — observers rely on _syncedJumping
-            if (GroundCheckEnabled && (IsOwner || IsServerInitialized))
+            //Check for both client and server
+            if (GroundCheckEnabled)
             {
                 bool grounded = CheckGrounded();
                 if (_isGrounded && !grounded)
@@ -157,6 +158,7 @@ namespace Kuantech.Core
                     _lastLandTime = Time.time;
                 _isGrounded = grounded;
             }
+  
             if (_animationModule != null)
             {
                 _animationModule.IsGroundedFlag = _isGrounded;
@@ -369,29 +371,42 @@ namespace Kuantech.Core
 
         public void Dash(Vector3 direction)
         {
-            // IsSpawned guard: in single-player ObserversRpc is a plain method call,
-            // skipping it avoids firing OnDashEvent twice
-            if (IsServerInitialized) { ExecuteDash(direction); if (IsSpawned) ObserversRpc_Dash(direction); }
-            else if (IsOwner)        { ExecuteDash(direction); ServerRpc_Dash(direction); }
+            if (IsServerInitialized)
+            {
+                ExecuteDash(direction);
+                if (IsSpawned) ObserversRpc_Dash(direction);
+            }
+            else if (IsOwner)
+            {
+                ExecuteDash(direction);
+                ServerRpc_Dash(direction);
+            }
         }
 
         [ServerRpc]
-        private void ServerRpc_Dash(Vector3 direction) { ExecuteDash(direction); ObserversRpc_Dash(direction); }
+        private void ServerRpc_Dash(Vector3 direction)
+        {
+            ExecuteDash(direction); // physics only — no OnDashEvent
+            ObserversRpc_Dash(direction);
+        }
 
-        // ExcludeOwner: owner already ran ExecuteDash locally
+        // Fires on all observers (incl. listen-server host when not owner). Owner already fired locally.
         [ObserversRpc(ExcludeOwner = true)]
-        private void ObserversRpc_Dash(Vector3 direction) { OnDashEvent?.Invoke(this, EventArgs.Empty); }
+        private void ObserversRpc_Dash(Vector3 direction) { 
+            ExecuteDash(direction);
+        }
 
         private void ExecuteDash(Vector3 direction)
         {
             DashHandler?.OnDashStart(this, direction);
+            DashStartEvent?.Invoke(this, direction);
             if (LockRotationOnDash && _aimHandler != null)
             {
                 if (SnapToDirectionOnDash) _aimHandler.SetDirection(direction);
                 _aimHandler.LockRotation(this);
             }
             DashHandler?.HandleDash(this, direction);
-            OnDashEvent?.Invoke(this, EventArgs.Empty);
+            // OnDashEvent intentionally NOT fired here — caller is responsible
             StartCoroutine(DashEndRoutine());
         }
 
@@ -399,6 +414,7 @@ namespace Kuantech.Core
         {
             yield return new WaitForSeconds(DashDuration);
             DashHandler?.OnDashEnd(this);
+            DashEndEvent?.Invoke(this, EventArgs.Empty);
             if (_aimHandler != null) _aimHandler.UnlockRotation(this);
         }
 

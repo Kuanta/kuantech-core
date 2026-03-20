@@ -30,7 +30,6 @@ namespace Kuantech.Core
 
         // Cached modules
         private MovementModule _movementModule;
-        private RigidbodyMovementModule _rigidbodyMovementModule;
 
         // Movement blend parameters
         private Vector2 _targetMovementParameters = Vector2.zero;
@@ -79,12 +78,8 @@ namespace Kuantech.Core
             {
                 _movementModule.OnJumpEvent     += OnJump;
                 _movementModule.OnJumpLandEvent += OnLand;
-                _movementModule.OnDashEvent     += OnDash;
+                _movementModule.DashStartEvent  += OnDash;
             }
-
-            _rigidbodyMovementModule = Actor.GetModule<RigidbodyMovementModule>();
-            if (_rigidbodyMovementModule != null)
-                _rigidbodyMovementModule.OnDodgeEvent += OnDodge;
 
             ActorVisualHandler visualHandler = Actor.GetModule<ActorVisualHandler>();
             if (visualHandler != null)
@@ -222,7 +217,7 @@ namespace Kuantech.Core
             Animator.SetTrigger(Land);
         }
 
-        private void OnDash(object sender, EventArgs args)
+        private void OnDash(object sender, Vector3 direction)
         {
             if (Animator == null) return;
             Animator.SetTrigger(Dash);
