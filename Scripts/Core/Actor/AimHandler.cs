@@ -8,12 +8,15 @@ namespace Kuantech.Core
         [SerializeField] private bool PrioritizeMovementForTargetVector;
         [SerializeField] private float rotateSpeedDegPerSec = 720f;
         [SerializeField] private Transform Anchor;
+        [Tooltip("For multiplayer, if rotation is synced turn this off")]
+        [SerializeField] private bool RotateOnClient = true;
         private Vector3 _targetAimVector;
         Quaternion _targetRot = Quaternion.identity;
 
         public override void ModuleLateUpdate()
         {
             if (!Actor.IsAlive()) return;
+            if(!RotateOnClient && !Actor.IsServer()) return;
             _targetAimVector = Actor.MotionVectorsHandler.GetTargetVector(PrioritizeMovementForTargetVector);
             Transform t = Actor.transform;
             if (_targetAimVector.sqrMagnitude < 1e-8f)

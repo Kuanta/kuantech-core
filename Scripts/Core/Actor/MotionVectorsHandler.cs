@@ -22,6 +22,11 @@ namespace Kuantech.Core
 
         [NonSerialized] public Actor ParentActor;
 
+        public Action<Vector3> OnMovementVectorChanged;
+        public Action<Vector3> OnTargetVectorChanged;
+        public Action<float> OnMovementMultiplierChanged;
+        
+
         public MotionVectorsHandler(Actor actor, Vector3 actorForwardVector, Vector3 actorUpVector)
         {
             ParentActor = actor;
@@ -44,6 +49,7 @@ namespace Kuantech.Core
         public void SetMovementVector(Vector3 movementVector)
         {
             MovementVector = movementVector;
+            OnMovementVectorChanged?.Invoke(movementVector);
         }
         
         public float GetMovementMultiplier()
@@ -54,6 +60,7 @@ namespace Kuantech.Core
         public void SetMovementMultiplier(float multiplier)
         {
             MovementMultiplier = multiplier;
+            OnMovementMultiplierChanged?.Invoke(multiplier);
         }
         
         /// <summary>
@@ -184,11 +191,12 @@ namespace Kuantech.Core
         public void SetTargetVector(Vector3 targetVector)
         {
             TargetVector = targetVector;
+            OnTargetVectorChanged?.Invoke(targetVector);
         }
 
         public void ClearTargetVector()
         {
-            TargetVector = Vector3.zero;
+            SetTargetVector(Vector3.zero);
         }
         #endregion
         

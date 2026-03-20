@@ -21,7 +21,6 @@ namespace Kuantech.Core.Utils
         public void Reset()
         {
             _lockingSources.Clear();
-            ;
         }
 
         public bool IsLocked()

@@ -123,8 +123,11 @@ namespace Kuantech.Core
         public bool IsServer => true;
         public bool IsClient => true;
         public bool IsServerStarted => true;
+        public bool IsServerInitialized => true;
         public bool IsClientStarted => true;
         public bool IsClientOnlyInitialized => false;
+        // False in offline: guards ObserversRpc/ClientRpc calls that shouldn't run locally
+        public bool IsSpawned => false;
 #endif
         #endregion
     }

@@ -32,12 +32,12 @@ namespace Kuantech.Core
         private bool _crouching;
         
         [Header("Jump")]
-        [SerializeField] private bool LockAttackOnJump = true;
         public bool GroundCheckEnabled = false;
         public bool Jumping;
         public float CheckGroundedRadius = 0.2f;
         public LayerMask GroundCheckMask;
         public float JumpHeight = 2f;
+
         [Tooltip("A max air time to do normalization")]
         public float MaxAirTime = 5f;
         private bool _isGrounded;
@@ -79,54 +79,16 @@ namespace Kuantech.Core
         
         #region Movement Vector
 
-        private readonly SyncVar<Vector3> _syncedMovement = new SyncVar<Vector3>();
-
-        public override void OnStartNetwork()
-        {
-            base.OnStartNetwork();
-            _syncedMovement.OnChange += OnSyncedMovementChanged;
-        }
-
-        public override void OnStopNetwork()
-        {
-            base.OnStopNetwork();
-            _syncedMovement.OnChange -= OnSyncedMovementChanged;
-        }
-
-        /// <summary>
-        /// Sets the actor movement vector. On owning client, sends to server.
-        /// On server, applies directly and SyncVar propagates to observers.
-        /// </summary>
         public void SetMovementVector(Vector3 movementVector)
         {
             Actor.MotionVectorsHandler.SetMovementVector(movementVector);
-
-            if (IsServerInitialized)
-                _syncedMovement.Value = movementVector;
-            else if (IsOwner)
-                ServerRpc_SetMovement(movementVector);
         }
 
-        [ServerRpc]
-        private void ServerRpc_SetMovement(Vector3 movement)
-        {
-            _syncedMovement.Value = movement;
-            Actor.MotionVectorsHandler.SetMovementVector(movement);
-        }
-
-        private void OnSyncedMovementChanged(Vector3 prev, Vector3 next, bool asServer)
-        {
-            if (!asServer)
-                Actor.MotionVectorsHandler.SetMovementVector(next);
-        }
-
-        /// <summary>
-        /// Gets the movement vector
-        /// </summary>
         public Vector3 GetMovementVector()
         {
             return Actor.MotionVectorsHandler.GetMovementVector();
         }
+
         #endregion
         
         #region Speed
@@ -177,19 +139,18 @@ namespace Kuantech.Core
 
         #region Jump
 
+        private readonly SyncVar<bool> _syncedJumping = new();
+
         private void HandleJumpLogic()
         {
-            if (GroundCheckEnabled)
+            // Ground check only meaningful on owner/server — observers rely on _syncedJumping
+            if (GroundCheckEnabled && (IsOwner || IsServerInitialized))
             {
                 bool grounded = CheckGrounded();
                 if (_isGrounded && !grounded)
-                {
                     _lastFallStartTime = Time.time;
-                }else if (!_isGrounded && grounded)
-                {
+                else if (!_isGrounded && grounded)
                     _lastLandTime = Time.time;
-                }
-
                 _isGrounded = grounded;
             }
             if (_animationModule != null)
@@ -197,65 +158,74 @@ namespace Kuantech.Core
                 _animationModule.IsGroundedFlag = _isGrounded;
                 _animationModule.AirTime = GetNormalizedAirTime();
             }
-            if (Jumping && Time.time - _jumpTime > 0.5f && _isGrounded)
-            {
-                //Land
+            // Server/owner detect landing and propagate via SyncVar
+            if (Jumping && Time.time - _jumpTime > 0.5f && _isGrounded && (IsOwner || IsServerInitialized))
                 Land();
-            }
         }
+
         public bool IsGrounded()
         {
             if (!GroundCheckEnabled) return true;
             return _isGrounded;
         }
+
         public void Jump()
         {
             if (Jumping || !IsGrounded() || JumpLock.IsLocked()) return;
-            if (JumpHandler == null)
+            if (JumpHandler == null) { Debug.LogWarning("Jump handler is null"); return; }
+            if (IsServerInitialized) { ExecuteJump(); _syncedJumping.Value = true; }
+            else if (IsOwner)        { ExecuteJump(); ServerRpc_Jump(); }
+        }
+
+        [ServerRpc]
+        private void ServerRpc_Jump() { ExecuteJump(); _syncedJumping.Value = true; }
+
+        private void OnSyncedJumpingChanged(bool _, bool next, bool asServer)
+        {
+            if (asServer || IsOwner) return;
+            // Observer: update state and fire events for animation — no physics
+            if (next)
             {
-                Debug.LogWarning("Jump handler is null");
-                return;
+                Jumping = true;
+                _jumpTime = Time.time;
+                OnJumpEvent?.Invoke(this, EventArgs.Empty);
             }
-            //Did we land?
+            else
+            {
+                ExecuteLand();
+            }
+        }
+
+        private void ExecuteJump()
+        {
             Vector3 jumpVector = GetJumpVector();
             Jumping = true;
             _jumpTime = Time.time;
             JumpHandler?.HandleJump(this, jumpVector);
-            
-            
-            CombatModule cm = Actor.GetModule<CombatModule>();
-            if (cm != null && LockAttackOnJump)
-            {
-                cm.AttackLock.Lock(this);
-            }
+            OnJumpEvent?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void Land()
+        {
+            ExecuteLand();
+            if (IsServerInitialized) _syncedJumping.Value = false;
+        }
+
+        private void ExecuteLand()
+        {
+            Jumping = false;
+            OnJumpLandEvent?.Invoke(this, EventArgs.Empty);
         }
 
         public Vector3 GetJumpVector()
         {
             float jumpForce = Mathf.Sqrt(Mathf.Abs(2 * JumpHeight * UnityEngine.Physics.gravity.y));
-            Vector3 currMovement = GetMovementVector();
-            float speed = GetSpeed();
-            return currMovement * speed + Vector3.up * jumpForce;
-        }
-        
-        private void Land()
-        {
-            Jumping = false;
-            OnJumpLandEvent?.Invoke(this, EventArgs.Empty);
-            CombatModule cm = Actor.GetModule<CombatModule>();
-            if (cm != null)
-            {
-                cm.AttackLock.Unlock(this);
-            }
+            return GetMovementVector() * GetSpeed() + Vector3.up * jumpForce;
         }
 
         public float GetAirTime()
         {
-            if (!IsGrounded())
-            {
-                return Time.time - _lastGroundedTime;
-            }
-
+            if (!IsGrounded()) return Time.time - _lastGroundedTime;
             return _lastLandTime - _lastFallStartTime;
         }
 
@@ -263,11 +233,12 @@ namespace Kuantech.Core
         {
             return Mathf.Clamp01(GetAirTime() / Mathf.Max(MaxAirTime, 0.1f));
         }
+
         private bool CheckGrounded()
         {
-            Vector3 center = transform.position;
-            return UnityEngine.Physics.CheckSphere(center, CheckGroundedRadius, GroundCheckMask);
+            return UnityEngine.Physics.CheckSphere(transform.position, CheckGroundedRadius, GroundCheckMask);
         }
+
         #endregion
         
         #region Locks
@@ -324,19 +295,67 @@ namespace Kuantech.Core
 
         #region Crouch
 
+        private readonly SyncVar<bool> _syncedCrouching = new();
+
+        public override void OnStartNetwork()
+        {
+            base.OnStartNetwork();
+            _syncedCrouching.OnChange += OnSyncedCrouchingChanged;
+            _syncedJumping.OnChange += OnSyncedJumpingChanged;
+        }
+
+        public override void OnStopNetwork()
+        {
+            base.OnStopNetwork();
+            _syncedCrouching.OnChange -= OnSyncedCrouchingChanged;
+            _syncedJumping.OnChange -= OnSyncedJumpingChanged;
+        }
+
         public void Crouch()
         {
-            if (CrouchHandler == null) return;
-            CrouchHandler.OnCrouchStarted();
-            _animationModule.ToggleCrouching(true);
-            _crouching = true;
+            if (IsServerInitialized) { ExecuteCrouch(); _syncedCrouching.Value = true; }
+            else if (IsOwner)        { ExecuteCrouch(); ServerRpc_Crouch(); }
         }
 
         public void Standup()
         {
+            if (IsServerInitialized) { ExecuteStandup(); _syncedCrouching.Value = false; }
+            else if (IsOwner)        { ExecuteStandup(); ServerRpc_Standup(); }
+        }
+
+        [ServerRpc]
+        private void ServerRpc_Crouch()
+        {
+            ExecuteCrouch();
+            _syncedCrouching.Value = true;
+        }
+
+        [ServerRpc]
+        private void ServerRpc_Standup()
+        {
+            ExecuteStandup();
+            _syncedCrouching.Value = false;
+        }
+
+        private void OnSyncedCrouchingChanged(bool _, bool next, bool asServer)
+        {
+            if (asServer || IsOwner) return;
+            if (next) ExecuteCrouch(); else ExecuteStandup();
+        }
+
+        private void ExecuteCrouch()
+        {
+            if (CrouchHandler == null) return;
+            CrouchHandler.OnCrouchStarted();
+            if (_animationModule != null) _animationModule.ToggleCrouching(true);
+            _crouching = true;
+        }
+
+        private void ExecuteStandup()
+        {
             if (CrouchHandler == null) return;
             CrouchHandler.OnCrouchEnd();
-            _animationModule.ToggleCrouching(false);
+            if (_animationModule != null) _animationModule.ToggleCrouching(false);
             _crouching = false;
         }
 
@@ -346,7 +365,22 @@ namespace Kuantech.Core
 
         public void Dash()
         {
-            DashHandler.HandleDash(this);
+            // IsSpawned guard: in single-player ObserversRpc is a plain method call,
+            // skipping it avoids firing OnDashEvent twice
+            if (IsServerInitialized) { ExecuteDash(); if (IsSpawned) ObserversRpc_Dash(); }
+            else if (IsOwner)        { ExecuteDash(); ServerRpc_Dash(); }
+        }
+
+        [ServerRpc]
+        private void ServerRpc_Dash() { ExecuteDash(); ObserversRpc_Dash(); }
+
+        // ExcludeOwner: owner already ran ExecuteDash locally
+        [ObserversRpc(ExcludeOwner = true)]
+        private void ObserversRpc_Dash() { OnDashEvent?.Invoke(this, EventArgs.Empty); }
+
+        private void ExecuteDash()
+        {
+            DashHandler?.HandleDash(this);
             OnDashEvent?.Invoke(this, EventArgs.Empty);
         }
 
@@ -410,6 +444,7 @@ namespace Kuantech.Core
             
             //Reset jump
             Jumping = false;
+            if (IsServerInitialized) _syncedJumping.Value = false;
             JumpLock.Reset();
             _lastGroundedTime = Time.time;
             
