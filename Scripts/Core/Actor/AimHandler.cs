@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Kuantech.Core.Utils;
+using UnityEngine;
 
 namespace Kuantech.Core
 {
@@ -13,10 +14,16 @@ namespace Kuantech.Core
         private Vector3 _targetAimVector;
         Quaternion _targetRot = Quaternion.identity;
 
+        public LockVariable RotationLock = new LockVariable();
+
+        public void LockRotation(object locker) => RotationLock.Lock(locker);
+        public void UnlockRotation(object locker) => RotationLock.Unlock(locker);
+
         public override void ModuleLateUpdate()
         {
             if (!Actor.IsAlive()) return;
             if(!RotateOnClient && !Actor.IsServer()) return;
+            if (RotationLock.IsLocked()) return;
             _targetAimVector = Actor.MotionVectorsHandler.GetTargetVector(PrioritizeMovementForTargetVector);
             Transform t = Actor.transform;
             if (_targetAimVector.sqrMagnitude < 1e-8f)

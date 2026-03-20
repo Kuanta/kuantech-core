@@ -1,49 +1,37 @@
-﻿using Kuantech.Core;
-using UnityEngine;
+﻿using UnityEngine;
 
-public class AttackBehaviour : StateMachineBehaviour
+/// <summary>
+/// Scales an animator state's speed so the clip plays in exactly TargetTimeKey seconds.
+/// Add to any state that needs duration-driven timing (attacks, dodges, casts, etc.).
+/// The state must have its Speed set to the SpeedKey parameter.
+/// </summary>
+public class AnimationTimeScaler : StateMachineBehaviour
 {
-    public string TargetTimeKey;
-    private bool _multiplierCalculated = false;
+    [Tooltip("Animator float that holds the desired duration in seconds")]
+    public string TargetTimeKey = "TargetTime";
+    [Tooltip("Animator float that the state's Speed is multiplied by")]
+    public string SpeedKey = "AttackSpeed";
 
-    // OnStateEnter is called when a transition starts and the state machine starts to evaluate this state
+    private bool _calculated;
+
     public override void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
-        if(_multiplierCalculated) return;
+        if (_calculated) return;
         float targetTime = animator.GetFloat(TargetTimeKey);
-        if (targetTime == 0f) targetTime = 1f;
-        float baseAnimLength = GetBaseAnimationLength(stateInfo);
-        float speedMultiplier = baseAnimLength / targetTime;
-        animator.SetFloat(AnimationModule.AttackSpeed, speedMultiplier);
-        _multiplierCalculated = true;
-    }
-    
-    private float GetBaseAnimationLength(AnimatorStateInfo stateInfo)
-    {
-        return stateInfo.length * stateInfo.speedMultiplier;
-    }
-    
-    // OnStateUpdate is called on each Update frame between OnStateEnter and OnStateExit callbacks
-    public override void OnStateUpdate(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
-    {
-      
+        if (targetTime <= 0f) targetTime = 1f;
+        float clipLength = stateInfo.length * stateInfo.speedMultiplier;
+        animator.SetFloat(SpeedKey, clipLength / targetTime);
+        _calculated = true;
     }
 
-    //OnStateExit is called when a transition ends and the state machine finishes evaluating this state
     public override void OnStateExit(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
-        _multiplierCalculated=false;
+        _calculated = false;
     }
-
-    // OnStateMove is called right after Animator.OnAnimatorMove()
-    //override public void OnStateMove(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
-    //{
-    //    // Implement code that processes and affects root motion
-    //}
-
-    // OnStateIK is called right after Animator.OnAnimatorIK()
-    //override public void OnStateIK(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
-    //{
-    //    // Implement code that sets up animation IK (inverse kinematics)
-    //}
 }
+
+/// <summary>
+/// Legacy alias — kept so existing animator states don't break.
+/// New states should use AnimationTimeScaler directly.
+/// </summary>
+public class AttackBehaviour : AnimationTimeScaler { }

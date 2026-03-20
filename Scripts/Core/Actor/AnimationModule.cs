@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Kuantech.Utils;
 using UnityEngine;
 using UnityEngine.Events;
@@ -6,7 +6,8 @@ using UnityEngine.Events;
 namespace Kuantech.Core
 {
     /// <summary>
-    /// A common animation module for common actor events
+    /// Drives an Animator from actor events and MotionVectorsHandler data.
+    /// Animators must follow the parameter naming convention defined by the hash constants below.
     /// </summary>
     public class AnimationModule : ActorModule
     {
@@ -15,67 +16,76 @@ namespace Kuantech.Core
         public AnimationMontagePlayer MontagePlayer;
 
         [Header("Settings")]
-        [Tooltip("If set to true, movement will be sent to animator as a single float")]
+        [Tooltip("Send movement as a single magnitude float instead of Forward/Sideways")]
         public bool UseOneDimensionalMovement;
-        
+
         [Header("Animation Parameters")]
         [SerializeField] private AnimationData DamageReceivedAnimationData;
-        
+        [SerializeField] private AnimationData DodgeAnimationData;
+
+        public float LerpFactor = 10f;
+
+        // Events
+        public UnityEvent OnDamageFrameEvent;
+
+        // Cached modules
+        private MovementModule _movementModule;
+        private RigidbodyMovementModule _rigidbodyMovementModule;
+
+        // Movement blend parameters
         private Vector2 _targetMovementParameters = Vector2.zero;
         private Vector2 _movementParameters = Vector2.zero;
         private Vector2 _movementParametersScale = Vector2.one;
-        private MovementModule _movementModule;
-
-        public float LerpFactor = 10f;
-    
-        //Events
-        public UnityEvent OnDamageFrameEvent;
-        
-        //Animation Hashes
-        private static readonly int Forward = Animator.StringToHash("Forward");
-        private static readonly int Sideways = Animator.StringToHash("Right");
-        private static readonly int Movement = Animator.StringToHash("Movement");
-        private static readonly int Attack = Animator.StringToHash("Attack");
-        private static readonly int Hold = Animator.StringToHash("Hold");
-        private static readonly int AttackIndex = Animator.StringToHash("AttackIndex");
-        private static readonly int HandIndex = Animator.StringToHash("HandIndex");
-        public static readonly int AttackSpeed = Animator.StringToHash("AttackSpeed");
-        public static readonly int TargetTime = Animator.StringToHash("TargetTime");
-        private static readonly int Death = Animator.StringToHash("Dead");
-        // private static readonly int DamageReceived = Animator.StringToHash("DamageReceived");
-        // private static readonly int DamageReceivedIndex = Animator.StringToHash("DamageReceivedIndex");
-        private static readonly int Aiming = Animator.StringToHash("Aiming");
-        private static readonly int AlternativeAttack = Animator.StringToHash("AlternativeAttack");
-        private static readonly int Jump = Animator.StringToHash("Jump");
-        private static readonly int Dash = Animator.StringToHash("Dash");
-        private static readonly int Land = Animator.StringToHash("Land");
-        private static readonly int Crouching = Animator.StringToHash("Crouching");
-        private static readonly int IsGrounded = Animator.StringToHash("IsGrounded");
-        private static readonly int AirTimeHash = Animator.StringToHash("AirTime");
-        private static readonly int Cast = Animator.StringToHash("Cast");
-        private static readonly int CastIndex = Animator.StringToHash("CastIndex");
 
         [NonSerialized] public bool IsGroundedFlag;
         [NonSerialized] public float AirTime;
-        
-    
+
+        // Animation parameter hashes — animator must use these exact parameter names
+        private static readonly int Forward          = Animator.StringToHash("Forward");
+        private static readonly int Sideways         = Animator.StringToHash("Right");
+        private static readonly int Movement         = Animator.StringToHash("Movement");
+        private static readonly int Death            = Animator.StringToHash("Dead");
+        private static readonly int Aiming          = Animator.StringToHash("Aiming");
+        private static readonly int Jump             = Animator.StringToHash("Jump");
+        private static readonly int Land             = Animator.StringToHash("Land");
+        private static readonly int Dash             = Animator.StringToHash("Dash");
+        private static readonly int Crouching        = Animator.StringToHash("Crouching");
+        private static readonly int IsGrounded       = Animator.StringToHash("IsGrounded");
+        private static readonly int AirTimeHash      = Animator.StringToHash("AirTime");
+        private static readonly int Attack           = Animator.StringToHash("Attack");
+        private static readonly int AlternativeAttack= Animator.StringToHash("AlternativeAttack");
+        private static readonly int Hold             = Animator.StringToHash("Hold");
+        private static readonly int AttackIndex      = Animator.StringToHash("AttackIndex");
+        private static readonly int HandIndex        = Animator.StringToHash("HandIndex");
+        private static readonly int Cast             = Animator.StringToHash("Cast");
+        private static readonly int CastIndex        = Animator.StringToHash("CastIndex");
+        public static readonly int AttackSpeed       = Animator.StringToHash("AttackSpeed");
+        public static readonly int TargetTime        = Animator.StringToHash("TargetTime");
+
+        // ─── Lifecycle ───────────────────────────────────────────────────────────
+
         public override void Initialize()
         {
             base.Initialize();
             ApplyDefaultAnimationSet();
         }
-        
+
         public override void OnModulesInitialized()
         {
             base.OnModulesInitialized();
-            MovementModule _movementModule = Actor.GetModule<MovementModule>();
+
+            _movementModule = Actor.GetModule<MovementModule>();
             if (_movementModule != null)
             {
-                _movementModule.OnJumpEvent += OnJump;
+                _movementModule.OnJumpEvent     += OnJump;
                 _movementModule.OnJumpLandEvent += OnLand;
-                _movementModule.OnDashEvent += OnDash;
+                _movementModule.OnDashEvent     += OnDash;
             }
-            
+
+            _rigidbodyMovementModule = Actor.GetModule<RigidbodyMovementModule>();
+            if (_rigidbodyMovementModule != null)
+                _rigidbodyMovementModule.OnDodgeEvent += OnDodge;
+
             ActorVisualHandler visualHandler = Actor.GetModule<ActorVisualHandler>();
             if (visualHandler != null)
             {
@@ -83,104 +93,27 @@ namespace Kuantech.Core
                 OnActorVisualChanged(visualHandler.CurrentActorVisual);
             }
         }
+
         public override void ModuleUpdate()
         {
             if (GameManager.Instance.GameIsPaused || Animator == null || Actor == null) return;
-            
-            //Update from Motion Vectors Handler
+
             if (Actor.MotionVectorsHandler != null)
-            {
                 UpdateMovementParameters();
-            }
-            
-            _movementParameters =
-                Vector2.Lerp(_movementParameters, _targetMovementParameters * _movementParametersScale, Time.deltaTime * LerpFactor);
-           
-            if (Animator == null) return;
+
+            _movementParameters = Vector2.Lerp(
+                _movementParameters,
+                _targetMovementParameters * _movementParametersScale,
+                Time.deltaTime * LerpFactor);
+
             SetMovementParameters();
         }
-        
-        private void SetMovementParameters()
-        {
-            if(UseOneDimensionalMovement)
-            {
-                Animator.SetFloat(Movement, _movementParameters.magnitude);
-            }
-            else
-            {
-                Animator.SetFloat(Sideways, _movementParameters.x);
-                Animator.SetFloat(Forward, _movementParameters.y);
-            }
-            
-            Animator.SetFloat(IsGrounded, IsGroundedFlag ? 1f : 0f);
-            Animator.SetFloat(AirTimeHash, AirTime);
-        }
 
-        public Animator GetAnimator()
-        {
-            return Animator;
-        }
-
-        #region Animation Sets
-        public void ApplyDefaultAnimationSet()
-        {
-            if (DefaultAnimationSet == null || Animator == null) return; 
-            Animator.runtimeAnimatorController = DefaultAnimationSet;
-        }
-        
-        public void ApplyAnimationSet(RuntimeAnimatorController animationSet)
-        {
-            if (animationSet == null || Animator == null) return; 
-            Animator.runtimeAnimatorController = animationSet;
-        }
-        #endregion
-
-        #region Animation Play
-        public void SetClip(string clipName, AnimationClip clip)
-        {
-            Animator animator = GetAnimator();
-            if (animator == null) return;
-        }
-        public void SetTrigger(int hash)
-        {
-            Animator.SetTrigger(hash);
-        }
-
-        private void PlayAnimationMontage(AnimationMontage animationMontage, float targetTime = 1.0f)
-        {
-            Animator animator = GetAnimator();
-            if (animator == null) return;
-            if (MontagePlayer == null) return;
-            animator.SetFloat(TargetTime, targetTime);
-            MontagePlayer.PlayMontage(animationMontage);
-        }
-
-        public void PlayAnimationData(AnimationData animationData, float animationDuration = -1)
-        {
-            Animator animator = GetAnimator();
-            if (animator == null) return;
-            
-            //Set parameters
-            animationData.SetParameters(animator);
-
-            if (animationDuration > 0)
-            {
-                animator.SetFloat(TargetTime, animationDuration);
-            }
-            
-            //Play montage
-            if (animationData.AttackMontage != null)
-            {
-                PlayAnimationMontage(animationData.AttackMontage, animationDuration);
-            }
-        }
-        #endregion
-  
         public override void ResetModule()
         {
             base.ResetModule();
             if (Animator != null)
-            {            
+            {
                 Animator.SetFloat(Forward, 0);
                 Animator.SetFloat(Sideways, 0);
                 Animator.SetBool(Death, false);
@@ -191,82 +124,119 @@ namespace Kuantech.Core
             _targetMovementParameters = Vector2.zero;
             _movementParametersScale = Vector2.one;
         }
-        
-        #region Movement
+
+        // ─── Animator reference ───────────────────────────────────────────────────
+
+        public Animator GetAnimator() => Animator;
+
+        public void OnActorVisualChanged(ActorVisual newVisual)
+        {
+            if (newVisual == null)
+            {
+                Animator = null;
+                return;
+            }
+            Animator = newVisual.Animator;
+            if (Animator != null) Animator.logWarnings = false;
+            if (MontagePlayer != null) MontagePlayer.Animator = Animator;
+        }
+
+        // ─── Animation sets ───────────────────────────────────────────────────────
+
+        public void ApplyDefaultAnimationSet()
+        {
+            if (DefaultAnimationSet == null || Animator == null) return;
+            Animator.runtimeAnimatorController = DefaultAnimationSet;
+        }
+
+        public void ApplyAnimationSet(RuntimeAnimatorController animationSet)
+        {
+            if (animationSet == null || Animator == null) return;
+            Animator.runtimeAnimatorController = animationSet;
+        }
+
+        // ─── Movement ─────────────────────────────────────────────────────────────
 
         private void UpdateMovementParameters()
         {
-            Vector3 localMovement = Actor.MotionVectorsHandler.GetLocalMovementVector() * Actor.MotionVectorsHandler.GetMovementMultiplier();
-            float movementScaler = 1;
+            // GetLocalMovementVector() is already normalized (~magnitude 1).
+            // GetNormalizedSpeed() returns 0..1 at base speed, up to SprintMultiplier when sprinting.
+            // Do NOT also multiply by GetMovementMultiplier() — it's already inside GetNormalizedSpeed().
+            Vector3 localMovement = Actor.MotionVectorsHandler.GetLocalMovementVector();
+
             if (_movementModule != null)
-            {
-                movementScaler = _movementModule.GetNormalizedSpeed();
-            }
-            localMovement *= movementScaler;
+                localMovement *= _movementModule.GetNormalizedSpeed();
+
             _targetMovementParameters = new Vector2(localMovement.x, localMovement.z);
         }
-        
+
+        private void SetMovementParameters()
+        {
+            if (UseOneDimensionalMovement)
+                Animator.SetFloat(Movement, _movementParameters.magnitude);
+            else
+            {
+                Animator.SetFloat(Sideways, _movementParameters.x);
+                Animator.SetFloat(Forward, _movementParameters.y);
+            }
+            Animator.SetFloat(IsGrounded, IsGroundedFlag ? 1f : 0f);
+            Animator.SetFloat(AirTimeHash, AirTime);
+        }
+
         public void SetMovementParametersFromMovementDirection(Vector3 direction, bool forced = false)
         {
             Vector2 movement = Helpers.GetVector2FromVector3WithUpDirection(direction, Actor.ActorUpVector);
             SetMovementParameters(movement, forced);
         }
-        
+
         public void SetMovementParameters(Vector2 movement, bool forced = false)
         {
             movement.Normalize();
-            if (Actor.GetModule<RigidbodyMovementModule>() != null && Actor.GetModule<RigidbodyMovementModule>().IsDodging())
-            {
-                if (movement.magnitude < 0.01f)
-                {
-                    movement = Vector2.up;
-                }
-                movement = movement.normalized * 2;
-            }
             _targetMovementParameters = movement * Actor.MotionVectorsHandler.GetMovementMultiplier();
             if (!forced) return;
-            _movementParameters.x = movement.x *  _movementParametersScale.x;
+            _movementParameters.x = movement.x * _movementParametersScale.x;
             _movementParameters.y = movement.y * _movementParametersScale.y;
-
-        }
-        
-        public void SetMovementParameters(float side, float forward,  bool forced = false)
-        {
-            SetMovementParameters(new Vector2(side, forward), forced);
-        }
-        
-        public void SetMovementParametersScale(Vector2 scale)
-        {
-            _movementParametersScale = scale;
-        }
-        public void OnJump(object sender, EventArgs args)
-        {
-            Animator.SetTrigger(Jump);
         }
 
-        private void OnDash(object sender, EventArgs args)
-        {
-            Animator.SetTrigger(Dash);
-        }
-        
-        public void OnLand(object sender, EventArgs args)
-        {
-            Animator.SetTrigger(Land);
-        }
+        public void SetMovementParameters(float side, float forward, bool forced = false)
+            => SetMovementParameters(new Vector2(side, forward), forced);
+
+        public void SetMovementParametersScale(Vector2 scale) => _movementParametersScale = scale;
 
         public void ToggleCrouching(bool toggle)
         {
             if (Animator == null) return;
             Animator.SetBool(Crouching, toggle);
         }
-        #endregion
-        
-        #region Combat
-        /// <summary>
-        /// Starts a light attack given the hand and attack(flow) index
-        /// </summary>
-        /// <param name="handIndex"></param>
-        /// <param name="attackIndex"></param>
+
+        // Movement event callbacks — subscribed in OnModulesInitialized
+        public void OnJump(object sender, EventArgs args)
+        {
+            if (Animator == null) return;
+            Animator.SetTrigger(Jump);
+        }
+
+        public void OnLand(object sender, EventArgs args)
+        {
+            if (Animator == null) return;
+            Animator.SetTrigger(Land);
+        }
+
+        private void OnDash(object sender, EventArgs args)
+        {
+            if (Animator == null) return;
+            Animator.SetTrigger(Dash);
+        }
+
+        private void OnDodge(object sender, EventArgs args)
+        {
+            if (Animator == null || DodgeAnimationData == null) return;
+            float duration = args is DodgeEventArgs dodge ? dodge.Duration : -1;
+            PlayAnimationData(DodgeAnimationData, duration);
+        }
+
+        // ─── Combat ───────────────────────────────────────────────────────────────
+
         public void LightAttackTrigger(int handIndex = 0, int attackIndex = 0)
         {
             if (Animator == null) return;
@@ -284,24 +254,11 @@ namespace Kuantech.Core
             Animator.SetInteger(HandIndex, handIndex);
             Animator.SetInteger(AttackIndex, attackIndex);
         }
+
         public void SetRelease()
         {
-            Animator.SetBool(Hold, false);
-        }
-        
-        /// <summary>
-        /// Can be called from an animation where damage should be applied. Works for client authorotive games but for
-        /// server authoration, this should be handled by a timer on the server
-        /// </summary>
-        public void OnDamageFrame()
-        {
-            OnDamageFrameEvent?.Invoke();
-        }
-
-        public void SetAnimationTime(float animationTime)
-        {
             if (Animator == null) return;
-            Animator.SetFloat(TargetTime, animationTime);
+            Animator.SetBool(Hold, false);
         }
 
         public void ToggleAiming(bool toggle)
@@ -316,45 +273,62 @@ namespace Kuantech.Core
             Animator.SetInteger(CastIndex, castIndex);
             Animator.SetTrigger(Cast);
         }
-        #endregion
 
-        #region Events
+        public void SetAnimationTime(float animationTime)
+        {
+            if (Animator == null) return;
+            Animator.SetFloat(TargetTime, animationTime);
+        }
+
+        public void SetTrigger(int hash)
+        {
+            if (Animator == null) return;
+            Animator.SetTrigger(hash);
+        }
+
+        // ─── Animation data / montage ─────────────────────────────────────────────
+
+        public void PlayAnimationData(AnimationData animationData, float animationDuration = -1)
+        {
+            if (Animator == null) return;
+            animationData.SetParameters(Animator);
+            if (animationDuration > 0)
+                Animator.SetFloat(TargetTime, animationDuration);
+            if (animationData.AttackMontage != null)
+                PlayAnimationMontage(animationData.AttackMontage, animationDuration);
+        }
+
+        private void PlayAnimationMontage(AnimationMontage animationMontage, float targetTime = 1.0f)
+        {
+            if (Animator == null || MontagePlayer == null) return;
+            Animator.SetFloat(TargetTime, targetTime);
+            MontagePlayer.PlayMontage(animationMontage);
+        }
+
+        // ─── Actor state / damage ─────────────────────────────────────────────────
 
         public override void OnActorStateChanged(ActorState oldState, ActorState newState)
         {
             base.OnActorStateChanged(oldState, newState);
             if (Animator == null) return;
             if (newState == ActorState.Dead)
-            {
                 Animator.SetBool(Death, true);
-            }else if (newState == ActorState.Spawned)
-            {
+            else if (newState == ActorState.Spawned)
                 Animator.SetBool(Death, false);
-            }
         }
+
         public void OnDamageReceive(HitInfo hitInfo)
         {
             PlayAnimationData(DamageReceivedAnimationData);
         }
 
-        public void OnActorVisualChanged(ActorVisual newVisual)
+        /// <summary>
+        /// Called from an animation event when the damage frame is reached.
+        /// For server-authoritative games use a server-side timer instead.
+        /// </summary>
+        public void OnDamageFrame()
         {
-            if (newVisual == null)
-            {
-                //Set Animator to null
-                Animator = null;
-                return;
-            }
-            Animator = newVisual.Animator;
-            if(Animator != null) Animator.logWarnings = false;
-            if (MontagePlayer != null)
-            {
-                MontagePlayer.Animator = Animator;
-            }
+            OnDamageFrameEvent?.Invoke();
         }
-
-        #endregion
-
-
     }
 }

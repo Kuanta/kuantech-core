@@ -14,7 +14,6 @@ namespace Kuantech.Core
     {
         private readonly SyncVar<Vector3> _syncedMovement = new();
         private readonly SyncVar<Vector3> _syncedTargetVector = new();
-
         private readonly SyncVar<float> _syncedSpeedMultiplier = new();
 
         public override void Initialize()

@@ -23,10 +23,12 @@ namespace Kuantech.Core
         [Header("Crouch")] 
         public float CrouchSpeedMultiplier = 0.5f;
 
-        [Header("Dash")] 
+        [Header("Dash")]
         public float DashStrength = 3f;
         public float DashDuration = 0.5f;
         [SerializeReference] public DashHandler DashHandler;
+        [SerializeField] private bool LockRotationOnDash = true;
+        [SerializeField] private bool SnapToDirectionOnDash = false;
         
         [SerializeReference] private CrouchHandler CrouchHandler;
         private bool _crouching;
@@ -58,11 +60,13 @@ namespace Kuantech.Core
         [SerializeReference] public JumpHandler JumpHandler;
 
         private AnimationModule _animationModule;
-        
+        private AimHandler _aimHandler;
+
         public override void OnModulesInitialized()
         {
             base.OnModulesInitialized();
             _animationModule = Actor.GetModule<AnimationModule>();
+            _aimHandler = Actor.GetModule<AimHandler>();
         }
         
         public override void ModuleUpdate()
@@ -363,25 +367,39 @@ namespace Kuantech.Core
 
         #region Dash
 
-        public void Dash()
+        public void Dash(Vector3 direction)
         {
             // IsSpawned guard: in single-player ObserversRpc is a plain method call,
             // skipping it avoids firing OnDashEvent twice
-            if (IsServerInitialized) { ExecuteDash(); if (IsSpawned) ObserversRpc_Dash(); }
-            else if (IsOwner)        { ExecuteDash(); ServerRpc_Dash(); }
+            if (IsServerInitialized) { ExecuteDash(direction); if (IsSpawned) ObserversRpc_Dash(direction); }
+            else if (IsOwner)        { ExecuteDash(direction); ServerRpc_Dash(direction); }
         }
 
         [ServerRpc]
-        private void ServerRpc_Dash() { ExecuteDash(); ObserversRpc_Dash(); }
+        private void ServerRpc_Dash(Vector3 direction) { ExecuteDash(direction); ObserversRpc_Dash(direction); }
 
         // ExcludeOwner: owner already ran ExecuteDash locally
         [ObserversRpc(ExcludeOwner = true)]
-        private void ObserversRpc_Dash() { OnDashEvent?.Invoke(this, EventArgs.Empty); }
+        private void ObserversRpc_Dash(Vector3 direction) { OnDashEvent?.Invoke(this, EventArgs.Empty); }
 
-        private void ExecuteDash()
+        private void ExecuteDash(Vector3 direction)
         {
-            DashHandler?.HandleDash(this);
+            DashHandler?.OnDashStart(this, direction);
+            if (LockRotationOnDash && _aimHandler != null)
+            {
+                if (SnapToDirectionOnDash) _aimHandler.SetDirection(direction);
+                _aimHandler.LockRotation(this);
+            }
+            DashHandler?.HandleDash(this, direction);
             OnDashEvent?.Invoke(this, EventArgs.Empty);
+            StartCoroutine(DashEndRoutine());
+        }
+
+        private IEnumerator DashEndRoutine()
+        {
+            yield return new WaitForSeconds(DashDuration);
+            DashHandler?.OnDashEnd(this);
+            if (_aimHandler != null) _aimHandler.UnlockRotation(this);
         }
 
         #endregion

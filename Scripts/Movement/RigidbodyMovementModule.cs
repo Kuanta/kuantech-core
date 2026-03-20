@@ -152,7 +152,7 @@ namespace Kuantech.Core
             _dodgeDirection = dodgeDirection;
             _dodgeSpeed = dodgeSpeed;
             _movementModule.Lock(this);
-            OnDodgeEvent?.Invoke(this, EventArgs.Empty);
+            OnDodgeEvent?.Invoke(this, new DodgeEventArgs { Direction = _dodgeDirection, Duration = dodgeDuration });
             Actor.StartCoroutine(DodgeRoutine(dodgeDuration));
         }
 
