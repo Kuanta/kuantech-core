@@ -2,44 +2,19 @@
 using System.Collections.Generic;
 using Kuantech.Rpg;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace Kuantech.Core
 {
     /// <summary>
-    /// If you make this class, check = operators for this
+    /// A DTO for damage info
     /// </summary>
     [Serializable]
     public struct DamageInfo
     {
         public DamageType DamageType; //Type of damge
         public float DamageAmount; //Amount of damage
-        public bool IsCritical => CritMultiplier > 1; //If is critical, useful for UI
+        public bool IsCritical; //If is critical, useful for UI
 
-        [NonSerialized] public float CritMultiplier;
-        [NonSerialized] public float AttributeValue;
-        
-        public float GetDamage()
-        {
-            float baseDamage = DamageAmount;
-            if(DamageType != null) baseDamage += AttributeValue * DamageType.AttributeScale;
-            return baseDamage * Mathf.Max(1,CritMultiplier);
-        }
-
-        public void SetDamage(float damage)
-        {
-            DamageAmount = damage;
-        }
-        public void SetAttributeValue(StatsModule statsModule)
-        {
-            if (DamageType == null || statsModule == null || DamageType.DamageScaleAttribute == null)
-            {
-                AttributeValue = 0;
-                return;
-            }
-
-            AttributeValue = statsModule.GetAttributeValue(DamageType.DamageScaleAttribute) * DamageType.AttributeScale;
-        }
     }
     
     [Serializable]

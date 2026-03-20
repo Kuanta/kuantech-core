@@ -6,10 +6,9 @@ using Kuantech.Core.Utils;
 using Kuantech.Rpg;
 using Kuantech.Rpg.Skills;
 using Kuantech.Utils;
-using Unity.VisualScripting;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.Serialization;
 
 namespace Kuantech.Core
 {
@@ -42,9 +41,9 @@ namespace Kuantech.Core
         [Header("Attack Shape")]
         public AttackTypes AttackType;
         public bool IsMelee;
-        public float Angle;
-        public float Width;
-        public float Range;
+        public CombatVariable Angle;
+        public CombatVariable Width;
+        public CombatVariable Range;
         
         [Header("Required Resource")]
         public ResourceAsset RequiredResource;
@@ -52,19 +51,15 @@ namespace Kuantech.Core
 
         
         [Header("Damage")]
-        public DamageInfo DamageInfo;
-        public List<DamageInfo> AdditionalDamages;
+        public CombatDamageVariable Damage;
+        public List<CombatDamageVariable> AdditionalDamages;
         
         [Header("Splash Damage")]
-        public DamageInfo SplashDamage;
-        public List<DamageInfo> AdditionalSplashDamages;
+        public CombatDamageVariable SplashDamage;
+        public List<CombatDamageVariable> AdditionalSplashDamages;
         
-        public float SplashRadius;
-        public AttributeAsset AttributeToScaleSplashRadius;
+        public CombatVariable SplashRadius;
         
-        [Header("Critical")] 
-        public float CriticalChance = 0;
-        public float CriticalMultiplier = 1.5f;
         
         [Header("Timings")] 
         public float AttackImplementationTime;
@@ -79,11 +74,11 @@ namespace Kuantech.Core
         public List<StatusEffectAsset> StatusEffectsToApply;
         
         [Header("Movement Manupilation")]
-        public float MovementSlow; //Factor between 0-1, movement speed while attacking will be MovementSpeed * (1-MovementSlow)
+        public CombatVariable MovementSlow; //Factor between 0-1, movement speed while attacking will be MovementSpeed * (1-MovementSlow)
 
         [Header("Knosckback")]
-        public float Knockback;
-        public float KnockbackTime;
+        public CombatVariable Knockback;
+        public CombatVariable KnockbackTime;
         
         [Header("Projectile")]
         public Projectile ProjectilePrefab;
@@ -101,9 +96,10 @@ namespace Kuantech.Core
 
         public EffectPlayer HitEffect = null;
         
-        public DamageInfo GetDamageInfo()
+        public DamageInfo GetDamageInfo(StatsModule statsModule)
         {
-            return DamageInfo;
+            return Damage.GetDamageInfo(statsModule);
+        }
         }
     }
 
@@ -126,11 +122,9 @@ namespace Kuantech.Core
         public AttributeAsset RangeAttributeAsset; //Range attribute
 
         [Header("Collision")]
-        private Collider[] _results = new Collider[32];
         public LayerMask Targets;
         public LayerMask ObstacleLayerMask;
-        private List<RaycastProjectile> _shotRaycastProjecitles = new List<RaycastProjectile>();
-        
+
         [Header("Combo")]
         public float ComboRefreshTime = 1f; //Time in seconds to reset the combo
 
@@ -159,10 +153,9 @@ namespace Kuantech.Core
         private float _attackStartTime;
         private bool _isAttacking = false;
         private bool _attacked = false;
-        private float _lastAttackImplementationTime; //Last time an attack implementation has been called. Useful for continious attacks
+        private float _lastAttackImplementationTime;
         private float _lastAttackCompleteTime;
         private bool _effectPlayed;
-        private int _attackIndex = 0;
         private int _currentComboIndex;
 
         private ActionCastData _currentCastData;
@@ -181,7 +174,7 @@ namespace Kuantech.Core
         }
         
 
-        private void Update()
+        public override void ModuleUpdate()
         {
             if (!_isAttacking || AttackLock.IsLocked()) return;
             float elapsedTime = Time.time - _attackStartTime;
@@ -522,15 +515,14 @@ namespace Kuantech.Core
         {
             AttackPattern currPattern = GetCurrentAttackPattern();
             if (currPattern.SkillToCast == null) return;
-            SpellBook spellBook = Actor.GetModule<SpellBook>();
-            if (spellBook == null) return;
+            if (_spellBook == null) return;
             ActionCastData skillCastData = new ActionCastData()
             {
                 Direction = GetAttackDirection(),
                 StartPosition = GetAttackPosition(),
                 Target = GetCurrentTarget(),
             };
-            spellBook.CastSkill(currPattern.SkillToCast, skillCastData);
+            _spellBook.CastSkill(currPattern.SkillToCast, skillCastData);
         }
 
   
@@ -842,25 +834,6 @@ namespace Kuantech.Core
   
             //todo(networking): Check server auth
 
-            if (Actor.GetModule<RigidbodyMovementModule>())
-            {
-                //todo: Transform this UE code to unity
-                // if(!ParentActor->HasAuthority()) return;
-                // if(ParentActor->MovementModule == nullptr) return;
-                // attackDirection.Z = 0;
-                // attackDirection.Normalize();
-                //
-                // if(_currentAttackPattern.ForwardMovementSpeed > 0.0f)
-                // {
-                //     ParentActor->MovementModule->SetForceMovementVector(attackDirection * _currentAttackPattern.ForwardMovementSpeed, true);
-                // }
-                // ParentActor->MovementModule->MovementSpeedScale = _currentAttackPattern.MovementSlow;
-                // if(_currentAttackPattern.ForceTurn)
-                // {
-                //     ParentActor->MovementModule->SetRotationWithDirection(attackDirection, true, true);
-                // }
-                // if(_currentAttackPattern.LockRotation) ParentActor->MovementModule->RotationLock.Lock();
-            }
             
             AttackStartedEvent?.Invoke(this);
         }
