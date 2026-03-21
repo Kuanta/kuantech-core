@@ -11,11 +11,11 @@ namespace Kuantech.Rpg.Inventory
             WeaponData = data;
         }
 
-        public float GetDamage(int comboIndex)
+        public float GetDamage(int comboIndex, StatsModule statsModule)
         {
             //todo: Base stat???
             AttackPattern attackPattern = WeaponData.AttackPatterns[comboIndex];
-            float damageAmount = attackPattern.GetDamageInfo().DamageAmount;
+            float damageAmount = attackPattern.Damage.GetDamageInfo(statsModule).GetDamage();
             float baseDamage = damageAmount * (1 + StateData.ItemLevel * WeaponData.ScalingFactor);
             if (WeaponData.@base != null)
             {
@@ -28,11 +28,11 @@ namespace Kuantech.Rpg.Inventory
             return baseDamage;
         }
 
-        public float GetAlternativeDamage()
+        public float GetAlternativeDamage(StatsModule statsModule)
         {
             AttackPattern attackPattern = WeaponData.AlternativeAttackPatterns;
             if (attackPattern == null) return 0f;
-            float damageAmount = attackPattern.GetDamageInfo().DamageAmount;
+            float damageAmount = attackPattern.Damage.GetDamageInfo(statsModule).GetDamage();
             float baseDamage = damageAmount * (1 + StateData.ItemLevel * WeaponData.ScalingFactor);
             if (WeaponData.@base != null)
             {

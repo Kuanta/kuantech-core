@@ -15,6 +15,15 @@ namespace Kuantech.Core
         public float DamageAmount; //Amount of damage
         public bool IsCritical; //If is critical, useful for UI
 
+        public float GetDamage()
+        {
+            return DamageAmount;
+        }
+    
+        public void SetDamage(float damage)
+        {
+            DamageAmount = damage;
+        }
     }
     
     [Serializable]

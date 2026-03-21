@@ -9,6 +9,7 @@ using Kuantech.Utils;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
+using FishNet.Object;
 
 namespace Kuantech.Core
 {
@@ -100,7 +101,6 @@ namespace Kuantech.Core
         {
             return Damage.GetDamageInfo(statsModule);
         }
-        }
     }
 
     public class CombatModule: ActorModule
@@ -116,11 +116,6 @@ namespace Kuantech.Core
         public AttackPattern DefaultAttackPattern;
         private AttackPattern _currentAttackPattern;
         
-        [Header("Attributes")]
-        public AttributeAsset CriticalChanceAttribute;
-        public AttributeAsset CriticalMultiplierAttribute;
-        public AttributeAsset RangeAttributeAsset; //Range attribute
-
         [Header("Collision")]
         public LayerMask Targets;
         public LayerMask ObstacleLayerMask;
@@ -143,7 +138,6 @@ namespace Kuantech.Core
 
         //Quick module references
         private StatsModule _statModule;
-        private SurroundManager _surroundManager;
         private AnimationModule _animationModule;
         private ActorSlotsHandler _slotsHandler;
         private HealthcareModule _healthcareModule;
@@ -167,12 +161,10 @@ namespace Kuantech.Core
             
             _statModule = Actor.GetModule<StatsModule>();
             _animationModule = Actor.GetModule<AnimationModule>();
-            _surroundManager = Actor.GetModule<SurroundManager>();
             _slotsHandler = Actor.GetModule<ActorSlotsHandler>();
             _healthcareModule = Actor.GetModule<HealthcareModule>();
             _spellBook = Actor.GetModule<SpellBook>();
         }
-        
 
         public override void ModuleUpdate()
         {
@@ -180,28 +172,35 @@ namespace Kuantech.Core
             float elapsedTime = Time.time - _attackStartTime;
             AttackPattern currentPattern = GetCurrentAttackPattern();
 
-            if (elapsedTime >= _effectPlayTime && !_effectPlayed)
+            if(IsClientInitialized)
             {
-                PlayAttackFx();
-            }
-            if (elapsedTime >= _attackImplementationTime && !_attacked || 
-                (currentPattern.Continious &&  (Time.time - _lastAttackImplementationTime) >= _attackImplementationTime))
-            {
-                if (elapsedTime <= _maxContinuousAttackTime || !currentPattern.Continious)
+                if (elapsedTime >= _effectPlayTime && !_effectPlayed)
                 {
-                    RunAttackImplementation();
+                    PlayAttackFx();
                 }
             }
 
-            if (elapsedTime > _attackDuration)
+            //Server codes
+            if (IsServerInitialized)
             {
-                OnAttackCompleted();
+                bool shouldImplement = elapsedTime >= _attackImplementationTime &&
+                    (!_attacked || (currentPattern.Continious && (Time.time - _lastAttackImplementationTime) >= _attackImplementationTime));
+                if (shouldImplement && (elapsedTime <= _maxContinuousAttackTime || !currentPattern.Continious))
+                {
+                    RunAttackImplementation();
+                    if (IsSpawned) ObserverAttackImplementation_Rpc();
+                }
+
+                if (elapsedTime > _attackDuration)
+                {
+                    EndAttack();
+                }
             }
         }
 
         public override void Cleanup()
         {
-            CancelAttack();
+            EndAttack();
         }
         #endregion
 
@@ -213,8 +212,7 @@ namespace Kuantech.Core
         /// <returns></returns>
         public Actor GetCurrentTarget()
         {
-            if (_surroundManager == null) return null;
-            return _surroundManager.GetCurrentTarget();
+            return null;
         }
         #endregion
 
@@ -308,70 +306,86 @@ namespace Kuantech.Core
 
         private void RunAttackImplementation()
         {
-            _attacked = true;
             switch (GetCurrentAttackPattern().AttackType)
             {
-                case AttackTypes.None:
-                    break;
-                case AttackTypes.Arc:
-                    ArcAttack();
-                    break;
-                case AttackTypes.Arc2D:
-                    ArcAttack2D();
-                    break;
-                case AttackTypes.Linear:
-                    break;
-                case AttackTypes.Circle:
-                    break;
-                case AttackTypes.Target:
-                    TargetAttack();
-                    break;
+                case AttackTypes.None:                                        break;
+                case AttackTypes.Arc:             ArcAttack();                break;
+                case AttackTypes.Arc2D:           ArcAttack2D();              break;
+                case AttackTypes.Linear:          LinearAttack();             break;
+                case AttackTypes.Linear2D:        LinearAttack2D();           break;
+                case AttackTypes.Circle:          CircleAttack();             break;
+                case AttackTypes.Circle2D:        CircleAttack2D();           break;
+                case AttackTypes.Target:          TargetAttack();             break;
                 case AttackTypes.RangedProjectile:
-                    RangedProjectileAttack();
-                    break;
-                case AttackTypes.SkillCast:
-                    SkillCastAttack();
-                    break;
-                case AttackTypes.Beam:
-                    BeamAttack();
-                    break;
+                case AttackTypes.TargetProjectile: RangedProjectileAttack(); break;
+                case AttackTypes.SkillCast:       SkillCastAttack();          break;
+                case AttackTypes.Beam:            BeamAttack();               break;
             }
+            OnAttackImplemented();
+        }
 
+        private void OnAttackImplemented()
+        {
+            _attacked = true;
             _lastAttackImplementationTime = Time.time;
             AttackedEvent?.Invoke(this); //Maybe we shouldn't call this here
         }
-        
+
         /// <summary>
         /// 3d arc attack
         /// </summary>
-        public void ArcAttack()
+        private void ArcAttack()
         {
             AttackPattern currPattern = GetCurrentAttackPattern();
-            Vector3 attackPoint = GetAttackPosition();
-            Vector3 forward = GetAttackDirection().normalized;
-            float range = GetAttackRange();
-            float angle = currPattern.Angle;
-            List<Actor> actors = CombatUtilities.GetActorsInArc3D(attackPoint, forward, range, angle, Targets, GetEnemyFactions());
-
-            foreach (var actor in actors)
-            {
-                DamageActor(actor);
-            }
+            List<Actor> actors = CombatUtilities.GetActorsInArc3D(
+                GetAttackPosition(), GetAttackDirection().normalized,
+                GetAttackRange(), currPattern.Angle.GetValue(_statModule),
+                Targets, GetEnemyFactions());
+            DamageActors(actors);
         }
 
-        public void ArcAttack2D()
+        private void ArcAttack2D()
         {
             AttackPattern currPattern = GetCurrentAttackPattern();
-            Vector3 attackPoint = GetAttackPosition();
-            Vector3 forward = GetAttackDirection().normalized;
-            float range = GetAttackRange();
-            float angle = currPattern.Angle;
-            List<Actor> actors = CombatUtilities.GetActorsInArc2D(attackPoint, forward, range, angle, Targets, GetEnemyFactions());
+            List<Actor> actors = CombatUtilities.GetActorsInArc2D(
+                GetAttackPosition(), GetAttackDirection().normalized,
+                GetAttackRange(), currPattern.Angle.GetValue(_statModule),
+                Targets, GetEnemyFactions());
+            DamageActors(actors);
+        }
 
-            foreach (var actor in actors)
-            {
-                DamageActor(actor);
-            }
+        private void LinearAttack()
+        {
+            AttackPattern currPattern = GetCurrentAttackPattern();
+            List<Actor> actors = CombatUtilities.GetActorsInBox(
+                GetAttackPosition(), GetAttackDirection().normalized,
+                currPattern.Width.GetValue(_statModule), GetAttackRange(),
+                Targets, GetEnemyFactions());
+            DamageActors(actors);
+        }
+
+        private void LinearAttack2D()
+        {
+            AttackPattern currPattern = GetCurrentAttackPattern();
+            List<Actor> actors = CombatUtilities.GetActorsInBox2D(
+                GetAttackPosition(), GetAttackDirection().normalized,
+                currPattern.Width.GetValue(_statModule), GetAttackRange(),
+                Targets, GetEnemyFactions());
+            DamageActors(actors);
+        }
+
+        private void CircleAttack()
+        {
+            List<Actor> actors = CombatUtilities.GetActorsInSphere(
+                GetAttackPosition(), GetAttackRange(), Targets, GetEnemyFactions());
+            DamageActors(actors);
+        }
+
+        private void CircleAttack2D()
+        {
+            List<Actor> actors = CombatUtilities.GetActorsInCircle2D(
+                GetAttackPosition(), GetAttackRange(), Targets, GetEnemyFactions());
+            DamageActors(actors);
         }
         
         /// <summary>
@@ -398,10 +412,7 @@ namespace Kuantech.Core
             AttackPattern attackPattern = GetCurrentAttackPattern();
             
             List<Actor> actors = CombatUtilities.GetActorsInRaycast2D(startPoint, direction, GetAttackRange(), Targets, GetEnemyFactions());
-            foreach (var actor in actors)
-            {
-                DamageActor(actor);
-            }
+            DamageActors(actors);
         }
         
         public void RangedProjectileAttack()
@@ -415,16 +426,15 @@ namespace Kuantech.Core
             Projectile projectile = PoolManager.GetObjectFromPool(GetCurrentAttackPattern().ProjectilePrefab.gameObject).GetComponent<Projectile>();
             if (projectile == null) return;
             
-            //Apply projectileproperties
-            float critMultiplier = GetCriticalMultiplier();
-            projectile.Damage = GetDamage(critMultiplier);
-            projectile.AdditionalDamages = GetAdditionalDamageInfos(critMultiplier);
+            AttackPattern pattern = GetCurrentAttackPattern();
+            projectile.Damage = GetDamage();
+            projectile.AdditionalDamages = GetAdditionalDamageInfos();
             projectile.SplashDamage = GetSplashDamage();
             projectile.AdditionalSplashDamages = GetAdditionalSplashDamages();
             projectile.SplashRadius = GetSplashDamageRadius();
             projectile.Range = GetAttackRange();
-            projectile.Knockback = GetCurrentAttackPattern().Knockback;
-            projectile.KnockbackTime = GetCurrentAttackPattern().KnockbackTime;
+            projectile.Knockback = pattern.Knockback.GetValue(_statModule);
+            projectile.KnockbackTime = pattern.KnockbackTime.GetValue(_statModule);
             
             
             if (currentTarget != null)
@@ -437,78 +447,84 @@ namespace Kuantech.Core
             {
                 projectile.Shoot(Actor, null, GetAttackPosition(), GetAttackDirection(), null);
             }
-            
         }
         
+        private void DamageActors(List<Actor> actors)
+        {
+            if(!IsServerInitialized) return; //Only server can
+            List<Actor> hurtActors = new List<Actor>();
+            foreach(var actor in actors)
+            {
+                if(ExecuteDamageActor(actor))
+                {
+                    hurtActors.Add(actor);
+                }
+            }
+
+            if(!IsSpawned || hurtActors.Count == 0) return;
+            List<NetworkObject> nobs = new List<NetworkObject>(hurtActors.Count);
+            foreach (var a in hurtActors) nobs.Add(a.GetComponent<NetworkObject>());
+            ObserverDamageActors_Rpc(nobs);
+        }
+
         /// <summary>
         /// Hits the actor with current damage parameters
         /// </summary>
         /// <param name="actor"></param>
         private void DamageActor(Actor actor)
         {
-            float critMultiplier = GetCriticalMultiplier();
-            DamageInfo damageInfos = GetDamage(critMultiplier);
-            if (actor == null || !actor.IsAlive()) return;
-            
+            if (!IsServerInitialized) return;
+            bool hit = ExecuteDamageActor(actor);
+            if (hit && IsSpawned) ObserverDamageActor_Rpc(actor.GetComponent<NetworkObject>());
+        }
+
+        private bool ExecuteDamageActor(Actor actor)
+        {
+            if (actor == null || !actor.IsAlive()) return false;
+            AttackPattern pattern = GetCurrentAttackPattern();
+
             HitInfo hitInfo = new HitInfo()
             {
                 Hitter = gameObject,
-                DamageInfo = damageInfos,
-                AdditionalDamages = GetAdditionalDamageInfos(critMultiplier),
+                DamageInfo = GetDamage(),
+                AdditionalDamages = GetAdditionalDamageInfos(),
                 HitDirection = GetAttackDirection(),
-                KnockbackForce = GetCurrentAttackPattern().Knockback,
-                KnockbackDuration = GetCurrentAttackPattern().KnockbackTime
+                KnockbackForce = pattern.Knockback.GetValue(_statModule),
+                KnockbackDuration = pattern.KnockbackTime.GetValue(_statModule)
             };
-            
-            //Apply status effects
-            List<StatusEffectAsset> statusEffectDatas = GetCurrentAttackPattern().StatusEffectsToApply;
-            if (!statusEffectDatas.IsNullOrEmpty())
+            if (IsServerInitialized)
             {
-                StatusEffectHandler seh = actor.GetModule<StatusEffectHandler>();
-                if (seh != null)
+                
+                //Apply status effects
+                List<StatusEffectAsset> statusEffectDatas = GetCurrentAttackPattern().StatusEffectsToApply;
+                if (!statusEffectDatas.IsNullOrEmpty())
                 {
-                    foreach (var statusEffectData in statusEffectDatas)
+                    StatusEffectHandler seh = actor.GetModule<StatusEffectHandler>();
+                    if (seh != null)
                     {
-                        StatusEffect statusEffect = statusEffectData.CreateStatusEffect();
-                        seh.AddStatusEffect(statusEffect);
+                        foreach (var statusEffectData in statusEffectDatas)
+                        {
+                            StatusEffect statusEffect = statusEffectData.CreateStatusEffect();
+                            seh.AddStatusEffect(statusEffect);
+                        }
                     }
                 }
             }
-            
-            //Play hit effect
-            EffectPlayer hitEffect = GetCurrentAttackPattern().HitEffect;
-            if (hitEffect != null)
+            if(IsClientInitialized)
             {
-                Vector3 targetHitPoint = actor.GetHitPoint(Actor).GetTargetPosition();
-                Vector3 attackerPosition = Actor.transform.position;
-                attackerPosition.y = targetHitPoint.y;
-                hitEffect.PlayEffectAtPosition(actor.GetHitPoint(Actor).GetTargetPositionTowardsTarget(attackerPosition), Quaternion.LookRotation(GetAttackDirection()));
+                //Play hit effect
+                EffectPlayer hitEffect = GetCurrentAttackPattern().HitEffect;
+                if (hitEffect != null)
+                {
+                    Vector3 targetHitPoint = actor.GetHitPoint(Actor).GetTargetPosition();
+                    Vector3 attackerPosition = Actor.transform.position;
+                    attackerPosition.y = targetHitPoint.y;
+                    hitEffect.PlayEffectAtPosition(actor.GetHitPoint(Actor).GetTargetPositionTowardsTarget(attackerPosition), Quaternion.LookRotation(GetAttackDirection()));
+                }
             }
+       
             actor.OnHit(hitInfo);
-        }
-
-        private float GetCriticalMultiplier()
-        {
-            AttackPattern currPattern = GetCurrentAttackPattern();
-            float criticalChance = currPattern .CriticalChance;
-            float criticalMultiplier = Mathf.Max(1, currPattern .CriticalMultiplier);
-            if (CriticalChanceAttribute != null && _statModule != null)
-            {
-                criticalChance += _statModule.GetAttributeValue(CriticalChanceAttribute);
-            }
-
-            if (CriticalMultiplierAttribute != null && _statModule != null)
-            {
-                criticalMultiplier += _statModule.GetAttributeValue(CriticalMultiplierAttribute);
-            }
-
-            criticalChance = Mathf.Clamp01(criticalChance);
-            bool crit = UnityEngine.Random.Range(0f, 1f) < criticalChance;
-            if (crit)
-            {
-                return Mathf.Max(1, criticalMultiplier);
-            }
-            return 1;
+            return true;
         }
         
         private void SkillCastAttack()
@@ -530,134 +546,109 @@ namespace Kuantech.Core
 
         #region Attack Pattern Queries
 
-        public DamageInfo GetDamage(float critMultiplier)
+        public DamageInfo GetDamage()
+            => GetCurrentAttackPattern().Damage.GetDamageInfo(_statModule);
+
+        public List<DamageInfo> GetAdditionalDamageInfos()
         {
-            DamageInfo damageInfo = GetCurrentAttackPattern().GetDamageInfo();
-            return _AdjustDamageInfo(damageInfo, critMultiplier);
+            var result = new List<DamageInfo>();
+            foreach (var d in GetCurrentAttackPattern().AdditionalDamages)
+                result.Add(d.GetDamageInfo(_statModule));
+            return result;
         }
 
-        public List<DamageInfo> GetAdditionalDamageInfos(float critMult)
-        {
-            AttackPattern attackPattern = GetCurrentAttackPattern();
-            List<DamageInfo> additionalDamages = new List<DamageInfo>();
-            foreach (var addDamInfo in attackPattern.AdditionalDamages)
-            {
-                DamageInfo critApplied = _AdjustDamageInfo(addDamInfo, critMult);
-                additionalDamages.Add(critApplied);
-            }
-
-            return additionalDamages;
-        }
-
-        public float GetAttackRange()
-        {
-            float patternRange = GetCurrentAttackPattern().Range;
-            Rpg.Attribute att = _statModule.GetAttribute(RangeAttributeAsset);
-            if (att == null) return patternRange;
-            return _statModule.GetAttributeValue(RangeAttributeAsset);
-        }
-        
-        /// <summary>
-        /// Adjusts the damage info by setting the crit multiplier and the attribute value
-        /// </summary>
-        /// <param name="damageInfo"></param>
-        /// <param name="critMultiplier"></param>
-        /// <returns></returns>
-        private DamageInfo _AdjustDamageInfo(DamageInfo damageInfo, float critMultiplier)
-        {
-            damageInfo.SetAttributeValue(_statModule);
-            damageInfo.CritMultiplier = critMultiplier;
-            return damageInfo;
-        }
-        
         public DamageInfo GetSplashDamage()
-        {
-            float critMultiplier = GetCriticalMultiplier();
-            AttackPattern attackPattern = GetCurrentAttackPattern();
-            DamageInfo damageInfo = attackPattern.SplashDamage;
-            damageInfo.SetAttributeValue(_statModule);
-            damageInfo.CritMultiplier = critMultiplier;
-            return damageInfo;
-        }
+            => GetCurrentAttackPattern().SplashDamage.GetDamageInfo(_statModule);
 
         public List<DamageInfo> GetAdditionalSplashDamages()
         {
-            float critMultiplier = GetCriticalMultiplier();
-            AttackPattern attackPattern = GetCurrentAttackPattern();
-            List<DamageInfo> additionalDamages = new List<DamageInfo>();
-            foreach (var splashDamage in attackPattern.AdditionalSplashDamages)
-            {
-                DamageInfo damageInfo = splashDamage;
-                damageInfo.SetAttributeValue(_statModule);
-                damageInfo.CritMultiplier = critMultiplier;
-                additionalDamages.Add(damageInfo);
-            }
+            var result = new List<DamageInfo>();
+            foreach (var d in GetCurrentAttackPattern().AdditionalSplashDamages)
+                result.Add(d.GetDamageInfo(_statModule));
+            return result;
+        }
 
-            return additionalDamages;
-        }
-        
-        /// <summary>
-        /// Returns splash damage radius
-        /// </summary>
-        /// <returns></returns>
+        public float GetAttackRange()
+            => GetCurrentAttackPattern().Range.GetValue(_statModule);
+
         public float GetSplashDamageRadius()
-        {
-            AttackPattern attackPattern = GetCurrentAttackPattern();
-            if (attackPattern.AttributeToScaleSplashRadius == null || _statModule == null)
-            {
-                return GetCurrentAttackPattern().SplashRadius;
-            }
-            return _statModule.GetAttributeValue(attackPattern.AttributeToScaleSplashRadius);
-        }
+            => GetCurrentAttackPattern().SplashRadius.GetValue(_statModule);
+
         #endregion
 
         #region Attack Commands
         public bool Attack(ActionCastData castData)
         {
-            if (!CanAttack()) return false;
-            
-            //Spend resource
-            if (_healthcareModule != null)
+            bool canAttack = ExecuteAttack(castData);
+            if (IsServerInitialized && IsSpawned)
             {
-                ResourceAsset resourceAsset = GetCurrentAttackPattern().RequiredResource;
-                if (resourceAsset != null)
+                if(canAttack)
+                    ObserverAttackStart_Rpc(castData);
+                else
+                    ObserverAttackEnd_Rpc();
+            }
+
+            if(!IsServerInitialized && IsSpawned && canAttack)
+                ServerAttack_Rpc(castData);
+            return canAttack;
+        }
+
+        /// <summary>
+        /// Executes attack
+        /// </summary>
+        /// <param name="castData"></param>
+        /// <returns></returns>
+        private bool ExecuteAttack(ActionCastData castData)
+        {
+            if(!CanAttack()) return false;
+
+            //Server specific
+            if(IsServerInitialized)
+            {
+                //Spend resource
+                if (_healthcareModule != null)
                 {
-                    _healthcareModule.RemoveResource(resourceAsset, GetCurrentAttackPattern().RequiredResourceAmount);
+                    ResourceAsset resourceAsset = GetCurrentAttackPattern().RequiredResource;
+                    if (resourceAsset != null)
+                    {
+                        _healthcareModule.RemoveResource(resourceAsset, GetCurrentAttackPattern().RequiredResourceAmount);
+                    }
                 }
             }
-            
-            _currentCastData = castData;
-            if (_currentCastData.Target != null && _surroundManager != null && _currentCastData.Target.IsAlive())
-            {
-                _surroundManager.SetCurrentTarget(_currentCastData.Target);
-            }
 
+            _currentCastData = castData;
             _currentCastData.StartPosition = GetAttackPosition();
 
-            //Actor.MotionVectorsHandler.SetTargetVector(_currentCastData.Direction);
-            
-            OnAttackStarted(castData);
+            float timeSinceLastAttack = Time.time - _lastAttackCompleteTime;
+            _currentComboIndex = timeSinceLastAttack < ComboRefreshTime ? _currentComboIndex + 1 : 0;
 
-            float timeSinceLastAttack = _attackStartTime - _lastAttackCompleteTime;
-            if (timeSinceLastAttack < ComboRefreshTime)
+            //Common
+            AttackPattern currPattern = GetCurrentAttackPattern();
+            _isAttacking = true;
+            _attacked = false;
+            _attackStartTime = Time.time;
+            _effectPlayed = false;
+            _attackDuration = GetAttackDuration();
+            _attackImplementationTime = GetAttackImplementationTime();
+            _maxContinuousAttackTime = GetContinuousAttackMaxTime();
+            _effectPlayTime = GetAttackFxPlayTime();
+
+
+            if (IsClientInitialized)
             {
-                _currentComboIndex++;
-            }
-            else
-            {
-                _currentComboIndex = 0;
+                float timeMultiplier = Mathf.Max(0.01f, GetAttackSpeedMultiplier());
+                float animationTime = currPattern.AnimationTime;
+                animationTime = Mathf.Clamp(animationTime, 0, _attackDuration);
+                if (_animationModule != null)
+                {
+                    _animationModule.PlayAnimationData(currPattern.AttackAnimationData, animationTime / timeMultiplier);
+                }
             }
 
+            AttackStartedEvent?.Invoke(this);
             return true;
-            //todo(networking): Notify clients
         }
 
-        public void CancelAttack()
-        {
-            _isAttacking = false;
-            OnAttackCompleted();
-        }
-        
         /// <summary>
         /// Attacks to a target
         /// </summary>
@@ -674,11 +665,6 @@ namespace Kuantech.Core
                 Target = target,
                 TargetPosition = target.transform.position
             };
-            if (_surroundManager != null)
-            {
-                _surroundManager.SetCurrentTarget(target);
-            }
-            
             return Attack(castData);
         }
         
@@ -810,35 +796,21 @@ namespace Kuantech.Core
         private float _attackImplementationTime;
         private float _maxContinuousAttackTime;
 
-        private void OnAttackStarted(ActionCastData castData)
+        private void EndAttack()
         {
-            AttackPattern currPattern = GetCurrentAttackPattern();
-            //Set timings
-            _attackDuration = GetAttackDuration();
-            float timeMultiplier = Mathf.Max(0.01f,GetAttackSpeedMultiplier());
-            _effectPlayTime = GetAttackFxPlayTime();
-            _attackImplementationTime = GetAttackImplementationTime();
-            _maxContinuousAttackTime = GetContinuousAttackMaxTime();
-            
-            _isAttacking = true;
-            _attacked = false;
-            _attackStartTime = Time.time;
-            _effectPlayed = false;
-
-            float animationTime = currPattern.AnimationTime;
-            animationTime = Mathf.Clamp(animationTime, 0, _attackDuration);
-            if(_animationModule != null)
+            if(IsServerInitialized)
             {
-                _animationModule.PlayAnimationData(currPattern.AttackAnimationData,  animationTime/timeMultiplier);
+                ExecuteEndAttack();
+                if (IsSpawned) ObserverAttackEnd_Rpc();
             }
-  
-            //todo(networking): Check server auth
-
-            
-            AttackStartedEvent?.Invoke(this);
+            else
+            {
+                if (IsSpawned) ServerCancelAttack_Rpc();
+                else ExecuteEndAttack(); // single player
+            }
         }
 
-        private void OnAttackCompleted()
+        private void ExecuteEndAttack()
         {
             _isAttacking = false;
             _lastAttackCompleteTime = Time.time;
@@ -929,6 +901,64 @@ namespace Kuantech.Core
             return startPosition + attackDireciton * GetAttackRange();
         }
         #endregion
-        
+
+        #region Networking
+
+        [ServerRpc]
+        private void ServerAttack_Rpc(ActionCastData castData)
+        {
+           Attack(castData); //Is this correct?
+        }
+
+        [ServerRpc]
+        private void ServerCancelAttack_Rpc()
+        {
+            ExecuteEndAttack();
+            ObserverAttackEnd_Rpc();
+        }
+
+        [ObserversRpc(ExcludeOwner=true)]
+        private void ObserverAttackStart_Rpc(ActionCastData castData)
+        {
+            if (IsServerInitialized) return; // listen server already ran ExecuteAttack
+            ExecuteAttack(castData); //Let other clients start attack
+        }
+
+        [ObserversRpc]
+        private void ObserverAttackImplementation_Rpc()
+        {
+            if (IsServerInitialized) return;
+            OnAttackImplemented();
+        }
+
+        [ObserversRpc]
+        private void ObserverAttackEnd_Rpc()
+        {
+            if (IsServerInitialized) return;
+            ExecuteEndAttack();
+        }
+
+        [ObserversRpc]
+        private void ObserverDamageActor_Rpc(NetworkObject target)
+        {
+            if (IsServerInitialized || target == null) return;
+            if (target.TryGetComponent(out Actor actor)) ExecuteDamageActor(actor);
+        }
+
+        [ObserversRpc]
+        private void ObserverDamageActors_Rpc(List<NetworkObject> targets)
+        {
+            if (IsServerInitialized) return;
+            foreach (var target in targets)
+            {
+                if (target != null && target.TryGetComponent(out Actor actor))
+                    ExecuteDamageActor(actor);
+            }
+        }
+        #endregion
     }
+
+
 }
+
+

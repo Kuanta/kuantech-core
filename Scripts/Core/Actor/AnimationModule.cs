@@ -287,6 +287,7 @@ namespace Kuantech.Core
         {
             if (Animator == null) return;
             animationData.SetParameters(Animator);
+            Debug.Log("Playing animation:"+animationDuration);
             if (animationDuration > 0)
                 Animator.SetFloat(TargetTime, animationDuration);
             if (animationData.AttackMontage != null)
