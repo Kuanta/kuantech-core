@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using FishNet.Object;
 using Kuantech.Core.FX;
 using Kuantech.Rpg;
 using Kuantech.Utils;
@@ -50,6 +51,18 @@ namespace Kuantech.Core.Combat
             Actor.OnHitEvent += OnHit;
         }
 
+        public override void OnModulesInitialized()
+        {
+            base.OnModulesInitialized();
+            _statModule = Actor.GetModule<StatsModule>();
+            _animationModule = Actor.GetModule<AnimationModule>();
+
+            if (Healthbar != null)
+            {
+                SetResourceBar(HealthResourceAsset, Healthbar);
+            }
+        }
+
 
         public override void ResetModule()
         {
@@ -57,45 +70,6 @@ namespace Kuantech.Core.Combat
             Refresh();
         }
 
-        public void Refresh()
-        {
-            if (_statModule == null) return;
-
-            if (Resources.IsNullOrEmpty())
-            {
-                Debug.LogWarning($"Resources are null for {Actor.gameObject.name}");
-                return;
-            }
-            //Refresh all resources
-            foreach (var resource in Resources)
-            {
-                RefreshResource(resource);
-            }
-            
-            SetRemainingDamageToPlayHitAnim();
-        }
-        
-        /// <summary>
-        /// Refreshes a resource to its max value
-        /// </summary>
-        /// <param name="resource"></param>
-        public void RefreshResource(ResourceAsset resource)
-        {
-            _statModule.RefreshResourceValue(resource);
-            UpdateResourceBar(resource);
-        }
-        
-        public override void OnModulesInitialized()
-        {
-            base.OnModulesInitialized();
-            _statModule = Actor.GetModule<StatsModule>();
-            _animationModule = Actor.GetModule<AnimationModule>();
-            
-            if (Healthbar != null)
-            {
-                SetResourceBar(HealthResourceAsset, Healthbar);
-            }
-        }
 
         public override void OnActorRankSet(int rank)
         {
@@ -108,66 +82,54 @@ namespace Kuantech.Core.Combat
             yield return new WaitForNextFrameUnit();
             Refresh();
         }
-        
+
         private void OnHit(HitInfo hitInfo)
         {
-            float previousHealth = GetCurrentHealth();
-            //Apply main damage
-            DamageResource(hitInfo.DamageInfo);
-    
-            //Additional damages
-            if (hitInfo.AdditionalDamages != null)
+            if (IsServerInitialized)
             {
-                foreach (var damageInfo in hitInfo.AdditionalDamages)
+                float previousHealth = GetCurrentHealth();
+
+                DamageResource(hitInfo.DamageInfo);
+                if (hitInfo.AdditionalDamages != null)
+                    foreach (var damageInfo in hitInfo.AdditionalDamages)
+                        DamageResource(damageInfo);
+
+                // Hit anim threshold — computed server-side where damage is authoritative
+                float receivedDmg = previousHealth - GetCurrentHealth();
+                _remainingDamageToPlayHitAnim -= receivedDmg;
+                if (_remainingDamageToPlayHitAnim <= 0)
                 {
-                    DamageResource(damageInfo);
+                    SetRemainingDamageToPlayHitAnim();
+                    if (IsSpawned) ObserversHitAnim_Rpc(hitInfo);
+                }
+
+                // Death check AFTER damage is applied
+                if (GetCurrentHealth() <= 0.0f)
+                {
+                    Actor.KillActor(hitInfo.Hitter);
+                    if (Healthbar != null) Healthbar.ToggleVisual(false);
+                    if (DespawnAfterDeath) Actor.Despawn(DespawnDelay);
                 }
             }
-            //Check health
-            float currentHealth = GetCurrentResource(HealthResourceAsset);
-            if (currentHealth <= 0.0f)
-            {
-                Actor.KillActor(hitInfo.Hitter);
-                if (Healthbar != null)
-                {
-                    Healthbar.ToggleVisual(false);
-                }
-                if(DespawnAfterDeath)
-                {
-                    Actor.Despawn(DespawnDelay); // Despawn actor after delay
-                }
-            }
-            
+
             OnReceivedHitEvent?.Invoke(hitInfo);
-            
-            //Hit anim?
-            float receivedDmg = previousHealth - currentHealth;
-            _remainingDamageToPlayHitAnim -= Mathf.Max(receivedDmg);
-
-            if (_remainingDamageToPlayHitAnim <= 0)
-            {
-                SetRemainingDamageToPlayHitAnim();
-                //Play hit animation?
-                if (_animationModule != null)
-                {
-                    _animationModule.OnDamageReceive(hitInfo);
-                }
-            }
         }
 
-        private void SetRemainingDamageToPlayHitAnim()
-        {
-            _remainingDamageToPlayHitAnim = GetMaxHealth() * Mathf.Max(0, PlayDamageThreshPercentage);
-        }
-        
+        #region Resource Manipulation
         /// <summary>
         /// Reduces the resource by checking the resistance values
         /// </summary>
         /// <param name="damageInfo"></param>
         public void DamageResource(DamageInfo damageInfo)
         {
-            if (!Actor.IsAlive()) return; //Can't kill which is already dead
+            if (!Actor.IsAlive() || !IsServerInitialized) return;
+            ResourceAsset resourceAsset = GetAffectedResource(damageInfo);
+            ExecuteDamageResource(damageInfo);
+            if (IsSpawned) ObserverSyncResource_Rpc(resourceAsset, GetCurrentResource(resourceAsset));
+        }
 
+        private void ExecuteDamageResource(DamageInfo damageInfo)
+        {
             ResourceAsset resourceAsset = GetAffectedResource(damageInfo);
             DamageInfo reducedDamage = CalculateReducedDamageInfo(damageInfo);
             float resourceAfterDamage = CalculateResourceAfterDamage(reducedDamage);
@@ -177,13 +139,31 @@ namespace Kuantech.Core.Combat
             {
                 OnHealthChanged?.Invoke(this);
 
-                if (ShowDamageText)
+                if (IsClientInitialized && ShowDamageText)
                 {
                     CombatManager.ShowDamageText(Actor.transform.position, reducedDamage, Actor.GetFactionId() == 0); //todo: Fix Friendly check
                 }
             }
         }
-        
+
+        /// <summary>
+        /// Refreshes a resource to its max value
+        /// </summary>
+        /// <param name="resource"></param>
+        public void RefreshResource(ResourceAsset resource)
+        {
+            if (!IsServerInitialized) return;
+            ExecuteRefreshResource(resource);
+            if (IsSpawned) ObserversRefreshResource_Rpc(resource);
+        }
+
+        private void ExecuteRefreshResource(ResourceAsset resource)
+        {
+            _statModule.RefreshResourceValue(resource);
+            UpdateResourceBar(resource);
+        }
+
+
         /// <summary>
         /// Removes resource without applying any resistance or armor
         /// </summary>
@@ -191,26 +171,40 @@ namespace Kuantech.Core.Combat
         /// <param name="amount"></param>
         public void RemoveResource(ResourceAsset resourceAsset, float amount)
         {
+            if (!IsServerInitialized || !Actor.IsAlive()) return;
+            ExecuteRemoveResource(resourceAsset, amount);
+            if (IsSpawned) ObserverSyncResource_Rpc(resourceAsset, GetCurrentResource(resourceAsset));
+        }
+
+        private void ExecuteRemoveResource(ResourceAsset resourceAsset, float amount)
+        {
             float currentResource = GetCurrentResource(resourceAsset);
             float newResource = Mathf.Clamp(currentResource - amount, 0, GetMaxResourceValue(resourceAsset));
             _statModule.SetResourceValue(resourceAsset, newResource);
             OnResourceChanged?.Invoke(resourceAsset);
             UpdateResourceBar(resourceAsset);
         }
-        
+
         /// <summary>
         /// Adds resource
         /// </summary>
         /// <param name="heal"></param>
         public void ReceiveResource(ResourceAsset resourceAsset, float amount)
         {
+            if (!IsServerInitialized || !Actor.IsAlive()) return;
+            ExecuteReceiveResource(resourceAsset, amount);
+            if (IsSpawned) ObserverSyncResource_Rpc(resourceAsset, GetCurrentResource(resourceAsset));
+        }
+
+        private void ExecuteReceiveResource(ResourceAsset resourceAsset, float amount)
+        {
             if (!Actor.IsAlive()) return; //Can't heal the dead
             float currentRes = GetCurrentResource(resourceAsset);
             float maxRes = GetMaxResourceValue(resourceAsset);
-            float newRes  = Mathf.Clamp(currentRes + amount, 0, maxRes);
-            
+            float newRes = Mathf.Clamp(currentRes + amount, 0, maxRes);
+
             _statModule.SetResourceValue(HealthResourceAsset, newRes);
-            
+
             //Show heal text if health resource is increased
             if (ShowDamageText && resourceAsset == HealthResourceAsset)
             {
@@ -224,14 +218,76 @@ namespace Kuantech.Core.Combat
 
         public void ReceiveHeal(float healAmount)
         {
-            ReceiveResource(HealthResourceAsset, healAmount);
-            
+            if (!IsServerInitialized || !Actor.IsAlive()) return;
+            ExecuteReceiveHeal(healAmount);
+            if (IsSpawned) ObserverSyncResource_Rpc(HealthResourceAsset, GetCurrentHealth());
+        }
+
+        private void ExecuteReceiveHeal(float healAmount)
+        {
+            ExecuteReceiveResource(HealthResourceAsset, healAmount);
+        }
+
+
+        public void Refresh()
+        {
+            if (!IsServerInitialized) return;
+            ExecuteRefresh();
+            if (IsSpawned) ObserversRefresh_Rpc();
+        }
+
+        private void ExecuteRefresh()
+        {
+            if (_statModule == null) return;
+
+            if (Resources.IsNullOrEmpty())
+            {
+                return;
+            }
+            //Refresh all resources
+            foreach (var resource in Resources)
+            {
+                ExecuteRefreshResource(resource);
+            }
+
+            SetRemainingDamageToPlayHitAnim();
+        }
+        #endregion
+
+        private void SetRemainingDamageToPlayHitAnim()
+        {
+            _remainingDamageToPlayHitAnim = GetMaxHealth() * Mathf.Max(0, PlayDamageThreshPercentage);
         }
         
+        /// <summary>
+        /// Sets the value of a resource
+        /// </summary>
+        /// <param name="resourceAsset"></param>
+        /// <param name="value"></param>
+        public void SetResourceValue(ResourceAsset resourceAsset, float value)
+        {
+            if (!IsServerInitialized) return;
+            ExecuteSetResourceValue(resourceAsset, value);
+            if (IsSpawned) ObserverSyncResource_Rpc(resourceAsset, value);
+        }
+
+        private void ExecuteSetResourceValue(ResourceAsset resourceAsset, float value)
+        {
+            _statModule.SetResourceValue(resourceAsset, value);
+            OnResourceChanged?.Invoke(resourceAsset);
+            UpdateResourceBar(resourceAsset);
+        }
+
+        public void SetHealthValue(float value)
+        {
+            SetResourceValue(HealthResourceAsset, value);
+        }
+
         #region Resource Bars
 
         public void UpdateResourceBar(ResourceAsset resourceType)
         {
+            if (IsDedicatedServer) return;
             Healthbar resourceBar = GetResourceBar(resourceType);
             if (resourceBar == null) return;
             float currentValue = _statModule.GetResourceValue(resourceType);
@@ -240,6 +296,8 @@ namespace Kuantech.Core.Combat
 
         public void SetResourceBar(ResourceAsset resourceType, Healthbar resourceBar)
         {
+            if (IsDedicatedServer) return;
+
             if (_resourceBars == null) _resourceBars = new Dictionary<ResourceAsset, Healthbar>();
             _resourceBars[resourceType] = resourceBar;
             UpdateResourceBar(resourceType);
@@ -333,5 +391,40 @@ namespace Kuantech.Core.Combat
         {
             return GetMaxResourceValue(HealthResourceAsset);
         }
+
+        #region Networking
+
+        // Refresh to max — deterministic, safe to re-run on clients
+        [ObserversRpc]
+        private void ObserversRefreshResource_Rpc(ResourceAsset resourceAsset)
+        {
+            if (IsServerInitialized) return;
+            ExecuteRefreshResource(resourceAsset);
+        }
+
+        [ObserversRpc]
+        private void ObserversRefresh_Rpc()
+        {
+            if (IsServerInitialized) return;
+            ExecuteRefresh();
+        }
+
+        // Authoritative value sync — server sends final value, clients just apply it
+        [ObserversRpc]
+        private void ObserverSyncResource_Rpc(ResourceAsset resourceAsset, float resourceValue)
+        {
+            if (IsServerInitialized) return;
+            ExecuteSetResourceValue(resourceAsset, resourceValue);
+        }
+
+        // Hit animation — server decides when threshold is crossed, all clients play it
+        [ObserversRpc]
+        private void ObserversHitAnim_Rpc(HitInfo hitInfo)
+        {
+            if (IsServerInitialized) return;
+            if (_animationModule != null) _animationModule.OnDamageReceive(hitInfo);
+        }
+
+        #endregion
     }
 }

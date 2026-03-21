@@ -24,6 +24,8 @@ namespace Kuantech.Core
         public string ModuleId;
         [NonSerialized] public bool Dirtied = false;
 
+        public bool IsDedicatedServer => !IsServerInitialized && IsClientInitialized;
+
         public virtual void SetActorData(ActorData actorData)
         {
             

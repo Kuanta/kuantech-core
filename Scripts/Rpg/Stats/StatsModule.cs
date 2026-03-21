@@ -633,7 +633,6 @@ namespace Kuantech.Rpg
 
         // Attributes are private — only the owner needs them
         [TargetRpc]
-        //todo: Implement a serializer for AttributeDefinition
         private void TargetSetStat_Rpc(NetworkConnection conn, AttributeDefinition attributeDefinition, bool insertAttribute)
         {
             if (IsServerInitialized) return;
@@ -648,7 +647,6 @@ namespace Kuantech.Rpg
         }
 
         [TargetRpc]
-        //todo: Implement a serializer for AttributeDefinition
         private void TargetSyncStats_Rpc(NetworkConnection conn, List<AttributeDefinition> attributeDefinitions)
         {
             if (IsServerInitialized) return;
