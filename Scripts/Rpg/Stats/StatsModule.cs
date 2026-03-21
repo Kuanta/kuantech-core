@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using FishNet.Connection;
+using FishNet.Object;
 using Kuantech.Core;
 using Kuantech.Utils;
 using UnityEngine;
@@ -115,15 +117,17 @@ namespace Kuantech.Rpg
         /// <param name="experience"></param>
         public void AddExperience(int experience)
         {
+            if (!IsServerInitialized) return;
+            ExecuteAddExperience(experience);
+            if (IsSpawned) ObserverSetActorLevel_Rpc(ActorLevel.CurrentLevel, experience);
+        }
+
+        private void ExecuteAddExperience(int experience)
+        {
             int currentLevel = GetActorLevel();
             ActorLevel.AddValue(experience);
             int newLevel = ActorLevel.CurrentLevel;
-            if (newLevel > currentLevel)
-            {
-                LevelChangeEvent?.Invoke(newLevel);
-            }
-
-            //Fire the event so subscribers handle changed experience case
+            if (newLevel > currentLevel) ExecuteSetLevel(newLevel);
             ExperienceEarnedEvent?.Invoke();
         }
 
@@ -133,8 +137,15 @@ namespace Kuantech.Rpg
         /// <param name="level"></param>
         public void SetLevel(int level)
         {
+            if (!IsServerInitialized) return;
+            ExecuteSetLevel(level);
+            if (IsSpawned) ObserverSetActorLevel_Rpc(level, 0);
+        }
+
+        private void ExecuteSetLevel(int level)
+        {
             ActorLevel.SetLevel(level);
-            if(ResourceManager != null) ResourceManager.Refresh();
+            if (ResourceManager != null) ResourceManager.Refresh();
             LevelChangeEvent?.Invoke(level);
         }
 
@@ -205,6 +216,13 @@ namespace Kuantech.Rpg
         /// <param name="insertAttribute"></param>
         public void SetAttribute(AttributeDefinition attributeDefinition, bool insertAttribute=false)
         {
+            if (!IsServerInitialized) return;
+            ExecuteSetAttribute(attributeDefinition, insertAttribute);
+            if (IsSpawned) TargetSetStat_Rpc(Owner, attributeDefinition, insertAttribute);
+        }
+
+        private void ExecuteSetAttribute(AttributeDefinition attributeDefinition, bool insertAttribute = false)
+        {
             if (attributeDefinition.AttributeAsset == null) return;
             Attribute att = GetAttribute(attributeDefinition.AttributeAsset);
             if (att == null)
@@ -229,11 +247,25 @@ namespace Kuantech.Rpg
         /// <param name="value"></param>
         public void SetAttributeValue(AttributeAsset attributeAsset, float value)
         {
+            if (!IsServerInitialized) return;
+            ExecuteSetAttributeValue(attributeAsset, value);
+            if (IsSpawned) TargetSetAttributeValue_Rpc(Owner, attributeAsset.Id, value);
+        }
+
+        private void ExecuteSetAttributeValue(AttributeAsset attributeAsset, float value)
+        {
             Attribute att = GetAttribute(attributeAsset);
             if (att == null) return;
             att.BaseValue = value;
         }
-        
+
+        private void ExecuteSetAttributeValue(string attributeId, float value)
+        {
+            Attribute att = GetAttribute(attributeId);
+            if (att == null) return;
+            att.BaseValue = value;
+        }
+
         /// <summary>
         /// Sets the rank of the attribute
         /// </summary>
@@ -369,31 +401,30 @@ namespace Kuantech.Rpg
         public void AddModifiers(List<StatModifier> modifiers)
         {
             foreach (var modifier in modifiers)
-            {
-                AddModifier(modifier);
-            }
+                ExecuteAddModifier(modifier);
+            if (IsSpawned) TargetSetModifiers_Rpc(Owner, GetAllModifiers());
         }
 
         public void AddModifier(StatModifier modifier)
         {
-            Modifiers ??= new Dictionary<AttributeAsset, HashSet<StatModifier>>();
-            
-            if (!Modifiers.ContainsKey(modifier.AttributeAsset))
-            {
-                Modifiers.Add(modifier.AttributeAsset, new HashSet<StatModifier>());
-            }
+            ExecuteAddModifier(modifier);
+            if (IsSpawned) TargetAddModifier_Rpc(Owner, modifier);
+        }
 
+        private void ExecuteAddModifier(StatModifier modifier)
+        {
+            Modifiers ??= new Dictionary<AttributeAsset, HashSet<StatModifier>>();
+            if (!Modifiers.ContainsKey(modifier.AttributeAsset))
+                Modifiers.Add(modifier.AttributeAsset, new HashSet<StatModifier>());
             Modifiers[modifier.AttributeAsset].Add(modifier);
             DirtyStat(modifier.AttributeAsset);
-
         }
 
         public void RemoveModifiers(List<StatModifier> modifiers)
         {
             foreach (var modifier in modifiers)
-            {
-                RemoveModifier(modifier);
-            }
+                ExecuteRemoveModifier(modifier);
+            if (IsSpawned) TargetSetModifiers_Rpc(Owner, GetAllModifiers());
         }
         
         public List<StatModifier> GetModifierByTag(string tag)
@@ -421,20 +452,31 @@ namespace Kuantech.Rpg
         /// <param name="tagToCompare"></param>
         public void ClearModifiers(bool clearByTag = false, string tagToCompare = "")
         {
+            ExecuteClearModifiers(clearByTag, tagToCompare);
+            if (IsSpawned) TargetClearModifiers_Rpc(Owner, clearByTag, tagToCompare);
+        }
+
+        private void ExecuteClearModifiers(bool clearByTag = false, string tagToCompare = "")
+        {
             if (Modifiers == null) return;
-            HashSet<StatModifier> allModifiers = new HashSet<StatModifier>();
+            var toRemove = new List<StatModifier>();
             foreach (var pair in Modifiers)
-            {
                 foreach (var modifier in pair.Value)
                 {
                     if (clearByTag && modifier.ModifierTag != tagToCompare) continue;
-                    allModifiers.Add(modifier);
+                    toRemove.Add(modifier);
                 }
-            }
-            RemoveModifiers(allModifiers.ToList());
+            foreach (var modifier in toRemove)
+                ExecuteRemoveModifier(modifier);
         }
 
         public void RemoveModifier(StatModifier modifier)
+        {
+            ExecuteRemoveModifier(modifier);
+            if (IsSpawned) TargetRemoveModifier_Rpc(Owner, modifier);
+        }
+
+        private void ExecuteRemoveModifier(StatModifier modifier)
         {
             if (Modifiers == null || !Modifiers.ContainsKey(modifier.AttributeAsset)) return;
             if (Modifiers[modifier.AttributeAsset].Contains(modifier))
@@ -442,6 +484,16 @@ namespace Kuantech.Rpg
                 Modifiers[modifier.AttributeAsset].Remove(modifier);
                 DirtyStat(modifier.AttributeAsset);
             }
+        }
+
+        private List<StatModifier> GetAllModifiers()
+        {
+            var result = new List<StatModifier>();
+            if (Modifiers == null) return result;
+            foreach (var pair in Modifiers)
+                foreach (var modifier in pair.Value)
+                    result.Add(modifier);
+            return result;
         }
 
         public void DirtyStat(AttributeAsset type)
@@ -566,6 +618,75 @@ namespace Kuantech.Rpg
                 attribute.Rank = rank;
             }
         }
+        #endregion
+
+        #region Networking
+
+        // Level is public info — all observers need it (nameplates, UI, etc.)
+        [ObserversRpc]
+        private void ObserverSetActorLevel_Rpc(int newLevel, int earnedExperience)
+        {
+            if (IsServerInitialized) return;
+            if (earnedExperience > 0) ExecuteAddExperience(earnedExperience);
+            else if (newLevel != ActorLevel.CurrentLevel) ExecuteSetLevel(newLevel);
+        }
+
+        // Attributes are private — only the owner needs them
+        [TargetRpc]
+        //todo: Implement a serializer for AttributeDefinition
+        private void TargetSetStat_Rpc(NetworkConnection conn, AttributeDefinition attributeDefinition, bool insertAttribute)
+        {
+            if (IsServerInitialized) return;
+            ExecuteSetAttribute(attributeDefinition, insertAttribute);
+        }
+
+        [TargetRpc]
+        private void TargetSetAttributeValue_Rpc(NetworkConnection conn, string attributeId, float value)
+        {
+            if (IsServerInitialized) return;
+            ExecuteSetAttributeValue(attributeId, value);
+        }
+
+        [TargetRpc]
+        //todo: Implement a serializer for AttributeDefinition
+        private void TargetSyncStats_Rpc(NetworkConnection conn, List<AttributeDefinition> attributeDefinitions)
+        {
+            if (IsServerInitialized) return;
+            foreach (var def in attributeDefinitions)
+                ExecuteSetAttribute(def, false);
+        }
+
+        // Modifiers are private — only the owner needs them
+        [TargetRpc]
+        private void TargetSetModifiers_Rpc(NetworkConnection conn, List<StatModifier> modifiers)
+        {
+            if (IsServerInitialized) return;
+            ExecuteClearModifiers();
+            foreach (var modifier in modifiers)
+                ExecuteAddModifier(modifier);
+        }
+
+        [TargetRpc]
+        private void TargetAddModifier_Rpc(NetworkConnection conn, StatModifier modifier)
+        {
+            if (IsServerInitialized) return;
+            ExecuteAddModifier(modifier);
+        }
+
+        [TargetRpc]
+        private void TargetRemoveModifier_Rpc(NetworkConnection conn, StatModifier modifier)
+        {
+            if (IsServerInitialized) return;
+            ExecuteRemoveModifier(modifier);
+        }
+
+        [TargetRpc]
+        private void TargetClearModifiers_Rpc(NetworkConnection conn, bool clearByTag, string tagToCompare)
+        {
+            if (IsServerInitialized) return;
+            ExecuteClearModifiers(clearByTag, tagToCompare);
+        }
+
         #endregion
     }
 }
