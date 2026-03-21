@@ -427,16 +427,19 @@ namespace Kuantech.Core
             if (projectile == null) return;
             
             AttackPattern pattern = GetCurrentAttackPattern();
-            projectile.Damage = GetDamage();
-            projectile.AdditionalDamages = GetAdditionalDamageInfos();
-            projectile.SplashDamage = GetSplashDamage();
-            projectile.AdditionalSplashDamages = GetAdditionalSplashDamages();
-            projectile.SplashRadius = GetSplashDamageRadius();
+            projectile.IsVisualOnly = !IsServerInitialized;
+            if (IsServerInitialized)
+            {
+                projectile.Damage = GetDamage();
+                projectile.AdditionalDamages = GetAdditionalDamageInfos();
+                projectile.SplashDamage = GetSplashDamage();
+                projectile.AdditionalSplashDamages = GetAdditionalSplashDamages();
+                projectile.SplashRadius = GetSplashDamageRadius();
+                projectile.Knockback = pattern.Knockback.GetValue(_statModule);
+                projectile.KnockbackTime = pattern.KnockbackTime.GetValue(_statModule);
+            }
             projectile.Range = GetAttackRange();
-            projectile.Knockback = pattern.Knockback.GetValue(_statModule);
-            projectile.KnockbackTime = pattern.KnockbackTime.GetValue(_statModule);
-            
-            
+             
             if (currentTarget != null)
             {
                 Vector3 targetOffset = currentTarget.GetHitPoint(Actor).GetTargetPosition() - currentTarget.transform.position;
@@ -928,7 +931,7 @@ namespace Kuantech.Core
         private void ObserverAttackImplementation_Rpc()
         {
             if (IsServerInitialized) return;
-            OnAttackImplemented();
+            RunAttackImplementation();
         }
 
         [ObserversRpc]

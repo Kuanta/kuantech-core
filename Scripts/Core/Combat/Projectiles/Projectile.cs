@@ -39,6 +39,7 @@ namespace Kuantech.Core
         public float KnockbackTime = 0f;
         
         [Header("Damage")]
+        public bool IsVisualOnly = false; // Ghost projectile: moves and shows effects but deals no damage
         public bool RawDamage = false;
         public DamageInfo Damage;
         public List<DamageInfo> AdditionalDamages = new List<DamageInfo>();
@@ -473,6 +474,7 @@ namespace Kuantech.Core
         /// </summary>
         protected virtual void Explode()
         {
+            if (IsVisualOnly) return;
             Vector3 origin = transform.position;
             GameObject hitter = CastBy != null ? CastBy.gameObject : null;
             if (Is2D)
@@ -505,6 +507,7 @@ namespace Kuantech.Core
         protected virtual void Impact(GameObject impacted)
         {
             if (DestroyOnImpact && Despawned) return;
+            if (IsVisualOnly) return;
 
             Actor target = impacted.GetComponent<Actor>();
             GameObject hitter = CastBy != null ? CastBy.gameObject : null;
