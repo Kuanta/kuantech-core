@@ -37,7 +37,7 @@ namespace Kuantech.Core
     
         public override void ModuleFixedUpdate()
         {
-            if (!Actor.IsOwner()) return;
+            if (!Actor.IsOwner) return;
             HandleMovement();
         }
 

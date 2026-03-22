@@ -5,8 +5,9 @@ using UnityEngine.UI;
 
 namespace Kuantech.Rpg
 {
-    public class Healthbar : MonoBehaviour
+    public class ResourceBar : MonoBehaviour
     {
+        public ResourceAsset ResourceAsset;
         [Header("Settings")]
         public bool ShowAlways = false;
         

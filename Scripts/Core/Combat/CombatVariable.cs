@@ -37,7 +37,7 @@ public class CombatDamageVariable : CombatVariable
 
         return new DamageInfo
         {
-            DamageAmount = baseValue * critMultiplier,
+            DamageAmount = baseValue * Mathf.Max(1,critMultiplier),
             DamageType = DamageType,
             IsCritical = isCritical,
         };

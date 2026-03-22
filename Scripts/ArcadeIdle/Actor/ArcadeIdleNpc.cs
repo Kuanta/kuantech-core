@@ -197,9 +197,9 @@ namespace Kuantech.ArcadeIdle
 
         #endregion
 
-        public override void Reset()
+        public override void ResetActor()
         {
-            base.Reset();
+            base.ResetActor();
             ToggleMovement(false);
         }
     }

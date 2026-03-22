@@ -10,7 +10,7 @@ namespace Kuantech.TowerDefense
     public class TowerDefenseLevelUI : LevelUI
     {
         [Header("UI Elements")]
-        [SerializeField] private Healthbar Healthbar;
+        [SerializeField] private ResourceBar Healthbar;
 
         [Header("Panels")] 
         public CompletePanel completePanel;

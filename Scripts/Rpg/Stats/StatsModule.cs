@@ -21,6 +21,7 @@ namespace Kuantech.Rpg
     {
         public int Level;
         public Dictionary<string, int> AttributeRanks;
+        public Dictionary<string, float> ResourceValues;
     }
     
     public class StatsModule : ActorModule
@@ -570,9 +571,17 @@ namespace Kuantech.Rpg
 
         protected override ActorModuleSerializableData InstantiateState()
         {
-            return new StatsSerializableData(){
-                Level = 0,
-                AttributeRanks = new Dictionary<string, int>(),
+            var resourceValues = new Dictionary<string, float>();
+            if (ResourceManager != null)
+                foreach (var resource in ResourceDefinitions)
+                    resourceValues[resource.ResourceAsset.Id] = GetResourceValue(resource.ResourceAsset);
+
+            return new StatsSerializableData()
+            {
+                Level = ActorLevel.CurrentLevel,
+                AttributeRanks = _statMap?.ToDictionary(p => p.Key, p => p.Value.Rank)
+                                 ?? new Dictionary<string, int>(),
+                ResourceValues = resourceValues,
             };
         }
         
@@ -582,16 +591,18 @@ namespace Kuantech.Rpg
         /// <param name="serializableData"></param>
         public void SetStatStates(StatsSerializableData serializableData)
         {
-            if(serializableData.AttributeRanks != null)
-            {
+            if (serializableData.AttributeRanks != null)
                 foreach (var pair in serializableData.AttributeRanks)
-                {
                     SetAttributeRank(pair.Key, pair.Value);
-                }
-            }
 
-            SetLevel(serializableData.Level);
-            //todo: Overflow
+            ExecuteSetLevel(serializableData.Level);
+
+            if (serializableData.ResourceValues != null)
+                foreach (var pair in serializableData.ResourceValues)
+                {
+                    var def = ResourceDefinitions.Find(r => r.ResourceAsset != null && r.ResourceAsset.Id == pair.Key);
+                    if (def.ResourceAsset != null) SetResourceValue(def.ResourceAsset, pair.Value);
+                }
         }
 
         /// <summary>

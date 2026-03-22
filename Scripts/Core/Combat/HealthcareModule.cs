@@ -24,9 +24,10 @@ namespace Kuantech.Core.Combat
         [Tooltip("Delay that despawns the actor after death")] public float DespawnDelay = 1f;
 
         [Header("UI")] 
-        [SerializeField] private Healthbar Healthbar;
+        [SerializeField] private List<ResourceBar> ResourceBars;
         [SerializeField] private bool ShowDamageText = false;
-        private Dictionary<ResourceAsset, Healthbar> _resourceBars = new Dictionary<ResourceAsset, Healthbar>();
+        private Dictionary<ResourceAsset, ResourceBar> _resourceBars = new Dictionary<ResourceAsset, ResourceBar>();
+        private ResourceBar Healthbar => GetResourceBar(HealthResourceAsset);
         
         [Header("Effects")]
         [SerializeField] private Effect HealEffect;
@@ -48,6 +49,7 @@ namespace Kuantech.Core.Combat
         public override void Initialize()
         {
             base.Initialize();
+            Actor.OnStateLoaded += OnStateLoaded;
             Actor.OnHitEvent += OnHit;
         }
 
@@ -56,13 +58,24 @@ namespace Kuantech.Core.Combat
             base.OnModulesInitialized();
             _statModule = Actor.GetModule<StatsModule>();
             _animationModule = Actor.GetModule<AnimationModule>();
+            SetupResourceBars();
+        }
 
-            if (Healthbar != null)
+        private void SetupResourceBars()
+        {
+            if(IsDedicatedServer) return;
+            foreach (var resourceBar in ResourceBars)
             {
-                SetResourceBar(HealthResourceAsset, Healthbar);
+                SetResourceBar(resourceBar.ResourceAsset, resourceBar);
+                UpdateResourceBar(resourceBar.ResourceAsset);
             }
         }
 
+        public override void OnStartClient()
+        {
+            base.OnStartClient();
+            SetupResourceBars(); //Re-update?
+        }
 
         public override void ResetModule()
         {
@@ -81,6 +94,12 @@ namespace Kuantech.Core.Combat
         {
             yield return new WaitForNextFrameUnit();
             Refresh();
+        }
+
+        private void OnStateLoaded(Actor actor)
+        {
+            //Update all bars
+            UpdateResourceBars();
         }
 
         private void OnHit(HitInfo hitInfo)
@@ -285,36 +304,43 @@ namespace Kuantech.Core.Combat
 
         #region Resource Bars
 
+        public void UpdateResourceBars()
+        {
+            if (IsDedicatedServer) return;
+            foreach (var resource in Resources)
+                UpdateResourceBar(resource);
+        }
         public void UpdateResourceBar(ResourceAsset resourceType)
         {
             if (IsDedicatedServer) return;
-            Healthbar resourceBar = GetResourceBar(resourceType);
+            ResourceBar resourceBar = GetResourceBar(resourceType);
+            Debug.Log($"Updating resource bar for {Actor.name}");
             if (resourceBar == null) return;
             float currentValue = _statModule.GetResourceValue(resourceType);
             resourceBar.SetHealth(currentValue, GetMaxResourceValue(resourceType));
         }
 
-        public void SetResourceBar(ResourceAsset resourceType, Healthbar resourceBar)
+        public void SetResourceBar(ResourceAsset resourceType, ResourceBar resourceBar)
         {
             if (IsDedicatedServer) return;
 
-            if (_resourceBars == null) _resourceBars = new Dictionary<ResourceAsset, Healthbar>();
+            if (_resourceBars == null) _resourceBars = new Dictionary<ResourceAsset, ResourceBar>();
             _resourceBars[resourceType] = resourceBar;
             UpdateResourceBar(resourceType);
         }
 
-        public Healthbar GetResourceBar(ResourceAsset resourceType)
+        public ResourceBar GetResourceBar(ResourceAsset resourceType)
         {
             if (_resourceBars == null || !_resourceBars.ContainsKey(resourceType)) return null;
             return _resourceBars[resourceType];
         }
 
-        public Healthbar GetHealhbar()
+        public ResourceBar GetHealhbar()
         {
             return Healthbar;
         }
 
-        public void SetHealthbar(Healthbar healthbar)
+        public void SetHealthbar(ResourceBar healthbar)
         {
             SetResourceBar(HealthResourceAsset, healthbar);
         }
@@ -390,6 +416,12 @@ namespace Kuantech.Core.Combat
         public float GetMaxHealth()
         {
             return GetMaxResourceValue(HealthResourceAsset);
+        }
+
+        public override void OnNetworkSynced()
+        {
+            foreach (var resource in Resources)
+                UpdateResourceBar(resource);
         }
 
         #region Networking

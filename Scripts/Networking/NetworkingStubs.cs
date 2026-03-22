@@ -34,4 +34,19 @@ namespace FishNet.Object.Synchronizing
         public event System.Action<T, T, bool> OnChange;
     }
 }
+
+namespace Kuantech.Networking{
+    public abstract class KtNetworkBehaviourStub : MonoBehaviour
+    {
+        public virtual void OnStartNetwork();
+
+        public virtual void OnStopNetwork();
+
+        public virtual void OnStartClient();
+
+        public virtual void OnStopClient();
+
+        public virtual void OnOwnershipClient(NetworkConnection prevOwner);
+    }
+}
 #endif

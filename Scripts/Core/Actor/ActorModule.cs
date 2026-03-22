@@ -24,7 +24,7 @@ namespace Kuantech.Core
         public string ModuleId;
         [NonSerialized] public bool Dirtied = false;
 
-        public bool IsDedicatedServer => !IsServerInitialized && IsClientInitialized;
+        public bool IsDedicatedServer => IsServerInitialized && !IsClientInitialized;
 
         public virtual void SetActorData(ActorData actorData)
         {
@@ -110,6 +110,9 @@ namespace Kuantech.Core
         // Called by KtActorNetworkBehaviour when this actor becomes the local player
         public virtual void OnLocalPlayerStart() { }
         public virtual void OnLocalPlayerStop() { }
+
+        // Called on client after actor state is synced from server (late-join sync)
+        public virtual void OnNetworkSynced() { }
 
 #if !NETWORKING_FISHNET
         // Stub callbacks — no-op in offline builds.

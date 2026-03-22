@@ -205,7 +205,7 @@ namespace Kuantech.ArcadeIdle
             if(ProgressBar != null) ProgressBar.gameObject.SetActive(false);
         }
 
-        public override void Reset()
+        public override void ResetActor()
         {
             _generating = false;
         }

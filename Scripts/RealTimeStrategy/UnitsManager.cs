@@ -298,11 +298,11 @@ namespace Kuantech.RealTimeStrategy
             base.OnReset();
             ClearSpawnedActors();
         }
-        public void OnActorDeath(Actor.KillFeedData killFeedData)
+        public void OnActorDeath(Actor deadActor)
         {
-            if (killFeedData.DeadActor == null) return;
-            RemoveActor(killFeedData.DeadActor);
-            DeadActors.Add(killFeedData.DeadActor);
+            if (deadActor == null) return;
+            RemoveActor(deadActor);
+            DeadActors.Add(deadActor);
         }
 
         public void OnActorDespawn(Actor actor)

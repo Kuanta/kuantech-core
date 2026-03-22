@@ -2,10 +2,14 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Kuantech.Networking;
 using Kuantech.Utils;
 using UnityEngine;
 using UnityEngine.Events;
+
+#if NETWORKING_FISHNET
+    using FishNet.Connection;
+    using FishNet.Object;
+#endif
 
 namespace Kuantech.Core
 {
@@ -17,7 +21,12 @@ namespace Kuantech.Core
         Despawned,
     }
 
+#if NETWORKING_FISHNET
+
+    public class Actor : NetworkBehaviour, IHittable, ISpawnable
+#else
     public class Actor : MonoBehaviour, IHittable, ISpawnable
+#endif
     {
         [Serializable]
         public struct KillFeedData
@@ -47,7 +56,7 @@ namespace Kuantech.Core
         //Common module references
         public ActorVisualHandler VisualHandler;
         
-        protected bool Initialized;
+        [SerializeField] protected bool Initialized;
         [Tooltip("If set to true, actor will initialize itself on start")]
         public bool InitializeOnStart;
         
@@ -68,10 +77,11 @@ namespace Kuantech.Core
         //Lifecycle events
         public UnityAction<ActorState> OnActorStateChanged;
         public UnityAction<Actor> OnSpawnedEvent;
-        public UnityAction<KillFeedData> OnDeathEvent;
+        public UnityAction<Actor> OnDeathEvent;
         public UnityAction<Actor> OnDespawnedEvent;
         public UnityAction<HitInfo> OnHitEvent;
         public UnityAction<int> OnRankSetEvent;
+        public UnityAction<Actor> OnStateLoaded;
 
         #region Lifecycle
         private void Start()
@@ -130,9 +140,9 @@ namespace Kuantech.Core
         {
             if (!Initialized)
                 Initialize();
-            Reset();
+            Debug.Log("Spawning "+name);
+            ResetActor();
             ChangeActorState(ActorState.Spawned);
-            OnSpawnedEvent?.Invoke(this);
         }
 
         public virtual void PostInitialize()
@@ -170,7 +180,7 @@ namespace Kuantech.Core
             }
         }
         
-        public virtual void Reset()
+        public virtual void ResetActor()
         {
             foreach (var module in ActorModulesList)
             {
@@ -196,38 +206,56 @@ namespace Kuantech.Core
         }
         
         /// <summary>
-        /// Despawns the actor by sending it to the pool
+        /// Despawns the actor. On server: tells all clients via FishNet. Standalone: returns to pool directly.
         /// </summary>
         public virtual void Despawn(float delay=0f)
         {
             if (_despawnCoroutine != null)
                 StopCoroutine(_despawnCoroutine);
 
-            if (!gameObject.activeInHierarchy)
-            {
-                Cleanup();
-                ChangeActorState(ActorState.Despawned);
-                OnDespawnedEvent?.Invoke(this);
-                if (VisualHandler != null) VisualHandler.ClearCurrentVisual();
-                PoolManager.PoolObject(gameObject);
-                return;
-            }
-
             _despawnCoroutine = _DespawnRoutine(delay);
             StartCoroutine(_despawnCoroutine);
         }
-        
+
         private IEnumerator _despawnCoroutine;
         private IEnumerator _DespawnRoutine(float delay)
         {
             yield return new WaitForSeconds(delay);
-            Cleanup();
-            ChangeActorState(ActorState.Despawned);
-            OnDespawnedEvent?.Invoke(this);
-            if (VisualHandler != null) VisualHandler.ClearCurrentVisual();
-            PoolManager.PoolObject(gameObject);
+#if NETWORKING_FISHNET
+            if (IsServerInitialized && IsSpawned)
+            {
+                // FishNet despawn notifies all clients; cleanup happens in OnStopServer/OnStopClient
+                NetworkObject.Despawn();
+                _despawnCoroutine = null;
+                yield break;
+            }
+#endif
+            ExecuteLocalDespawn();
             _despawnCoroutine = null;
         }
+
+        private void ExecuteLocalDespawn()
+        {
+            Cleanup();
+            ExecuteChangeActorState(ActorState.Despawned);
+            if (VisualHandler != null) VisualHandler.ClearCurrentVisual();
+            PoolManager.PoolObject(gameObject);
+        }
+
+#if NETWORKING_FISHNET
+        public override void OnStopServer()
+        {
+            base.OnStopServer();
+            ExecuteLocalDespawn();
+        }
+
+        public override void OnStopClient()
+        {
+            base.OnStopClient();
+            if (_isLocalPlayer) OnStopLocalPlayer();
+            if (!IsServerInitialized) ExecuteLocalDespawn();
+        }
+#endif
         #endregion
 
         #region ActorRank
@@ -261,6 +289,27 @@ namespace Kuantech.Core
         /// <param name="state"></param>
         public void ChangeActorState(ActorState state)
         {
+#if NETWORKING_FISHNET
+            if (!IsServerInitialized) return;
+            ActorState oldState = CurrentActorState;
+            ExecuteChangeActorState(state);
+            if (IsSpawned) ObserversChangeActorState_Rpc(oldState, state);
+#else
+            ExecuteChangeActorState(state);
+#endif
+        }
+
+#if NETWORKING_FISHNET
+        [ObserversRpc]
+        private void ObserversChangeActorState_Rpc(ActorState oldState, ActorState state)
+        {
+            if (IsServerInitialized) return;
+            ExecuteChangeActorState(state);
+        }
+#endif
+
+        public void ExecuteChangeActorState(ActorState state)
+        {
             ActorState oldState = CurrentActorState;
             CurrentActorState = state;
             foreach (var module in ActorModulesList)
@@ -268,21 +317,30 @@ namespace Kuantech.Core
                 module.OnActorStateChanged(oldState, state);
             }
             OnActorStateChanged?.Invoke(state);
+
+            switch(state)
+            {
+                case ActorState.Spawned:
+                    OnSpawnedEvent?.Invoke(this);
+                    break;
+                case ActorState.Dead:
+                    OnDeathEvent?.Invoke(this);
+                    break;
+                case ActorState.Despawned:
+                    OnDespawnedEvent?.Invoke(this);
+                    break;
+            }
         }
         
         /// <summary>
-        /// Kills the actor state, sets its state to dead
+        /// Kills the actor, sets its state to dead
         /// </summary>
-        public void KillActor(GameObject hitter = null)
+        public void KillActor(GameObject killer = null)
         {
             ChangeActorState(ActorState.Dead);
-            OnDeathEvent?.Invoke(new KillFeedData()
-            {
-                Killer = hitter,
-                DeadActor = this,
-            });
         }
-        
+
+
         /// <summary>
         /// Checks if actor is alive
         /// </summary>
@@ -375,7 +433,9 @@ namespace Kuantech.Core
                 return;
             }
             LoadModuleState(actorSerializableData.ModuleStates);
+            OnStateLoaded?.Invoke(this);
         }
+
         public virtual void LoadModuleState(Dictionary<string, ActorModuleSerializableData> moduleStates)
         {
             foreach(var pair in moduleStates)
@@ -404,7 +464,9 @@ namespace Kuantech.Core
             foreach(var pair in ModulesById)
             {
                 if(pair.Value.ModuleId.IsNullOrEmpty()) continue;
-                actorSerializableData.ModuleStates[pair.Value.ModuleId] = pair.Value.CreateModuleState();
+                ActorModuleSerializableData serializableData = pair.Value.CreateModuleState();
+                if(serializableData == null) continue;
+                actorSerializableData.ModuleStates[pair.Value.ModuleId] = serializableData;
             }
             return actorSerializableData;
         }
@@ -438,13 +500,6 @@ namespace Kuantech.Core
 
         public void OnHit(HitInfo hitInfo)
         {
-            MovementModule mm = GetModule<MovementModule>();
-            if (mm != null)
-            {
-                mm.Knockback(hitInfo.HitDirection, 
-                    hitInfo.KnockbackForce, 
-                    hitInfo.KnockbackDuration);
-            }
             OnHitEvent?.Invoke(hitInfo);
         }
         
@@ -560,91 +615,102 @@ namespace Kuantech.Core
 
         #region Networking
 
-        public KtActorNetworkBehaviour NetworkBehaviour;
-        /// <summary>
-        /// Checks if is server
-        /// </summary>
-        /// <returns></returns>
-        public bool IsServer()
+#if NETWORKING_FISHNET
+        private bool _isLocalPlayer;
+
+        public override void OnStartNetwork()
         {
-            if (NetworkBehaviour == null)
-            {
-                return true;
-            }
-            return NetworkBehaviour.IsServerInitialized;
+            base.OnStartNetwork();
+            Initialize();
+            Spawn();
+            TryHandleLocalPlayerChange(null);
         }
 
-        /// <summary>
-        /// Checks if is client
-        /// </summary>
-        /// <returns></returns>
-        public bool IsClient()
+        public override void OnSpawnServer(NetworkConnection connection)
         {
-            if (NetworkBehaviour == null)
-            {
-                return true;
-            }
-            return NetworkBehaviour.IsClientInitialized;
+            base.OnSpawnServer(connection);
+            ActorSerializableData state = GetActorState();
+            int moduleCount = state.ModuleStates?.Count ?? 0;
+            Debug.Log($"[Actor] OnSpawnServer → {name} syncing {moduleCount} module(s) to client {connection.ClientId}. Modules: [{string.Join(", ", state.ModuleStates?.Keys ?? Enumerable.Empty<string>())}]");
+            byte[] bytes = SaveUtility.SerializePoco(state);
+            TargetSyncActorState_Rpc(connection, bytes);
         }
 
-        /// <summary>
-        /// Checks if is only client no server
-        /// </summary>
-        /// <returns></returns>
+        [TargetRpc]
+        private void TargetSyncActorState_Rpc(NetworkConnection conn, byte[] bytes)
+        {
+            ActorSerializableData state = SaveUtility.DeserializePoco<ActorSerializableData>(bytes);
+            int moduleCount = state?.ModuleStates?.Count ?? 0;
+            Debug.Log($"[Actor] TargetSyncActorState_Rpc received on {name} — {moduleCount} module(s): [{string.Join(", ", state?.ModuleStates?.Keys ?? Enumerable.Empty<string>())}]");
+            LoadActorState(state);
+            foreach (var module in ActorModulesList)
+                module.OnNetworkSynced();
+        }
+
+        public override void OnStartClient()
+        {
+            base.OnStartClient();
+            TryHandleLocalPlayerChange(null);
+        }
+
+        public override void OnOwnershipClient(NetworkConnection prevOwner)
+        {
+            base.OnOwnershipClient(prevOwner);
+            TryHandleLocalPlayerChange(prevOwner);
+        }
+
+        private void TryHandleLocalPlayerChange(NetworkConnection prevOwner)
+        {
+            if (!IsClientInitialized || NetworkManager == null) return;
+            if (!Owner.IsValid)
+            {
+                if (_isLocalPlayer) OnStopLocalPlayer();
+                return;
+            }
+            bool nowLocalPlayer = Owner == NetworkManager.ClientManager.Connection;
+            if (nowLocalPlayer == _isLocalPlayer) return;
+            _isLocalPlayer = nowLocalPlayer;
+            if (nowLocalPlayer) OnStartLocalPlayer();
+            else OnStopLocalPlayer();
+        }
+
+        private void OnStartLocalPlayer() => StartLocalPlayer();
+
+        private void OnStopLocalPlayer()
+        {
+            _isLocalPlayer = false;
+            StopLocalPlayer();
+        }
+#endif
+
         public bool IsOnlyClient()
         {
-            if (NetworkBehaviour == null)
-            {
-                return false;
-            }
-            return NetworkBehaviour.IsClientOnlyInitialized;
+#if NETWORKING_FISHNET
+            return IsClientOnlyInitialized;
+#else
+            return false;
+#endif
         }
 
-        /// <summary>
-        /// Checks if client controls this actor
-        /// </summary>
-        /// <returns></returns>
-        public bool IsOwner()
-        {
-            if(NetworkBehaviour == null)
-            {
-                return true;
-            }
-            return NetworkBehaviour.IsOwner;
-        }
-
-        /// <summary>
-        /// Checks if this Actor is local player
-        /// </summary>
-        /// <returns></returns>
         public bool IsLocalPlayer()
         {
-            if (NetworkBehaviour == null)
-            {
-                return true;
-            }
-            return NetworkBehaviour.IsOwner;
-        }
-
-        public bool HasAuthority()
-        {
-            return IsOwner() || IsServer();
+#if NETWORKING_FISHNET
+            return IsOwner;
+#else
+            return true;
+#endif
         }
 
         public void StartLocalPlayer()
         {
             foreach (var module in ActorModulesList)
-            {
                 module.OnLocalPlayerStart();
-            }
         }
 
         public void StopLocalPlayer()
         {
             foreach (var module in ActorModulesList)
-            {
                 module.OnLocalPlayerStop();
-            }
         }
 
         #endregion
