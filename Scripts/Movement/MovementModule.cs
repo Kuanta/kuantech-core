@@ -22,6 +22,7 @@ namespace Kuantech.Core
 
         [Header("Crouch")] 
         public float CrouchSpeedMultiplier = 0.5f;
+        public bool Crouching => _crouching;
 
         [Header("Dash")]
         public float DashStrength = 3f;
@@ -57,16 +58,15 @@ namespace Kuantech.Core
         public EventHandler OnJumpLandEvent;
         public EventHandler<Vector3> DashStartEvent;
         public EventHandler DashEndEvent;
+        public EventHandler CrouchStarted;
+        public EventHandler CrouchEnded;
 
         [SerializeReference] public JumpHandler JumpHandler;
-
-        private AnimationModule _animationModule;
         private AimHandler _aimHandler;
 
         public override void OnModulesInitialized()
         {
             base.OnModulesInitialized();
-            _animationModule = Actor.GetModule<AnimationModule>();
             _aimHandler = Actor.GetModule<AimHandler>();
         }
         
@@ -158,12 +158,7 @@ namespace Kuantech.Core
                     _lastLandTime = Time.time;
                 _isGrounded = grounded;
             }
-  
-            if (_animationModule != null)
-            {
-                _animationModule.IsGroundedFlag = _isGrounded;
-                _animationModule.AirTime = GetNormalizedAirTime();
-            }
+
             // Server/owner detect landing and propagate via SyncVar
             if (Jumping && Time.time - _jumpTime > 0.5f && _isGrounded && (IsOwner || IsServerInitialized))
                 Land();
@@ -353,7 +348,7 @@ namespace Kuantech.Core
         {
             if (CrouchHandler == null) return;
             CrouchHandler.OnCrouchStarted();
-            if (_animationModule != null) _animationModule.ToggleCrouching(true);
+            CrouchStarted?.Invoke(this, EventArgs.Empty);
             _crouching = true;
         }
 
@@ -361,7 +356,7 @@ namespace Kuantech.Core
         {
             if (CrouchHandler == null) return;
             CrouchHandler.OnCrouchEnd();
-            if (_animationModule != null) _animationModule.ToggleCrouching(false);
+            CrouchEnded?.Invoke(this, EventArgs.Empty);
             _crouching = false;
         }
 
@@ -481,8 +476,6 @@ namespace Kuantech.Core
             if (IsServerInitialized) _syncedJumping.Value = false;
             JumpLock.Reset();
             _lastGroundedTime = Time.time;
-            
-            if(_animationModule != null) _animationModule.ToggleCrouching(false);
             _crouching = false;
             if (CrouchHandler != null)
             {

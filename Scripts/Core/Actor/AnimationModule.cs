@@ -21,7 +21,6 @@ namespace Kuantech.Core
 
         [Header("Animation Parameters")]
         [SerializeField] private AnimationData DamageReceivedAnimationData;
-        [SerializeField] private AnimationData DodgeAnimationData;
 
         public float LerpFactor = 10f;
 
@@ -36,7 +35,7 @@ namespace Kuantech.Core
         private Vector2 _movementParameters = Vector2.zero;
         private Vector2 _movementParametersScale = Vector2.one;
 
-        [NonSerialized] public bool IsGroundedFlag;
+        [NonSerialized] public bool IsGroundedFlag = true;
         [NonSerialized] public float AirTime;
 
         // Animation parameter hashes — animator must use these exact parameter names
@@ -79,6 +78,9 @@ namespace Kuantech.Core
                 _movementModule.OnJumpEvent     += OnJump;
                 _movementModule.OnJumpLandEvent += OnLand;
                 _movementModule.DashStartEvent  += OnDash;
+                _movementModule.DashEndEvent    += OnDashEnd;
+                _movementModule.CrouchStarted += OnCrouchStarted;
+                _movementModule.CrouchEnded     += OnCrouchEnded;
             }
 
             ActorVisualHandler visualHandler = Actor.GetModule<ActorVisualHandler>();
@@ -93,8 +95,16 @@ namespace Kuantech.Core
         {
             if (GameManager.Instance.GameIsPaused || Animator == null || Actor == null) return;
 
+            if(_movementModule != null)
+            {
+                IsGroundedFlag = _movementModule.IsGrounded();
+                AirTime = _movementModule.GetAirTime();
+                Animator.SetBool(Crouching, _movementModule.Crouching); //todo: temp fix. Implement transitions
+            }
             if (Actor.MotionVectorsHandler != null)
+            {
                 UpdateMovementParameters();
+            }
 
             _movementParameters = Vector2.Lerp(
                 _movementParameters,
@@ -223,13 +233,22 @@ namespace Kuantech.Core
             Animator.SetTrigger(Dash);
         }
 
-        private void OnDodge(object sender, EventArgs args)
+        private void OnDashEnd(object sender, EventArgs args)
         {
-            if (Animator == null || DodgeAnimationData == null) return;
-            float duration = args is DodgeEventArgs dodge ? dodge.Duration : -1;
-            PlayAnimationData(DodgeAnimationData, duration);
+            if (Animator == null) return;
         }
 
+        private void OnCrouchStarted(object sender, EventArgs args)
+        {
+            if (Animator == null) return;
+            Animator.SetBool(Crouching, true);
+        }
+
+        private void OnCrouchEnded(object sender, EventArgs args)
+        {
+            if (Animator == null) return;
+            Animator.SetBool(Crouching, false);
+        }
         // ─── Combat ───────────────────────────────────────────────────────────────
 
         public void LightAttackTrigger(int handIndex = 0, int attackIndex = 0)
