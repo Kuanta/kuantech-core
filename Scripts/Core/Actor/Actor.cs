@@ -222,9 +222,15 @@ namespace Kuantech.Core
         {
             yield return new WaitForSeconds(delay);
 #if NETWORKING_FISHNET
+            if (IsClientInitialized && !IsServerInitialized)
+            {
+                // Pure client: FishNet will call OnStopClient when server despawns — do nothing here
+                _despawnCoroutine = null;
+                yield break;
+            }
             if (IsServerInitialized && IsSpawned)
             {
-                // FishNet despawn notifies all clients; cleanup happens in OnStopServer/OnStopClient
+                // Server: FishNet notifies all clients; cleanup happens in OnStopServer/OnStopClient
                 NetworkObject.Despawn();
                 _despawnCoroutine = null;
                 yield break;
@@ -242,18 +248,26 @@ namespace Kuantech.Core
             PoolManager.PoolObject(gameObject);
         }
 
+        // Called from FishNet callbacks — cleanup only, no pooling (FishNet owns the lifecycle)
+        private void ExecuteNetworkDespawn()
+        {
+            Cleanup();
+            ExecuteChangeActorState(ActorState.Despawned);
+            if (VisualHandler != null) VisualHandler.ClearCurrentVisual();
+        }
+
 #if NETWORKING_FISHNET
         public override void OnStopServer()
         {
             base.OnStopServer();
-            ExecuteLocalDespawn();
+            ExecuteNetworkDespawn();
         }
 
         public override void OnStopClient()
         {
             base.OnStopClient();
             if (_isLocalPlayer) OnStopLocalPlayer();
-            if (!IsServerInitialized) ExecuteLocalDespawn();
+            if (!IsServerInitialized) ExecuteNetworkDespawn();
         }
 #endif
         #endregion
@@ -440,17 +454,13 @@ namespace Kuantech.Core
         {
             foreach(var pair in moduleStates)
             {
-                if (string.IsNullOrEmpty(pair.Key))
-                {
-                    continue;
-                }
+                if (string.IsNullOrEmpty(pair.Key)) continue;
                 if (!ModulesById.ContainsKey(pair.Key))
                 {
-                    Debug.LogError("Id is missing:" + pair.Key);
+                    Debug.LogError($"[Actor] LoadModuleState: no module found for key '{pair.Key}'");
                     continue;
                 }
-                ActorModule module = ModulesById[pair.Key];
-                module.LoadState(pair.Value);
+                ModulesById[pair.Key].LoadState(pair.Value);
             }
         }
         /// <summary>
@@ -463,10 +473,9 @@ namespace Kuantech.Core
             actorSerializableData.ModuleStates = new Dictionary<string, ActorModuleSerializableData>();
             foreach(var pair in ModulesById)
             {
-                if(pair.Value.ModuleId.IsNullOrEmpty()) continue;
                 ActorModuleSerializableData serializableData = pair.Value.CreateModuleState();
                 if(serializableData == null) continue;
-                actorSerializableData.ModuleStates[pair.Value.ModuleId] = serializableData;
+                actorSerializableData.ModuleStates[pair.Key] = serializableData;
             }
             return actorSerializableData;
         }
