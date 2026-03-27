@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Kuantech.AI.Utils
 {
-    public class WorldZone : MonoBehaviour {
+    public class AIZone : MonoBehaviour {
         public List<Vector3> Points = new List<Vector3>();
 
         public WorldPoint SampleWorldPoint()

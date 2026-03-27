@@ -26,10 +26,10 @@ namespace Kuantech.ArcadeIdle
         [SerializeField] private ResourceInventory PackagesInventory;
 
         [Header("Exits")]
-        public List<WorldZone> Exits = new List<WorldZone>();
+        public List<AIZone> Exits = new List<AIZone>();
 
         [Header("Workers")]
-        public WorldZone WorkerSpawnZone;
+        public AIZone WorkerSpawnZone;
 
         private HashSet<ArcadeIdleNpc> _activeWorkers = new HashSet<ArcadeIdleNpc>();
         private Dictionary<ResourceData, HashSet<ResourceDispenser>> _resourceToDispensers;
@@ -156,7 +156,7 @@ namespace Kuantech.ArcadeIdle
             }
             return false;
         }
-        public WorldZone GetRandomExit()
+        public AIZone GetRandomExit()
         {
             if (Exits == null || Exits.Count == 0) return null;
             return Exits.GetRandomElement();

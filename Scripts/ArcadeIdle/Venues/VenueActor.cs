@@ -13,7 +13,7 @@ namespace Kuantech.ArcadeIdle
         public int VenueTag;
 
         [Header("Navmesh Zones")]
-        public List<WorldZone> NavmeshTargetZones;
+        public List<AIZone> NavmeshTargetZones;
 
         [Tooltip("Venue actors that are unlocked at start should tick this")]
         //public bool UnlockedByDefault;

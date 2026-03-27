@@ -42,10 +42,10 @@ namespace Kuantech.Networking
         {
 #if NETWORKING_FISHNET
             var ctx = GetContext<KtNetworkManager>();
-            if (ctx == null) return true; //Single player
+            if (ctx == null) return false;
             return ctx.NetworkManager.IsServerStarted;
 #else
-            return true;
+            return true; //Single player
 #endif
         }
         #endregion

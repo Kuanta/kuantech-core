@@ -11,7 +11,7 @@ namespace Kuantech.ArcadeIdle
         public bool Disabled = false;
         [KTTag("CharacterTag")]
         public List<int> AcceptedCharacterTags;
-        public WorldZone InteractionZone;
+        public AIZone InteractionZone;
         public ActorQueue ActorQueue;
         public float InteractionDistanceThreshold = 0.2f; //If character is far away, don't interact
 
