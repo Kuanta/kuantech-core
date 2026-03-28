@@ -314,7 +314,6 @@ namespace Kuantech.Core.Combat
         {
             if (IsDedicatedServer) return;
             ResourceBar resourceBar = GetResourceBar(resourceType);
-            Debug.Log($"Updating resource bar for {Actor.name}");
             if (resourceBar == null) return;
             float currentValue = _statModule.GetResourceValue(resourceType);
             resourceBar.SetHealth(currentValue, GetMaxResourceValue(resourceType));
