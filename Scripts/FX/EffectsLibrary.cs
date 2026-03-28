@@ -7,11 +7,20 @@ using UnityEngine;
 namespace Kuantech.Core.FX
 {
     
+    [Serializable]
+    public struct TaggedEffect
+    {
+        [KTTag("EffectTags")] public int Tag;
+        public Effect Effect;
+    }
+
     public class EffectsLibrary : SubManager
     {
         public AudioLibrary AudioLibrary;
-        [Tooltip("Effects that will be created dynamicall")]
+        [Tooltip("Effects that will be created dynamically")]
         public List<Effect> EffectsPrefabs;
+        [Tooltip("Effects accessible by integer tag (used by EffectPlayer.EffectTag)")]
+        public List<TaggedEffect> TaggedEffects;
         public Dictionary<int, Effect> _effectsByTag;
         public Dictionary<string, Effect> _effectsById;
 
@@ -26,6 +35,7 @@ namespace Kuantech.Core.FX
 
         public override async UniTask Initialize(GameManager gameManager)
         {
+            await base.Initialize(gameManager);
             EffectsPool = new PrefabPool(transform, 1000);
 
             _effectsById = new Dictionary<string, Effect>();
@@ -33,6 +43,11 @@ namespace Kuantech.Core.FX
             {
                _effectsById[entry.EffectId] = entry;
             }
+
+            _effectsByTag = new Dictionary<int, Effect>();
+            if (TaggedEffects != null)
+                foreach (var entry in TaggedEffects)
+                    if (entry.Effect != null) _effectsByTag[entry.Tag] = entry.Effect;
 
             //Existing effects
             if(ExistingEffectsParent == null)

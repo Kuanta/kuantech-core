@@ -92,7 +92,6 @@ namespace Kuantech.Core.FX
         [Button("Play")]
         public void Play()
         {
-            EffectPlaySettings.GetDefaultSettings();
             Play(EffectPlaySettings.GetDefaultSettings());
         }
 
@@ -234,58 +233,6 @@ namespace Kuantech.Core.FX
             EffectsLibrary.SetLastPlayedTime(EffectId);
         }
 
-        #region Old Play Methods
-        public void Play(Vector3 position, Quaternion rotation, float effectCooldown, bool local = false)
-        {
-            if (local)
-            {
-                transform.localPosition = position;
-                transform.localRotation = rotation;
-            }
-            else
-            {
-                transform.position = position;
-                transform.rotation = rotation;
-            }
-            //Play(effectCooldown);
-        }
-
-        public void Play(Transform parent, float effectCooldown)
-        {
-            Play(parent, Vector3.zero, Quaternion.identity, effectCooldown);
-        }
-
-        public void Play(Transform parent, Vector3 position, Quaternion rotation, float effectCooldown)
-        {
-            transform.SetParent(parent);
-            Play(position, rotation,effectCooldown, local:true);
-        }
-
-        public void PlayTimed(float effectCooldown)
-        {
-            //Play(effectCooldown);
-            StartCoroutine(PoolRoutine(Duration));
-        }
-        
-        public void PlayTimed(float duration, Vector3 position, Quaternion rotation, float effectCooldown, bool local = false)
-        {
-            Play(position, rotation, effectCooldown, local);
-            StartCoroutine(PoolRoutine(duration));
-        }
-                
-        public void PlayTimed(float duration, Transform parent, float effectCooldown)
-        {
-            Play(parent, effectCooldown);
-            StartCoroutine(PoolRoutine(duration));
-        }
-        
-        public void PlayTimed(float duration, Transform parent, Vector3 position, Quaternion rotation, float effectCooldown)
-        {
-            Play(parent, position, rotation, effectCooldown);
-            StartCoroutine(PoolRoutine(duration));
-        }
-        #endregion
-        
         public void Stop()
         {
             IsFxPlaying = false;

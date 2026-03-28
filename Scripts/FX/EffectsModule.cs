@@ -387,7 +387,6 @@ namespace Kuantech.Core.FX
         {
             if (!ActiveEffects.IsNullOrEmpty() && ActiveEffects.Contains(effect) && effect.OwnerEffectModule == this)
             {
-                effect.Stop();
                 ActiveEffects.Remove(effect);
                 effect.OwnerEffectModule = null;
             }
