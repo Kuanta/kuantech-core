@@ -6,6 +6,16 @@ namespace Kuantech.Rpg
 {
 
     [Serializable]
+    public struct SerializableResourceDefinition
+    {
+        public string ResourceAssetId;
+        [Tooltip("Attribute that dictates the max value")] public string MaxValueAttributeId;
+        [Tooltip("Attribute that dictates regeneration value")] public string RegenValueAttributeId;
+        public float DefaultMaxValue;
+        public float RegenValue;
+    }
+
+    [Serializable]
     public struct ResourceDefinition
     {
         public ResourceAsset ResourceAsset;

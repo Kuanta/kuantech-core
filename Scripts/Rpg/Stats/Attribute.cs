@@ -4,6 +4,18 @@ using UnityEngine;
 namespace Kuantech.Rpg
 {
     /// <summary>
+    /// Defines an attribute definition but with string id instead of attribute asset
+    /// </summary>
+    [Serializable]
+    public struct SerializableAttributeDefinition
+    {
+        public string AttributeId;
+        public float BaseValue;
+        public float ValuePerRak;
+        public float ValuePerLevel;    
+    }
+
+    /// <summary>
     /// Defines default values for an attribute
     /// </summary>
     [Serializable]

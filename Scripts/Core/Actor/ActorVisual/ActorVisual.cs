@@ -25,6 +25,9 @@ namespace Kuantech.Core
     
     public class ActorVisual : MonoBehaviour
     {
+        [Header("Info")]
+        public string ActorVisualId;
+        
         [Header("Animations")] 
         public Animator Animator;
 

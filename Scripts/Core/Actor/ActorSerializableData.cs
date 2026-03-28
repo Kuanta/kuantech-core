@@ -12,6 +12,7 @@ namespace Kuantech.Core
     public class ActorSerializableData : SaveDataState
     {
         public string ActorId;
+        public string ActorVisualId;
         public Dictionary<string, ActorModuleSerializableData> ModuleStates;
     }
 

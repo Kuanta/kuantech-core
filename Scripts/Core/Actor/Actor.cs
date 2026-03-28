@@ -35,8 +35,9 @@ namespace Kuantech.Core
             public Actor DeadActor;
         }
  
-        [Header("Identifier")] 
+        [Header("Identifier")]
         public string Id;
+        public string ActorVisualId;
         public int ActorRank = 0;
         
         [Header("Positioning Variables")]
@@ -416,6 +417,7 @@ namespace Kuantech.Core
         {
             ActorSerializableData actorSerializableData = InstantiateActorState();
             actorSerializableData.ActorId = Id;
+            actorSerializableData.ActorVisualId = ActorVisualId;
             return actorSerializableData;
         }
 
@@ -446,6 +448,8 @@ namespace Kuantech.Core
                 SetDefaultStateValues();
                 return;
             }
+            if (!string.IsNullOrEmpty(actorSerializableData.ActorVisualId))
+                ApplyVisual(actorSerializableData.ActorVisualId);
             LoadModuleState(actorSerializableData.ModuleStates);
             OnStateLoaded?.Invoke(this);
         }
@@ -479,6 +483,42 @@ namespace Kuantech.Core
             }
             return actorSerializableData;
         }
+
+        /// <summary>
+        /// Applies identity and faction from spawn data immediately.
+        /// If the actor is already initialized, also loads module states from ModuleDatas.
+        /// Safe to call before Initialize (module datas will be skipped and must be re-applied after).
+        /// </summary>
+        public void ApplySpawnData(ActorSpawnData data)
+        {
+            Initialize();
+            Id = data.ActorId;
+            ActorVisualId = data.ActorVisualId;
+            if (FactionHandler != null)
+                FactionHandler.BelongingFaction = data.FactionId;
+
+            if (!Initialized || data.ModuleDatas == null || data.ModuleDatas.Count == 0) return;
+
+            var dict = new Dictionary<string, ActorModuleSerializableData>();
+            foreach (var md in data.ModuleDatas)
+                if (!string.IsNullOrEmpty(md.ModuleId)) dict[md.ModuleId] = md;
+            if (dict.Count > 0) LoadModuleState(dict);
+        }
+
+        private void ApplyVisual(string visualId)
+        {
+            if (string.IsNullOrEmpty(visualId)) return;
+            ActorVisualId = visualId;
+            ActorVisual prefab = ActorDataManager.GetActorVisual(visualId);
+            if (prefab == null)
+            {
+                Debug.LogWarning($"[Actor] ApplyVisual: no visual found for id '{visualId}'");
+                return;
+            }
+            ActorVisual instance = Instantiate(prefab);
+            VisualHandler?.SetActorVisual(instance);
+        }
+
         #endregion
         
         #region IHittable
@@ -654,6 +694,15 @@ namespace Kuantech.Core
             LoadActorState(state);
             foreach (var module in ActorModulesList)
                 module.OnNetworkSynced();
+        }
+
+        /// <summary>
+        /// Server calls this after spawn to set the visual on all peers (including host).
+        /// </summary>
+        [ObserversRpc(RunLocally = true)]
+        public void SetVisualRpc(string visualId)
+        {
+            ApplyVisual(visualId);
         }
 
         public override void OnStartClient()

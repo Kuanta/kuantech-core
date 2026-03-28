@@ -4,6 +4,7 @@ using System.Linq;
 using FishNet.Connection;
 using FishNet.Object;
 using Kuantech.Core;
+using Kuantech.Rpg.Managers;
 using Kuantech.Utils;
 using UnityEngine;
 using UnityEngine.Events;
@@ -22,6 +23,18 @@ namespace Kuantech.Rpg
         public int Level;
         public Dictionary<string, int> AttributeRanks;
         public Dictionary<string, float> ResourceValues;
+    }
+
+    /// <summary>
+    /// Inspector-friendly spawn-time stat setup. Uses string IDs instead of asset references
+    /// so it can be filled directly in ActorDataManager without ScriptableObject references.
+    /// Add this to ActorSpawnData.ModuleDatas with ModuleId matching the StatsModule's ModuleId.
+    /// </summary>
+    [Serializable]
+    public class StatsModuleSpawnData : ActorModuleSerializableData
+    {
+        public int Level;
+        public List<SerializableAttributeDefinition> Attributes;
     }
     
     public class StatsModule : ActorModule
@@ -86,8 +99,33 @@ namespace Kuantech.Rpg
         public override void LoadState(ActorModuleSerializableData serializableData)
         {
             base.LoadState(serializableData);
-            StatsSerializableData statsSerializableData = serializableData as StatsSerializableData;
-            SetStatStates(statsSerializableData);
+            if (serializableData is StatsModuleSpawnData spawnData)
+                ApplyFromSpawnData(spawnData);
+            else if (serializableData is StatsSerializableData statsData)
+                SetStatStates(statsData);
+        }
+
+        private void ApplyFromSpawnData(StatsModuleSpawnData spawnData)
+        {
+            ExecuteSetLevel(spawnData.Level);
+
+            if (spawnData.Attributes == null) return;
+            foreach (var def in spawnData.Attributes)
+            {
+                AttributeAsset asset = RpgManager.GetAttributeAssetById(def.AttributeId);
+                if (asset == null)
+                {
+                    Debug.LogWarning($"[StatsModule] ApplyFromSpawnData: attribute '{def.AttributeId}' not found in RpgManager.");
+                    continue;
+                }
+                ExecuteSetAttribute(new AttributeDefinition
+                {
+                    AttributeAsset  = asset,
+                    BaseValue       = def.BaseValue,
+                    ValuePerRank    = def.ValuePerRak,
+                    ValuePerLevel   = def.ValuePerLevel,
+                }, insertAttribute: true);
+            }
         }
 
         public override void ModuleUpdate()
