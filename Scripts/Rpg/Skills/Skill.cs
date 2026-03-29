@@ -51,6 +51,12 @@ namespace Kuantech.Rpg.Skills
             Reset();
         }
 
+        public string GetId()
+        {
+            if(SkillDataAsset == null) return "";
+            return SkillDataAsset.SkillId;
+        }
+
         public void SetSkillRank(int rank)
         {
             SkillRank = rank;
@@ -61,6 +67,15 @@ namespace Kuantech.Rpg.Skills
         public bool IsCasting()
         {
             return _isCasting;
+        }
+
+        /// <summary>
+        /// Called on observer clients to mark the skill as actively casting
+        /// so ModuleUpdate keeps it in _activeSkills and UpdateBehaviour runs.
+        /// </summary>
+        public void BeginObserverCast()
+        {
+            _isCasting = true;
         }
         
         /// <summary>
@@ -110,7 +125,6 @@ namespace Kuantech.Rpg.Skills
                     float dist =
                         Vector3.SqrMagnitude(castData.TargetPosition - ParentSpellBook.Actor.GetActorLocation());
                     return dist <= (SkillDataAsset.SkillRange * SkillDataAsset.SkillRange);
-                    break;
             }
 
             return true;
@@ -186,6 +200,7 @@ namespace Kuantech.Rpg.Skills
         {
             CurrentSkillBehaviour = _skillBehaviours[skillEffectIndex];
             CurrentSkillBehaviour.StartBehaviour(CurrentSkillCastData);
+            ParentSpellBook.OnSkillBehaviourStarted(CurrentSkillBehaviour);
         }
 
         public void OnSkillBehaviourCompleted()

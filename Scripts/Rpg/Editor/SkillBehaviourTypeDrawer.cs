@@ -29,13 +29,22 @@ namespace Kuantech.Rpg.Editor
         {
             Init();
 
+            EditorGUI.BeginProperty(position, label, property);
+
+            if (_typeNames == null || _typeNames.Length == 0)
+            {
+                EditorGUI.LabelField(position, label.text, "No SkillBehaviour types found");
+                EditorGUI.EndProperty();
+                return;
+            }
+
             SerializedProperty classNameProp = property.FindPropertyRelative("className");
             string current = classNameProp.stringValue;
             int index = Array.IndexOf(_typeNames, current);
             if (index < 0) index = 0;
 
-            EditorGUI.BeginProperty(position, label, property);
             int selected = EditorGUI.Popup(position, label.text, index, _displayNames);
+            selected = Mathf.Clamp(selected, 0, _typeNames.Length - 1);
             classNameProp.stringValue = _typeNames[selected];
             EditorGUI.EndProperty();
         }

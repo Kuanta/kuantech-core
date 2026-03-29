@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Kuantech.Core
 {
     [Serializable]
-    
+
     public class ActionCastData
     {
         public Actor Caster;

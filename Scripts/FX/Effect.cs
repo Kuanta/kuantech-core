@@ -151,6 +151,40 @@ namespace Kuantech.Core.FX
         }
         
         
+        #region Utility Play Overloads
+
+        public void Play(Transform parent, Vector3 localPosition, Quaternion localRotation, float effectCooldown = -1)
+        {
+            EffectPlaySettings settings = EffectPlaySettings.GetPlayAtObjectSettings(parent, localPosition, localRotation);
+            settings.EffectCooldown = effectCooldown;
+            Play(settings);
+        }
+
+        public void Play(Vector3 position, Quaternion rotation, float effectCooldown = -1)
+        {
+            EffectPlaySettings settings = EffectPlaySettings.GetPlayAtPositionSettings(position, rotation);
+            settings.EffectCooldown = effectCooldown;
+            Play(settings);
+        }
+
+        public void PlayTimed(float duration, Transform parent, Vector3 localPosition, Quaternion localRotation, float effectCooldown = -1)
+        {
+            float prevDuration = Duration;
+            Duration = duration;
+            Play(parent, localPosition, localRotation, effectCooldown);
+            Duration = prevDuration;
+        }
+
+        public void PlayTimed(float duration, Vector3 position, Quaternion rotation, float effectCooldown = -1)
+        {
+            float prevDuration = Duration;
+            Duration = duration;
+            Play(position, rotation, effectCooldown);
+            Duration = prevDuration;
+        }
+
+        #endregion
+
         public void _Play(EffectPlaySettings playSettings)
         {
             StartCoroutine(PlayRoutine(playSettings));

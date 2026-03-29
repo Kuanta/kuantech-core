@@ -40,7 +40,7 @@ namespace Kuantech.Rpg.Inventory
         {
             for (int i = 0; i < items.Count; i++)
             {
-                if (items[i].GetId() == itemId) return items[i];
+                if (items[i] != null && items[i].GetId() == itemId) return items[i];
             }
 
             return null;
@@ -156,6 +156,7 @@ namespace Kuantech.Rpg.Inventory
                 int newAmount = itemToRemove.Amount - amount;
                 if (newAmount > 0)
                 {
+                    itemToRemove.Amount = newAmount;
                     return;
                 }
             }
@@ -172,18 +173,10 @@ namespace Kuantech.Rpg.Inventory
         /// <returns></returns>
         public int GetAvailableSlotId()
         {
-            for (int i = items.Count; i < items.Capacity; i++)
+            for (int i = 0; i < items.Count; i++)
             {
-                items.Add(null);
+                if (items[i] == null) return i;
             }
-            for (int i = 0; i < items.Capacity; i++)
-            {
-                if (items[i] == null)
-                {
-                    return i;
-                }
-            }
-
             return -1; // No available slot
         }
 

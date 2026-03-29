@@ -1,29 +1,93 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using FishNet.Object;
 using Kuantech.Core;
 using Kuantech.Core.Combat;
+using Kuantech.Networking;
 using Kuantech.Core.Utils;
+using Kuantech.Rpg.Managers;
 using Kuantech.Utils;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace Kuantech.Rpg.Skills
 {
+    /// <summary>
+    /// Carries the skill ID list for state sync (late-join) and spawn data.
+    /// Skills are looked up via RpgManager on load — no ScriptableObject references needed.
+    /// Set ModuleId to match the SpellBook component's ModuleId field.
+    /// </summary>
+    [System.Serializable]
+    public class SpellBookSerializableData : ActorModuleSerializableData
+    {
+        public List<string> SkillIds = new();
+    }
+
+    /// <summary>
+    /// RPC-safe version of ActionCastData. Actor.Target replaced with NetworkObject
+    /// because FishNet cannot serialize MonoBehaviour/UnityEngine.Object references.
+    /// </summary>
+    [System.Serializable]
+    public struct SkillCastRpcData
+    {
+        public string SkillId;
+        public Vector3 StartPosition;
+        public Vector3 Direction;
+        public Vector3 TargetPosition;
+        public FishNet.Object.NetworkObject Target; // resolved to Actor on receive
+
+        public static SkillCastRpcData From(string skillId, ActionCastData cast)
+        {
+            return new SkillCastRpcData
+            {
+                SkillId         = skillId,
+                StartPosition   = cast.StartPosition,
+                Direction       = cast.Direction,
+                TargetPosition  = cast.TargetPosition,
+                Target          = cast.Target != null ? cast.Target.GetComponent<FishNet.Object.NetworkObject>() : null,
+            };
+        }
+
+        public ActionCastData ToActionCastData()
+        {
+            return new ActionCastData
+            {
+                StartPosition  = StartPosition,
+                Direction      = Direction,
+                TargetPosition = TargetPosition,
+                Target         = Target != null ? Target.GetComponent<Actor>() : null,
+            };
+        }
+    }
+
     public class SpellBook : ActorModule
     {
-        [Header("Positionings")] 
+        [Header("Positionings")]
         public string DefaultCastSlotName;
-        
+
+        [Header("Default Skills")]
+        [Tooltip("Skills added here are given to the actor at Initialize — useful for player prefabs.")]
+        public List<SkillDataAsset> DefaultSkills;
+
         [Header("Lock")]
         public LockVariable SkillLock = new LockVariable();
-        
+
+        // Fired on the local client when a skill cast ends (for rotation hold, UI, etc.)
+        public UnityAction<Skill> SkillCastEndedEvent;
+
         private Dictionary<string, Skill> _skills = new Dictionary<string, Skill>();
-        private List<Skill> _activeSkills = new(); 
-        
-       
+        private List<Skill> _activeSkills = new();
 
         //Runtime
-        private float _lastSkillCastTime;
         private HealthcareModule _healthcareModule;
+
+        public override void Initialize()
+        {
+            base.Initialize();
+            if (DefaultSkills == null) return;
+            foreach (var asset in DefaultSkills)
+                if (asset != null) AddSkill(asset);
+        }
 
         public override void OnModulesInitialized()
         {
@@ -92,13 +156,17 @@ namespace Kuantech.Rpg.Skills
             if (skill == null) return false;
             return true;
         }
+        #endregion
+
+
+        #region Queries
 
         public bool HasSkill(string skillId)
         {
             Skill skill = GetSkillById(skillId);
             return skill != null;
         }
-        
+
         public Skill GetSkillByDataAsset(SkillDataAsset skillDataAsset)
         {
             return GetSkillById(skillDataAsset.SkillId);
@@ -109,15 +177,64 @@ namespace Kuantech.Rpg.Skills
             if (_skills.IsNullOrEmpty() || !_skills.ContainsKey(skillId)) return null;
             return _skills[skillId];
         }
+        public bool CanCastSkill(SkillDataAsset skillDataAsset, ActionCastData skillCastData)
+        {
+            if (!CanSkillBeCasted(skillDataAsset)) return false;
+            Skill skill = GetSkillByDataAsset(skillDataAsset);
+            return skill.CanBeCast(skillCastData);
+        }
+
+        /// <summary>
+        /// Checks cooldown, skill availability and resource availability
+        /// </summary>
+        /// <param name="skillDataAsset"></param>
+        /// <returns></returns>
+        public bool CanSkillBeCasted(SkillDataAsset skillDataAsset)
+        {
+            if (!HasSkill(skillDataAsset)) return false;
+
+            //Check resource
+            if (_healthcareModule != null && skillDataAsset.RequiredResource != null)
+            {
+                if (_healthcareModule.GetCurrentResource(skillDataAsset.RequiredResource) < skillDataAsset.RequiredResourceAmount) return false;
+            }
+
+            return true;
+        }
+
+        #endregion
+
+        #region Commands
+        public bool CastSkill(string skillId, ActionCastData skillCastData)
+        {
+            Skill skillToCast = GetSkillById(skillId);
+            return CastSkill(skillToCast, skillCastData);
+        }
 
         public bool CastSkill(Skill skillToCast, ActionCastData skillCastData)
         {
             if (skillToCast == null || skillToCast.SkillDataAsset == null) return false;
             return CastSkill(skillToCast.SkillDataAsset, skillCastData);
         }
-        
+
         public bool CastSkill(SkillDataAsset skillDataAsset, ActionCastData skillCastData)
         {
+            if (!IsServerInitialized && IsSpawned)
+            {
+                // Client: send to server, server drives the full lifecycle via RPCs
+                SkillCastRpcData rpcData = SkillCastRpcData.From(skillDataAsset.SkillId, skillCastData);
+                ServerCastSkill_Rpc(rpcData);
+                return true;
+            }
+            return ExecuteCastSkill(skillDataAsset, skillCastData);
+        }
+        #endregion
+
+        #region Execution
+
+        public bool ExecuteCastSkill(SkillDataAsset skillDataAsset, ActionCastData skillCastData)
+        {
+            if(!IsServerInitialized) return false; //For now execute only at server
             if (SkillLock.IsLocked()) return false;
             if (!CanCastSkill(skillDataAsset, skillCastData)) return false;
             Skill skillToCast = GetSkillByDataAsset(skillDataAsset);
@@ -126,13 +243,13 @@ namespace Kuantech.Rpg.Skills
             {
                 _activeSkills.Add(skillToCast);
             }
-            
+
             //Spend resource
             if (_healthcareModule != null && skillDataAsset.RequiredResource != null)
             {
                 _healthcareModule.RemoveResource(skillDataAsset.RequiredResource, skillDataAsset.RequiredResourceAmount);
             }
-            
+
             //Turn towards skill direction?
             if (skillCastData.Target != null)
             {
@@ -144,56 +261,115 @@ namespace Kuantech.Rpg.Skills
             }
             return skillToCast.Cast(skillCastData);
         }
-
-        public bool CanCastSkill(SkillDataAsset skillDataAsset, ActionCastData skillCastData)
-        {
-            if (!CanSkillBeCasted(skillDataAsset)) return false;
-            Skill skill = GetSkillByDataAsset(skillDataAsset);
-            return skill.CanBeCast(skillCastData);
-        }
-        
-        /// <summary>
-        /// Checks cooldown, skill availability and resource availability
-        /// </summary>
-        /// <param name="skillDataAsset"></param>
-        /// <returns></returns>
-        public bool CanSkillBeCasted(SkillDataAsset skillDataAsset)
-        {
-            if (!HasSkill(skillDataAsset)) return false;
-            
-            //Check resource
-            if (_healthcareModule != null && skillDataAsset.RequiredResource != null)
-            {
-                if(_healthcareModule.GetCurrentResource(skillDataAsset.RequiredResource) < skillDataAsset.RequiredResourceAmount) return false;
-            }
-
-            return true;
-        }
+        #endregion
 
         public override void Cleanup()
         {
             base.Cleanup();
             _skills.Clear();
         }
+
+        protected override ActorModuleSerializableData InstantiateState()
+        {
+            return new SpellBookSerializableData
+            {
+                SkillIds = _skills.Keys.ToList(),
+            };
+        }
+
+        public override void LoadState(ActorModuleSerializableData serializableData)
+        {
+            base.LoadState(serializableData);
+            if (serializableData is not SpellBookSerializableData data) return;
+            foreach (string skillId in data.SkillIds)
+            {
+                SkillDataAsset asset = RpgManager.GetSkillDataAssetById(skillId);
+                if (asset != null) AddSkill(asset);
+                else Debug.LogWarning($"[SpellBook] LoadState: skill '{skillId}' not found in RpgManager.");
+            }
+        }
         
-        #endregion
 
         #region Events
 
         public virtual void OnSkillCastStarted(Skill skill)
         {
             //CurrentlyCastedSkill = skill;
+            if(IsServerInitialized)
+            {
+                ObserversSkillCasted_Rpc(skill.GetId());
+            }
         }
 
         public void OnSkillBehaviourStarted(SkillBehaviour skillBehaviour)
         {
-            
+            if (!IsServerInitialized || !IsSpawned) return;
+            Skill skill = skillBehaviour.ParentSkill;
+            SkillCastRpcData castRpcData = SkillCastRpcData.From(skill.GetId(), skill.CurrentSkillCastData);
+            ObserversOnSkillBehaviourStarted_Rpc(skill.GetId(), skill.CurrentSkilLBehaviourIndex, castRpcData);
         }
 
         public virtual void OnSkillCastEnded(Skill skill)
         {
-            //CurrentlyCastedSkill = null;
+            SkillCastEndedEvent?.Invoke(skill);
+            if(IsServerInitialized)
+            {
+                ObserversOnSkillCastEnded_Rpc(skill.GetId());
+            }
         }
+        #endregion
+
+        #region Networking
+
+        [ServerRpc]
+        private void ServerCastSkill_Rpc(SkillCastRpcData rpcData)
+        {
+            SkillDataAsset asset = RpgManager.GetSkillDataAssetById(rpcData.SkillId);
+            if (asset == null)
+            {
+                Debug.LogWarning($"[SpellBook] ServerCastSkill_Rpc: skill asset not found for id '{rpcData.SkillId}'");
+                return;
+            }
+            ActionCastData castData = rpcData.ToActionCastData();
+            castData.Caster = Actor; // Caster is always this actor on the server
+            ExecuteCastSkill(asset, castData);
+        }
+
+        // Server → all clients (ExcludeOwner: owner already ran local prediction)
+        [ObserversRpc(ExcludeOwner = true)]
+        private void ObserversSkillCasted_Rpc(string skillId)
+        {
+            if (IsServerInitialized) return;
+            Skill skill = GetSkillById(skillId);
+            if (skill == null || _activeSkills.Contains(skill)) return;
+            _activeSkills.Add(skill);
+        }
+
+        // Server → all clients: play animation + fx for this behaviour phase
+        [ObserversRpc]
+        private void ObserversOnSkillBehaviourStarted_Rpc(string skillId, int behaviourIndex, SkillCastRpcData castData)
+        {
+            if (IsServerInitialized) return;
+            Skill skill = GetSkillById(skillId);
+            if (skill == null) return;
+            // Owner already started this behaviour via local prediction — skip to avoid double-start
+            if (IsOwner && skill.IsCasting() && skill.CurrentSkilLBehaviourIndex == behaviourIndex) return;
+            // Set cast data so BehaviourClientImplementation has correct positions/direction
+            skill.CurrentSkillCastData = castData.ToActionCastData();
+            skill.BeginObserverCast();
+            if (!_activeSkills.Contains(skill)) _activeSkills.Add(skill);
+            skill.CurrentSkilLBehaviourIndex = behaviourIndex;
+            skill.StartSkillBehaviour(behaviourIndex);
+        }
+
+        [ObserversRpc]
+        private void ObserversOnSkillCastEnded_Rpc(string skillId)
+        {
+            if (IsServerInitialized) return;
+            Skill skill = GetSkillById(skillId);
+            skill?.EndCast();
+        }
+
         #endregion
     }
 }

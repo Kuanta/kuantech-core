@@ -21,6 +21,7 @@ namespace Kuantech.Rpg
     public class StatsSerializableData : ActorModuleSerializableData
     {
         public int Level;
+        public List<SerializableAttributeDefinition> Attributes; // BaseValue, ValuePerRank, ValuePerLevel
         public Dictionary<string, int> AttributeRanks;
         public Dictionary<string, float> ResourceValues;
     }
@@ -614,9 +615,21 @@ namespace Kuantech.Rpg
                 foreach (var resource in ResourceDefinitions)
                     resourceValues[resource.ResourceAsset.Id] = GetResourceValue(resource.ResourceAsset);
 
+            var attributes = new List<SerializableAttributeDefinition>();
+            if (_statMap != null)
+                foreach (var pair in _statMap)
+                    attributes.Add(new SerializableAttributeDefinition
+                    {
+                        AttributeId   = pair.Key,
+                        BaseValue     = pair.Value.BaseValue,
+                        ValuePerRak   = pair.Value.ValuePerRank,
+                        ValuePerLevel = pair.Value.ValuePerLevel,
+                    });
+
             return new StatsSerializableData()
             {
-                Level = ActorLevel.CurrentLevel,
+                Level          = ActorLevel.CurrentLevel,
+                Attributes     = attributes,
                 AttributeRanks = _statMap?.ToDictionary(p => p.Key, p => p.Value.Rank)
                                  ?? new Dictionary<string, int>(),
                 ResourceValues = resourceValues,
@@ -629,6 +642,27 @@ namespace Kuantech.Rpg
         /// <param name="serializableData"></param>
         public void SetStatStates(StatsSerializableData serializableData)
         {
+            //Set stat states
+            if (serializableData.Attributes != null)
+            {
+                //Clear all stats
+                _statMap = new Dictionary<string, Attribute>();
+                foreach (var def in serializableData.Attributes)
+                {
+                    AttributeAsset attributeAsset = RpgManager.GetAttributeAssetById(def.AttributeId);
+                    if (attributeAsset == null) continue;
+                    AttributeDefinition attDef = new AttributeDefinition
+                    {
+                        AttributeAsset = attributeAsset,
+                        BaseValue = def.BaseValue,
+                        ValuePerRank = def.ValuePerRak,
+                        ValuePerLevel = def.ValuePerLevel,
+                    };
+                    ExecuteSetAttribute(attDef, true);
+                }
+            }
+
+
             if (serializableData.AttributeRanks != null)
                 foreach (var pair in serializableData.AttributeRanks)
                     SetAttributeRank(pair.Key, pair.Value);
@@ -693,14 +727,6 @@ namespace Kuantech.Rpg
         {
             if (IsServerInitialized) return;
             ExecuteSetAttributeValue(attributeId, value);
-        }
-
-        [TargetRpc]
-        private void TargetSyncStats_Rpc(NetworkConnection conn, List<AttributeDefinition> attributeDefinitions)
-        {
-            if (IsServerInitialized) return;
-            foreach (var def in attributeDefinitions)
-                ExecuteSetAttribute(def, false);
         }
 
         // Modifiers are private — only the owner needs them

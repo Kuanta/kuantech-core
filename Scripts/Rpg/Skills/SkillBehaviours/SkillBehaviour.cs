@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Kuantech.Core;
 using Kuantech.Core.FX;
+using Kuantech.Networking;
 using Kuantech.Utils;
 using UnityEngine;
 
@@ -75,6 +76,7 @@ namespace Kuantech.Rpg.Skills
         protected bool _isCompleted;
         private float _castStartTime;
         protected bool _playedEffect;
+        private bool _implemented;
         public HashSet<Effect> PlayedEffects = new HashSet<Effect>();
         
         /// <summary>
@@ -103,7 +105,8 @@ namespace Kuantech.Rpg.Skills
             _castStartTime = Time.time;
             _isCompleted = false;
             _playedEffect = false;
-            
+            _implemented = false;
+
             //Play animation
             PlayBehaviourAnimation();
 
@@ -207,34 +210,59 @@ namespace Kuantech.Rpg.Skills
         public void UpdateBehaviour()
         {
             if (_isCompleted) return;
-            float duration = GetDuration();
+            float duration    = GetDuration();
             float elapsedTime = GetElapsedTime();
-                  
-            //Behaviour
-            if (elapsedTime >= BehaviourData.CastTime)
+            bool  isNetworked = KtNetworkManager.IsNetworked();
+            bool  isServer    = ParentSkill.ParentSpellBook.IsServerInitialized;
+            bool  isClient    = ParentSkill.ParentSpellBook.IsClientInitialized;
+
+            if (elapsedTime >= BehaviourData.CastTime && !_implemented)
             {
+                //Common
                 BehaviourImplementation();
+                
+                if(isServer || !isNetworked)
+                {
+                    BehaviourServerImplementation();
+                }
+                if(isClient  || !isNetworked)
+                {
+                    BehaviourClientImplementation();
+                }
+                _implemented = true;
             }
-            
-            if(!_playedEffect && GetElapsedTime() > BehaviourData.EffectPlayTime)
-            {
-                PlayBehaviourEffects();
-                _playedEffect = true;
-            }
-            
-            //ıf duration is less than 0, it means the behaviour is infinite
-            if (GetElapsedTime() >= duration && duration >= 0)
+
+            if (duration >= 0 && elapsedTime >= duration)
             {
                 CompleteBehaviour();
                 return;
             }
+
+            // FX + client prediction — client only. In single-player always runs.
+            if (isClient || !isNetworked)
+            {
+                if (!_playedEffect && elapsedTime >= BehaviourData.EffectPlayTime)
+                {
+                    PlayBehaviourEffects();
+                    _playedEffect = true;
+                }
+            }
         }
 
+     
         protected virtual void BehaviourImplementation()
+        {
+        }
+
+        protected virtual void BehaviourServerImplementation()
         {
             
         }
-        
+        protected virtual void BehaviourClientImplementation()
+        {
+
+        }
+
         public void CompleteBehaviour()
         {
             _isCompleted = true;
@@ -449,6 +477,38 @@ namespace Kuantech.Rpg.Skills
             StopSkillEffects();
         }
         
+        #region Cast Position Helpers
+
+        /// <summary>
+        /// Returns the caster's CURRENT cast slot position at the moment of execution.
+        /// Use this instead of CurrentSkillCastData.StartPosition in BehaviourImplementation
+        /// to avoid stale positions when there is a CastTime delay (actor may have moved/rotated).
+        /// Direction and TargetPosition remain frozen (aim is locked at input time).
+        /// </summary>
+        protected Vector3 GetLiveStartPosition()
+        {
+            return ParentSkill.ParentSpellBook.GetDefaultCastPosition();
+        }
+
+        /// <summary>
+        /// Recalculates direction from live start position toward the frozen target/aim point.
+        /// Falls back to the frozen direction if no target or target position is set.
+        /// </summary>
+        protected Vector3 GetLiveDirection()
+        {
+            Vector3 liveStart = GetLiveStartPosition();
+            if (CurrentSkillCastData.Target != null)
+            {
+                Vector3 toTarget = CurrentSkillCastData.Target.transform.position - liveStart;
+                if (toTarget.sqrMagnitude > 0.001f) return toTarget.normalized;
+            }
+            Vector3 toPoint = CurrentSkillCastData.TargetPosition - liveStart;
+            if (toPoint.sqrMagnitude > 0.001f) return toPoint.normalized;
+            return CurrentSkillCastData.Direction; // frozen fallback
+        }
+
+        #endregion
+
         #region Queries
 
         public bool IsCompleted()

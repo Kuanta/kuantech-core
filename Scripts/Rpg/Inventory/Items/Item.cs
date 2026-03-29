@@ -48,10 +48,12 @@ namespace Kuantech.Rpg.Inventory
         
         public Item(ItemData data)
         {
-            
             Amount = 1;
             Data = data;
-            StateData = new ItemStateData();
+            StateData = new ItemStateData
+            {
+                StatModifiers = new Dictionary<AttributeAsset, StatModifier>()
+            };
         }
 
         #region Equip

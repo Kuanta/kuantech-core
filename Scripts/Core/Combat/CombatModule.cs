@@ -36,9 +36,11 @@ namespace Kuantech.Core
     [Serializable]
     public class AttackPattern
     {
-        [Header("Attack Point")] 
+        [Header("Attack Point")]
         public string AttackPointSlotName = "AttackPoint";
-        
+        [Tooltip("If true, attack implementation waits until the actor faces the attack direction before dealing damage.")]
+        public bool WaitRotationalAlign = false;
+
         [Header("Attack Shape")]
         public AttackTypes AttackType;
         public bool IsMelee;
@@ -147,6 +149,8 @@ namespace Kuantech.Core
         private float _attackStartTime;
         private bool _isAttacking = false;
         private bool _attacked = false;
+        private bool _requireAlignment = false;
+        private bool _hasAligned = false;
         private float _lastAttackImplementationTime;
         private float _lastAttackCompleteTime;
         private bool _effectPlayed;
@@ -171,8 +175,9 @@ namespace Kuantech.Core
             if (!_isAttacking || AttackLock.IsLocked()) return;
             float elapsedTime = Time.time - _attackStartTime;
             AttackPattern currentPattern = GetCurrentAttackPattern();
+            bool isNetworked = Networking.KtNetworkManager.IsNetworked();
 
-            if(IsClientInitialized)
+            if (IsClientInitialized || !isNetworked)
             {
                 if (elapsedTime >= _effectPlayTime && !_effectPlayed)
                 {
@@ -180,10 +185,13 @@ namespace Kuantech.Core
                 }
             }
 
-            //Server codes
-            if (IsServerInitialized)
+            if (IsServerInitialized || !isNetworked)
             {
+                if (_requireAlignment && !_hasAligned)
+                    _hasAligned = HasAlignedWithAttackDirection();
+
                 bool shouldImplement = elapsedTime >= _attackImplementationTime &&
+                    (_hasAligned) &&
                     (!_attacked || (currentPattern.Continious && (Time.time - _lastAttackImplementationTime) >= _attackImplementationTime));
                 if (shouldImplement && (elapsedTime <= _maxContinuousAttackTime || !currentPattern.Continious))
                 {
@@ -622,6 +630,15 @@ namespace Kuantech.Core
             _currentCastData = castData;
             _currentCastData.StartPosition = GetAttackPosition();
 
+            // Turn towards attack direction and optionally wait for alignment
+            AttackPattern currPatternForAlign = GetCurrentAttackPattern();
+            _requireAlignment = currPatternForAlign.WaitRotationalAlign;
+            _hasAligned = !_requireAlignment;
+            if (castData.Target != null)
+                Actor.MotionVectorsHandler.SetTargetObject(castData.Target.transform);
+            else if (castData.Direction.sqrMagnitude > 0.01f)
+                Actor.MotionVectorsHandler.SetTargetVector(castData.Direction);
+
             float timeSinceLastAttack = Time.time - _lastAttackCompleteTime;
             _currentComboIndex = timeSinceLastAttack < ComboRefreshTime ? _currentComboIndex + 1 : 0;
 
@@ -637,7 +654,8 @@ namespace Kuantech.Core
             _effectPlayTime = GetAttackFxPlayTime();
 
 
-            if (IsClientInitialized)
+            bool isNetworked = Networking.KtNetworkManager.IsNetworked();
+            if (IsClientInitialized || !isNetworked)
             {
                 float timeMultiplier = Mathf.Max(0.01f, GetAttackSpeedMultiplier());
                 float animationTime = currPattern.AnimationTime;
@@ -877,6 +895,13 @@ namespace Kuantech.Core
         /// Returns the center position of attack. Projectiles will be cast from this, overlap attacks will center around this
         /// </summary>
         /// <returns></returns>
+        private bool HasAlignedWithAttackDirection()
+        {
+            Vector3 targetVector = Actor.MotionVectorsHandler.GetTargetVector();
+            if (targetVector.sqrMagnitude < 0.001f) return true;
+            return Vector3.Dot(targetVector.normalized, Actor.transform.forward) >= 0.9f;
+        }
+
         public Vector3 GetAttackPosition()
         {
             string slotName = GetCurrentAttackPattern().AttackPointSlotName;

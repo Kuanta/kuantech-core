@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using FishNet.Object;
 using Kuantech.Core.FX;
 using Kuantech.Rpg;
+using Kuantech.Rpg.Managers;
 using Kuantech.Utils;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -144,7 +145,7 @@ namespace Kuantech.Core.Combat
             if (!Actor.IsAlive() || !IsServerInitialized) return;
             ResourceAsset resourceAsset = GetAffectedResource(damageInfo);
             ExecuteDamageResource(damageInfo);
-            if (IsSpawned) ObserverSyncResource_Rpc(resourceAsset, GetCurrentResource(resourceAsset));
+            if (IsSpawned) ObserverSyncResource_Rpc(resourceAsset.Id, GetCurrentResource(resourceAsset));
         }
 
         private void ExecuteDamageResource(DamageInfo damageInfo)
@@ -173,7 +174,7 @@ namespace Kuantech.Core.Combat
         {
             if (!IsServerInitialized) return;
             ExecuteRefreshResource(resource);
-            if (IsSpawned) ObserversRefreshResource_Rpc(resource);
+            if (IsSpawned) ObserversRefreshResource_Rpc(resource.Id);
         }
 
         private void ExecuteRefreshResource(ResourceAsset resource)
@@ -192,7 +193,7 @@ namespace Kuantech.Core.Combat
         {
             if (!IsServerInitialized || !Actor.IsAlive()) return;
             ExecuteRemoveResource(resourceAsset, amount);
-            if (IsSpawned) ObserverSyncResource_Rpc(resourceAsset, GetCurrentResource(resourceAsset));
+            if (IsSpawned) ObserverSyncResource_Rpc(resourceAsset.Id, GetCurrentResource(resourceAsset));
         }
 
         private void ExecuteRemoveResource(ResourceAsset resourceAsset, float amount)
@@ -212,7 +213,7 @@ namespace Kuantech.Core.Combat
         {
             if (!IsServerInitialized || !Actor.IsAlive()) return;
             ExecuteReceiveResource(resourceAsset, amount);
-            if (IsSpawned) ObserverSyncResource_Rpc(resourceAsset, GetCurrentResource(resourceAsset));
+            if (IsSpawned) ObserverSyncResource_Rpc(resourceAsset.Id, GetCurrentResource(resourceAsset));
         }
 
         private void ExecuteReceiveResource(ResourceAsset resourceAsset, float amount)
@@ -239,7 +240,7 @@ namespace Kuantech.Core.Combat
         {
             if (!IsServerInitialized || !Actor.IsAlive()) return;
             ExecuteReceiveHeal(healAmount);
-            if (IsSpawned) ObserverSyncResource_Rpc(HealthResourceAsset, GetCurrentHealth());
+            if (IsSpawned) ObserverSyncResource_Rpc(HealthResourceAsset.Id, GetCurrentHealth());
         }
 
         private void ExecuteReceiveHeal(float healAmount)
@@ -287,7 +288,7 @@ namespace Kuantech.Core.Combat
         {
             if (!IsServerInitialized) return;
             ExecuteSetResourceValue(resourceAsset, value);
-            if (IsSpawned) ObserverSyncResource_Rpc(resourceAsset, value);
+            if (IsSpawned) ObserverSyncResource_Rpc(resourceAsset.Id, value);
         }
 
         private void ExecuteSetResourceValue(ResourceAsset resourceAsset, float value)
@@ -427,9 +428,11 @@ namespace Kuantech.Core.Combat
 
         // Refresh to max — deterministic, safe to re-run on clients
         [ObserversRpc]
-        private void ObserversRefreshResource_Rpc(ResourceAsset resourceAsset)
+        private void ObserversRefreshResource_Rpc(string resourceId)
         {
             if (IsServerInitialized) return;
+            ResourceAsset resourceAsset = RpgManager.GetResourceAssetById(resourceId);
+            if (resourceAsset == null) return;
             ExecuteRefreshResource(resourceAsset);
         }
 
@@ -442,9 +445,11 @@ namespace Kuantech.Core.Combat
 
         // Authoritative value sync — server sends final value, clients just apply it
         [ObserversRpc]
-        private void ObserverSyncResource_Rpc(ResourceAsset resourceAsset, float resourceValue)
+        private void ObserverSyncResource_Rpc(string resourceId, float resourceValue)
         {
             if (IsServerInitialized) return;
+            ResourceAsset resourceAsset = RpgManager.GetResourceAssetById(resourceId);
+            if(resourceAsset == null) return;
             ExecuteSetResourceValue(resourceAsset, resourceValue);
         }
 

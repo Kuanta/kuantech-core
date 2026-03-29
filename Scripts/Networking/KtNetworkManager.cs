@@ -48,6 +48,37 @@ namespace Kuantech.Networking
             return true; //Single player
 #endif
         }
+
+        /// <summary>
+        /// True when any networking is active (server or client started).
+        /// False in single-player / offline builds.
+        /// </summary>
+        public static bool IsNetworked()
+        {
+#if NETWORKING_FISHNET
+            var ctx = GetContext<KtNetworkManager>();
+            if (ctx == null) return false;
+            return ctx.NetworkManager.IsServerStarted || ctx.NetworkManager.IsClientStarted;
+#else
+            return false;
+#endif
+        }
+
+        /// <summary>
+        /// True when a client connection is active. Also true on listen-server (host).
+        /// False on dedicated server and in single-player.
+        /// </summary>
+        public static bool IsClient()
+        {
+#if NETWORKING_FISHNET
+            var ctx = GetContext<KtNetworkManager>();
+            if (ctx == null) return false;
+            return ctx.NetworkManager.IsClientStarted;
+#else
+            return true; // single-player: local player is always "the client"
+#endif
+        }
+
         #endregion
     }
 }
