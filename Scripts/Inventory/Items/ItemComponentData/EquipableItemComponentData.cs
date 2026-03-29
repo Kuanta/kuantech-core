@@ -14,14 +14,21 @@ namespace Kuantech.Inventory
             
         }
 
+        public override bool CanEquipItem(Item item, EquipmentSlotType slotType)
+        {
+            if (SuitableSlots == null || SuitableSlots.Count == 0) return false;
+            if (slotType == null) return true; // will default to SuitableSlots[0]
+            return SuitableSlots.Contains(slotType);
+        }
+
         public override void OnItemEquipped(Item item, EquipmentSlotType slotType)
         {
-            //Handle equipment
             if(item.ParentInvetory == null) return;
             Equipment equipment = item.ParentInvetory.Equipment;
             if(equipment == null) return;
             if(slotType == null)
             {
+                if (SuitableSlots == null || SuitableSlots.Count == 0) return;
                 slotType = SuitableSlots[0];
             }
             equipment.EquipItem(item, slotType);

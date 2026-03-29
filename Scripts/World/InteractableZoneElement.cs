@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Kuantech.World
 {
-    public abstract class Interactable : MonoBehaviour, IZoneElement
+    public abstract class InteractableZoneElement : MonoBehaviour, IZoneElement
     {
         public Zone Zone { get; private set; }
 

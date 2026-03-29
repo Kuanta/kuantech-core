@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Kuantech.Core;
+using Kuantech.Networking;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -75,13 +76,12 @@ namespace Kuantech.Inventory
             
             slotTable[itemSlotType].item = item;
             
-            //Get Actor Visual
-            ActorVisual visual = GetActorVisual();
-            
-            //If actor visual isn't null, slot the visual
-            if (visual != null)
+            // Spawn visual only on clients (or single-player). Dedicated server has no visuals.
+            if (KtNetworkManager.IsClient())
             {
-                item.ItemVisual = visual.SlotItem(itemSlotType, item);
+                ActorVisual visual = GetActorVisual();
+                if (visual != null)
+                    item.ItemVisual = visual.SlotItem(itemSlotType, item);
             }
  
 
@@ -110,6 +110,7 @@ namespace Kuantech.Inventory
             if (item.ItemVisual != null)
             {
                 PoolManager.PoolObject(item.ItemVisual.gameObject);
+                item.ItemVisual = null;
             }
             
             //UI handler

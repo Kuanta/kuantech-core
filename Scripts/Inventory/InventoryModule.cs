@@ -3,22 +3,41 @@ using System.Collections.Generic;
 using Kuantech.Core;
 using Sirenix.OdinInspector;
 using UnityEngine;
-
+using Kuantech.Utils;
 
 
 #if NETWORKING_FISHNET
+using FishNet.Connection;
 using FishNet.Object;
 #endif
 
 namespace Kuantech.Inventory
 {
+    /// <summary>
+    /// Compact item state sent over RPCs. ScriptableObject-free.
+    /// </summary>
+    [Serializable]
+    public struct SerializableItemState
+    {
+        public string ItemDataId;
+        public int InventoryId;
+        public int Amount;
+        public int ItemLevel;
+        public bool Equipped;
+        public string EquippedSlotId;
+    }
+
     public class InventoryModule : ActorModule
     {
         public float MaxEncumbrance = 10f; //Can be a stat value in future
         public Equipment Equipment;
-        [SerializeReference] public List<Item> items;
+        [SerializeReference] public Item[] items;
         public int Size = 30;
         private bool _initialized = false;
+
+        // Request/response callback registry for async AddItem
+        private int _nextRequestId = 0;
+        private Dictionary<int, Action<Item>> _pendingAddCallbacks = new();
 
         //Events
         public EventHandler<Item> ItemEquipEvent;
@@ -27,19 +46,23 @@ namespace Kuantech.Inventory
         public override void Initialize()
         {
             if (_initialized) return;
-            items = new List<Item>(Size);
+            //Initialize items arrat
+            items = new Item[Size];
             for (int i = 0; i < Size; i++)
             {
-                items.Add(null);
+                items[0] = null;
             }
-            if(Equipment == null) Equipment = GetComponent<Equipment>();
-            Equipment.Initialize(this);
+            if(Equipment == null) 
+            {
+                Equipment = GetComponent<Equipment>();
+            }
+            if(Equipment != null)Equipment.Initialize(this);
             _initialized = true;
         }
         
         public Item GetItemAtInventoryId(int inventoryId)
         {
-            if (inventoryId < 0 || inventoryId >= items.Count) return null;
+            if (inventoryId < 0 || inventoryId >= items.Length) return null;
             return items[inventoryId];
         }
 
@@ -50,7 +73,7 @@ namespace Kuantech.Inventory
         /// <returns></returns>
         public Item GetItemById(string itemId)
         {
-            for (int i = 0; i < items.Count; i++)
+            for (int i = 0; i < items.Length; i++)
             {
                 if (items[i] != null && items[i].GetId() == itemId) return items[i];
             }
@@ -58,11 +81,17 @@ namespace Kuantech.Inventory
             return null;
         }
         
-        public bool ContainsItem(Item item)
+        /// <summary>
+        /// Checks whether inventory has the item
+        /// </summary>
+        /// <param name="item"></param>
+        /// <returns></returns>
+        public bool ContainsItemReference(Item item)
         {
-            if (items.Contains(item))
+            //todo: Should we check by id=
+            for(int i = 0; i < items.Length; i++)
             {
-                return true;
+                if(items[i] == item) return true;
             }
             return false;
         }
@@ -74,34 +103,46 @@ namespace Kuantech.Inventory
         /// <returns></returns>
         public int GetAvailableSlotId()
         {
-            for (int i = 0; i < items.Count; i++)
+            for (int i = 0; i < items.Length; i++)
             {
                 if (items[i] == null) return i;
             }
             return -1; // No available slot
         }
 
-        public bool AddItemById(string itemId, int amount = 1)
+        public void ExtendInventory(int newSize)
+        {
+            if(newSize <= items.Length) return;
+            Item[] newItems = new Item[newSize];
+            Array.Copy(items, 0, newItems, 0, items.Length);
+            items = newItems;
+        }
+        public bool AddItemById(string itemId, int amount = 1, Action<Item> onAdded = null)
         {
             ItemData itemData = ItemsManager.GetItemData(itemId);
             if (itemData == null) return false;
-            return AddItem(itemData, amount);
+            return AddItem(itemData, amount, onAdded);
         }
 
         /// <summary>
-        /// Adds an item to the inventory of the player
+        /// Adds an item. On server/single-player: executes immediately, onAdded fires synchronously.
+        /// On client: sends ServerRpc and fires onAdded when server confirms via TargetRpc.
         /// </summary>
-        /// <param name="item"></param>
-        public bool AddItem(ItemData itemData, int amount = 1)
+        public bool AddItem(ItemData itemData, int amount = 1, Action<Item> onAdded = null)
         {
-            if(IsServerInitialized)
+            if (IsServerInitialized)
             {
-                bool result =  ExecuteAddItem(itemData, amount);
-                if(!result) return false;
-                //Send client rpc
+                Item item = ExecuteAddItem(itemData, amount);
+                if (item == null) return false;
+                SerializableItemState state = BuildItemState(item);
+                if (IsSpawned) ObserversOnItemAdded_Rpc(state);
+                onAdded?.Invoke(item);
                 return true;
             }
-            ServerAddItem_Rpc(itemData.Id, amount);
+            // Client: register callback and send request to server
+            int requestId = _nextRequestId++;
+            if (onAdded != null) _pendingAddCallbacks[requestId] = onAdded;
+            ServerAddItem_Rpc(itemData.Id, amount, requestId);
             return true;
         }
 
@@ -120,13 +161,14 @@ namespace Kuantech.Inventory
         //     return true;
         // }
 
-        private bool ExecuteAddItem(ItemData itemData, int amount)
+        // Returns the item that was added (or the existing stack), null on failure.
+        private Item ExecuteAddItem(ItemData itemData, int amount, int inventoryId=-1)
         {
             Item item = Item.GetItemFromData(itemData);
-            return ExecuteAddItem(item, amount);
+            return ExecuteAddItem(item, amount, inventoryId);
         }
 
-        private bool ExecuteAddItem(Item item, int amount)
+        private Item ExecuteAddItem(Item item, int amount, int inventoryId=-1)
         {
             amount = Mathf.Max(1, amount);
             if (item.Data.stackable)
@@ -135,17 +177,64 @@ namespace Kuantech.Inventory
                 if (stackable != null)
                 {
                     stackable.Amount += amount;
-                    return true;
+                    return stackable;
                 }
             }
 
-            int availableId = GetAvailableSlotId();
-            if (availableId < 0) return false;
+            int availableId = -1;
+            if(inventoryId < 0)
+            {
+                availableId = GetAvailableSlotId();
+            }
+            else
+            {
+                if(!(items.Length <= inventoryId))
+                {
+                    ExtendInventory(inventoryId + 1);
+                    availableId = inventoryId;
+                }
+            }
+            if (availableId < 0) return null;
             items[availableId] = item;
             item.StateData.InventoryId = availableId;
-            //Add the item data
             item.ParentInvetory = this;
-            return true;
+            item.OnAdded();
+            return item;
+        }
+
+        private SerializableItemState BuildItemState(Item item)
+        {
+            return new SerializableItemState
+            {
+                ItemDataId    = item.Data.Id,
+                InventoryId   = item.StateData.InventoryId,
+                Amount        = item.Amount,
+                ItemLevel     = item.StateData.ItemLevel,
+                Equipped      = item.StateData.Equipped,
+                EquippedSlotId = item.CurrentSlot != null ? item.CurrentSlot.Id : "",
+            };
+        }
+
+        // Reconstructs an item from serialized state on client. Returns null if ItemData not found.
+        private Item ReconstructItem(SerializableItemState state)
+        {
+            ItemData itemData = ItemsManager.GetItemData(state.ItemDataId);
+            if (itemData == null)
+            {
+                Debug.LogWarning($"[InventoryModule] ReconstructItem: ItemData '{state.ItemDataId}' not found.");
+                return null;
+            }
+            Item item = Item.GetItemFromData(itemData);
+            item.Amount = state.Amount;
+            item.StateData.InventoryId = state.InventoryId;
+            item.StateData.ItemLevel   = state.ItemLevel;
+            item.StateData.Equipped    = state.Equipped;
+            item.ParentInvetory = this;
+
+            // Expand list if this slot index is beyond current size (save/load case)
+            ExtendInventory(state.InventoryId + 1);
+            items[state.InventoryId] = item;
+            return item;
         }
 
         #endregion
@@ -218,7 +307,7 @@ namespace Kuantech.Inventory
             if(!item.CanEquip(slotType)) return false;
             
             //If this item isn't in this inventory, add it
-            if (!ContainsItem(item))
+            if (!ContainsItemReference(item))
             {
                 AddItem(item.Data, 1);
             }
@@ -268,10 +357,41 @@ namespace Kuantech.Inventory
         }
 
         #region Networking
+
+        // Client → Server: add item request with a requestId so we can fire the callback.
         [ServerRpc]
-        private void ServerAddItem_Rpc(string itemId, int amount)
+        private void ServerAddItem_Rpc(string itemId, int amount, int requestId)
         {
-            AddItemById(itemId, amount);
+            ItemData itemData = ItemsManager.GetItemData(itemId);
+            if (itemData == null) return;
+            Item item = ExecuteAddItem(itemData, amount);
+            if (item == null) return;
+            SerializableItemState state = BuildItemState(item);
+            // Tell the requesting owner which slot their item landed in.
+            TargetOnItemAdded_Rpc(Owner, state, requestId);
+            // Tell all other observers about the new item.
+            ObserversOnItemAdded_Rpc(state);
+        }
+
+        // Server → owner: confirm add and carry back the resolved state.
+        [TargetRpc]
+        private void TargetOnItemAdded_Rpc(NetworkConnection conn, SerializableItemState state, int requestId)
+        {
+            if (IsServerInitialized) return;
+            Item item = ReconstructItem(state);
+            if (item != null && _pendingAddCallbacks.TryGetValue(requestId, out Action<Item> cb))
+            {
+                _pendingAddCallbacks.Remove(requestId);
+                cb.Invoke(item);
+            }
+        }
+
+        // Server → all observers (ExcludeOwner: owner already handled via TargetRpc above).
+        [ObserversRpc(ExcludeOwner = true)]
+        private void ObserversOnItemAdded_Rpc(SerializableItemState state)
+        {
+            if (IsServerInitialized) return;
+            ReconstructItem(state);
         }
 
         [ServerRpc]
@@ -280,15 +400,11 @@ namespace Kuantech.Inventory
             RemoveItem(inventoryId, amount);
         }
 
-        /// <summary>
-        /// Tries to 
-        /// </summary>
-        /// <param name="inventoryId"></param>
         [ServerRpc]
         private void ServerEquipItem_Rpc(int inventoryId, string slotId)
         {
             Item item = GetItemAtInventoryId(inventoryId);
-            if (item == null) return;   
+            if (item == null) return;
             EquipmentSlotType equipmentSlotType = Equipment.GetEquipmentSlotType(slotId);
             if (equipmentSlotType == null) return;
             EquipItem(item, equipmentSlotType);
@@ -303,29 +419,26 @@ namespace Kuantech.Inventory
         }
 
         [ObserversRpc]
-        private void ObserversAddItem_Rpc(string itemId, int amount)
+        private void ObserversAddAndEquipItem_Rpc(string itemId, int inventoryId, int amount, string slotId)
         {
-            if(IsServerInitialized) return;
-            Item item = GetItemById(itemId);
-            if(item == null) return;
-            ExecuteAddItem(item, amount);
+            if (IsServerInitialized) return;
+            ExecuteAddItem(itemId, amount);
+            Item item = GetItemAtInventoryId(inventoryId);
         }
-
         [ObserversRpc]
         private void ObserversRemoveItem_Rpc(int inventoryId, int amount)
         {
-            if(IsServerInitialized) return;
+            if (IsServerInitialized) return;
             ExecuteRemoveItem(inventoryId, amount);
         }
 
-        /// <summary
         [ObserversRpc]
         private void ObserversEquipItem_Rpc(int inventoryId, string slotId)
         {
-            if(IsServerInitialized) return;
-            EquipmentSlotType slotType = Equipment != null? Equipment.GetEquipmentSlotType(slotId) : null;
+            if (IsServerInitialized) return;
+            EquipmentSlotType slotType = Equipment != null ? Equipment.GetEquipmentSlotType(slotId) : null;
             Item item = GetItemAtInventoryId(inventoryId);
-            if(item == null) return;
+            if (item == null) return;
             item.Equip(slotType);
         }
 
