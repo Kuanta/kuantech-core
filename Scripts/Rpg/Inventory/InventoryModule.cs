@@ -4,6 +4,11 @@ using Kuantech.Core;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
+
+#if NETWORKING_FISHNET
+using FishNet.Object;
+#endif
+
 namespace Kuantech.Rpg.Inventory
 {
     public class InventoryModule : ActorModule
@@ -46,54 +51,7 @@ namespace Kuantech.Rpg.Inventory
             return null;
         }
 
-        /// <summary>
-        /// Adds an item to the inventory of the player
-        /// </summary>
-        /// <param name="item"></param>
-        public bool AddItem(Item item, int amount=1)
-        {
-            amount = Mathf.Max(1, amount);
-            if (item.Data.stackable)
-            {
-                Item stackable = GetItemById(item.GetId());
-                if (stackable != null)
-                {
-                    stackable.Amount += amount;
-                    return true;
-                }
-            }
-            else
-            {
-                amount = 1;
-            }
-            int availableId = GetAvailableSlotId();
-            if (availableId < 0) return false;
-            items[availableId] = item;
-            item.StateData.InventoryId = availableId;
-            item.StateData.IsNew = true;
-            //Add the item data
-            item.ParentInvetory = this;
-            return true;
-        }
-        
-          /// <summary>
-          /// Adds an item that already has a state data. Should only be called at the moment all the items are loaded from memory and
-          /// current inventory is empty. Important because inventory Ids should be consistent between sessions.
-          /// </summary>
-          /// <param name="item"></param>
-          /// <param name="stateData"></param>
-          /// <param name="amount"></param>
-          /// <param name="equip"></param>
-        public void AddItem(Item item, ItemStateData stateData, int amount = 1)
-        {
-            //Expand size if necessary
-            if (stateData.InventoryId > items.Capacity)
-            {
-                while(items.Count < stateData.InventoryId + 1) items.Add(null);
-            }
-            items[stateData.InventoryId] = item;
-            item.ParentInvetory = this;
-        }
+  
           
         /// <summary>
         /// Equips an item
@@ -140,6 +98,82 @@ namespace Kuantech.Rpg.Inventory
             return false;
         }
 
+        #region Add Item
+
+        public bool AddItemById(string itemId, int amount = 1)
+        {
+            //todo: Implement a way to get ItemDataAsset from itemId. Like an item library
+            return false;
+        }
+        /// <summary>
+        /// Adds an item to the inventory of the player
+        /// </summary>
+        /// <param name="item"></param>
+        public bool AddItem(ItemDataAsset itemDataAsset, int amount = 1)
+        {
+            if(IsServerInitialized)
+            {
+                bool result =  ExecuteAddItem(itemDataAsset, amount);
+                if(!result) return false;
+                //Send client rpc
+
+                return true;
+            }
+            ServerAddItem_Rpc(itemDataAsset.GetItemId(), amount);
+            return true;
+        }
+
+        /// <summary>
+        /// Adds an item that already has a state data. Should only be called at the moment all the items are loaded from memory and
+        /// current inventory is empty. Important because inventory Ids should be consistent between sessions.
+        /// </summary>
+        /// <param name="item"></param>
+        /// <param name="stateData"></param>
+        /// <param name="amount"></param>
+        /// <param name="equip"></param>
+        public void AddItem(Item item, ItemStateData stateData, int amount = 1)
+        {
+            //Expand size if necessary
+            if (stateData.InventoryId > items.Capacity)
+            {
+                while (items.Count < stateData.InventoryId + 1) items.Add(null);
+            }
+            items[stateData.InventoryId] = item;
+            item.ParentInvetory = this;
+        }
+
+        private bool ExecuteAddItem(ItemDataAsset itemDataAsset, int amount)
+        {
+            Item item = Item.GetItemFromData(itemDataAsset.ItemData);
+            return ExecuteAddItem(item, amount);
+        }
+
+        private bool ExecuteAddItem(Item item, int amount)
+        {
+            amount = Mathf.Max(1, amount);
+            if (item.Data.stackable)
+            {
+                Item stackable = GetItemById(item.GetId());
+                if (stackable != null)
+                {
+                    stackable.Amount += amount;
+                    return true;
+                }
+            }
+
+            int availableId = GetAvailableSlotId();
+            if (availableId < 0) return false;
+            items[availableId] = item;
+            item.StateData.InventoryId = availableId;
+            item.StateData.IsNew = true;
+            //Add the item data
+            item.ParentInvetory = this;
+            return true;
+        }
+
+        #endregion
+
+        #region Remove Item
         public void RemoveItem(Item item)
         {
             if (item == null) return;
@@ -147,7 +181,21 @@ namespace Kuantech.Rpg.Inventory
             RemoveItem(item.StateData.InventoryId);
         }
         
-        public void RemoveItem(int InventoryId, int amount=1, bool updateActorData = true)
+        public void RemoveItem(int InventoryId, int amount=1)
+        {
+            if(IsServerInitialized)
+            {
+                ExecuteRemoveItem(InventoryId, amount);
+                //Send client rpc
+            }
+            else
+            {
+                //Send server rpc
+            }
+        }
+        
+
+        private void ExecuteRemoveItem(int InventoryId, int amount = 1)
         {
             Item itemToRemove = items[InventoryId];
             if (itemToRemove == null) return;
@@ -166,7 +214,8 @@ namespace Kuantech.Rpg.Inventory
             }
             items[InventoryId] = null;
         }
-        
+
+        #endregion
         /// <summary>
         /// Returns the index of an available slot in the inventory
         /// </summary>
@@ -199,5 +248,62 @@ namespace Kuantech.Rpg.Inventory
             }
             items.Clear();
         }
+
+        #region Networking
+        [ServerRpc]
+        private void ServerAddItem_Rpc(string itemId, int amount)
+        {
+            
+        }
+
+        [ServerRpc]
+        private void ServerRemoveItem_Rpc(int inventoryId, int amount)
+        {
+            ExecuteRemoveItem(inventoryId, amount);
+        }
+
+        /// <summary>
+        /// Tries to 
+        /// </summary>
+        /// <param name="inventoryId"></param>
+        [ServerRpc]
+        private void ServerEquipItem_Rpc(int inventoryId)
+        {
+            
+        }
+
+        [ServerRpc]
+        private void ServerUnequipItem_Rpc(int inventoryId)
+        {
+
+        }
+
+        [ObserversRpc]
+        private void ObserversAddItem_Rpc(int itemId, int amount)
+        {
+            
+        }
+
+        [ObserversRpc]
+        private void ObserversRemoveItem(int inventoryId, int amount)
+        {
+            if(IsServerInitialized) return;
+            ExecuteRemoveItem(inventoryId, amount);
+        }
+
+        /// <summary
+        [ObserversRpc]
+        private void ObserversEquipItem_Rpc(int inventoryId)
+        {
+
+        }
+
+        [ObserversRpc]
+        private void ObserversUnequipItem_Rpc(int inventoryId)
+        {
+
+        }
+
+        #endregion
     }
 }

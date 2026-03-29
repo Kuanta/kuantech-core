@@ -1,14 +1,16 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using FishNet.Object;
 using Kuantech.Core;
 using Kuantech.Core.Combat;
-using Kuantech.Networking;
 using Kuantech.Core.Utils;
 using Kuantech.Rpg.Managers;
 using Kuantech.Utils;
 using UnityEngine;
 using UnityEngine.Events;
+
+#if NETWORKING_FISHNET
+    using FishNet.Object;
+#endif
 
 namespace Kuantech.Rpg.Skills
 {
@@ -34,7 +36,7 @@ namespace Kuantech.Rpg.Skills
         public Vector3 StartPosition;
         public Vector3 Direction;
         public Vector3 TargetPosition;
-        public FishNet.Object.NetworkObject Target; // resolved to Actor on receive
+        public NetworkObject Target; //todo: Fix this, wont work in single player games
 
         public static SkillCastRpcData From(string skillId, ActionCastData cast)
         {
@@ -320,6 +322,8 @@ namespace Kuantech.Rpg.Skills
         #endregion
 
         #region Networking
+
+        //todo: Implement stubs for networking tags
 
         [ServerRpc]
         private void ServerCastSkill_Rpc(SkillCastRpcData rpcData)
