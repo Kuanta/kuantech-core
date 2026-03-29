@@ -1,9 +1,8 @@
 ﻿using System.Collections.Generic;
 using Kuantech.Core.Data;
-using Kuantech.Rpg.Inventory;
 using SQLite4Unity3d;
 
-namespace Kuantech.Rpg.Database
+namespace Kuantech.Inventory
 {
     [Table("items")]
     public class ItemDataEntry

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Kuantech.Core.Combat;
 using Kuantech.Core.FX;
-using Kuantech.Rpg.Inventory;
+using Kuantech.Inventory;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
@@ -49,7 +49,7 @@ namespace Kuantech.Core
 
         [Header("Ownership & Filters")]
         public Actor CastBy;
-        public Weapon ShotFrom = null;
+        public Item ShotFrom = null;
         public LayerMask Targets;
         public HashSet<int> FactionFilter;
 
@@ -187,7 +187,7 @@ namespace Kuantech.Core
         #endregion
         
         #region Shoot
-        public virtual void Shoot(Actor castBy, Weapon shotFrom, Vector3 shootPosition, Vector3 shootDirection, Transform target = null, float relativeSpeed = 0.0f)
+        public virtual void Shoot(Actor castBy, Item shotFrom, Vector3 shootPosition, Vector3 shootDirection, Transform target = null, float relativeSpeed = 0.0f)
         {
             // Set faction enemies
             if (castBy != null)

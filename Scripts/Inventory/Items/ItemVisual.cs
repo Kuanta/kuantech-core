@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace Kuantech.Rpg.Inventory
+namespace Kuantech.Inventory
 {
     public class ItemVisual : MonoBehaviour
     {

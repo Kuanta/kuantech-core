@@ -6,7 +6,7 @@ using Kuantech.Utils;
 using UnityEditor;
 using UnityEngine;
 
-namespace Kuantech.Rpg.Inventory
+namespace Kuantech.Inventory
 {
     [Serializable]
     public struct EquipmentPlace

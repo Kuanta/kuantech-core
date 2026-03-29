@@ -2,15 +2,12 @@
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Kuantech.Core;
-using Kuantech.Rpg.Database;
-using Kuantech.Rpg.Inventory;
+using Kuantech.Inventory;
 using UnityEngine;
 
 
 namespace Kuantech.Rpg
 {
-   
-
     public class Librarian : SubManager
     {
         

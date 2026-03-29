@@ -7,7 +7,7 @@ using Kuantech.Utils;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Events;
-using Kuantech.Rpg.Inventory;
+using Kuantech.Inventory;
 using Kuantech.Core;
 using Kuantech.Core.Combat;
 

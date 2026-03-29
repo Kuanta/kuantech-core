@@ -1,4 +1,4 @@
-using Kuantech.Rpg.Inventory;
+using Kuantech.Inventory;
 using UnityEngine;
 
 namespace Kuantech.ArcadeIdle

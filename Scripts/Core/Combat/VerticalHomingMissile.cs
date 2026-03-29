@@ -1,4 +1,4 @@
-﻿using Kuantech.Rpg.Inventory;
+﻿using Kuantech.Inventory;
 using UnityEngine;
 
 namespace Kuantech.Core
@@ -52,7 +52,7 @@ namespace Kuantech.Core
         private Vector3 _launchDir = Vector3.up;   // normalized
         private Vector3 _lastPos;
 
-        public override void Shoot(Actor castBy, Weapon shotFrom, Vector3 shootPosition, Vector3 shootDirection, Transform target = null, float relativeSpeed = 0.0f)
+        public override void Shoot(Actor castBy, Item shotFrom, Vector3 shootPosition, Vector3 shootDirection, Transform target = null, float relativeSpeed = 0.0f)
         {
             base.Shoot(castBy, shotFrom, shootPosition, shootDirection, target, relativeSpeed);
 

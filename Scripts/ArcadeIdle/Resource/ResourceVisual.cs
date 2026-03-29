@@ -2,7 +2,7 @@
 using DG.Tweening;
 using Kuantech.Core;
 using Kuantech.Core.FX;
-using Kuantech.Rpg.Inventory;
+using Kuantech.Inventory;
 using Kuantech.Utils;
 using UnityEngine;
 using UnityEngine.Events;

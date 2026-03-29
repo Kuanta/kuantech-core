@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using Kuantech.Core;
+using Kuantech.Rpg;
 using UnityEngine.Serialization;
 
-namespace Kuantech.Rpg.Inventory
+namespace Kuantech.Inventory
 {
     [Serializable]
     public class WeaponData : ItemData

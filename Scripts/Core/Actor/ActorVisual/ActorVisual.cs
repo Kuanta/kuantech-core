@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Kuantech.Core.FX;
-using Kuantech.Rpg.Inventory;
+using Kuantech.Inventory;
 using Kuantech.Utils;
 using UnityEngine;
 
@@ -137,14 +137,19 @@ namespace Kuantech.Core
         public ItemVisual SlotItem(EquipmentSlotType slot, Item itemToSlot)
         {
             if (!HasSlotFor(slot)) return null;
+            //todo: Implement actor visual toggling (Like beards when helmet is equipped etc.)
+            // EquipableItemComponentData equipableItemComponentData = itemToSlot.GetItemComponent<EquipableItemComponentData>();
+           
+            // if (equipableItemComponentData == null) return null;
             
-            //Clear occupying slots
-            foreach (var occupying in itemToSlot.GetOccupyingSlots(slot))
-            {
-                ToggleVisualPartForSlot(occupying, false);
-            }
+            // //Clear occupying slots
+            // foreach (var occupying in equipableItemComponentData.OccupiedSlots)
+            // {
+            //     ToggleVisualPartForSlot(occupying, false);
+            // }
 
             Transform socket = GetObjectSlot(slot.SlotName);
+            if(socket == null) return null;
 
             //is in place?
             ItemVisual visual = itemToSlot.SpawnItemVisual();

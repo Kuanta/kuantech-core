@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using Kuantech.Rpg.Inventory;
+using Kuantech.Inventory;
 using Kuantech.Utils;
 
 namespace Kuantech.Core

@@ -4,7 +4,7 @@ using Kuantech.Core;
 using UnityEngine;
 using UnityEngine.Serialization;
 
-namespace Kuantech.Rpg.Inventory
+namespace Kuantech.Inventory
 {
     [Serializable]
     public class EquipmentSlot
@@ -18,8 +18,7 @@ namespace Kuantech.Rpg.Inventory
         public InventoryModule ParentInventory;
         public List<EquipmentSlot> slotTypes;
         public Dictionary<EquipmentSlotType, EquipmentSlot> slotTable;
-        
-        public float Encumbrance = 0f;
+        private Dictionary<string, EquipmentSlotType> _slotTypesById;
         
         //Events
         public EventHandler<Item>  ItemEquippedEvent;
@@ -30,12 +29,27 @@ namespace Kuantech.Rpg.Inventory
             ParentInventory = parentInventory;
             if (slotTable != null) return;
             slotTable = new Dictionary<EquipmentSlotType, EquipmentSlot>();
+            _slotTypesById = new Dictionary<string, EquipmentSlotType>();
             foreach (EquipmentSlot slot in slotTypes)
             {
                 slot.item = null;
                 slotTable.Add(slot.SlotType, slot);
+                _slotTypesById[slot.SlotType.Id] = slot.SlotType;
             }
         }
+
+        /// <summary>
+        /// Gets equipment slot type by id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public EquipmentSlotType GetEquipmentSlotType(string id)
+        {
+            if(_slotTypesById == null) return null;
+            if(_slotTypesById.ContainsKey(id)) return _slotTypesById[id];
+            return null;
+        }
+
         public Item GetEquipedItem(EquipmentSlotType slot)
         {
             if (!slotTable.ContainsKey(slot)) return null;
@@ -43,30 +57,13 @@ namespace Kuantech.Rpg.Inventory
             return slotTable[slot].item;
         }
 
-        private Weapon GetWeapon(EquipmentSlotType slotType)
-        {
-            Item weapon = GetEquipedItem(slotType);
-            if (weapon is Weapon weapon1) return weapon1;
-            return null;
-        }
         // Equips an item for the proper slot
         public void EquipItem(Item item, EquipmentSlotType slotType)
         {
-            if (item == null || !item.CanBeEquippedToSlot(slotType)) return;
+            if (item == null) return;
             EquipmentSlotType itemSlotType = slotType;
-            if (item is Weapon itemAsWeapon)
-            {
-                itemSlotType = slotType;
-                if (itemAsWeapon.WeaponData.SlotSize > 1)
-                {
-                    //itemSlotType = EquipmentSlotType.MainHand;
-                    Debug.LogWarning("handle multiple slots");
-                }
-            }
- 
             
             if (!slotTable.ContainsKey(itemSlotType)) return;
-            Encumbrance += item.Data.weight; //Add to encumberance
             item.StateData.Equipped = true;
             item.CurrentSlot = itemSlotType; //For weapons. While saving, we need to know where we have equipped it
             
@@ -109,8 +106,6 @@ namespace Kuantech.Rpg.Inventory
                 slot.item = null;
             }
             item.StateData.Equipped = false;
-            Encumbrance -= item.Data.weight;
-            Encumbrance = Mathf.Max(Encumbrance, 0f);
 
             if (item.ItemVisual != null)
             {

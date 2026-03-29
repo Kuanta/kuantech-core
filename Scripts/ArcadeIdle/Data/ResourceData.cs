@@ -1,7 +1,7 @@
 ﻿using System;
 using Kuantech.Core;
 using Kuantech.Rpg;
-using Kuantech.Rpg.Inventory;
+using Kuantech.Inventory;
 using Kuantech.Utils;
 using UnityEngine;
 

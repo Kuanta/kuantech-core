@@ -1,6 +1,6 @@
 ﻿using SQLite4Unity3d;
 
-namespace Kuantech.Rpg.Database
+namespace Kuantech.Inventory
 {
     public class ItemDataModel
     {

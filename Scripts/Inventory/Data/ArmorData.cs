@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Kuantech.Rpg.Inventory
+namespace Kuantech.Inventory
 {
     [Serializable]
     public class ArmorData : ItemData

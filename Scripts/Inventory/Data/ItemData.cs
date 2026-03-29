@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using Kuantech.Core.Data;
+using UnityEngine;
 
-namespace Kuantech.Rpg.Inventory
+namespace Kuantech.Inventory
 {
     public enum ItemRarities
     {
@@ -17,14 +18,13 @@ namespace Kuantech.Rpg.Inventory
     public class ItemData : VaultData
     {
         public string Name;
-        public string Description = "";
         public float weight;
         public float value;
         public bool stackable = false;
-        public List<EquipmentSlotType> SuitableSlots; //Which slot can this be equipped to
-        public List<EquipmentSlotType> OccupiedSlots; //Which slots does this occupy?
-        public ItemType ItemType;
         
+        [SerializeReference]
+        public List<ItemComponent> Components;
+
         //Visuals
         public string ItemTemplateId;
         

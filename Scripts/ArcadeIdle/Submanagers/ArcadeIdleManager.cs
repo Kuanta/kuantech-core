@@ -3,7 +3,7 @@ using ArcadeIdle.Data;
 using Cysharp.Threading.Tasks;
 using Kuantech.Core;
 using Kuantech.Core.Store;
-using Kuantech.Rpg.Inventory;
+using Kuantech.Inventory;
 using Kuantech.Utils;
 using UnityEngine;
 

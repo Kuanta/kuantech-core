@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace Kuantech.Rpg.Inventory
+namespace Kuantech.Inventory
 {
     [CreateAssetMenu(fileName = "Item Template", menuName = "Kuantech/Inventory/Item Template")]
     public class ItemTemplate : ScriptableObject
