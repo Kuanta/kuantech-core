@@ -94,6 +94,11 @@ namespace Kuantech.Inventory
             return Data.Id;
         }
         
+        public int GetInventoryId()
+        {
+            if(StateData == null || ParentInvetory) return -1;
+            return StateData.InventoryId;
+        }
         /// <summary>
         /// Returns the item name
         /// </summary>
@@ -102,11 +107,6 @@ namespace Kuantech.Inventory
         {
             string name = Data.Name;
             return name;
-        }
-
-        public int GetInventoryId()
-        {
-            return StateData.InventoryId;
         }
 
         public string GetItemId()

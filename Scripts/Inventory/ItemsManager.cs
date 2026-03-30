@@ -23,6 +23,7 @@ namespace Kuantech.Inventory
         public async override UniTask Initialize(GameManager parentManager)
         {
             await base.Initialize(parentManager);
+            if (Librarian != null) Librarian.Initialize(this);
         }
 
         public static ItemData GetItemData(string itemId)
