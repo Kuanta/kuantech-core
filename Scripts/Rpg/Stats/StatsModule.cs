@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Kuantech.Core;
+#if NETWORKING_FISHNET
 using FishNet.Connection;
 using FishNet.Object;
-using Kuantech.Core;
+#endif
 using Kuantech.Rpg.Managers;
 using Kuantech.Utils;
 using UnityEngine;
@@ -704,7 +706,7 @@ namespace Kuantech.Rpg
         #endregion
 
         #region Networking
-
+#if NETWORKING_FISHNET
         // Level is public info — all observers need it (nameplates, UI, etc.)
         [ObserversRpc]
         private void ObserverSetActorLevel_Rpc(int newLevel, int earnedExperience)
@@ -759,7 +761,15 @@ namespace Kuantech.Rpg
             if (IsServerInitialized) return;
             ExecuteClearModifiers(clearByTag, tagToCompare);
         }
-
+#else
+        private void ObserverSetActorLevel_Rpc(int newLevel, int earnedExperience) { }
+        private void TargetSetStat_Rpc(object conn, AttributeDefinition attributeDefinition, bool insertAttribute) { }
+        private void TargetSetAttributeValue_Rpc(object conn, string attributeId, float value) { }
+        private void TargetSetModifiers_Rpc(object conn, List<StatModifier> modifiers) { }
+        private void TargetAddModifier_Rpc(object conn, StatModifier modifier) { }
+        private void TargetRemoveModifier_Rpc(object conn, StatModifier modifier) { }
+        private void TargetClearModifiers_Rpc(object conn, bool clearByTag, string tagToCompare) { }
+#endif
         #endregion
     }
 }

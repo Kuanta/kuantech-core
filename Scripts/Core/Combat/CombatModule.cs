@@ -9,7 +9,9 @@ using Kuantech.Utils;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
+#if NETWORKING_FISHNET
 using FishNet.Object;
+#endif
 
 namespace Kuantech.Core
 {
@@ -931,7 +933,7 @@ namespace Kuantech.Core
         #endregion
 
         #region Networking
-
+#if NETWORKING_FISHNET
         [ServerRpc]
         private void ServerAttack_Rpc(ActionCastData castData)
         {
@@ -983,6 +985,15 @@ namespace Kuantech.Core
                     ExecuteDamageActor(actor);
             }
         }
+#else
+        private void ServerAttack_Rpc(ActionCastData castData) { }
+        private void ServerCancelAttack_Rpc() { }
+        private void ObserverAttackStart_Rpc(ActionCastData castData) { }
+        private void ObserverAttackImplementation_Rpc() { }
+        private void ObserverAttackEnd_Rpc() { }
+        private void ObserverDamageActor_Rpc(UnityEngine.GameObject target) { }
+        private void ObserverDamageActors_Rpc(List<UnityEngine.GameObject> targets) { }
+#endif
         #endregion
     }
 

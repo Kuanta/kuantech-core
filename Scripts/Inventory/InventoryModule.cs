@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using Kuantech.Core;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using Kuantech.Networking;
+
 
 #if NETWORKING_FISHNET
 using FishNet.Connection;
@@ -353,7 +355,13 @@ namespace Kuantech.Inventory
             if (inventoryState.ItemStates == null) return;
             foreach (var state in inventoryState.ItemStates)
             {
-                if (GetItemAtInventoryId(state.InventoryId) != null) continue; // host already has it
+                Item existing = GetItemAtInventoryId(state.InventoryId);
+                if (existing != null)
+                {
+                    // Item already exists server-side (host case) — equip data is already set,
+                    // but visual may not have been spawned yet. Handled in OnNetworkSynced.
+                    continue;
+                }
                 Item item = Item.FromState(state, this);
                 if (item == null) continue;
                 if (state.Equipped)
@@ -364,10 +372,26 @@ namespace Kuantech.Inventory
             }
         }
 
+        // Called on client after state sync — ensures equipped item visuals are spawned.
+        // Covers the host/listen-server case where items exist server-side but visual was never spawned client-side.
+        public override void OnNetworkSynced()
+        {
+            if (!KtNetworkManager.IsClient()) return;
+            if (Equipment == null) return;
+            foreach (var slot in Equipment.slotTable.Values)
+            {
+                Item item = slot.item;
+                if (item == null || item.ItemVisual != null) continue;
+                ActorVisual visual = Equipment.GetActorVisual();
+                if (visual == null) continue;
+                item.ItemVisual = visual.SlotItem(slot.SlotType, item);
+            }
+        }
+
         #endregion
 
         #region Networking
-
+#if NETWORKING_FISHNET
         // Client → Server: add item request with a requestId so we can fire the callback.
         [ServerRpc]
         private void ServerAddItem_Rpc(string itemId, int amount)
@@ -448,7 +472,18 @@ namespace Kuantech.Inventory
             if (item == null) return;
             item.Unequip();
         }
-
+#else
+        private void ServerAddItem_Rpc(string itemId, int amount) { }
+        private void ServerRemoveItem_Rpc(int inventoryId, int amount) { }
+        private void ServerEquipItem_Rpc(int inventoryId, string slotId) { }
+        private void ServerAddAndEquipItem_Rpc(string itemId, int amount, string slotId) { }
+        private void ServerUnequipItem_Rpc(int inventoryId) { }
+        private void ObserversOnItemAdded_Rpc(string itemId, int amount, int inventoryId) { }
+        private void ObserversAddAndEquipItem_Rpc(string itemId, int inventoryId, int amount, string slotId) { }
+        private void ObserversRemoveItem_Rpc(int inventoryId, int amount) { }
+        private void ObserversEquipItem_Rpc(int inventoryId, string slotId) { }
+        private void ObserversUnequipItem_Rpc(int inventoryId) { }
+#endif
         #endregion
     }
 }

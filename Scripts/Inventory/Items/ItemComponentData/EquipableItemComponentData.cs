@@ -14,11 +14,11 @@ namespace Kuantech.Inventory
             
         }
 
-        public override bool CanEquipItem(Item item, EquipmentSlotType slotType)
+        public override int CanEquipItem(Item item, EquipmentSlotType slotType)
         {
-            if (SuitableSlots == null || SuitableSlots.Count == 0) return false;
-            if (slotType == null) return true; // will default to SuitableSlots[0]
-            return SuitableSlots.Contains(slotType);
+            if (SuitableSlots == null || SuitableSlots.Count == 0) return -1;
+            if (slotType == null) return 1; // will default to SuitableSlots[0]
+            return SuitableSlots.Contains(slotType) ? 1 : -1;
         }
 
         public override void OnItemEquipped(Item item, EquipmentSlotType slotType)

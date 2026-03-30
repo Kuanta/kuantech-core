@@ -323,8 +323,7 @@ namespace Kuantech.Rpg.Skills
 
         #region Networking
 
-        //todo: Implement stubs for networking tags
-
+#if NETWORKING_FISHNET
         [ServerRpc]
         private void ServerCastSkill_Rpc(SkillCastRpcData rpcData)
         {
@@ -335,11 +334,10 @@ namespace Kuantech.Rpg.Skills
                 return;
             }
             ActionCastData castData = rpcData.ToActionCastData();
-            castData.Caster = Actor; // Caster is always this actor on the server
+            castData.Caster = Actor;
             ExecuteCastSkill(asset, castData);
         }
 
-        // Server → all clients (ExcludeOwner: owner already ran local prediction)
         [ObserversRpc(ExcludeOwner = true)]
         private void ObserversSkillCasted_Rpc(string skillId)
         {
@@ -349,16 +347,13 @@ namespace Kuantech.Rpg.Skills
             _activeSkills.Add(skill);
         }
 
-        // Server → all clients: play animation + fx for this behaviour phase
         [ObserversRpc]
         private void ObserversOnSkillBehaviourStarted_Rpc(string skillId, int behaviourIndex, SkillCastRpcData castData)
         {
             if (IsServerInitialized) return;
             Skill skill = GetSkillById(skillId);
             if (skill == null) return;
-            // Owner already started this behaviour via local prediction — skip to avoid double-start
             if (IsOwner && skill.IsCasting() && skill.CurrentSkilLBehaviourIndex == behaviourIndex) return;
-            // Set cast data so BehaviourClientImplementation has correct positions/direction
             skill.CurrentSkillCastData = castData.ToActionCastData();
             skill.BeginObserverCast();
             if (!_activeSkills.Contains(skill)) _activeSkills.Add(skill);
@@ -373,6 +368,12 @@ namespace Kuantech.Rpg.Skills
             Skill skill = GetSkillById(skillId);
             skill?.EndCast();
         }
+#else
+        private void ServerCastSkill_Rpc(SkillCastRpcData rpcData) { }
+        private void ObserversSkillCasted_Rpc(string skillId) { }
+        private void ObserversOnSkillBehaviourStarted_Rpc(string skillId, int behaviourIndex, SkillCastRpcData castData) { }
+        private void ObserversOnSkillCastEnded_Rpc(string skillId) { }
+#endif
 
         #endregion
     }

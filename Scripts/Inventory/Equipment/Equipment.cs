@@ -128,7 +128,7 @@ namespace Kuantech.Inventory
             }
         }
 
-        private ActorVisual GetActorVisual()
+        public ActorVisual GetActorVisual()
         {
             if (ParentInventory == null)
             {
