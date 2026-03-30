@@ -89,6 +89,14 @@ namespace Kuantech.Inventory
         }
 
         #region Add Item
+
+        public virtual bool CanAddItem(ItemData itemData)
+        {
+            int availableInventoryId = GetAvailableSlotId();
+            if(availableInventoryId < 0) return false;
+            return true; //For encumbrance or inventory limits checks
+        }
+
         /// <summary>
         /// Returns the index of an available slot in the inventory
         /// </summary>
@@ -147,12 +155,8 @@ namespace Kuantech.Inventory
         // Returns the item that was added (or the existing stack), null on failure.
         private Item ExecuteAddItem(ItemData itemData, int amount, int inventoryId=-1)
         {
+            if(!CanAddItem(itemData)) return null;
             Item item = Item.GetItemFromData(itemData);
-            return ExecuteAddItem(item, amount, inventoryId);
-        }
-
-        private Item ExecuteAddItem(Item item, int amount, int inventoryId=-1)
-        {
             amount = Mathf.Max(1, amount);
             if (item.Data.stackable)
             {
@@ -165,13 +169,13 @@ namespace Kuantech.Inventory
             }
 
             int availableId = -1;
-            if(inventoryId < 0)
+            if (inventoryId < 0)
             {
                 availableId = GetAvailableSlotId();
             }
             else
             {
-                if(!(items.Length <= inventoryId))
+                if (!(items.Length <= inventoryId))
                 {
                     ExtendInventory(inventoryId + 1);
                     availableId = inventoryId;

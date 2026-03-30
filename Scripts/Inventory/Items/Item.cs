@@ -93,7 +93,8 @@ namespace Kuantech.Inventory
             if(_components.IsNullOrEmpty()) return true;
             foreach(var pair in _components)
             {
-                if(!pair.Value.CanEquipItem(this, slotType)) return false;
+                int result = pair.Value.CanEquipItem(this, slotType);
+                if(result < 0) return false;
             }
             return true;
         }

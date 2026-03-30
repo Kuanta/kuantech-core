@@ -16,14 +16,14 @@ namespace Kuantech.Inventory
 
         #region Checkers
         /// <summary>
-        /// Checks if item can be equipped
+        /// Checks if item can be equipped. -1 means false, 0 means don't care, 1 means true
         /// </summary>
         /// <param name="item"></param>
         /// <param name="slotType"></param>
         /// <returns></returns>
-        public virtual bool CanEquipItem(Item item, EquipmentSlotType slotType)
+        public virtual int CanEquipItem(Item item, EquipmentSlotType slotType)
         {
-            return true;
+            return 0;
         }
 
         public virtual bool CanUnequipItem(Item item)
