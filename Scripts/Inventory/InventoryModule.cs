@@ -3,12 +3,6 @@ using System.Collections.Generic;
 using Kuantech.Core;
 using Sirenix.OdinInspector;
 using UnityEngine;
-using Kuantech.Utils;
-using Unity.VisualScripting;
-using NUnit.Framework;
-
-
-
 
 #if NETWORKING_FISHNET
 using FishNet.Connection;
@@ -17,18 +11,10 @@ using FishNet.Object;
 
 namespace Kuantech.Inventory
 {
-    /// <summary>
-    /// Compact item state sent over RPCs. ScriptableObject-free.
-    /// </summary>
     [Serializable]
-    public struct SerializableItemState
+    public class InventoryState : ActorModuleSerializableData
     {
-        public string ItemDataId;
-        public int InventoryId;
-        public int Amount;
-        public int ItemLevel;
-        public bool Equipped;
-        public string EquippedSlotId;
+        public List<SerializableItemState> ItemStates;
     }
 
     public class InventoryModule : ActorModule
@@ -96,6 +82,12 @@ namespace Kuantech.Inventory
             return false;
         }
 
+        public EquipmentSlotType GetEquipmentSlotTypeFromId(string slotTypeId)
+        {
+            if(Equipment == null) return null;
+            return Equipment.GetEquipmentSlotType(slotTypeId);
+        }
+
         #region Add Item
         /// <summary>
         /// Returns the index of an available slot in the inventory
@@ -136,7 +128,7 @@ namespace Kuantech.Inventory
                 if (item == null) return false;
                 if (IsSpawned)
                 {
-                    ObserversOnItemAdded_Rpc(itemData.Id, amount, item.StateData.InventoryId);
+                    ObserversOnItemAdded_Rpc(itemData.Id, amount, item.GetInventoryId());
                 } 
                 return true;
             }
@@ -167,7 +159,7 @@ namespace Kuantech.Inventory
                 Item stackable = GetItemById(item.GetId());
                 if (stackable != null)
                 {
-                    stackable.Amount += amount;
+                    stackable.AddAmount(amount);
                     return stackable;
                 }
             }
@@ -187,23 +179,10 @@ namespace Kuantech.Inventory
             }
             if (availableId < 0) return null;
             items[availableId] = item;
-            item.StateData.InventoryId = availableId;
+            item.SetInventoryId(availableId);
             item.ParentInvetory = this;
             item.OnAdded();
             return item;
-        }
-
-        private SerializableItemState BuildItemState(Item item)
-        {
-            return new SerializableItemState
-            {
-                ItemDataId    = item.Data.Id,
-                InventoryId   = item.StateData.InventoryId,
-                Amount        = item.Amount,
-                ItemLevel     = item.StateData.ItemLevel,
-                Equipped      = item.StateData.Equipped,
-                EquippedSlotId = item.CurrentSlot != null ? item.CurrentSlot.Id : "",
-            };
         }
 
         #endregion
@@ -213,7 +192,7 @@ namespace Kuantech.Inventory
         {
             if (item == null) return;
             if (item.ParentInvetory.Actor != Actor) return;
-            RemoveItem(item.StateData.InventoryId);
+            RemoveItem(item.GetInventoryId());
         }
         
         public void RemoveItem(int InventoryId, int amount=1)
@@ -237,14 +216,14 @@ namespace Kuantech.Inventory
             if (itemToRemove == null) return;
             if (itemToRemove.Data.stackable)
             {
-                int newAmount = itemToRemove.Amount - amount;
+                int newAmount = itemToRemove.GetAmount() - amount;
                 if (newAmount > 0)
                 {
-                    itemToRemove.Amount = newAmount;
+                    itemToRemove.SetAmount(newAmount);
                     return;
                 }
             }
-            if (Equipment.slotTable.ContainsKey(itemToRemove.CurrentSlot) && Equipment.slotTable[itemToRemove.CurrentSlot].item == itemToRemove)
+            if (Equipment.slotTable.ContainsKey(itemToRemove.GetEquippedSlot()) && Equipment.slotTable[itemToRemove.GetEquippedSlot()].item == itemToRemove)
             {
                 Equipment.UnequipItem(itemToRemove);
             }
@@ -262,11 +241,11 @@ namespace Kuantech.Inventory
             {
                 ExecuteEquipItem(item, slotType);
                 //Send client rpc
-                ObserversEquipItem_Rpc(item.StateData.InventoryId, slotId);
+                ObserversEquipItem_Rpc(item.GetInventoryId(), slotId);
             }
             else
             {
-                ServerEquipItem_Rpc(item.StateData.InventoryId, slotId);
+                ServerEquipItem_Rpc(item.GetInventoryId(), slotId);
             }
         }
 
@@ -322,11 +301,11 @@ namespace Kuantech.Inventory
             if(IsServerInitialized)
             {
                 ExecuteUnequipItem(item);
-                ObserversUnequipItem_Rpc(item.StateData.InventoryId);
+                ObserversUnequipItem_Rpc(item.GetInventoryId());
             }
             else
             {
-                ServerUnequipItem_Rpc(item.StateData.InventoryId);
+                ServerUnequipItem_Rpc(item.GetInventoryId());
             }
         }
 
@@ -343,11 +322,45 @@ namespace Kuantech.Inventory
         [Button("Clear inventory")]
         public void ClearInventory()
         {
+            if (Equipment != null) Equipment.UnequipAll();
             for (int i = 0; i < items.Length; ++i)
             {
-               items[i] = null;
+                items[i]?.OnRemoved();
+                items[i] = null;
             }
         }
+
+        #region State
+
+        protected override ActorModuleSerializableData InstantiateState()
+        {
+            var itemStates = new List<SerializableItemState>();
+            for (int i = 0; i < items.Length; i++)
+            {
+                if (items[i] != null)
+                    itemStates.Add(items[i].BuildState());
+            }
+            return new InventoryState { ItemStates = itemStates };
+        }
+
+        public override void LoadState(ActorModuleSerializableData serializableData)
+        {
+            if (serializableData is not InventoryState inventoryState) return;
+            if (inventoryState.ItemStates == null) return;
+            foreach (var state in inventoryState.ItemStates)
+            {
+                if (GetItemAtInventoryId(state.InventoryId) != null) continue; // host already has it
+                Item item = Item.FromState(state, this);
+                if (item == null) continue;
+                if (state.Equipped)
+                {
+                    EquipmentSlotType slot = Equipment != null ? Equipment.GetEquipmentSlotType(state.EquippedSlotId) : null;
+                    ExecuteEquipItem(item, slot);
+                }
+            }
+        }
+
+        #endregion
 
         #region Networking
 

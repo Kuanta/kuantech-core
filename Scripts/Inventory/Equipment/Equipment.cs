@@ -20,10 +20,6 @@ namespace Kuantech.Inventory
         public List<EquipmentSlot> slotTypes;
         public Dictionary<EquipmentSlotType, EquipmentSlot> slotTable;
         private Dictionary<string, EquipmentSlotType> _slotTypesById;
-        
-        //Events
-        public EventHandler<Item>  ItemEquippedEvent;
-        public EventHandler<Item> ItemUnequippedEvent;
 
         public void Initialize(InventoryModule parentInventory)
         {
@@ -65,13 +61,11 @@ namespace Kuantech.Inventory
             EquipmentSlotType itemSlotType = slotType;
             
             if (!slotTable.ContainsKey(itemSlotType)) return;
-            item.StateData.Equipped = true;
-            item.CurrentSlot = itemSlotType; //For weapons. While saving, we need to know where we have equipped it
             
             Item existingItem = slotTable[itemSlotType].item;
             if (existingItem != null && existingItem != item)
             {
-                ItemUnequippedEvent?.Invoke(this, existingItem);
+                ParentInventory.UnequipItem(existingItem);
             }
             
             slotTable[itemSlotType].item = item;
@@ -99,19 +93,19 @@ namespace Kuantech.Inventory
         public void UnequipItem(Item item)
         {
             if (item == null) return;
-            if (!slotTable.ContainsKey(item.CurrentSlot)) return;
-            EquipmentSlot slot = slotTable[item.CurrentSlot];
+            if (!slotTable.ContainsKey(item.GetEquippedSlot())) return;
+            EquipmentSlot slot = slotTable[item.GetEquippedSlot()];
             if (slot.item == item)
             {
                 slot.item = null;
             }
-            item.StateData.Equipped = false;
 
             if (item.ItemVisual != null)
             {
                 PoolManager.PoolObject(item.ItemVisual.gameObject);
                 item.ItemVisual = null;
             }
+            item.SetEquippedState(false);
             
             //UI handler
             try
@@ -124,6 +118,16 @@ namespace Kuantech.Inventory
             }
         }
         
+        public void UnequipAll()
+        {
+            if (slotTable == null) return;
+            foreach (var slot in slotTable.Values)
+            {
+                if (slot.item != null)
+                    UnequipItem(slot.item);
+            }
+        }
+
         private ActorVisual GetActorVisual()
         {
             if (ParentInventory == null)

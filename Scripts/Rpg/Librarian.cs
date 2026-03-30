@@ -69,7 +69,7 @@ namespace Kuantech.Rpg
         {
             ItemData itemData = ItemsVault.GetDataById(stateData.ItemId);
             Item item = Item.GetItemFromData(itemData);
-            item.StateData = stateData;
+            item.SetStateData(stateData);
             return item;
         }
         

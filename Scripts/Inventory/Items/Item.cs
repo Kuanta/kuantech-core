@@ -1,31 +1,45 @@
 ﻿using System;
 using System.Collections.Generic;
 using Kuantech.Core;
-using Kuantech.Rpg;
 using Kuantech.Utils;
+using UnityEngine;
 
 namespace Kuantech.Inventory
 {
     [Serializable]
     public class ItemStateData
     {
-        public string ItemId;
+        public string ItemId;  
         public int InventoryId;
         public int ItemLevel;
         public bool Equipped;
-        public Dictionary<AttributeAsset, StatModifier> StatModifiers;
+        public int Amount;
+        public EquipmentSlotType EquippedSlot;
+    }
+
+    /// <summary>
+    /// Compact, ScriptableObject-free snapshot of an item. Safe to send over RPCs and save to disk.
+    /// </summary>
+    [Serializable]
+    public struct SerializableItemState
+    {
+        public string ItemDataId;
+        public int InventoryId;
+        public int Amount;
+        public int ItemLevel;
+        public bool Equipped;
+        public string EquippedSlotId;
     }
 
     [Serializable]
     public class Item
     {
         public InventoryModule ParentInvetory;
-        public int Amount = 1;
         public ItemData Data;
         
         //Stats
-        public ItemStateData StateData;
-        public EquipmentSlotType CurrentSlot;
+        private ItemStateData _stateData;
+        //public EquipmentSlotType CurrentSlot;
         [NonSerialized] public ItemVisual ItemVisual;
 
         //Comps
@@ -33,19 +47,28 @@ namespace Kuantech.Inventory
         
         public Item(ItemData data)
         {
-            Amount = 1;
             Data = data;
-            StateData = new ItemStateData
-            {
-                StatModifiers = new Dictionary<AttributeAsset, StatModifier>()
-            };
-
+            CreateStateData();
             _components = new Dictionary<Type, ItemComponent>();
             if(Data.Components == null) return;
             foreach(var component in Data.Components)
             {
                 _components[component.GetType()] = component; //Is this polymorphic?
             }
+        }
+
+        private void CreateStateData()
+        {
+            _stateData = new ItemStateData();
+            _stateData.ItemId = Data.Id;
+            _stateData.InventoryId = -1;
+            _stateData.Equipped = false;
+            _stateData.EquippedSlot = null;
+        }
+
+        public void SetStateData(ItemStateData stateData)
+        {
+            _stateData = stateData;
         }
 
         #region Item Data Components
@@ -63,6 +86,8 @@ namespace Kuantech.Inventory
         #endregion
 
         #region Checks
+
+        
         public bool CanEquip(EquipmentSlotType slotType)
         {
             if(_components.IsNullOrEmpty()) return true;
@@ -84,6 +109,44 @@ namespace Kuantech.Inventory
         }
         #endregion
 
+        #region Setters
+        public void SetParentInventory(InventoryModule inventory)
+        {
+            ParentInvetory = inventory;
+        }
+
+        public void SetInventoryId(int inventoryId)
+        {
+            if(_stateData == null) _stateData = new ItemStateData();
+            _stateData.InventoryId = inventoryId;
+        }
+
+        public void AddAmount(int amount)
+        {
+            if (_stateData == null) _stateData = new ItemStateData();
+            _stateData.Amount += amount;
+            _stateData.Amount = Mathf.Max(0, _stateData.Amount);
+        }
+        public void SetAmount(int amount)
+        {
+            if (_stateData == null) _stateData = new ItemStateData();
+            _stateData.Amount = amount;
+        }
+
+        public void SetEquippedState(bool equipped)
+        {
+            if(_stateData == null) CreateStateData();
+            _stateData.Equipped = equipped;
+        }
+
+        public void SetEquippedSlot(EquipmentSlotType slotType)
+        {
+            if (_stateData == null) CreateStateData();
+            _stateData.EquippedSlot = slotType;
+        }
+
+        #endregion
+
         #region Getters
         /// <summary>
         /// Returns the item id
@@ -96,9 +159,32 @@ namespace Kuantech.Inventory
         
         public int GetInventoryId()
         {
-            if(StateData == null || ParentInvetory) return -1;
-            return StateData.InventoryId;
+            if (_stateData == null || ParentInvetory == null) return -1;
+            return _stateData.InventoryId;
         }
+        public bool IsEquipped()
+        {
+            if (_stateData == null) return false;
+            return _stateData.Equipped;
+        }
+        public EquipmentSlotType GetEquippedSlot()
+        {
+            if(_stateData == null) return null;
+            return _stateData.EquippedSlot;
+        }
+
+        public string GetEquippedSlotId()
+        {
+            if (_stateData == null || _stateData.EquippedSlot == null) return "";
+            return _stateData.EquippedSlot.Id;
+        }
+
+        public int GetAmount()
+        {
+            if (_stateData == null) return 0;
+            return _stateData.Amount;
+        }
+
         /// <summary>
         /// Returns the item name
         /// </summary>
@@ -119,6 +205,48 @@ namespace Kuantech.Inventory
         {
             return new Item(data);
         }
+
+        #region Serialization
+
+        public SerializableItemState BuildState()
+        {
+            return new SerializableItemState
+            {
+                ItemDataId     = Data.Id,
+                InventoryId    = _stateData.InventoryId,
+                Amount         = _stateData.Amount,
+                ItemLevel      = _stateData.ItemLevel,
+                Equipped       = _stateData.Equipped,
+                EquippedSlotId = GetEquippedSlotId(),
+            };
+        }
+
+        /// <summary>
+        /// Reconstructs an Item from a serialized state. Places it in the inventory's items array.
+        /// Returns null if ItemData is not found.
+        /// </summary>
+        public static Item FromState(SerializableItemState state, InventoryModule inventory)
+        {
+            ItemData itemData = ItemsManager.GetItemData(state.ItemDataId);
+            if (itemData == null)
+            {
+                Debug.LogWarning($"[Item] FromState: ItemData '{state.ItemDataId}' not found.");
+                return null;
+            }
+            Item item = new Item(itemData);
+            item.SetAmount(state.Amount);
+            item._stateData.ItemId      = state.ItemDataId;
+            item._stateData.InventoryId = state.InventoryId;
+            item._stateData.ItemLevel   = state.ItemLevel;
+            item._stateData.Equipped    = state.Equipped;
+            item.SetEquippedSlot(inventory.GetEquipmentSlotTypeFromId(state.EquippedSlotId));
+            item.ParentInvetory        = inventory;
+            inventory.ExtendInventory(state.InventoryId + 1);
+            inventory.items[state.InventoryId] = item;
+            return item;
+        }
+
+        #endregion
 
         #region Operations
         /// <summary>
@@ -154,6 +282,8 @@ namespace Kuantech.Inventory
             {
                 comp.OnItemEquipped(this, slotType);
             }
+            _stateData.Equipped = true;
+            _stateData.EquippedSlot = slotType;
             return true;
         }
 
@@ -168,6 +298,8 @@ namespace Kuantech.Inventory
             {
                 comp.OnItemUnequipped(this);
             }
+            _stateData.Equipped = false;
+            _stateData.EquippedSlot = null;
             return true;
         }
 
