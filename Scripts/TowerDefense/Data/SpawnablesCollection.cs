@@ -25,9 +25,24 @@ namespace Kuantech.TowerDefense
             [Header("Tags")]
             public List<EnemyTagAsset> Tags = new List<EnemyTagAsset>();
             
+            [Tooltip("Spawn Weight")]
+            public float SpawnWeight = 1;
+            
             [Header("Gating")]
             [Tooltip("This spawnable will NOT appear before this linear difficulty index.")]
             public int MinDifficultyLevel = 0;
+            
+            [Tooltip("This spawnable will NOT appear after this linear difficulty index.")]
+            public int MaxDifficultyLevel = 100;
+
+            /// <summary>
+            /// Wave Generator bu metodu çağıracak. 
+            /// İstersen bunu override edip cost'a, level'a veya hava durumuna göre değiştirebilirsin.
+            /// </summary>
+            public virtual float GetSpawnWeight(int currentLevel, float calculatedCost)
+            {
+                return SpawnWeight;
+            }
         }
         
         public List<SpawnableEntry> Spawnables;

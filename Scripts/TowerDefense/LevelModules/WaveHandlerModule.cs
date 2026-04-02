@@ -32,10 +32,10 @@ namespace Kuantech.TowerDefense
         
         //Runtime
         [NonSerialized] public int CurrentWaveIndex;
+        [NonSerialized] public bool WaveStarted;
         private UnitsManager _unitManager;
         private Queue<WaveEntry> _waveQueue;
         private float _lastSpawnTime;
-        private bool _waveStarted = false;
         
         private Queue<ActorSummonData> _pendingSummons = new Queue<ActorSummonData>();
         
@@ -61,6 +61,8 @@ namespace Kuantech.TowerDefense
             CurrentWaveIndex = -1;
 
             BaseMaxUnitsFactor = ConfigManager.GetFloatConfig("BaseMaxUnitsFactor", BaseMaxUnitsFactor);
+            
+            StopWave(); //Start as stopped
         }
         
         public override void PostLevelSetup()
@@ -74,7 +76,8 @@ namespace Kuantech.TowerDefense
         {
             if (waveDatas.IsNullOrEmpty())
             {
-                GenerateWaves(ParentLevel.GetPowerLevel(), waveCount);
+                WaveGeneratorConfig config = TowerDefenseLevelDataManager.GetWaveGeneratorConfig();
+                WaveDatas = WaveGenerator.Generate(config, SpawnablesCollection, ParentLevel.GetPowerLevel(), waveCount);
             }
             else
             {
@@ -89,14 +92,14 @@ namespace Kuantech.TowerDefense
             CurrentWaveIndex = -1;
             _waveCompleteRoutine = null;
             _currentMaxUnitsFactor = BaseMaxUnitsFactor;
-            _waveStarted = false;
+            WaveStarted = false;
             ToggleSummoners(false);
         }
         
         private void Update()
         {
             if (ParentLevel == null || ParentLevel.CurrentState != LevelState.Playing) return;
-            if (IsLevelInWavePhase() && _waveStarted)
+            if (IsLevelInWavePhase() && WaveStarted)
             {
                 SpawnNextWaveElement();
             }
@@ -168,9 +171,24 @@ namespace Kuantech.TowerDefense
 
         public void StartWave()
         {
-            _waveStarted = true;
-            ToggleSummoners(true);
+            ToggleSpawners(true);
+            WaveStarted = true;
         }
+
+        public void StopWave()
+        {
+            ToggleSpawners(false);
+            WaveStarted = false;
+        }
+        
+        public void ToggleSpawners(bool toggle)
+        {
+            foreach (var spawner in ActorSummoners)
+            {
+                spawner.Toggled = toggle;
+            }
+        }
+        
         public void SetNextWave()
         {
             SetWave(CurrentWaveIndex+1);
@@ -367,7 +385,6 @@ namespace Kuantech.TowerDefense
             {
                 currentlyAlive += entry.Amount;
             }
-
             return currentlyAlive;
         }
 
@@ -419,9 +436,7 @@ namespace Kuantech.TowerDefense
             {
                 return;
             }
-
-            _waveStarted = false;
-            ToggleSummoners(false);
+            StopWave();
             _waveCompleteRoutine = CompleteWaveRoutine();
             StartCoroutine(_waveCompleteRoutine);
         }
@@ -457,11 +472,18 @@ namespace Kuantech.TowerDefense
         
         #region Debug
         [Button("Generate Wave Datas")]
-        public void GenerateWaves(int difficultyLevel, int waveCount)
+        public void GenerateWaves(WaveGeneratorConfig config, int difficultyLevel, int waveCount)
         {
             //Generate
-            WaveGeneratorConfig config = TowerDefenseLevelDataManager.GetWaveGeneratorConfig();
             WaveDatas = WaveGenerator.Generate(config, SpawnablesCollection, difficultyLevel, waveCount);
+            foreach (var wave in WaveDatas)
+            {
+                Debug.Log("===Wave===");
+                foreach (var entry in wave.WaveEntries)
+                {
+                    Debug.Log($"Entry: SpawnableIndex={entry.SpawnableIndex}, SpawnerIndex={entry.SpawnerIndex}, Amount={entry.Amount}");
+                }
+            }
         }
         #endregion
     }

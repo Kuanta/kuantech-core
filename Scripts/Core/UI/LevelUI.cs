@@ -22,13 +22,14 @@ namespace Kuantech.Core.UI
         public List<UIElement> UIElements;
 
         private Dictionary<string, UIElement> _phasePanelsById = new Dictionary<string, UIElement>();
+        private Level _parentLevel;
         public virtual void Initialize()
         {
-           
         }
         
         public virtual void OnLevelSetup(Level level)
         {
+            _parentLevel = level;
             level.OnStateChangeEvent += OnLevelStateChanged;
             level.OnPhaseChangeEvent += OnLevelPhaseChanged;
 
@@ -36,6 +37,7 @@ namespace Kuantech.Core.UI
             foreach(var panelEntry in PhasePanels)
             {
                 if(panelEntry.PhasePanel == null || panelEntry.PhaseKey.IsNullOrEmpty()) continue;
+                panelEntry.PhasePanel.Initialize();
                 _phasePanelsById[panelEntry.PhaseKey] = panelEntry.PhasePanel;
             }
         }
@@ -69,6 +71,22 @@ namespace Kuantech.Core.UI
                     pair.Value.Close();
                 }
             }
+        }
+        
+        /// <summary>
+        /// Returns current phase panel
+        /// </summary>
+        /// <returns></returns>
+        public UIElement GetCurrentPhasePanel()
+        {
+            foreach (var pair in _phasePanelsById)
+            {
+                if (pair.Key == _parentLevel.PhaseSystem.CurrentPhaseKey)
+                {
+                    return pair.Value;
+                }
+            }
+            return null;
         }
         
         protected virtual void OnLevelStateChanged(LevelStateChangeData stateChangeData)

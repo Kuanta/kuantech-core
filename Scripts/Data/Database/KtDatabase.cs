@@ -11,9 +11,8 @@ namespace Kuantech.Core.Database
     public class KtDatabase : MonoBehaviour
     {
         [SerializeField] private string Name;
-
+        [SerializeField] private bool UpdateFromRemote = true;
         [SerializeField] private DatabaseSheetReader SheetReader;
-        
         public List<DataTable> Tables;
         
         private Dictionary<string, DataTable> _tablesLookup;
@@ -37,7 +36,10 @@ namespace Kuantech.Core.Database
         [Button("Update Database")]
         public async UniTask UpdateDatabase()
         {
-            if (SheetReader == null) return;
+            if (SheetReader == null || !UpdateFromRemote)
+            {
+                return;
+            }
             await SheetReader.UpdateDatabase(this);
         }
         

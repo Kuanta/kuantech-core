@@ -114,14 +114,14 @@ namespace Kuantech.Core
         
         public virtual void SetupLevel()
         {
-            DetectModules();
-            SetupPhaseSystem();
-            SetupComponents();
             LevelUI = UIManager.GetLevelUI();
+            DetectModules();
             if (LevelUI != null)
             {
                 LevelUI.OnLevelSetup(this);
             }
+            SetupPhaseSystem();
+            SetupComponents();
             ChangeLevelState(LevelState.Waiting);
             
             //Call post level setup

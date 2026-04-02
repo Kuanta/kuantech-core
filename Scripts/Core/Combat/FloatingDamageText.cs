@@ -33,7 +33,7 @@ namespace Kuantech.Core
             {
                 Animator.SetTrigger(ShowHash);
             }
-            Text.text = damageInfo.DamageAmount.Stringfy(true);
+            Text.text = damageInfo.GetDamage().Stringfy(true);
 
             if (AdjustColors)
             {

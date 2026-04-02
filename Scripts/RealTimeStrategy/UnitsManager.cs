@@ -25,6 +25,7 @@ namespace Kuantech.RealTimeStrategy
         private Dictionary<int, int> _maxUnitsPerFaction;
         private Dictionary<int, float> _maxUnitsFactorPerFaction;
         public HashSet<Actor> SpawnedActors = new HashSet<Actor>();
+        public HashSet<Actor> DeadActors = new HashSet<Actor>();
         
 
         //todo(rts): Factions management here. Something like factions lookup table
@@ -75,6 +76,8 @@ namespace Kuantech.RealTimeStrategy
             {
                 actor.OnDeathEvent -= OnActorDeath;
                 actor.OnDeathEvent += OnActorDeath;
+                actor.OnDespawnedEvent -= OnActorDespawn;
+                actor.OnDespawnedEvent += OnActorDespawn;
                 if (spawned)
                 {
                     SpawnedActors.Add(actor);
@@ -120,7 +123,8 @@ namespace Kuantech.RealTimeStrategy
             UnregisterActor(actor);
             OnActorRemoved?.Invoke(actor);
         }
-
+        
+        
         private void UnregisterActor(Actor actor)
         {
             int factionId = actor.GetFactionId();
@@ -128,6 +132,11 @@ namespace Kuantech.RealTimeStrategy
             {
                 _actorsByFaction[factionId].Remove(actor);
             }
+        }
+
+        public HashSet<Actor> GetAllActors()
+        {
+            return SpawnedActors;
         }
         
         /// <summary>
@@ -189,18 +198,41 @@ namespace Kuantech.RealTimeStrategy
             {
                 if (actor != null)
                 {
-                    //Play a vfx here?
                     actor.Despawn(0.0f);
                     UnregisterActor(actor);
                 }
             }
             SpawnedActors.Clear();
+            
+            //To clear all dead actors that are not despawned yet
+            foreach (var actor in DeadActors)
+            {
+                if (actor != null)
+                {
+                    actor.Despawn(0.0f);
+                }
+            }
+            DeadActors.Clear();
+        }
+
+        public void ClearSpawnedActorsByFaction(int faction)
+        {
+            HashSet<Actor> originalActorsSet = GetActorsByFaction(faction);
+            if (originalActorsSet.IsNullOrEmpty()) return;
+            HashSet<Actor> actors = new HashSet<Actor>(originalActorsSet);
+            if(actors.IsNullOrEmpty()) return; 
+            foreach (var actor in actors)
+            {
+                actor.Despawn();
+                UnregisterActor(actor);
+            }
         }
         
         #region Pop limit
         
         public bool CanSpawnActor(ActorBlueprint actorBlueprint)
         {
+            if (actorBlueprint == null) return false;
             int maxUnitCount = GetMaxActorCountByFaction(actorBlueprint.FactionId);
             if (GetSpawnedActorCountByFaction(actorBlueprint.FactionId) >= maxUnitCount && maxUnitCount >= 0) return false;
             int actorPerFaction = GetSpawnedActorCountByFaction(actorBlueprint.FactionId);
@@ -214,7 +246,7 @@ namespace Kuantech.RealTimeStrategy
 
         public int GetMaxActorCountByFaction(int faction)
         {
-            if (_maxUnitsPerFaction.ContainsKey(faction))
+            if (!_maxUnitsPerFaction.IsNullOrEmpty() && _maxUnitsPerFaction.ContainsKey(faction))
             {
                 float factor = GetMaxUnitFactorPerFaction(faction);
                 return Mathf.FloorToInt(_maxUnitsPerFaction[faction] * factor);
@@ -266,12 +298,21 @@ namespace Kuantech.RealTimeStrategy
             base.OnReset();
             ClearSpawnedActors();
         }
-        public void OnActorDeath(Actor actor)
+        public void OnActorDeath(Actor.KillFeedData killFeedData)
         {
-            if (actor == null) return;
-            RemoveActor(actor);
+            if (killFeedData.DeadActor == null) return;
+            RemoveActor(killFeedData.DeadActor);
+            DeadActors.Add(killFeedData.DeadActor);
         }
 
+        public void OnActorDespawn(Actor actor)
+        {
+            if (actor == null) return;
+            if (DeadActors != null && DeadActors.Contains(actor))
+            {
+                DeadActors.Remove(actor);
+            }
+        }
         public override void OnLevelStateChange(LevelStateChangeData levelStateChangeData)
         {
             base.OnLevelStateChange(levelStateChangeData);

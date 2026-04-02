@@ -14,7 +14,8 @@ namespace Kuantech.Core.HyperCasual
         [SerializeField] private ToggleButton ToggleMusicButton;
         [SerializeField] private ToggleButton ToggleSfxButton;
         [SerializeField] private ToggleButton ToggleHapticsButton;
- 
+        [SerializeField] private bool PauseGame = true;
+        
         public override void Initialize()
         {
             if (Initialized) return;
@@ -55,13 +56,13 @@ namespace Kuantech.Core.HyperCasual
         {
             base.Show();
             UpdateElements();
-            GameManager.PauseGame();
+            if(PauseGame) GameManager.PauseGame();
         }
 
         public override void Hide()
         {
             base.Hide();
-            GameManager.ResumeGame();
+            if(PauseGame) GameManager.ResumeGame();
         }
         
         #region Sound

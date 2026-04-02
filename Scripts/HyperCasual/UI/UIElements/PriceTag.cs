@@ -26,6 +26,12 @@ namespace Kuantech.HyperCasual.UI
             SetPrice(info.GetPrice(CurrencyId));
         }
 
+        public void SetPrice(PriceInfo priceInfo)
+        {
+            SetPrice(priceInfo.GetPrice());
+            SetCurrency(priceInfo.CurrencyAsset);
+        }
+
         /// <summary>
         /// Sets the price text directly to the given argument
         /// </summary>

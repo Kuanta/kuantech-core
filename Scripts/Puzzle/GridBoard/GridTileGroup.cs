@@ -49,20 +49,21 @@ namespace Kuantech.Puzzle
             tile.transform.SetParent(transform);
             return true;
         }
-        
+
         /// <summary>
         /// Checks whether the tile group can be placed to given row and col
         /// </summary>
         /// <param name="board"></param>
         /// <param name="row"></param>
         /// <param name="col"></param>
+        /// <param name="layer"></param>
         /// <returns></returns>
-        public bool CanBePlacedToBoard(GridBoard board, int row, int col)
+        public bool CanBePlacedToBoard(GridBoard board, int row, int col,int layer)
         {
             foreach (var pair in ChildTiles)
             {
                 GridTileCoordinate coord = pair.Key;
-                if (!board.IsTileValidAndEmpty(coord.Row + row, coord.Column + col)) return false;
+                if (!board.IsTileValidAndEmpty(coord.Row + row, coord.Column + col, layer)) return false;
             }
 
             return true;
@@ -73,13 +74,13 @@ namespace Kuantech.Puzzle
         /// </summary>
         /// <param name="board"></param>
         /// <returns></returns>
-        public bool CanBePlacedToBoard(GridBoard board)
+        public bool CanBePlacedToBoard(GridBoard board, int layer)
         {
             for (int r = 0; r < board.RowCount; ++r)
             {
                 for (int c = 0; c < board.ColumnCount; ++c)
                 {
-                    if (CanBePlacedToBoard(board, r, c)) return true;
+                    if (CanBePlacedToBoard(board, r, c, layer)) return true;
                 }
             }
             return false;
@@ -91,13 +92,13 @@ namespace Kuantech.Puzzle
         /// <param name="board"></param>
         /// <param name="row"></param>
         /// <param name="col"></param>
-        public virtual bool PlaceOnBoard(GridBoard board, int row, int col)
+        public virtual bool PlaceOnBoard(GridBoard board, int row, int col, int layer)
         {
             foreach (var pair in ChildTiles)
             {
                 GridTileCoordinate localCoord = pair.Key;
                 GridTile tile = pair.Value;
-                if (!board.MoveTile(tile, localCoord.Row + row, localCoord.Column + col)) return false;
+                if (!board.MoveTile(tile, localCoord.Row + row, localCoord.Column + col, layer)) return false;
             }
             OnPlacedOnBoard?.Invoke();
             return false;

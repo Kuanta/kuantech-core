@@ -186,7 +186,7 @@ namespace Kuantech.Core.FX
             }
         }
 
-        private void OnHealReceived(DamageInfo damageInfo)
+        private void OnHealReceived(float heal)
         {
             if (HealEffect != null)
             {

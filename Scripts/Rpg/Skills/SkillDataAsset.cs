@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using Kuantech.Core;
+using Kuantech.Core.Combat;
 using UnityEngine;
 
 namespace Kuantech.Rpg.Skills
@@ -6,9 +8,25 @@ namespace Kuantech.Rpg.Skills
     [CreateAssetMenu(fileName = "SkillDataAsset", menuName = "Kuantech/Rpg/Skills/SkillDataAsset")]
     public class SkillDataAsset : ScriptableObject
     {
+        public enum SkillCastTypes
+        {
+            None,
+            Targeted,
+            Self,
+            Directional,
+            ToPoint,
+        }
+        
+        [Header("Skill Info")]
         public string SkillId;
         public string SkillName;
         public string SkillDescription;
+        public SkillCastTypes SkillCastType;
+        public bool WaitRotationalAlignToTarget;
+        
+        [Header("Required Resource")]
+        public ResourceAsset RequiredResource;
+        public float RequiredResourceAmount;
         
         [Header("Behaviours")]
         public List<SkillBehaviourData> SkillBehaviours;
@@ -19,5 +37,12 @@ namespace Kuantech.Rpg.Skills
         [Header("Skill Variables")]
         public List<SkillVariableData> SkillVariableDatas;
         public float SkillCooldown;
+        public float SkillRange;
+        
+        //todo: This is ai related, remove it from here
+        [Header("Targeting Behaviour")] 
+        public bool TargetsAllies = false;
+        public bool TargetsEnemies = true;
+        public TargetPriorityBehaviour TargetPriorityBehaviour;
     }
 }

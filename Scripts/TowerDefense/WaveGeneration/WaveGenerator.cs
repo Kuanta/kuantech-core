@@ -1,214 +1,178 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
 namespace Kuantech.TowerDefense
-{ 
-public static class 
-    WaveGenerator
 {
-    // params scaled for level
-    public struct LevelParams
+    public static class WaveGenerator
     {
-        public int LinearLevelIndex;
-        public int Seed;
-        public int PowerLevel;
-        public int BaseBudget;         // runtimeBudgetBase
-        public int MaxConcurrent;      // runtimeMaxConc
-        public float ChainChance;
-        public float EarlyLateMix;     // 0..1 (0=early, 1=late)
-    }
-
-    // params scaled for wave
-    public struct WaveParams
-    {
-        public int WaveIndex;
-        public float T01;           // intra difficulty t (0..1)
-        public float Delay;         // this wave delay
-        public float Mix;           // this wave composition mix (0..1)
-        public int   Budget;        // this wave budget (rest penalty vs intraBudget uygulanmış)
-        public int   MaxConcurrent; // this wave max conc
-    }
-
-    /// <summary>
-    /// Creates the base parameters for the level with given difficulty
-    /// </summary>
-    /// <returns></returns>
-    public static LevelParams ComputeLevelParams(WaveGeneratorConfig cfg, int linearLevelIndex)
-    {
-        if (cfg == null) throw new Exception("WaveGeneratorConfig is null.");
-        var rp = cfg.GetParamsForLevel(linearLevelIndex);
-
-        // base budget (difficulty’e göre)
-        int baseBudget = Mathf.RoundToInt(
-            (cfg.BaseBudget + cfg.BudgetGrowth * linearLevelIndex) * rp.BudgetMul
-            + rp.BudgetQuadTerm
-        );
-        baseBudget = Mathf.Max(5, baseBudget);
-
-        // Max concurrency (max amount of enemies on the battle)
-        int maxConc = Mathf.RoundToInt(Mathf.Lerp(cfg.MaxConcurrentBase, cfg.MaxConcurrentCap, rp.ConcurrencyT));
-        maxConc = Mathf.Clamp(maxConc, cfg.MaxConcurrentBase, cfg.MaxConcurrentCap);
-
-        return new LevelParams
+        // Adayları seçerken geçici olarak verileri tuttuğumuz sınıf
+        public class EnemyWeightParams
         {
-            LinearLevelIndex = linearLevelIndex,
-            Seed             = MixSeed(cfg.Seed ^ cfg.SeedSalt, linearLevelIndex),
-            PowerLevel       = rp.PowerLevel,
-            BaseBudget       = baseBudget,
-            MaxConcurrent    = maxConc,
-            ChainChance      = Mathf.Lerp(cfg.ChainChance, rp.ChainChance, 0.7f),
-            EarlyLateMix     = rp.EarlyLateMix
-        };
-    }
-
-    #region Tag Filtering
-
-    /// <summary>
-    /// Final selection weight for a candidate spawnable.
-    /// Combines cheap-bias with tag-based rules, duplicate penalty, share caps, opener bonus, scarcity.
-    /// </summary>
-    private static double ComputeCandidateWeight(
-        WaveGeneratorConfig cfg,
-        SpawnablesCollection.SpawnableEntry cand,
-        float targetSpend,              
-        float cost,                        
-        float t01,                         
-        bool isOpener,                      
-        int? lastPickedType,                
-        Dictionary<EnemyTagAsset,int> tagUnitCounts,  
-        int totalUnits           
-    )
-    {
-        // 1) “cheap bias” (ucuzlara eğilim)
-        double w = Math.Pow(
-            Math.Max(0.1, (double)targetSpend / Math.Max(1.0, cost)),
-            cfg.CheapBiasPower
-        );
-
-        // 2) Tag based multiplier
-        var tags = cand.Tags;
-        if (tags != null && tags.Count > 0)
-        {
-            double sum = 0.0;
-            int used = 0;
-
-            for (int i = 0; i < tags.Count; i++)
-            {
-                var tag = tags[i];
-                if (tag == null) continue;
-
-                var rule = cfg.FindRule(tag);
-
-                float tagWeight = 1f;
-                float maxShare = 1f;
-                float openerMul = 1f;
-                float scarcityPow = 0f;
-
-                if (rule != null)
-                {
-                    tagWeight   = rule.BaseWeight * rule.WeightOverT.Evaluate(t01);
-                    maxShare    = Mathf.Clamp01(rule.MaxShare);
-                    openerMul   = isOpener ? Mathf.Max(0f, rule.OpenerMultiplier) : 1f;
-                    scarcityPow = Mathf.Max(0f, rule.ScarcityPower);
-                }
-
-                int usedCount = 0;
-                // share cap
-                if (maxShare < 1f && totalUnits > 0 && tagUnitCounts != null &&
-                    tagUnitCounts.TryGetValue(tag, out usedCount))
-                {
-                    float share = (float)usedCount / totalUnits;
-                    if (share >= maxShare * 0.98f) tagWeight = 0f;
-                }
-
-                // scarcity
-                if (scarcityPow > 0f && totalUnits > 0 && tagUnitCounts != null)
-                {
-                    tagUnitCounts.TryGetValue(tag, out usedCount);
-                    float scarcity = 1f - ((float)usedCount / totalUnits); // 0..1
-                    tagWeight *= Mathf.Pow(Mathf.Clamp01(scarcity), scarcityPow);
-                }
-
-                tagWeight *= openerMul;
-
-                sum  += tagWeight;
-                used += 1;
-            }
-
-            if (used > 0)
-            {
-                w *= Math.Max(0.0, sum / used);
-            }
+            public SpawnablesCollection.SpawnableEntry Entry;
+            public float Cost;
+            public float SelectionWeight;
         }
 
-        // 3) duplicate penalty
-        if (lastPickedType.HasValue && cand.SpawnableIndex == lastPickedType.Value)
-            w *= Math.Max(0.0, cfg.DuplicatePenalty);
-
-        return w;
-    }
-
-    #endregion
-    
-    public static WaveParams ComputeWaveParams(
-        WaveGeneratorConfig cfg,
-        LevelParams lp,
-        int waveIndex,
-        int waveCount
-    )
-    {
-        if (cfg == null) throw new Exception("WaveGeneratorConfig is null.");
-        waveCount = Mathf.Max(1, waveCount);
-
-        // intra difficulty t (0..1) – dalga içi eğriler için
-        float baseProgress = (waveCount <= 1) ? 1f : (waveIndex + 0.5f) / waveCount;
-        float t01 = Mathf.Clamp01(cfg.IntraWaveDifficulty.Evaluate(baseProgress));
-
-        // delay
-        float d01   = Mathf.Clamp01(cfg.IntraDelay.Evaluate(t01));
-        float delay = Mathf.Lerp(cfg.DelayMin, cfg.DelayMax, d01);
-
-        // early/late mix: level tendency (lp.EarlyLateMix) ile intra mix’i harmanla
-        float intraMix = Mathf.Clamp01(cfg.IntraEarlyLateMix.Evaluate(t01));
-        float mix      = Mathf.Clamp01(Mathf.Lerp(lp.EarlyLateMix, intraMix, 0.6f));
-
-        // budget: base * intraBudget + rest penalty
-        float bmul  = Mathf.Max(0.1f, cfg.IntraBudget.Evaluate(t01));
-        int budget  = Mathf.RoundToInt(lp.BaseBudget * bmul);
-        if (cfg.RestEveryN > 0 && (waveIndex + 1) % cfg.RestEveryN == 0)
-            budget = Math.Max(10, budget - cfg.RestPenalty);
-
-        return new WaveParams
+        /// <summary>
+        /// Belirtilen sayıda wave içeren bir liste üretir.
+        /// </summary>
+        public static List<WaveData> Generate(
+            WaveGeneratorConfig config, 
+            SpawnablesCollection spawnables, 
+            int difficultyLevel, 
+            int waveCount)
         {
-            WaveIndex     = waveIndex,
-            T01           = t01,
-            Delay         = delay,
-            Mix           = mix,
-            Budget        = budget,
-            MaxConcurrent = lp.MaxConcurrent
-        };
-    }
-    
-    /// <summary>
-    /// Public entry point with ramp support.
-    /// You pass a base WaveGeneratorConfig, a LevelRampConfig, and the linearLevelIndex (your difficulty index).
-    /// This method derives per-level parameters (budget, concurrency, delay, composition mix, power level, seed)
-    /// and delegates to the private GenerateCore(...).
-    /// </summary>
-    public static List<WaveData> Generate(
-    WaveGeneratorConfig config,
-    SpawnablesCollection spawnables,
-    int linearLevelIndex,
-    int waveCount
-)
-{
-    if (config == null) throw new Exception("WaveGeneratorConfig is null.");
-    if (spawnables == null || spawnables.Spawnables == null || spawnables.Spawnables.Count == 0)
-        throw new Exception("SpawnablesCollection is empty!");
+            List<WaveData> generatedWaves = new List<WaveData>();
 
-    LevelParams levelParams = ComputeLevelParams(config, linearLevelIndex);
+            if (config == null || spawnables == null || config.DataGetter == null)
+            {
+                Debug.LogError("WaveGenerator: Config, Spawnables veya DataGetter eksik!");
+                return generatedWaves;
+            }
+
+            // ---------------------------------------------------------
+            // 1) Aday Havuzunu Oluştur (Create Candidate Pool)
+            // ---------------------------------------------------------
+            // Bunu döngünün dışında yapıyoruz ki her wave için tekrar tekrar 
+            // cost hesabı ve level kontrolü yapmayalım. Performans için önemli.
+            List<EnemyWeightParams> candidates = CreateCandidatePool(config, spawnables, difficultyLevel);
+
+            if (candidates.Count == 0)
+            {
+                Debug.LogWarning($"Level {difficultyLevel} için uygun hiç düşman bulunamadı! Min/Max Level ayarlarını kontrol et.");
+                return generatedWaves;
+            }
+
+            // ---------------------------------------------------------
+            // 2) Wave'leri Üret
+            // ---------------------------------------------------------
+            for (int w = 0; w < waveCount; w++)
+            {
+                // Artık wave üretim mantığı ayrı bir metodda
+                WaveData wave = GenerateSingleWave(config, candidates, difficultyLevel, w, waveCount);
+                generatedWaves.Add(wave);
+            }
+
+            return generatedWaves;
+        }
+
+        /// <summary>
+        /// Tek bir WaveData üretir ve içini doldurur.
+        /// </summary>
+        public static WaveData GenerateSingleWave(
+            WaveGeneratorConfig config, 
+            List<EnemyWeightParams> allCandidates, 
+            int difficultyLevel, 
+            int waveIndex,
+            int totalWaves)
+        {
+            WaveData wave = new WaveData();
+            wave.EnemyFactionId = 1;
+            wave.WaveActorsLevel = difficultyLevel;
+            wave.WaveEntries = new List<WaveEntry>();
+            wave.WaveSpawnDelay = config.SpawnInterval;
+                        
+            // DEPRECATED
+            wave.EnemyProbabilities = new EnemyProbabilityData { Values = new List<int>(), Weights = new List<float>() };
+            
+            float currentProgress = (float)waveIndex / Mathf.Max(1, totalWaves - 1);
+
+            // Sadece "Zamanı Gelmiş" olanları filtrele
+            var validCandidatesForThisWave = allCandidates
+                .Where(c => IsCandidateAllowedByPhase(c.Entry, currentProgress, config))
+                .ToList();
+    
+            // Eğer filtre sonucu herkes elendiyse (örn: hepsi "Late" tagliyse ve biz baştaysak)
+            // Güvenlik önlemi olarak ana listeyi kullan, oyun kilitlenmesin.
+            if (validCandidatesForThisWave.Count == 0)
+            {
+                Debug.LogWarning($"Wave {waveIndex}: Tag kuralları yüzünden uygun düşman kalmadı. Kurallar yoksayılıyor.");
+                validCandidatesForThisWave = allCandidates;
+            }
+
+
+            // Bütçe Hesabı: (Baz + (Level * Artış)) * (WaveÇarpanı ^ WaveIndex)
+            float baseLevelBudget = config.BaseBudget + (difficultyLevel * config.BudgetPerLevel);
+            float currentWaveBudget = baseLevelBudget * Mathf.Pow(config.WaveDifficultyMultiplier, waveIndex);
+
+            // İçeriği doldur
+            FillWaveContent(wave, currentWaveBudget, validCandidatesForThisWave);
+
+            return wave;
+        }
+        private static bool IsCandidateAllowedByPhase(SpawnablesCollection.SpawnableEntry entry, float progress, WaveGeneratorConfig config)
+        {
+            // Tag listesi yoksa veya boşsa her zaman izin ver
+            if (entry.Tags == null || entry.Tags.Count == 0) return true;
+
+            foreach (var tag in entry.Tags)
+            {
+                // Eğer tag null ise geç
+                if (tag == null) continue;
+
+                // Config'den bu tag için gereken min progress değerini al
+                float requiredProgress = config.GetMinProgressForTag(tag);
+
+                // Eğer henüz o ilerlemede değilsek REDDET
+                if (progress < requiredProgress)
+                {
+                    return false; 
+                }
+            }
+    
+            // Tüm tag'leri kontrol ettik, hiçbiri "henüz erken" demedi.
+            return true;
+        }
+        /// <summary>
+        /// Spawnable listesinden levele uygun adayları seçer ve maliyetlerini hesaplar.
+        /// </summary>
+        public static List<EnemyWeightParams> CreateCandidatePool(
+            WaveGeneratorConfig config, 
+            SpawnablesCollection spawnables, 
+            int difficultyLevel)
+        {
+            List<EnemyWeightParams> candidates = new List<EnemyWeightParams>();
+
+            foreach (var entry in spawnables.Spawnables)
+            {
+                if (entry == null || entry.ActorBlueprint == null) continue;
+
+                // Min Level Kontrolü
+                if (difficultyLevel < entry.MinDifficultyLevel) continue;
+
+                // Max Level Kontrolü
+                if (difficultyLevel > entry.MaxDifficultyLevel) continue;
+
+                // Cost ve Weight Hesabı
+                float cost = config.ComputeScore(entry, difficultyLevel);
+                float weight = entry.GetSpawnWeight(difficultyLevel, (int)cost);
+
+                if (weight <= 0f) continue;
+
+                candidates.Add(new EnemyWeightParams
+                {
+                    Entry = entry,
+                    Cost = cost,
+                    SelectionWeight = weight
+                });
+            }
+
+            return candidates;
+        }
+
+        /// <summary>
+        /// Verilen bütçeye göre WaveData'nın entry listesini doldurur.
+        /// </summary>
+        private static void FillWaveContent(WaveData wave, float budget, List<EnemyWeightParams> candidates)
+        {
+            System.Random rng = new System.Random();
+            List<WaveEntry> tempEntries = new List<WaveEntry>();
+            float currentBudget = budget;
+            int safetyCounter = 0;
+
+            // En ucuz düşmanın maliyetini bul (döngüden çıkış şartı)
+            float minCost = candidates.Min(x => x.Cost);
 
 
     return GenerateCore(
@@ -312,13 +276,11 @@ public static class
             var poolForThisEntry = pool;
             if (inSafeWindow)
             {
-                var safePool = pool.Where(e => HasAll(e.Tags, cfg.FirstWaveEntriesAllowed)).ToList();
-                if (safePool.Count > 0) poolForThisEntry = safePool;
-            }
-            
-            var candidates = new List<(SpawnablesCollection.SpawnableEntry e, float cost, double w)>();
-            
-            bool isOpener = wave.WaveEntries.Count < cfg.OpenerEntryCount; //Check if first few entries. Can be used to scale down the prob of a certain tag
+                // Bütçenin yettiği adayları filtrele
+                var affordableCandidates = candidates.Where(x => x.Cost <= currentBudget).ToList();
+                
+                // Hiçbir şeye para yetmiyorsa çık
+                if (affordableCandidates.Count == 0) break;
 
             foreach (var e in poolForThisEntry)
             {
@@ -439,177 +401,47 @@ public static class
                     Amount         = extra
                 });
 
-                remaining -= pick.cost * extra;
-                entriesLeftGoal = Mathf.Max(1, entriesLeftGoal - 1);
-                if (cfg.SpawnerLaneCount > 0) spawner = (spawner + 1) % cfg.SpawnerLaneCount;
+                currentBudget -= selected.Cost;
+                safetyCounter++;
             }
+
+            // ---------------------------------------------------------
+            // Shuffle (Homojen Dağılım)
+            // ---------------------------------------------------------
+            Shuffle(tempEntries, rng);
             
-            // advance entry index
-            entryIndex++;
+            wave.WaveEntries = tempEntries;
+            wave.GeneratedEnemyCount = tempEntries.Count;
+        }
+    }
+    }
+    }
+
+        private static EnemyWeightParams PickWeightedRandom(List<EnemyWeightParams> list, System.Random rng)
+        {
+            float totalWeight = list.Sum(x => x.SelectionWeight);
+            double randomValue = rng.NextDouble() * totalWeight;
             
-            // --- OPTIONAL: Variety injection near the end ---
-            if (cfg.ForceInjectWhenMonotone)
+            foreach (var item in list)
             {
-                int distinct = 0;
-                foreach (var kv in typeCounts) if (kv.Value > 0) distinct++;
-
-                bool lowVariety = distinct < cfg.MinDistinctTypesPerWave;
-                bool waveAlmostDone =
-                    remaining <= (int)(originalWaveBudget * 0.2f) ||
-                    wave.WaveEntries.Count >= (cfg.MaxWaveEntryCount - 2);
-
-                if (lowVariety && waveAlmostDone)
+                if (randomValue < item.SelectionWeight)
                 {
-                    // find a different type than lastPickedType with smallest cost
-                    SpawnablesCollection.SpawnableEntry inject = null;
-                    float injectCost = float.MaxValue;
-
-                    foreach (var e in pool)
-                    {
-                        if (lastPickedType.HasValue && e.SpawnableIndex == lastPickedType.Value) continue;
-
-                        float c = cfg.CalculateCost(e, levelParams.PowerLevel);
-                        if (c <= remaining && c < injectCost)
-                        {
-                            // also respect max share guard
-                            typeCounts.TryGetValue(e.SpawnableIndex, out int used);
-                            float share = (totalUnits > 0) ? (float)used / totalUnits : 0f;
-                            if (share >= cfg.MaxTypeShare * 0.98f) continue;
-
-                            inject = e;
-                            injectCost = c;
-                        }
-                    }
-
-                    if (inject != null)
-                    {
-                        int extraAmount = (int)Mathf.Clamp(cfg.InjectAmount, 1, Mathf.Max(1, remaining / injectCost));
-                        wave.WaveEntries.Add(new WaveEntry
-                        {
-                            SpawnableIndex = inject.SpawnableIndex,
-                            SpawnerIndex   = (cfg.SpawnerLaneCount <= 0) ? 0 : spawner,
-                            Amount         = extraAmount
-                        });
-
-                        // update counters
-                        typeCounts.TryGetValue(inject.SpawnableIndex, out int cur2);
-                        cur2 += extraAmount;
-                        typeCounts[inject.SpawnableIndex] = cur2;
-                        totalUnits += extraAmount;
-
-                        remaining -= injectCost * extraAmount;
-                        if (cfg.SpawnerLaneCount > 0) spawner = (spawner + 1) % cfg.SpawnerLaneCount;
-
-                        lastPickedType = inject.SpawnableIndex;
-
-                
-                    }
+                    return item;
                 }
+                randomValue -= item.SelectionWeight;
+            }
+            return list.Last(); // Yuvarlama hatası koruması
+        }
+
+        private static void Shuffle<T>(List<T> list, System.Random rng)
+        {
+            int n = list.Count;
+            while (n > 1) 
+            { 
+                n--; 
+                int k = rng.Next(n + 1); 
+                (list[k], list[n]) = (list[n], list[k]); 
             }
         }
-        waves.Add(wave);
     }
-
-    return waves;
-}
-
-    
-    private static bool HasAny(List<EnemyTagAsset> tags, List<EnemyTagAsset> allow)
-    {
-        if (allow == null || allow.Count == 0) return true;
-        if (tags == null) return false;
-        foreach (var t in tags)
-            if (t != null && allow.Contains(t)) return true;
-        return false;
-    }
-
-    private static bool HasAll(List<EnemyTagAsset> enemyTags, List<EnemyTagAsset> allowed)
-    {
-        if (enemyTags == null || enemyTags.Count == 0) return false;        // Reject enemy with no tag
-        if (allowed == null || allowed.Count == 0) return true; 
-        foreach (var t in enemyTags)
-            if (t == null || !allowed.Contains(t)) return false; // If even a single tag isn't allowed, reject
-        return true;
-    }
-    
-    private static void Shuffle<T>(List<T> list, System.Random rng)
-    {
-        for (int i = list.Count - 1; i > 0; i--)
-        {
-            int j = rng.Next(0, i + 1);
-            (list[i], list[j]) = (list[j], list[i]);
-        }
-    }
-
-    private static int MixSeed(int seed, int level)
-    {
-        unchecked
-        {
-            int h = seed;
-            h ^= level * 19349663;
-            return h;
-        }
-    }
-    
-    
-    
-    // Optional helper to print to console
-    public static void LogReport(DebugReport r)
-    {
-        if (r == null) { Debug.LogWarning("[WaveGen] (null report)"); return; }
-        var sb = new System.Text.StringBuilder(512);
-        sb.AppendLine($"[WaveGen] LDI={r.LinearLevelIndex} PL={r.PowerLevel} Seed={r.Seed}");
-        sb.AppendLine($"  BudgetBase={r.RuntimeBudgetBase}  MaxConc={r.RuntimeMaxConcurrent}  Delay={r.RuntimeDelay:0.00}s  Chain={r.RuntimeChainChance:0.00}  Mix={r.RuntimeEarlyLateMix:0.00}");
-        sb.AppendLine($"  PoolCount={r.PoolCount} (allowedTags={r.AllowedTagCount})");
-
-        foreach (var w in r.Waves)
-        {
-            sb.AppendLine($"  Wave#{w.WaveIndex}  StartBudget={w.StartBudget}  End={w.EndRemaining}  MaxConc={w.MaxConcurrent}  Delay={w.Delay:0.00}s");
-            foreach (var e in w.Entries)
-                sb.AppendLine($"    idx {e.SpawnableIndex}  cost {e.CostUsed}  amt {e.Amount}  sp {e.SpawnerIndex}");
-        }
-        Debug.Log(sb.ToString());
-    }
-}
-
-
-public class DebugReport
-{
-    // Per-level (call) overview
-    public int LinearLevelIndex;
-    public int PowerLevel;
-    public int Seed;
-    public int RuntimeBudgetBase;
-    public int RuntimeMaxConcurrent;
-    public float RuntimeDelay;
-    public float RuntimeChainChance;
-    public float RuntimeEarlyLateMix;
-
-    // After filtering
-    public int AllowedTagCount;   // how many tags we allowed (from config)
-    public int PoolCount;         // how many spawnables passed filters
-
-    public List<WaveDebug> Waves = new List<WaveDebug>();
-
-    public class WaveDebug
-    {
-        public int WaveIndex;
-        public int StartBudget;
-        public int EndRemaining;
-        public int MaxConcurrent;
-        public float Delay;
-
-        public List<EntryDebug> Entries = new List<EntryDebug>();
-    }
-
-    public class EntryDebug
-    {
-        public int SpawnableIndex;
-        public int CostUsed;
-        public int Amount;
-        public int SpawnerIndex;
-    }
-}
-
-
 }

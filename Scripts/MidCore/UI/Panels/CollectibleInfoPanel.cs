@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Kuantech.Core;
 using Kuantech.Core.UI;
 using Kuantech.Rpg;
-using Kuantech.Rpg.UI;
 using Kuantech.Utils;
 using TMPro;
 using UnityEngine;
@@ -17,8 +16,9 @@ namespace Kuantech.Midcore.UI
         [SerializeField] private TMP_Text Name;
         [SerializeField] private TMP_Text Description;
         [SerializeField] private Image Icon;
-        [SerializeField] private LevelableFloatIndicator CollectibleLevelIndicator;
+        [SerializeField] private CollectableRankIndicator CollectibleLevelIndicator;
         [SerializeField] private UpgradeButton UpgradeButton;
+        [SerializeField] private Button UnequipButton;
         
         public List<AttributeIndicator> AttributeIndicators;
         private Dictionary<string, AttributeIndicator> _attributeIndicatorsById = new Dictionary<string, AttributeIndicator>();
@@ -31,6 +31,14 @@ namespace Kuantech.Midcore.UI
             if (Initialized) return;
             base.Initialize();
             if(UpgradeButton != null) UpgradeButton.OnUpgradePurchased += OnUpgradePurchased;
+            if(UnequipButton != null)
+            {
+                UnequipButton.onClick.AddListener(() =>
+                {
+                    DeckBuildingManager.UnequipCollectible(CurrentDataAsset);
+                    Close();
+                });
+            }
         }
         
         public virtual void UpdateInfoPanel(CollectableAsset dataAsset)
@@ -50,8 +58,11 @@ namespace Kuantech.Midcore.UI
 
             if (CollectibleLevelIndicator != null)
             {
-                CollectibleLevelIndicator.UpdateValue(ProgressionManager.GetCurrentRank(dataAsset));
+                CollectibleLevelIndicator.SetCollectableRank(dataAsset);
             }
+            
+            bool isEquipped = DeckBuildingManager.IsEquipped(dataAsset);
+             if(UnequipButton != null) UnequipButton.gameObject.SetActive(isEquipped);
         }
 
         public virtual void UpdateStats(CollectableAsset collectableAsset)
@@ -65,7 +76,8 @@ namespace Kuantech.Midcore.UI
                 }
             }
             ActorBlueprint actorBlueprint = collectableAsset.ActorBlueprint;
-            int collectableLevel = ProgressionManager.GetCurrentRank(collectableAsset);
+            
+            int collectableLevel = collectableAsset.GetCollectableRank();
 
             if (actorBlueprint != null)
             {
@@ -76,6 +88,7 @@ namespace Kuantech.Midcore.UI
                 foreach (var indicator in AttributeIndicators)
                 {
                     AttributeDefinition definition = statsSetter.GetAttributeDefinition(indicator.AttributeAsset);
+                    if(definition == null) continue;
                     indicator.SetAttribute(definition, collectableLevel);
                 }
             }
@@ -88,7 +101,7 @@ namespace Kuantech.Midcore.UI
 
             if (CollectibleLevelIndicator != null)
             {
-                CollectibleLevelIndicator.UpdateValue(ProgressionManager.GetCurrentRank(CurrentDataAsset));
+                CollectibleLevelIndicator.SetCollectableRank(CurrentDataAsset);
             }
             
             ParentDeckSelectionMenu.UpdateCards();

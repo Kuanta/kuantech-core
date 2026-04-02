@@ -18,7 +18,7 @@ namespace Kuantech.TowerDefense
             return DpsCalculator.CalculateDPS(actorBlueprint, level);
         }
 
-        public override float GetAttributrValue(ActorBlueprint actorBlueprint, AttributeAsset attributeAsset, int level)
+        public override float GetAttributeValue(ActorBlueprint actorBlueprint, AttributeAsset attributeAsset, int level)
         {
             StatsSetterComponent statsSetterComponent =
                 actorBlueprint.GetActorBlueprintComponent<StatsSetterComponent>();

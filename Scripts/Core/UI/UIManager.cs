@@ -46,7 +46,7 @@ namespace Kuantech.Core.UI
             //Open default menu
             if (_defaultMenu != null)
             {
-                PushToStack(_defaultMenu);
+                PushToStack(_defaultMenu, true);
             }
             
             foreach(var menu in MenusToInitializeOnStart)

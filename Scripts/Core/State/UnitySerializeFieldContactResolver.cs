@@ -6,7 +6,6 @@
     using System.Reflection;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Serialization;
-    using UnityEngine;
 
     public class UnitySerializeFieldContractResolver : DefaultContractResolver
     {

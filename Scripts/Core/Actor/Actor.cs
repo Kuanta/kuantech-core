@@ -2,8 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Kuantech.Core.Combat;
-using Kuantech.Core.Utils;
 using Kuantech.Utils;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -21,10 +19,22 @@ namespace Kuantech.Core
 
     public class Actor : MonoBehaviour, IHittable, ISpawnable
     {
+        [Serializable]
+        public struct KillFeedData
+        {
+            public GameObject Killer;
+            public Actor DeadActor;
+        }
+ 
         [Header("Identifier")] 
         public string Id;
         public int ActorRank = 0;
-            
+        
+        [Header("Positioning Variables")]
+        public Transform ActorAnchor;
+
+        public float ActorRadius = 0.5f;
+
         [Header("Factions")]
        // public int FactionId = 0; //Since faction Id is used frequently, it is stated in Actor class
         public FactionHandler FactionHandler;
@@ -36,7 +46,6 @@ namespace Kuantech.Core
         
         //Common module references
         public ActorVisualHandler VisualHandler;
-        public StatusEffectHandler StatusEffectHandler;
         
         protected bool Initialized;
         [Tooltip("If set to true, actor will initialize itself on start")]
@@ -50,14 +59,16 @@ namespace Kuantech.Core
         //Runtime
         public ActorState CurrentActorState = ActorState.Spawned;
         [NonSerialized] public bool Dirtied = false;
+        [NonSerialized] public ActorBlueprint ActorBlueprint; //May be needed in some cases. If created by a template this should be non null
 
         //Events
         public EventHandler OnModulesInitialized;
+        public EventHandler<float> OnActorRadiusSet;
         
         //Lifecycle events
         public UnityAction<ActorState> OnActorStateChanged;
         public UnityAction<Actor> OnSpawnedEvent;
-        public UnityAction<Actor> OnDeathEvent;
+        public UnityAction<KillFeedData> OnDeathEvent;
         public UnityAction<Actor> OnDespawnedEvent;
         public UnityAction<HitInfo> OnHitEvent;
         public UnityAction<int> OnRankSetEvent;
@@ -76,7 +87,7 @@ namespace Kuantech.Core
             if (Initialized) return;
             
             //Motions vector handler
-            MotionVectorsHandler = new MotionVectorsHandler(this, ActorUpVector, ActorForwardVector);
+            MotionVectorsHandler = new MotionVectorsHandler(this, ActorForwardVector, ActorUpVector);
             
             //Modules
             ActorModulesList = GetComponentsInChildren<ActorModule>().ToList();
@@ -99,8 +110,6 @@ namespace Kuantech.Core
             }
 
             VisualHandler = GetModule<ActorVisualHandler>();
-            StatusEffectHandler = GetModule<StatusEffectHandler>();
-            
 
             if(actorSerializableData != null)
             {
@@ -141,7 +150,16 @@ namespace Kuantech.Core
                 module.OnModulesInitialized();
             }
         }
-
+        
+        protected virtual void FixedUpdate()
+        {
+            if (!Initialized) return;
+            foreach (var module in ActorModulesList)
+            {
+                module.ModuleFixedUpdate();
+            }
+        }
+        
         protected virtual void Update()
         {
             if (!Initialized) return;
@@ -150,13 +168,24 @@ namespace Kuantech.Core
                 module.ModuleUpdate();
             }
         }
-
+        
+        protected virtual void LateUpdate()
+        {
+            if (!Initialized) return;
+            foreach (var module in ActorModulesList)
+            {
+                module.ModuleLateUpdate();
+            }
+        }
+        
         public virtual void Reset()
         {
             foreach (var module in ActorModulesList)
             {
                 module.Reset();
             }
+
+            MotionVectorsHandler.Reset();
         }
 
         public virtual void Cleanup()
@@ -247,10 +276,14 @@ namespace Kuantech.Core
         /// <summary>
         /// Kills the actor state, sets its state to dead
         /// </summary>
-        public void KillActor()
+        public void KillActor(GameObject hitter = null)
         {
             ChangeActorState(ActorState.Dead);
-            OnDeathEvent?.Invoke(this);
+            OnDeathEvent?.Invoke(new KillFeedData()
+            {
+                Killer = hitter,
+                DeadActor = this,
+            });
         }
         
         /// <summary>
@@ -265,20 +298,6 @@ namespace Kuantech.Core
         #endregion
         
         #region Modules
-
-        /// <summary>
-        /// Return module by type
-        /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        public ActorModule GetModule(Type type)
-        {
-            if(Modules.ContainsKey(type) && Modules[type].Count > 0)
-            {
-                return Modules[type][0];
-            }
-            return null;
-        }
         
         /// <summary>
         /// Returns the first instance of a given mopdule type. Should only be used when searched for an explicit type and made sure that there is only a single instance of that component
@@ -411,14 +430,18 @@ namespace Kuantech.Core
         {
             WorldPoint hitPoint = new WorldPoint()
             {
-                Target =  transform,
+                Target =  GetActorAnchor(),
+                Radius = ActorRadius,
             };
             ActorSlotsHandler actorSlotsHandler = GetModule<ActorSlotsHandler>();
             if (actorSlotsHandler == null) return hitPoint;
+            
             Transform hitPointSlot =  actorSlotsHandler.GetSlot("HitPoint");
-            if (hitPointSlot != null)
+            if (hitPointSlot != null) //Hit point is not null, return it instead
+
             {
                 hitPoint.Target = hitPointSlot;
+                hitPoint.Radius = ActorRadius;
             }
             return hitPoint;
         }
@@ -456,6 +479,55 @@ namespace Kuantech.Core
         }
         #endregion
 
+        #region Actor Location
+        /// <summary>
+        /// Returns the actors location
+        /// </summary>
+        /// <returns></returns>
+        public Vector3 GetActorLocation()
+        {
+            if (ActorAnchor != null)
+            {
+                return ActorAnchor.transform.position;
+            }
+            return transform.position;
+        }
+
+        public Transform GetActorAnchor()
+        {
+            if(ActorAnchor != null)
+            {
+                return ActorAnchor;
+            }
+
+            return transform;
+        }
+
+        public void SetActorAnchor(Transform anchor)
+        {
+            ActorAnchor = anchor;
+        }
+
+        public void SetActorRadius(float radius)
+        {
+            ActorRadius = radius;
+            OnActorRadiusSet?.Invoke(this, radius);
+        }
+        
+        /// <summary>
+        /// Returns distance towards point
+        /// </summary>
+        /// <param name="point"></param>
+        /// <returns></returns>
+        public float GetDistanceToPosition(Vector3 point)
+        {
+            Vector3 actorPosition = GetActorLocation();
+            Vector3 diff = (point - actorPosition);
+            float diffMag = diff.magnitude;
+            return Mathf.Max(0, diffMag - ActorRadius);
+        }
+        #endregion
+        
         #region Factions
         
         /// <summary>
@@ -496,6 +568,18 @@ namespace Kuantech.Core
             return FactionHandler.GetFactionRelation(otherActor) == FactionHandler.FactionType.Enemy;
         }
         
+        #endregion
+
+        #region Networking
+
+        public void StartLocalPlayer()
+        {
+            foreach (var module in ActorModulesList)
+            {
+                module.OnLocalPlayerStart();
+            }
+        }
+
         #endregion
     }
 }

@@ -110,16 +110,16 @@ namespace Kuantech.Puzzle
 
         public bool[] GetEightConnectivity()
         {
-            bool[] eightConnectivity = new bool[8];
-            eightConnectivity[(int)GridBoard.Directions.TopLeft] = Get(GridBoard.Directions.TopLeft) > 0;
-            eightConnectivity[(int)GridBoard.Directions.Top] = Get(GridBoard.Directions.Top) > 0;
-            eightConnectivity[(int)GridBoard.Directions.TopRight] = Get(GridBoard.Directions.TopRight) > 0;
-            eightConnectivity[(int)GridBoard.Directions.Left] = Get(GridBoard.Directions.Left) > 0;
-            eightConnectivity[(int)GridBoard.Directions.Right] = Get(GridBoard.Directions.Right) > 0;
-            eightConnectivity[(int)GridBoard.Directions.BottomLeft] = Get(GridBoard.Directions.BottomLeft) > 0;
-            eightConnectivity[(int)GridBoard.Directions.Bottom] = Get(GridBoard.Directions.Bottom) > 0;
-            eightConnectivity[(int)GridBoard.Directions.BottomRight] = Get(GridBoard.Directions.BottomRight) > 0;
-            return eightConnectivity;
+            bool[] a = new bool[8];
+            a[(int)GridBoard.Directions.Top]         = Get(GridBoard.Directions.Top) > 0;
+            a[(int)GridBoard.Directions.Right]       = Get(GridBoard.Directions.Right) > 0;
+            a[(int)GridBoard.Directions.Bottom]      = Get(GridBoard.Directions.Bottom) > 0;
+            a[(int)GridBoard.Directions.Left]        = Get(GridBoard.Directions.Left) > 0;
+            a[(int)GridBoard.Directions.TopRight]    = Get(GridBoard.Directions.TopRight) > 0;
+            a[(int)GridBoard.Directions.BottomRight] = Get(GridBoard.Directions.BottomRight) > 0;
+            a[(int)GridBoard.Directions.BottomLeft]  = Get(GridBoard.Directions.BottomLeft) > 0;
+            a[(int)GridBoard.Directions.TopLeft]     = Get(GridBoard.Directions.TopLeft) > 0;
+            return a;
         }
         public override string ToString()
         {

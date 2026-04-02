@@ -1,21 +1,19 @@
-using System;
 using System.Collections;
 using Kuantech.Core.FX;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.Serialization;
 
 namespace Kuantech.Core.UI
 {
     public class UIElement : MonoBehaviour
     {
-        [Header("UI Element")] 
+        [Header("UI Element")] [SerializeField]
+        private bool UseTimeScale = false;
         [SerializeField] private float CloseDelay = 0f;
-
         [SerializeField] private Effect OnShowEffect;
         
         //ANimations
-        private Animator _animator;
+        protected Animator ElementAnimator;
         private static readonly int ShowTrigger = Animator.StringToHash("Open");
         private static readonly int CloseTrigger = Animator.StringToHash("Close");
         private IEnumerator _closeRoutine = null;
@@ -27,18 +25,19 @@ namespace Kuantech.Core.UI
         //Events
         public UnityAction OnMenuOpened;
         public UnityAction OnMenuClosed;
-        
-        private void Awake()
-        {
-            _animator = GetComponent<Animator>();
-            if(_animator != null) _animator.logWarnings = false;
-            _rectTransform = GetComponent<RectTransform>();
-        }
 
         public virtual void Initialize()
         {
             if (Initialized) return;
             Initialized = true;
+            ElementAnimator = GetComponent<Animator>();
+            if (ElementAnimator != null)
+            {
+                ElementAnimator.logWarnings = false;
+                if(!UseTimeScale) ElementAnimator.updateMode = AnimatorUpdateMode.UnscaledTime;
+                ElementAnimator.Rebind();
+            }
+            _rectTransform = GetComponent<RectTransform>();
         }
         
         /// <summary>
@@ -47,7 +46,7 @@ namespace Kuantech.Core.UI
         public virtual void Open()
         {
             Show();
-            if(_animator != null) _animator.SetTrigger(ShowTrigger);
+            if(ElementAnimator != null) ElementAnimator.SetTrigger(ShowTrigger);
         }
 
         public virtual void Show()
@@ -61,7 +60,7 @@ namespace Kuantech.Core.UI
         public virtual void Close()
         {
             if (!isActiveAndEnabled) return; //Already closed
-            if(_animator != null) _animator.SetTrigger(CloseTrigger);
+            if(ElementAnimator != null) ElementAnimator.SetTrigger(CloseTrigger);
             if (_closeRoutine != null)
             {
                 StopCoroutine(_closeRoutine);
@@ -80,7 +79,7 @@ namespace Kuantech.Core.UI
         
         private IEnumerator _CloseRoutine()
         {
-            yield return new WaitForSeconds(CloseDelay);
+            yield return new WaitForSecondsRealtime(CloseDelay); //Wait for seconds without time scale
             Hide();
             _closeRoutine = null;
         }

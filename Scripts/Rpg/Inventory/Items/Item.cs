@@ -31,10 +31,6 @@ namespace Kuantech.Rpg.Inventory
         public bool IsNew;
     }
 
-
-
-
-    
     [Serializable]
     public class Item
     {
@@ -48,12 +44,14 @@ namespace Kuantech.Rpg.Inventory
         //Runtime
         public float CurrentDurability;
         public EquipmentSlotType CurrentSlot;
+        [NonSerialized] public ItemVisual ItemVisual;
         
         public Item(ItemData data)
         {
             
             Amount = 1;
             Data = data;
+            StateData = new ItemStateData();
         }
 
         #region Equip
@@ -240,7 +238,12 @@ namespace Kuantech.Rpg.Inventory
 
         public ItemVisual SpawnItemVisual()
         {
-            ItemVisual itemVisualPrefab = AssetCollection.GetPrefabByType<ItemVisual>(Data.ItemTemplateId);
+            return SpawnItemVisual(Data.ItemTemplateId);
+        }
+
+        public static ItemVisual SpawnItemVisual(string itemVisualId)
+        {
+            ItemVisual itemVisualPrefab = AssetCollection.GetPrefabByType<ItemVisual>(itemVisualId);
             if (itemVisualPrefab == null) return null;
             return PoolManager.GetObjectFromPool(itemVisualPrefab.gameObject).GetComponent<ItemVisual>();
         }

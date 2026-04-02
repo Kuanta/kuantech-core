@@ -1,8 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Kuantech.Core;
 using Kuantech.Core.Database;
 using Kuantech.Rpg;
 using Kuantech.Utils;
+using UnityEngine;
 
 namespace Kuantech.Core
 {
@@ -26,7 +28,8 @@ namespace Kuantech.Core
             }
             return null;
         }
-            
+                
+        //DEPRECATED, use UpdateFromDatabaseRow instead
         public void UpdateVariablesFromDatabase(KtDatabase database, string tableName, string rowId)
         {
             foreach (var attribDefinition in AttributeDefinitions)
@@ -52,6 +55,42 @@ namespace Kuantech.Core
                 }
             }
         }
+
+        public override void UpdateFromDatabaseRow(DataTable.RowData rowData)
+        {
+            foreach (var attribDefinition in AttributeDefinitions)
+            {
+                string attributeId = attribDefinition.AttributeAsset.Id;
+                try
+                {
+                    attribDefinition.BaseValue = 0;
+                    attribDefinition.ValuePerLevel = 0;
+                    attribDefinition.ValuePerRank = 0;
+                    string attributeStringVal = rowData.GetValue<string>(attributeId);
+                    if (attributeStringVal.IsNullOrEmpty() || attributeStringVal == "") continue;
+                    string[] parts = attributeStringVal.Split('/');
+                    if(parts == null || parts.Length <= 0) continue;
+                    //Base Value
+                    attribDefinition.BaseValue = parts[0].TryParseFloat(attribDefinition.BaseValue);
+
+                    if (parts.Length > 1)
+                    {
+                        attribDefinition.ValuePerLevel = parts[1].TryParseFloat(attribDefinition.ValuePerLevel);
+                    }
+
+                    if (parts.Length > 2)
+                    {
+                        attribDefinition.ValuePerRank = parts[2].TryParseFloat(attribDefinition.ValuePerRank);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning(e.Message);
+                }
+              
+            }
+        }
+
     }
 
 }

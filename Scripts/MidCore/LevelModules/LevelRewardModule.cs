@@ -11,35 +11,35 @@ namespace Kuantech.Midcore
     {
         [SubclassSelector]
         [SerializeReference]
-        public List<Reward> Rewards;
+        protected List<Reward> Rewards;
         
         [SerializeReference]
-        public List<Reward> FailedRewards;
+        protected List<Reward> FailedRewards;
         
         public override void OnLevelStateChange(LevelStateChangeData changeData)
         {
             if (changeData.NewState == LevelState.Completed)
             {
                 EarnRewards();
-                SetRewardsUI(GetRewardsPanelFromCompletePanel(), Rewards);
+                SetRewardsUI(GetRewardsPanelFromCompletePanel(), GetRewards());
             }else if (changeData.NewState == LevelState.Failed)
             {
                 EarnFailedRewards();
-                SetRewardsUI(GetRewardsPanelFromFailedPanel(), FailedRewards);
+                SetRewardsUI(GetRewardsPanelFromFailedPanel(), GetFailedRewards());
             }
         }
 
-        private void EarnRewards()
+        protected virtual void EarnRewards()
         {
-            foreach (var reward in Rewards)
+            foreach (var reward in GetRewards())
             {
                 reward.EarnReward();
             }
         }
 
-        private void EarnFailedRewards()
+        protected virtual void EarnFailedRewards()
         {
-            foreach (var reward in FailedRewards)
+            foreach (var reward in GetFailedRewards())
             {
                 reward.EarnReward();
             }
@@ -55,7 +55,28 @@ namespace Kuantech.Midcore
             rewardsPanel.SetRewards(rewards);
         }
 
-        private RewardsPanel GetRewardsPanelFromCompletePanel()
+        public virtual List<Reward> GetFailedRewards()
+        {
+            return FailedRewards;
+        }
+
+        public virtual List<Reward> GetRewards()
+        {
+            return Rewards;
+        }
+
+        public void SetRewards(List<Reward> rewards)
+        {
+            Rewards = rewards;
+        }
+        
+        
+        public void SetFailedRewards(List<Reward> rewards)
+        {
+            FailedRewards = rewards;
+        }
+        
+        protected virtual RewardsPanel GetRewardsPanelFromCompletePanel()
         {
             Level parentLevel = ParentLevel;
             if (parentLevel.LevelUI == null) return null;
@@ -64,7 +85,7 @@ namespace Kuantech.Midcore
             return completePanel.RewardsPanel;
         }
 
-        private RewardsPanel GetRewardsPanelFromFailedPanel()
+        protected virtual RewardsPanel GetRewardsPanelFromFailedPanel()
         {
             Level parentLevel = ParentLevel;
             if (parentLevel.LevelUI == null) return null; 

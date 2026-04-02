@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Kuantech.Utils;
+using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Kuantech.Core.FX
@@ -48,6 +49,9 @@ namespace Kuantech.Core.FX
         private bool _isQuitting = false;
         private void OnApplicationQuit() => _isQuitting = true;
 
+        [NonSerialized] public bool IsFxPlaying;
+        private float _lastPlayedTime;
+
         /// <summary>
         /// Parent yüzünden pasif olma durumunu yakala: 
         /// gameObject.activeSelf == true && activeInHierarchy == false
@@ -73,21 +77,40 @@ namespace Kuantech.Core.FX
             }
         }
 
+        public bool IsPlaying()
+        {
+            if ((Time.time - _lastPlayedTime > Duration && Duration > 0))
+            {
+                IsFxPlaying = false;
+            }
+            return IsFxPlaying;
+        }
+
         /// <summary>
         /// To simply play
         /// </summary>
+        [Button("Play")]
         public void Play()
         {
             EffectPlaySettings.GetDefaultSettings();
             Play(EffectPlaySettings.GetDefaultSettings());
         }
-        
+
+        public void Update()
+        {
+            if (!IsPlaying()) return;
+            foreach (var behaviour in _effectBehaviours)
+            {
+                behaviour.UpdateFx();
+            }
+        }
         /// <summary>
         /// Plays the effect using the settings
         /// </summary>
         /// <param name="settings"></param>
         public void Play(EffectPlaySettings settings)
         {
+         
             EffectPlaySettings = settings;
             if (settings.EffectParent != null)
             {
@@ -148,6 +171,9 @@ namespace Kuantech.Core.FX
 
         protected virtual void PlayEffects(EffectPlaySettings playSettings)
         {
+            IsFxPlaying = true;
+            _lastPlayedTime = Time.time;
+            
             if(Sfx != null)
             {
                 Sfx.OnDeqeued = OnSoundDequeued;
@@ -201,7 +227,7 @@ namespace Kuantech.Core.FX
             {
                 foreach (var behaviour in _effectBehaviours)
                 {
-                    behaviour.OnFxStarted(this);
+                    behaviour.StartFxBehaviour(this);
                 }
             }
             
@@ -262,6 +288,8 @@ namespace Kuantech.Core.FX
         
         public void Stop()
         {
+            IsFxPlaying = false;
+            
             // VFX
             if(Vfx!=null) Vfx.Stop();
             

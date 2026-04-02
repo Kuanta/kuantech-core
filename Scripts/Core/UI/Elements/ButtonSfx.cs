@@ -6,24 +6,31 @@ namespace Kuantech.Core.UI
 {
     public class ButtonSfx : MonoBehaviour, KtButton.IUIButtonAction
     {
-        [SerializeField] private Sound Audio;
         [KTTag("AudioTag")]
-        [SerializeField] private int AudioTag;
+        [SerializeField] private int DefaultAudioaTag;
+        [KTTag("AudioTag")]
+        [SerializeField] private int PositiveSound;
+        [KTTag("AudioTag")]
+        [SerializeField] private int NegativeSound;
 
         private void ButtonPressHandler()
         {
-            if(Audio != null)
-            {
-                Audio.Play();
-                return;
-            }
-            AudioLibrary audioLibrary = EffectsLibrary.GetAudioLibrary();
-            if(audioLibrary != null) audioLibrary.PlaySound(AudioTag);
+            AudioLibrary.PlaySoundByTag(DefaultAudioaTag);
         }
 
         public void OnClick()
         {
             ButtonPressHandler();
+        }
+        
+        public void PositiveEffect()
+        {
+            AudioLibrary.PlaySoundByTag(PositiveSound);
+        }
+        
+        public void NegativeEffect()
+        {
+            AudioLibrary.PlaySoundByTag(NegativeSound);
         }
     }
 }

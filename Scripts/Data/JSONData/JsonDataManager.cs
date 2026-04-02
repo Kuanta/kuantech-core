@@ -52,11 +52,24 @@ namespace Kuantech.Core.Data
 
             await tasks;
         }
+        
         [ConsoleMethod("updateJsonData", "Updates json datas")]
         public static async UniTask UpdateDataFromRemote()
         {
             var ctx = GetContext<JsonDataManager>();
             await ctx.UpdateDatas();
+        }
+
+        public T GetDataNonStatic<T>() where T : class
+        {
+            Type key = typeof(T);
+
+            foreach (var data in JsonDatas)
+            {
+                if(data.SerializeType != key) continue;
+                return data.ReadData() as T;
+            }
+            return null;
         }
     }
 }

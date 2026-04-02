@@ -15,6 +15,7 @@ namespace Kuantech.Core
         [NonSerialized] public Vector3 MovementVector;
         [NonSerialized] public Vector3 ForceMoveVector = Vector3.zero; //Force move vector is used for knockback and other forceful movements        
         [NonSerialized] public Vector3 TargetVector = Vector3.zero;
+        [NonSerialized] public float MovementMultiplier = 1f;
 
         //Target
         public Transform TargetedObject;
@@ -43,6 +44,16 @@ namespace Kuantech.Core
         public void SetMovementVector(Vector3 movementVector)
         {
             MovementVector = movementVector;
+        }
+        
+        public float GetMovementMultiplier()
+        {
+            return MovementMultiplier;
+        }
+        
+        public void SetMovementMultiplier(float multiplier)
+        {
+            MovementMultiplier = multiplier;
         }
         
         /// <summary>
@@ -112,16 +123,16 @@ namespace Kuantech.Core
         public Vector3 GetLocalMovementVector()
         {
             Vector3 projectedMovement = ProjectToForwardPlane(GetMovementVector());
-            Vector3 projectedTarget = ProjectToForwardPlane(TargetVector);
+            Vector3 projectedTarget = ProjectToForwardPlane(GetTargetVector());
 
             if (projectedMovement.sqrMagnitude <= float.Epsilon)
             {
                 return Vector3.zero;
             }
-            
             //Get angle from projectedTarget to projectedMovement
             float angleDiff = Vector3.SignedAngle(projectedTarget, projectedMovement, ActorUpVector);
-            return new Vector3(Mathf.Sin(angleDiff * Mathf.Deg2Rad), 0, Mathf.Cos(angleDiff * Mathf.Deg2Rad));
+            Vector3 localMovement = new Vector3(Mathf.Sin(angleDiff * Mathf.Deg2Rad), 0, Mathf.Cos(angleDiff * Mathf.Deg2Rad));
+            return localMovement;
         }
         #endregion
 
@@ -131,14 +142,23 @@ namespace Kuantech.Core
         /// Target vector is the direction actor is facing
         /// </summary>
         /// <returns></returns>
-        public Vector3 GetTargetVector()
+        public Vector3 GetTargetVector(bool prioritizeMovementOverTarget = false)
         {
             //If target manager has a target...
-            if (ParentActor != null && ParentActor.GetModule<TargetManager>() != null)
+            // if (ParentActor != null && ParentActor.GetModule<SurroundManager>() != null)
+            // {
+            //     Actor target = ParentActor.GetModule<SurroundManager>().GetCurrentTarget();
+            //     if (target != null) TargetedObject = target.transform;
+            // }
+            
+            
+            //Check movement priority
+            if (prioritizeMovementOverTarget && MovementVector.sqrMagnitude > float.Epsilon)
             {
-                Actor target = ParentActor.GetModule<TargetManager>().GetCurrentTarget();
-                if (target != null) TargetedObject = target.transform;
+                return MovementVector;
             }
+            
+            //Buisness as usual
             if (TargetedObject != null)
             {
                 return (TargetedObject.position - ParentActor.transform.position).normalized;
@@ -147,9 +167,15 @@ namespace Kuantech.Core
             {
                 return TargetVector;
             }
-            return MovementVector; //same as movement
+
+            if (MovementVector.sqrMagnitude > float.Epsilon)
+            {
+                return MovementVector;
+            }
+
+            return ParentActor.transform.forward;
         }
- 
+        
         public void SetTargetObject(Transform targetObject)
         {
             TargetedObject = targetObject;
@@ -159,9 +185,12 @@ namespace Kuantech.Core
         {
             TargetVector = targetVector;
         }
+
+        public void ClearTargetVector()
+        {
+            TargetVector = Vector3.zero;
+        }
         #endregion
-
-
         
         /// <summary>
         /// Projects a vector to the forward plane of the actor
@@ -171,10 +200,7 @@ namespace Kuantech.Core
         public Vector3 ProjectToForwardPlane(Vector3 vector)
         {
             Vector3 up = ActorUpVector;
-            Vector3 forward = ActorForwardVector;
-
-            Vector3 projected = Helpers.ProjectVectorOnPlane(vector, up, Vector3.zero);
-            return projected;
+            return Vector3.ProjectOnPlane(vector, up).normalized;
         }
 
         public void Reset()

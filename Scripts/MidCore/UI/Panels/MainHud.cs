@@ -12,6 +12,7 @@ namespace Kuantech.Midcore.UI
         [Header("Components")] 
         public LevelableFloatIndicator PlayerLevelBar;
         [SerializeField] private List<MenuOpenButton> MenuButtons;
+        public List<UIElement> ElementsToInitialize;
         
         public override void Initialize()
         {
@@ -31,6 +32,11 @@ namespace Kuantech.Midcore.UI
             foreach (var button in MenuButtons)
             {
                 button.Initialize();
+            }
+
+            foreach (var element in ElementsToInitialize)
+            {
+                element.Initialize();
             }
         }
 

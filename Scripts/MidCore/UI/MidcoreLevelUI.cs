@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using Kuantech.Core;
 using Kuantech.Core.UI;
 using UnityEngine;
@@ -9,8 +8,8 @@ namespace Kuantech.Midcore.UI
     public class MidcoreLevelUI : LevelUI
     {
         [Header("Panels")] 
-        [SerializeField] private MidcoreCompletePanel CompletePanel;
-        [SerializeField] private MidcoreFailPanel FailPanel;
+        [SerializeField] private CompletePanel CompletePanel;
+        [SerializeField] private LevelFailPanel FailPanel;
         [SerializeField] private float CompletePanelShowDelay = 0f;
         [SerializeField] private float FailedPanelShowDelay = 0f;
         

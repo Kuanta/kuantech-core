@@ -10,9 +10,9 @@ namespace Kuantech.Core.Combat
         private CombatModule _combatModule;
         private SpellBook _spellBook;
         
-        public override void Initialize(StatusEffectAsset statusEffectAsset, StatusEffectData applyData)
+        public override void Initialize(StatusEffectAsset statusEffectAsset, StatusEffectApplyData applyApplyData)
         {
-            base.Initialize(statusEffectAsset, applyData);
+            base.Initialize(statusEffectAsset, applyApplyData);
 
         }
         

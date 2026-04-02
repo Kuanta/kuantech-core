@@ -29,7 +29,22 @@ namespace Kuantech.Core.Database
             if (database == null || ctx._databases.IsNullOrEmpty() || !ctx._databases.ContainsKey(database)) return null;
             return ctx._databases[database];
         }
-        
+            
+        /// <summary>
+        /// Useful for cases when updating from inspector
+        /// </summary>
+        /// <param name="database"></param>
+        /// <returns></returns>
+        public KtDatabase GetDatabaseNonStatic(string database)
+        {
+            if (Databases == null) return null;
+            foreach (var db in Databases)
+            {
+                if (db.GetDbName() == database) return db;
+            }
+
+            return null;
+        }
         public bool GetData<T>(string dbName, string table, string row, string column, out T result)
         {
             result = default;

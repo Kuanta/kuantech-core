@@ -26,6 +26,13 @@ namespace Kuantech.AI
         {
             SUCCESS, RUNNING, FAILURE,
         }
+
+        public struct NodeResult
+        {
+            public NodeStatus NodeStatus;
+            public bool WaitAfter;
+        }
+        
         [NonSerialized] public BehaviourTree Owner;
         [NonSerialized] public NodeStatus CurrentStatus;
         [SerializeField] public List<BTNode> Children = new List<BTNode>();
@@ -73,7 +80,15 @@ namespace Kuantech.AI
 
         public virtual NodeStatus Process()
         {
-            return NodeStatus.SUCCESS;}
+            return NodeStatus.SUCCESS;
+        }
+        
+        public virtual bool ShouldExecuteNodeImmediately()
+        {
+            BTNode node = GetCurrentChild();
+            if (node != null) return node.ShouldExecuteNodeImmediately();
+            return false;
+        }
         
         [Button("Add Node")]
         public void AddChildNode(NodeTypes nodeType, string nodeName = "", string actionName = "")
@@ -88,6 +103,7 @@ namespace Kuantech.AI
                     break;
                 case NodeTypes.LEAF:
                     BTLeafAction action = (BTLeafAction) Assembly.GetExecutingAssembly().CreateInstance(actionName);
+                    if(action != null) action.Initialize(Owner);
                     AddChild(new BTLeaf(nodeName, action));
                     break;
                 case NodeTypes.RANDOM_SELECTOR:
@@ -126,7 +142,17 @@ namespace Kuantech.AI
             Name = name;
             _leafAction = leafAction;
         }
-
+        
+        /// <summary>
+        /// For leaf nodes, if execute immediately is set, the next node will be executed without waiting for the next tick.
+        /// </summary>
+        /// <returns></returns>
+        public override bool ShouldExecuteNodeImmediately()
+        {
+            if (_leafAction == null) return false;
+            return _leafAction.ExecuteNextImmediately;
+        }
+        
         public void ParseNodeData(BtGraphNodeData nodeData)
         {
             Type type = Type.GetType(nodeData.ActionClassName);
@@ -202,11 +228,11 @@ namespace Kuantech.AI
                     }
                     else if(fieldType == typeof(GameObject) || typeof(Component).IsAssignableFrom(fieldType))
                     {
-                        Debug.LogWarning("Couldn't find a way to handle this for now");
+                        //Debug.LogWarning("Couldn't find a way to handle this for now");
                     }
                     else if(typeof(ScriptableObject).IsAssignableFrom(fieldType))
                     {
-                        Debug.LogWarning("Couldn't find a way to handle this for now");
+                        //Debug.LogWarning("Couldn't find a way to handle this for now");
                     }
                     // ... Add more types as necessary ...
                 }

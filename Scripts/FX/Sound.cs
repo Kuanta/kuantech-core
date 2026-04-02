@@ -5,7 +5,6 @@ using Kuantech.Utils;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.Serialization;
 
 namespace Kuantech.Core.FX
 {
@@ -33,7 +32,9 @@ namespace Kuantech.Core.FX
         [Header("Combo")] 
         public List<AudioClip> ComboSfxCollection;
 
-        [Header("Fire Rate")] public float FireRate = 0;
+        [Header("Fire Rate")] 
+        public float FireRate = 0;
+        public int MaxSoundCount = -1;
 
         [Header("Volumd")] 
         public float Volume = 1;
@@ -126,9 +127,11 @@ namespace Kuantech.Core.FX
         private IEnumerator FireLoop()
         {
             _isFiring = true;
-
+            int currentCount = 0;
             while (_isFiring)
             {
+                if(currentCount == MaxSoundCount && MaxSoundCount > 0) yield break;
+                currentCount++;
                 if (AudioSource != null && AudioSource.clip != null)
                 {
                     float pitch = BasePitch;

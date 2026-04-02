@@ -34,7 +34,7 @@ namespace Kuantech.Midcore
         [Header("Dependencies")]
         public List<ProgressableDependencyEntry> UpgradeDependencies;
         
-        [SaveableField] private Dictionary<string, ProgressibleData> _progressibleDatas;
+        [SerializeField] [SaveableField] private Dictionary<string, ProgressibleData> _progressibleDatas;
         private Dictionary<(ProgressableDataAsset, int), ProgressableDependencyEntry> _unlockConditions;
 
         public void Initilaze()
@@ -177,10 +177,20 @@ namespace Kuantech.Midcore
         /// <returns></returns>
         public bool CanBeAfforded(ProgressableDataAsset asset, int rank, int startRank)
         {
-           StoreManager sm = StoreManager.GetContext<StoreManager>();
-           if (sm == null) return true; //No stroe manager
-           if (asset.BuyableInfo.Id.IsNullOrEmpty() && asset.BuyableInfo.PricesInfo.IsNullOrEmpty()) return true; //No buyable info
-           return sm.CanBeBought(asset.BuyableInfo, rank, startRank); //Rank is used to calculate the price
+           BuyableInfo buyableInfo = asset.GetBuyableInfo();
+           if (buyableInfo.Id.IsNullOrEmpty() && buyableInfo.PricesInfo.IsNullOrEmpty()) return true; //No buyable info
+           return StoreManager.CanBeBought(buyableInfo, rank, startRank); //Rank is used to calculate the price
+        }
+        
+        /// <summary>
+        /// Checks whether the progressable data asset is at max rank
+        /// </summary>
+        /// <param name="asset"></param>
+        /// <returns></returns>
+        public bool IsAtMaxRank(ProgressableDataAsset asset)
+        {
+            int currentRank = GetCurrentRank(asset);
+            return (asset.GetMaxRank() > 0 && asset.GetMaxRank() <= currentRank);
         }
         
         /// <summary>
@@ -243,6 +253,8 @@ namespace Kuantech.Midcore
             if (!CanRankBeUnlocked(asset, rank)) return false;
             int currentRank = GetCurrentRank(asset);
             if (!CanBeAfforded(asset, rank, currentRank)) return false;
+
+            if (IsAtMaxRank(asset)) return false;
             
             //Money upfront
             PayThePrice(asset, rank, currentRank);
@@ -264,7 +276,7 @@ namespace Kuantech.Midcore
         {
             StoreManager sm = StoreManager.GetContext<StoreManager>();
             if (sm == null) return;
-            sm.BuyItem(asset.BuyableInfo, rankToBuy, startRank);
+            sm.BuyItem(asset.GetBuyableInfo(), rankToBuy, startRank);
         }
         
         /// <summary>

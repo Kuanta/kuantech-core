@@ -9,27 +9,30 @@ namespace Kuantech.Midcore
     public class MidcoreGameSceneManager : SubManager
     {
         public string MenuSceneName = "MenuScene";
-        
+        public bool UseWorlds = false;
         public override void OnSubmanagersInitialized()
         {
             base.OnSubmanagersInitialized();
-            
-            MidcoreSceneTransitionData transitionData = GameManager.GetLevelTransitionData() as MidcoreSceneTransitionData;
-            int levelIndex = 0;
-            int worldIndex = 0;
-            if (transitionData != null)
-            {
-                worldIndex = transitionData.WorldIndex;
-                levelIndex = transitionData.LevelIndex;
-            }
+            var levelProgressionData = LevelProgressionStateManager.GetLevelProgressionData();
+            //MidcoreSceneTransitionData transitionData = GameManager.GetLevelTransitionData() as MidcoreSceneTransitionData;
+            int levelIndex = levelProgressionData.LevelIndex;
+            int worldIndex = levelProgressionData.WorldIndex;
 
-            LevelManager lm = LevelManager.GetContext<LevelManager>();
+            LevelManager lm = GetContext<LevelManager>();
             if (lm == null)
             {
                 Debug.LogWarning("Level manager is null");
                 return;
             }
-            lm.SetWorldLevel(worldIndex, levelIndex); //todo(levels): Implement world index
+
+            if (UseWorlds)
+            {
+                lm.SetWorldLevel(worldIndex, levelIndex); //todo(levels): Implement world index
+            }
+            else
+            {
+                lm.SetLevel(levelIndex);       
+            }
         }
 
         public static string GetMenuSceneName()

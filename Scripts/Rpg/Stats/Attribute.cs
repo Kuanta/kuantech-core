@@ -40,8 +40,9 @@ namespace Kuantech.Rpg
         public Vector2 Limits;
         
         //Runtime
-        public float MultiplicationModifier = 1;
-        public float AdditionModifier;
+        public float FlatModifier;
+        public float PercentAddModifier = 1f;
+        public float PercentMultModifier = 1f;
         public int Rank;
         
         public void ApplyAttributeDefinition(AttributeDefinition definition)
@@ -63,15 +64,19 @@ namespace Kuantech.Rpg
             return finalValue;
         }
         
-        /// <summary>
-        /// Calculates the final value of the stat.
-        /// </summary>
-        /// <param name="level"></param>
-        /// <returns></returns>
+
+
         public float GetValue(int level)
         {
-            float finalValue = GetBaseValue(level);
-            return (finalValue * MultiplicationModifier) + AdditionModifier;
+            float baseVal = GetBaseValue(level);
+    
+            float val = baseVal + FlatModifier;
+    
+            val *= PercentAddModifier;
+    
+            val *= PercentMultModifier;
+
+            return val;
         }
     }
 }

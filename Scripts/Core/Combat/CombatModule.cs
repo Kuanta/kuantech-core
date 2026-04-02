@@ -6,10 +6,10 @@ using Kuantech.Core.Utils;
 using Kuantech.Rpg;
 using Kuantech.Rpg.Skills;
 using Kuantech.Utils;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Serialization;
-using Random = System.Random;
 
 namespace Kuantech.Core
 {
@@ -46,15 +46,19 @@ namespace Kuantech.Core
         public float Width;
         public float Range;
         
+        [Header("Required Resource")]
+        public ResourceAsset RequiredResource;
+        public float RequiredResourceAmount = 0;
+
+        
         [Header("Damage")]
         public DamageInfo DamageInfo;
-        public AttributeAsset AttributeToScaleDamage;
-        public float AttributeScaleFactor = 0f; //How much the attribute value scales the damage, 1 means 1:1 scaling
+        public List<DamageInfo> AdditionalDamages;
         
         [Header("Splash Damage")]
         public DamageInfo SplashDamage;
-        public AttributeAsset AttributeToScaleSplashDamage;
-
+        public List<DamageInfo> AdditionalSplashDamages;
+        
         public float SplashRadius;
         public AttributeAsset AttributeToScaleSplashRadius;
         
@@ -67,6 +71,7 @@ namespace Kuantech.Core
         public float EffectPlayTime;
         public float ContinuousAttackMaxTime;
         public bool ScaleAttackImplementationTimeWithAttackSpeed = true;
+        public float AnimationTime;
         public float AttackDuration;
         public bool Continious; //Continious will attack every 'attack time' during the attack
 
@@ -85,8 +90,8 @@ namespace Kuantech.Core
 
         [Header("Skill")] 
         public SkillDataAsset SkillToCast;
-        
-        [Header("Animation")]
+
+        [Header("Animation")] 
         public AnimationData AttackAnimationData;
 
         [Header("FX")] 
@@ -118,6 +123,7 @@ namespace Kuantech.Core
         [Header("Attributes")]
         public AttributeAsset CriticalChanceAttribute;
         public AttributeAsset CriticalMultiplierAttribute;
+        public AttributeAsset RangeAttributeAsset; //Range attribute
 
         [Header("Collision")]
         private Collider[] _results = new Collider[32];
@@ -143,9 +149,11 @@ namespace Kuantech.Core
 
         //Quick module references
         private StatsModule _statModule;
-        private TargetManager _targetManager;
+        private SurroundManager _surroundManager;
         private AnimationModule _animationModule;
         private ActorSlotsHandler _slotsHandler;
+        private HealthcareModule _healthcareModule;
+        private SpellBook _spellBook;
         
         //Runtime
         private float _attackStartTime;
@@ -159,8 +167,6 @@ namespace Kuantech.Core
 
         private ActionCastData _currentCastData;
         
-        public HashSet<int> FactionFilter = new HashSet<int>(); //Faction filter for the attack, if empty, all actors are valid targets
-        
         #region Lifecycle
         public override void OnModulesInitialized()
         {
@@ -168,8 +174,10 @@ namespace Kuantech.Core
             
             _statModule = Actor.GetModule<StatsModule>();
             _animationModule = Actor.GetModule<AnimationModule>();
-            _targetManager = Actor.GetModule<TargetManager>();
+            _surroundManager = Actor.GetModule<SurroundManager>();
             _slotsHandler = Actor.GetModule<ActorSlotsHandler>();
+            _healthcareModule = Actor.GetModule<HealthcareModule>();
+            _spellBook = Actor.GetModule<SpellBook>();
         }
         
 
@@ -212,8 +220,8 @@ namespace Kuantech.Core
         /// <returns></returns>
         public Actor GetCurrentTarget()
         {
-            if (_targetManager == null) return null;
-            return _targetManager.GetCurrentTarget();
+            if (_surroundManager == null) return null;
+            return _surroundManager.GetCurrentTarget();
         }
         #endregion
 
@@ -245,7 +253,7 @@ namespace Kuantech.Core
         /// <returns></returns>
         public float GetAttackDuration()
         {
-            return  CombatUtilities.GetAttackDuration(GetAttackSpeed(), GetBaseAttackTime(), MinAttackTime, MaxAttackTime);;
+            return  CombatUtilities.GetAttackDuration(GetAttackSpeed(), GetBaseAttackTime(), MinAttackTime, MaxAttackTime);
         }
                 
         /// <summary>
@@ -339,15 +347,23 @@ namespace Kuantech.Core
             _lastAttackImplementationTime = Time.time;
             AttackedEvent?.Invoke(this); //Maybe we shouldn't call this here
         }
-
+        
+        /// <summary>
+        /// 3d arc attack
+        /// </summary>
         public void ArcAttack()
         {
             AttackPattern currPattern = GetCurrentAttackPattern();
             Vector3 attackPoint = GetAttackPosition();
             Vector3 forward = GetAttackDirection().normalized;
-            float range = currPattern.Range;
+            float range = GetAttackRange();
             float angle = currPattern.Angle;
-            
+            List<Actor> actors = CombatUtilities.GetActorsInArc3D(attackPoint, forward, range, angle, Targets, GetEnemyFactions());
+
+            foreach (var actor in actors)
+            {
+                DamageActor(actor);
+            }
         }
 
         public void ArcAttack2D()
@@ -355,9 +371,9 @@ namespace Kuantech.Core
             AttackPattern currPattern = GetCurrentAttackPattern();
             Vector3 attackPoint = GetAttackPosition();
             Vector3 forward = GetAttackDirection().normalized;
-            float range = currPattern.Range;
+            float range = GetAttackRange();
             float angle = currPattern.Angle;
-            List<Actor> actors = CombatUtilities.GetActorsInArc2D(attackPoint, forward, range, angle, Targets, FactionFilter);
+            List<Actor> actors = CombatUtilities.GetActorsInArc2D(attackPoint, forward, range, angle, Targets, GetEnemyFactions());
 
             foreach (var actor in actors)
             {
@@ -388,7 +404,7 @@ namespace Kuantech.Core
             Vector3 direction = GetAttackDirection();
             AttackPattern attackPattern = GetCurrentAttackPattern();
             
-            List<Actor> actors = CombatUtilities.GetActorsInRaycast2D(startPoint, direction, attackPattern.Range, Targets, FactionFilter);
+            List<Actor> actors = CombatUtilities.GetActorsInRaycast2D(startPoint, direction, GetAttackRange(), Targets, GetEnemyFactions());
             foreach (var actor in actors)
             {
                 DamageActor(actor);
@@ -407,10 +423,13 @@ namespace Kuantech.Core
             if (projectile == null) return;
             
             //Apply projectileproperties
-            projectile.Damage = GetDamage();
+            float critMultiplier = GetCriticalMultiplier();
+            projectile.Damage = GetDamage(critMultiplier);
+            projectile.AdditionalDamages = GetAdditionalDamageInfos(critMultiplier);
             projectile.SplashDamage = GetSplashDamage();
+            projectile.AdditionalSplashDamages = GetAdditionalSplashDamages();
             projectile.SplashRadius = GetSplashDamageRadius();
-            projectile.Range = GetCurrentAttackPattern().Range;
+            projectile.Range = GetAttackRange();
             projectile.Knockback = GetCurrentAttackPattern().Knockback;
             projectile.KnockbackTime = GetCurrentAttackPattern().KnockbackTime;
             
@@ -434,13 +453,15 @@ namespace Kuantech.Core
         /// <param name="actor"></param>
         private void DamageActor(Actor actor)
         {
-            DamageInfo damage = GetDamage();
+            float critMultiplier = GetCriticalMultiplier();
+            DamageInfo damageInfos = GetDamage(critMultiplier);
             if (actor == null || !actor.IsAlive()) return;
             
             HitInfo hitInfo = new HitInfo()
             {
                 Hitter = gameObject,
-                DamageInfo = damage,
+                DamageInfo = damageInfos,
+                AdditionalDamages = GetAdditionalDamageInfos(critMultiplier),
                 HitDirection = GetAttackDirection(),
                 KnockbackForce = GetCurrentAttackPattern().Knockback,
                 KnockbackDuration = GetCurrentAttackPattern().KnockbackTime
@@ -465,7 +486,10 @@ namespace Kuantech.Core
             EffectPlayer hitEffect = GetCurrentAttackPattern().HitEffect;
             if (hitEffect != null)
             {
-                hitEffect.PlayEffectAtPosition(actor.GetHitPoint(Actor).GetTargetPosition(), Quaternion.LookRotation(GetAttackDirection()));
+                Vector3 targetHitPoint = actor.GetHitPoint(Actor).GetTargetPosition();
+                Vector3 attackerPosition = Actor.transform.position;
+                attackerPosition.y = targetHitPoint.y;
+                hitEffect.PlayEffectAtPosition(actor.GetHitPoint(Actor).GetTargetPositionTowardsTarget(attackerPosition), Quaternion.LookRotation(GetAttackDirection()));
             }
             actor.OnHit(hitInfo);
         }
@@ -475,12 +499,12 @@ namespace Kuantech.Core
             AttackPattern currPattern = GetCurrentAttackPattern();
             float criticalChance = currPattern .CriticalChance;
             float criticalMultiplier = Mathf.Max(1, currPattern .CriticalMultiplier);
-            if (CriticalChanceAttribute != null)
+            if (CriticalChanceAttribute != null && _statModule != null)
             {
                 criticalChance += _statModule.GetAttributeValue(CriticalChanceAttribute);
             }
 
-            if (CriticalMultiplierAttribute != null)
+            if (CriticalMultiplierAttribute != null && _statModule != null)
             {
                 criticalMultiplier += _statModule.GetAttributeValue(CriticalMultiplierAttribute);
             }
@@ -500,11 +524,11 @@ namespace Kuantech.Core
             if (currPattern.SkillToCast == null) return;
             SpellBook spellBook = Actor.GetModule<SpellBook>();
             if (spellBook == null) return;
-            SkillCastData skillCastData = new SkillCastData()
+            ActionCastData skillCastData = new ActionCastData()
             {
-                CastDirection = GetAttackDirection(),
-                CastStartPosition = GetAttackPosition(),
-                CastTarget = GetCurrentTarget(),
+                Direction = GetAttackDirection(),
+                StartPosition = GetAttackPosition(),
+                Target = GetCurrentTarget(),
             };
             spellBook.CastSkill(currPattern.SkillToCast, skillCastData);
         }
@@ -514,25 +538,70 @@ namespace Kuantech.Core
 
         #region Attack Pattern Queries
 
-        public DamageInfo GetDamage()
+        public DamageInfo GetDamage(float critMultiplier)
         {
-            float critMultiplier = GetCriticalMultiplier();
-            AttackPattern attackPattern = GetCurrentAttackPattern();
-            DamageInfo damageInfo = attackPattern.GetDamageInfo();
-            damageInfo.IsCritical = critMultiplier > 1;
-            float statVariable = _statModule.GetAttributeValue(attackPattern.AttributeToScaleDamage);
-            damageInfo.DamageAmount += (statVariable * attackPattern.AttributeScaleFactor) * critMultiplier;
-            return damageInfo;
+            DamageInfo damageInfo = GetCurrentAttackPattern().GetDamageInfo();
+            return _AdjustDamageInfo(damageInfo, critMultiplier);
         }
 
+        public List<DamageInfo> GetAdditionalDamageInfos(float critMult)
+        {
+            AttackPattern attackPattern = GetCurrentAttackPattern();
+            List<DamageInfo> additionalDamages = new List<DamageInfo>();
+            foreach (var addDamInfo in attackPattern.AdditionalDamages)
+            {
+                DamageInfo critApplied = _AdjustDamageInfo(addDamInfo, critMult);
+                additionalDamages.Add(critApplied);
+            }
+
+            return additionalDamages;
+        }
+
+        public float GetAttackRange()
+        {
+            float patternRange = GetCurrentAttackPattern().Range;
+            Rpg.Attribute att = _statModule.GetAttribute(RangeAttributeAsset);
+            if (att == null) return patternRange;
+            return _statModule.GetAttributeValue(RangeAttributeAsset);
+        }
+        
+        /// <summary>
+        /// Adjusts the damage info by setting the crit multiplier and the attribute value
+        /// </summary>
+        /// <param name="damageInfo"></param>
+        /// <param name="critMultiplier"></param>
+        /// <returns></returns>
+        private DamageInfo _AdjustDamageInfo(DamageInfo damageInfo, float critMultiplier)
+        {
+            damageInfo.SetAttributeValue(_statModule);
+            damageInfo.CritMultiplier = critMultiplier;
+            return damageInfo;
+        }
+        
         public DamageInfo GetSplashDamage()
         {
             float critMultiplier = GetCriticalMultiplier();
             AttackPattern attackPattern = GetCurrentAttackPattern();
-            float statVariable = _statModule.GetAttributeValue(attackPattern.AttributeToScaleSplashDamage);
             DamageInfo damageInfo = attackPattern.SplashDamage;
-            damageInfo.DamageAmount += (statVariable * attackPattern.AttributeScaleFactor) * critMultiplier;
+            damageInfo.SetAttributeValue(_statModule);
+            damageInfo.CritMultiplier = critMultiplier;
             return damageInfo;
+        }
+
+        public List<DamageInfo> GetAdditionalSplashDamages()
+        {
+            float critMultiplier = GetCriticalMultiplier();
+            AttackPattern attackPattern = GetCurrentAttackPattern();
+            List<DamageInfo> additionalDamages = new List<DamageInfo>();
+            foreach (var splashDamage in attackPattern.AdditionalSplashDamages)
+            {
+                DamageInfo damageInfo = splashDamage;
+                damageInfo.SetAttributeValue(_statModule);
+                damageInfo.CritMultiplier = critMultiplier;
+                additionalDamages.Add(damageInfo);
+            }
+
+            return additionalDamages;
         }
         
         /// <summary>
@@ -542,7 +611,7 @@ namespace Kuantech.Core
         public float GetSplashDamageRadius()
         {
             AttackPattern attackPattern = GetCurrentAttackPattern();
-            if (attackPattern.AttributeToScaleSplashRadius == null)
+            if (attackPattern.AttributeToScaleSplashRadius == null || _statModule == null)
             {
                 return GetCurrentAttackPattern().SplashRadius;
             }
@@ -554,15 +623,26 @@ namespace Kuantech.Core
         public bool Attack(ActionCastData castData)
         {
             if (!CanAttack()) return false;
-            _currentCastData = castData;
-            if (_currentCastData.Target != null && _targetManager != null && _currentCastData.Target.IsAlive())
+            
+            //Spend resource
+            if (_healthcareModule != null)
             {
-                _targetManager.SetCurrentTarget(_currentCastData.Target);
+                ResourceAsset resourceAsset = GetCurrentAttackPattern().RequiredResource;
+                if (resourceAsset != null)
+                {
+                    _healthcareModule.RemoveResource(resourceAsset, GetCurrentAttackPattern().RequiredResourceAmount);
+                }
+            }
+            
+            _currentCastData = castData;
+            if (_currentCastData.Target != null && _surroundManager != null && _currentCastData.Target.IsAlive())
+            {
+                _surroundManager.SetCurrentTarget(_currentCastData.Target);
             }
 
             _currentCastData.StartPosition = GetAttackPosition();
 
-            Actor.MotionVectorsHandler.SetTargetVector(_currentCastData.Direction);
+            //Actor.MotionVectorsHandler.SetTargetVector(_currentCastData.Direction);
             
             OnAttackStarted(castData);
 
@@ -602,6 +682,10 @@ namespace Kuantech.Core
                 Target = target,
                 TargetPosition = target.transform.position
             };
+            if (_surroundManager != null)
+            {
+                _surroundManager.SetCurrentTarget(target);
+            }
             
             return Attack(castData);
         }
@@ -636,13 +720,28 @@ namespace Kuantech.Core
                 StartPosition = startPosition,
                 Direction = attackDireciton.normalized,
                 Target = null,
-                TargetPosition = startPosition + attackDireciton * GetCurrentAttackPattern().Range,
+                TargetPosition = startPosition + attackDireciton * GetAttackRange(),
             };
             return Attack(castData);
         }
         #endregion
         
         #region Queries
+
+        public int GetCurrentComboIndex()
+        {
+            float timeSinceLastAttack = Time.time - _lastAttackCompleteTime;
+            if (timeSinceLastAttack >= ComboRefreshTime)
+            {
+                return 0;
+            }
+
+            return _currentComboIndex;
+        }
+        public HashSet<int> GetEnemyFactions()
+        {
+            return Actor.FactionHandler.GetEnemyFactions().ToHashSet();
+        }
         
         /// <summary>
         /// Checks if attack pattern is melee
@@ -661,19 +760,43 @@ namespace Kuantech.Core
         /// <returns></returns>
         public bool CanAttack()
         {
-            if (GetCurrentAttackPattern().AttackType == AttackTypes.Target && GetCurrentTarget() == null) return false;
-            return !_isAttacking && !AttackLock.IsLocked() && Actor.IsAlive();
+            if (_spellBook != null && _spellBook.IsCastingSkill()) return false;
+            return CanUseAttack(GetCurrentAttackPattern());
+        }
+        
+        /// <summary>
+        /// Checks if an attack pattern can be used or not.
+        /// </summary>
+        /// <param name="attackPattern"></param>
+        /// <returns></returns>
+        public bool CanUseAttack(AttackPattern attackPattern)
+        {
+            if (_spellBook != null && _spellBook.IsCastingSkill()) return false;
+            if (attackPattern.AttackType == AttackTypes.Target && GetCurrentTarget() == null) return false;
+            if (!Actor.IsAlive() || AttackLock.IsLocked() || _isAttacking) return false;
+            //Check resource
+            if (_healthcareModule != null && attackPattern.RequiredResource != null)
+            {
+                float currentResource = _healthcareModule.GetCurrentResource(attackPattern.RequiredResource);
+                if (currentResource < attackPattern.RequiredResourceAmount) return false;
+            }
+            return true;
         }
         
         public bool IsAttacking()
         {
             return _isAttacking;
         }
-
+        
+        /// <summary>
+        /// Checks whether the target point is in attacking range
+        /// </summary>
+        /// <param name="target"></param>
+        /// <returns></returns>
         public bool IsInAttackRange(WorldPoint target)
         {
-            float sqrDist = Vector3.SqrMagnitude(target.GetTargetPosition() - Actor.transform.position);
-            return sqrDist <= (GetCurrentAttackPattern().Range + RangeTolerance) * (GetCurrentAttackPattern().Range + RangeTolerance);
+            float dist = Vector3.Magnitude(target.GetTargetPosition() - Actor.GetActorLocation()) - target.Radius;
+            return dist <= (GetAttackRange() + RangeTolerance);
         }
         
         public AttackPattern GetCurrentAttackPattern()
@@ -700,7 +823,7 @@ namespace Kuantech.Core
             AttackPattern currPattern = GetCurrentAttackPattern();
             //Set timings
             _attackDuration = GetAttackDuration();
-            float timeMultiplier = GetAttackSpeedMultiplier();
+            float timeMultiplier = Mathf.Max(0.01f,GetAttackSpeedMultiplier());
             _effectPlayTime = GetAttackFxPlayTime();
             _attackImplementationTime = GetAttackImplementationTime();
             _maxContinuousAttackTime = GetContinuousAttackMaxTime();
@@ -709,9 +832,12 @@ namespace Kuantech.Core
             _attacked = false;
             _attackStartTime = Time.time;
             _effectPlayed = false;
+
+            float animationTime = currPattern.AnimationTime;
+            animationTime = Mathf.Clamp(animationTime, 0, _attackDuration);
             if(_animationModule != null)
             {
-                _animationModule.PlayAnimation(currPattern.AttackAnimationData, timeMultiplier);
+                _animationModule.PlayAnimationData(currPattern.AttackAnimationData,  animationTime/timeMultiplier);
             }
   
             //todo(networking): Check server auth
@@ -765,6 +891,7 @@ namespace Kuantech.Core
             playSettings.SetPosition = GetCurrentAttackPattern().SetAttackFxPosition;
             playSettings.SetRotation = GetCurrentAttackPattern().SetAttackFxRotation;
             playSettings.Caster = Actor;
+            playSettings.ComboIndex = GetCurrentComboIndex();
             attackEffect.PlayEffect(playSettings);
         }
         
@@ -784,9 +911,18 @@ namespace Kuantech.Core
         public Vector3 GetAttackDirection()
         {
             Actor target = GetCurrentTarget();
-            if(target == null) return GetActionCastData().Direction;
-            Vector3 direction = target.transform.position - GetActionCastData().StartPosition;
-            return direction.normalized;
+            if (target != null)
+            {
+                Vector3 direction = target.transform.position - GetActionCastData().StartPosition;
+                return direction.normalized;
+            }
+            ActionCastData castData =  GetActionCastData();
+            if (castData.Direction.sqrMagnitude > 0.01f)
+            {
+                return castData.Direction;
+            }
+
+            return (castData.TargetPosition - GetAttackPosition()).normalized;
         }
         
         /// <summary>
@@ -817,7 +953,7 @@ namespace Kuantech.Core
                 return getTarget.GetHitPoint(Actor).GetTargetPosition();
             }
 
-            return startPosition + attackDireciton * GetCurrentAttackPattern().Range;
+            return startPosition + attackDireciton * GetAttackRange();
         }
         #endregion
         

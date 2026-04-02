@@ -776,11 +776,12 @@
     "hlslDeclarationOverride": 0,
     "m_Hidden": false,
     "m_Value": {
-        "m_SerializedTexture": "{\"texture\":{\"instanceID\":0}}",
+        "m_SerializedTexture": "",
         "m_Guid": ""
     },
     "isMainTexture": false,
     "useTilingAndOffset": false,
+    "useTexelSize": true,
     "m_Modifiable": true,
     "m_DefaultType": 0
 }
@@ -1072,10 +1073,10 @@
     "m_Guid": {
         "m_GuidSerialized": "539e1094-ca78-4119-b59d-878c4443df24"
     },
-    "m_Name": "BackgroundColo",
+    "m_Name": "BackgroundColor",
     "m_DefaultRefNameVersion": 1,
-    "m_RefNameGeneratedByDisplayName": "BackgroundColo",
-    "m_DefaultReferenceName": "_BackgroundColo",
+    "m_RefNameGeneratedByDisplayName": "BackgroundColor",
+    "m_DefaultReferenceName": "_BackgroundColor",
     "m_OverrideReferenceName": "",
     "m_GeneratePropertyBlock": true,
     "m_UseCustomSlotLabel": false,
@@ -1092,7 +1093,7 @@
         "a": 0.0
     },
     "isMainColor": false,
-    "m_ColorMode": 0
+    "m_ColorMode": 1
 }
 
 {
@@ -1249,6 +1250,7 @@
     "m_SourceType": 0,
     "m_FunctionName": "TiledPattern",
     "m_FunctionSource": "d962ea27e24f551489d715afac4599d8",
+    "m_FunctionSourceUsePragmas": true,
     "m_FunctionBody": "float CheckeredPattern(float3 objectPos, float tileSize)\r\n{\r\n    int x = (int)(objectPos.x / tileSize);\r\n    int z = (int)(objectPos.z / tileSize);\r\n    \r\n    return (x + z) % 2 == 0 ? 1.0 : 0.0;\r\n}"
 }
 
@@ -1697,10 +1699,10 @@
         "w": 1.0
     },
     "m_DefaultValue": {
-        "x": 0.0,
-        "y": 0.0,
-        "z": 0.0,
-        "w": 0.0
+        "x": 1.0,
+        "y": 1.0,
+        "z": 1.0,
+        "w": 1.0
     },
     "m_Labels": []
 }
@@ -1776,7 +1778,7 @@
     "m_StageCapability": 2,
     "m_BareResource": false,
     "m_Texture": {
-        "m_SerializedTexture": "{\"texture\":{\"instanceID\":0}}",
+        "m_SerializedTexture": "",
         "m_Guid": ""
     },
     "m_DefaultType": 0
@@ -2195,7 +2197,7 @@
     "m_StageCapability": 2,
     "m_BareResource": false,
     "m_Texture": {
-        "m_SerializedTexture": "{\"texture\":{\"instanceID\":0}}",
+        "m_SerializedTexture": "",
         "m_Guid": ""
     },
     "m_DefaultType": 0
@@ -2446,6 +2448,27 @@
 
 {
     "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.Vector2MaterialSlot",
+    "m_ObjectId": "6b4df4fd31f24e9ab75ef573bddb4e87",
+    "m_Id": -1761702023,
+    "m_DisplayName": "UV",
+    "m_SlotType": 0,
+    "m_Hidden": false,
+    "m_ShaderOutputName": "_UV",
+    "m_StageCapability": 2,
+    "m_Value": {
+        "x": 0.0,
+        "y": 0.0
+    },
+    "m_DefaultValue": {
+        "x": 0.0,
+        "y": 0.0
+    },
+    "m_Labels": []
+}
+
+{
+    "m_SGVersion": 0,
     "m_Type": "UnityEditor.ShaderGraph.DynamicValueMaterialSlot",
     "m_ObjectId": "6deee57e41bf435a8e6da65de00df474",
     "m_Id": 2,
@@ -2577,8 +2600,8 @@
     "m_ObjectId": "761f666bc84e4d719a7737491e1ec823",
     "m_Title": "Vertex Position",
     "m_Position": {
-        "x": 10.0,
-        "y": 10.0
+        "x": -3950.0,
+        "y": -101.0
     }
 }
 
@@ -2664,6 +2687,9 @@
     "m_AlphaClip": false,
     "m_CastShadows": true,
     "m_ReceiveShadows": true,
+    "m_DisableTint": false,
+    "m_AdditionalMotionVectorMode": 0,
+    "m_AlembicMotionVectors": false,
     "m_SupportsLODCrossFade": false,
     "m_CustomEditorGUI": "",
     "m_SupportVFX": false
@@ -3064,7 +3090,7 @@
     "m_Type": "UnityEditor.ShaderGraph.Vector4MaterialSlot",
     "m_ObjectId": "8ba7d85ed6b340cdbea48f5aad6bbf4b",
     "m_Id": 0,
-    "m_DisplayName": "BackgroundColo",
+    "m_DisplayName": "BackgroundColor",
     "m_SlotType": 1,
     "m_Hidden": false,
     "m_ShaderOutputName": "Out",
@@ -3116,6 +3142,9 @@
             "m_Id": "fde0628e86534d9cb426c07d97268937"
         },
         {
+            "m_Id": "6b4df4fd31f24e9ab75ef573bddb4e87"
+        },
+        {
             "m_Id": "d143d5a373f14111abcc04662eb24322"
         }
     ],
@@ -3139,7 +3168,8 @@
         "53021fec-f974-4434-a741-f42797363955",
         "63c53669-f2dd-49ca-8d5f-658fd05a07aa",
         "87cec795-c129-4ed3-a4bb-3aa346369406",
-        "8a95fae4-9305-427b-b899-63d27c2f3013"
+        "8a95fae4-9305-427b-b899-63d27c2f3013",
+        "a981cc7e-df8a-4d9b-87b2-08330a2eec41"
     ],
     "m_PropertyIds": [
         -3749673,
@@ -3152,7 +3182,8 @@
         1710985640,
         258851305,
         1823705950,
-        163438373
+        163438373,
+        -1761702023
     ],
     "m_Dropdowns": [],
     "m_DropdownSelectedEntries": []
@@ -3540,6 +3571,27 @@
 
 {
     "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.Vector2MaterialSlot",
+    "m_ObjectId": "a0974d1cf2b54e2180a61670ac0c2dbe",
+    "m_Id": -1761702023,
+    "m_DisplayName": "UV",
+    "m_SlotType": 0,
+    "m_Hidden": false,
+    "m_ShaderOutputName": "_UV",
+    "m_StageCapability": 2,
+    "m_Value": {
+        "x": 0.0,
+        "y": 0.0
+    },
+    "m_DefaultValue": {
+        "x": 0.0,
+        "y": 0.0
+    },
+    "m_Labels": []
+}
+
+{
+    "m_SGVersion": 0,
     "m_Type": "UnityEditor.ShaderGraph.Vector3MaterialSlot",
     "m_ObjectId": "a4b800b1e6cd40f9b31e1779060864d8",
     "m_Id": 1,
@@ -3861,7 +3913,7 @@
         "a": 1.0
     },
     "isMainColor": false,
-    "m_ColorMode": 0
+    "m_ColorMode": 1
 }
 
 {
@@ -4080,6 +4132,9 @@
             "m_Id": "dd53dddb2402415585adc239b10bfba8"
         },
         {
+            "m_Id": "a0974d1cf2b54e2180a61670ac0c2dbe"
+        },
+        {
             "m_Id": "588f0782d10c4e47973ddeecfa3b10c1"
         }
     ],
@@ -4103,7 +4158,8 @@
         "53021fec-f974-4434-a741-f42797363955",
         "63c53669-f2dd-49ca-8d5f-658fd05a07aa",
         "87cec795-c129-4ed3-a4bb-3aa346369406",
-        "8a95fae4-9305-427b-b899-63d27c2f3013"
+        "8a95fae4-9305-427b-b899-63d27c2f3013",
+        "a981cc7e-df8a-4d9b-87b2-08330a2eec41"
     ],
     "m_PropertyIds": [
         -3749673,
@@ -4116,7 +4172,8 @@
         1710985640,
         258851305,
         1823705950,
-        163438373
+        163438373,
+        -1761702023
     ],
     "m_Dropdowns": [],
     "m_DropdownSelectedEntries": []
@@ -4635,11 +4692,12 @@
     "hlslDeclarationOverride": 0,
     "m_Hidden": false,
     "m_Value": {
-        "m_SerializedTexture": "{\"texture\":{\"instanceID\":0}}",
+        "m_SerializedTexture": "",
         "m_Guid": ""
     },
     "isMainTexture": false,
     "useTilingAndOffset": false,
+    "useTexelSize": true,
     "m_Modifiable": true,
     "m_DefaultType": 0
 }

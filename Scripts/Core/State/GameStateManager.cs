@@ -1,4 +1,6 @@
+using System;
 using Cysharp.Threading.Tasks;
+using IngameDebugConsole;
 using Kuantech.Core;
 using UnityEngine;
 
@@ -52,18 +54,25 @@ public class GameStateManager : SubManager
     /// <returns></returns>
     public static bool LoadData(ISaveable saveable)
     {
-        var ctx = GameStateManager.GetContext<GameStateManager>();
-        if (ctx == null)
+        try
         {
-            Debug.LogError("Game State Manager is null");
+            var ctx = GameStateManager.GetContext<GameStateManager>();
+            if (ctx == null)
+            {
+                Debug.LogError("Game State Manager is null");
+                return false;
+            }
+            if (ctx.GameState == null || saveable == null) return false;
+            string id = GetSaveableId(saveable);
+            byte[] data = ctx.GameState.GetData(id);
+            if (data == null) return false;
+            SaveUtility.Deserialize(data,saveable);
+            return true;
+        }
+        catch (Exception e)
+        {
             return false;
         }
-        if (ctx.GameState == null || saveable == null) return false;
-        string id = GetSaveableId(saveable);
-        byte[] data = ctx.GameState.GetData(id);
-        if (data == null) return false;
-        SaveUtility.Deserialize(data,saveable);
-        return true;
     }
 
     public override void ClearState()
@@ -71,6 +80,15 @@ public class GameStateManager : SubManager
         var ctx = GetContext<GameStateManager>();
         ctx.GameState.ClearAllData();
     }
+
+    [ConsoleMethod("clearState", "Clears game state")]
+    public static void ClearStateSS()
+    {
+        var ctx = GameStateManager.GetContext<GameStateManager>();
+        if (ctx == null) return;
+        ctx.ClearState();
+    }
+    
     public static void ClearSaveData(ISaveable saveable)
     {
         string id = GetSaveableId(saveable);

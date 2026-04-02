@@ -16,6 +16,15 @@ namespace Kuantech.TowerDefense
                 Debug.LogError("Current level doesn't have wave handler module");
                 return;
             }
+            whm.StartWave();
+        }
+        
+        public override void OnExit(Level level)
+        {
+            base.OnExit(level);
+            WaveHandlerModule whm = ParentLevel.GetLevelModule<WaveHandlerModule>();
+            if (whm == null) return;
+            whm.StopWave();
         }
     }
 }

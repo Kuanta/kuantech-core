@@ -5,8 +5,9 @@ namespace Kuantech.Rpg
 {
     public enum ModifierTypes
     {
-        Addition,
-        Multiplication,
+        Flat,
+        PercentAdd,
+        PercentMult,
     }
     
     [Serializable]
@@ -18,10 +19,9 @@ namespace Kuantech.Rpg
         public float LevelToValueFactor;
         public ModifierTypes ModifierType;
         public bool IsPercentage;
-
         public float GetValue(int level)
         {
-            return BaseValue + LevelToValueFactor * level * Math.Sign(BaseValue);
+            return BaseValue + LevelToValueFactor * level * (BaseValue != 0 ? Math.Sign(BaseValue) : 1);
         }
     }
 

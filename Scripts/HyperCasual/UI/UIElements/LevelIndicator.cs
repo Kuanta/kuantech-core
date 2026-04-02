@@ -1,3 +1,4 @@
+using Kuantech.Midcore;
 using Kuantech.Puzzle.UI;
 using TMPro;
 using UnityEngine;
@@ -14,9 +15,17 @@ namespace Kuantech.Core.HyperCasual.UI
         [SerializeField] private GameObject HardLevelIndicator;
         [SerializeField] private GameObject BonusLevelIndicator;
         [SerializeField] private StageIndicator StageIndicator;
+        [SerializeField] private int LevelIndexOffset = 1;
+
+        public void SetLevel(LevelIndexData levelIndexData)
+        {
+            //todo: set world
+            SetLevelIndex(levelIndexData.LevelIndex);
+        }
+        
         public void SetLevelIndex(int levelIndex)
         {
-            LevelIndexText.text = $"{LevelPrefix} {(levelIndex).ToString()}";
+            LevelIndexText.text = $"{LevelPrefix} {(levelIndex + LevelIndexOffset).ToString()}";
         }
 
         public void SetHardLevel(bool isHardLevel)
