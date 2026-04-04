@@ -30,6 +30,7 @@ namespace Kuantech.Core.HyperCasual
 
             if (ToggleHapticsButton != null)
             {
+                ToggleHapticsButton.Initialize();
                 ToggleHapticsButton.OnToggle += OnHapticsToggle;
             }
         }

@@ -11,10 +11,10 @@ namespace Kuantech.Midcore
     {
         [SubclassSelector]
         [SerializeReference]
-        protected List<Reward> Rewards;
+        public List<Reward> Rewards;
         
         [SerializeReference]
-        protected List<Reward> FailedRewards;
+        public List<Reward> FailedRewards;
         
         public override void OnLevelStateChange(LevelStateChangeData changeData)
         {

@@ -203,15 +203,21 @@ namespace Kuantech.Core
             container.ActivateManagerDependentSceneObjects();
             ResumeGame();
             
-            //Call On scene entry for every manager
-            foreach (var manager in _subManagers)
+            //Call On scene entry for every manager. They may need to know
+            if(_subManagers != null)
             {
-                manager.OnSceneEntry();
+                foreach (var manager in _subManagers)
+                {
+                    manager.OnSceneEntry();
+                }
             }
 
-            foreach (var manager in _sceneSubManagers)
+            if(_sceneSubManagers != null)
             {
-                manager.OnSceneEntry();
+                foreach (var manager in _sceneSubManagers)
+                {
+                    manager.OnSceneEntry();
+                }
             }
         }
         

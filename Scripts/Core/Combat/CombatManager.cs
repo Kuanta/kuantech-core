@@ -11,7 +11,6 @@ namespace Kuantech.Core
         [Header("Damage Texts")] [SerializeField]
         private FloatingDamageText DamageTextPrefab;
 
-        [SerializeField] private FloatingDamageText3D DamageText3D;
         [SerializeField]
         private FloatingDamageText HealTextPrefab;
         
@@ -52,15 +51,12 @@ namespace Kuantech.Core
         public static void ShowDamageText(Vector3 position, DamageInfo damageInfo, bool friendly)
         {
             CombatManager ctx = GetContext<CombatManager>();
-            if (ctx == null) return;
-            FloatingDamageText3D damageText3D =
-                PoolManager.GetObjectFromPool(ctx.DamageText3D.gameObject).GetComponent<FloatingDamageText3D>();
-            damageText3D.Show(damageInfo, position, friendly);
-            // FloatingDamageText damageText =
-            //     PoolManager.GetObjectFromPool(ctx.DamageTextPrefab.gameObject).GetComponent<FloatingDamageText>();
-            // if (damageText == null) return;
-            // damageText.transform.position = position;
-            // damageText.Show(damageInfo, friendly);
+            if (ctx == null || ctx.DamageTextPrefab == null) return;
+            FloatingDamageText damageText =
+                PoolManager.GetObjectFromPool(ctx.DamageTextPrefab.gameObject).GetComponent<FloatingDamageText>();
+           if(damageText == null) return;
+           damageText.transform.position = position;
+           damageText.Show(damageInfo, friendly);
         }
         
         public static void ShowHealText(Vector3 position, DamageInfo healAmount, bool friendly)

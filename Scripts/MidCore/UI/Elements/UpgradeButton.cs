@@ -1,19 +1,22 @@
 ﻿using System;
-using Kuantech.Core.FX;
 using Kuantech.Core.UI;
-using Kuantech.Utils;
 using UnityEngine;
 using UnityEngine.Events;
 
 namespace Kuantech.Midcore.UI
 {
+    [RequireComponent(typeof(KtButton))]
     public class UpgradeButton : MonoBehaviour, KtButton.IUIButtonAction
     {
         [SerializeField] private UpgradePriceTag PriceTag;
         [NonSerialized] public ProgressableDataAsset ProgressableToUpgrade;
         public UnityAction OnUpgradePurchased;
-        [KTTag("AudioTag")] public int PurchasedSoundTag;
-        [KTTag("AudioTag")] public int CantPurchaseSoundTag;
+        private KtButton _ktButton;
+
+        private void Awake()
+        {
+            _ktButton = GetComponent<KtButton>();
+        }
         public void SetProgressable(ProgressableDataAsset progressableDataAsset)
         {
             int currentRank = ProgressionManager.GetCurrentRank(progressableDataAsset);
@@ -39,11 +42,11 @@ namespace Kuantech.Midcore.UI
             if (ProgressionManager.RankUpUpgrade(ProgressableToUpgrade))
             {
                 OnUpgradePurchased?.Invoke();
-                AudioLibrary.PlaySoundByTag(PurchasedSoundTag);
+                if (_ktButton != null) _ktButton.TriggerPositiveEffect();
             }
             else
             {
-                AudioLibrary.PlaySoundByTag(CantPurchaseSoundTag);
+                if (_ktButton != null) _ktButton.TriggerNegativeEffect();
             }
         }
     }

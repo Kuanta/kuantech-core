@@ -16,7 +16,7 @@ namespace Kuantech.Midcore
         public List<ProgressableDataAsset> SubUpgrades;
         
         [Header("Store Entry")]
-        [SerializeField] protected BuyableInfo BuyableInfo;
+        public BuyableInfo BuyableInfo;
 
         [Header("Progressible Level")] 
         public LevelVariableData LevelVariableData;

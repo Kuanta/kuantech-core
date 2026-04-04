@@ -256,6 +256,11 @@ namespace Kuantech.Core.Combat
             return Healthbar;
         }
 
+        public void UpdateHealthbar()
+        {
+            UpdateResourceBar(HealthResourceAsset);
+        }
+        
         public void SetHealthbar(Healthbar healthbar)
         {
             SetResourceBar(HealthResourceAsset, healthbar);
