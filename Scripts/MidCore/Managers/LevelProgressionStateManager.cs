@@ -67,13 +67,7 @@ namespace Kuantech.Midcore
             //Last completed
             if (ctx.LastCompletedLevelNumberData.WorldIndex <= worldIndex)
             {
-                int lastCompletedWorldIndex = worldIndex;
-                int lastCompleteLevelIndex = ctx.LastCompletedLevelNumberData.LevelIndex;
-                if (ctx.LastCompletedLevelNumberData.LevelIndex < levelNumber)
-                {
-                    lastCompletedWorldIndex = levelNumber;
-                }
-                ctx.SetLastCompletedLevel(lastCompletedWorldIndex, lastCompleteLevelIndex);
+                ctx.SetLastCompletedLevel(worldIndex, levelNumber);
             }
 
             levelNumber += 1;
@@ -83,13 +77,13 @@ namespace Kuantech.Midcore
                 LevelIndex = levelNumber,
             };
             
-            // //Set next level
-            // LevelManager lm = LevelManager.GetContext<LevelManager>();
-            // if (lm != null)
-            // {
-            //     LevelIndexData correctedData = lm.GetCorrectedLevelIndex(ctx.CurrentLevelNumberData);
-            //     ctx.SetCurrentLevel(correctedData.WorldIndex, correctedData.LevelIndex);
-            // }
+            //Set next level
+            LevelManager lm = LevelManager.GetContext<LevelManager>();
+            if (lm != null)
+            {
+                LevelIndexData correctedData = lm.GetCorrectedLevelIndex(ctx.CurrentLevelNumberData);
+                ctx.SetCurrentLevel(correctedData.WorldIndex, correctedData.LevelIndex);
+            }
         }
 
         public static  LevelIndexData GetLevelProgressionData()
