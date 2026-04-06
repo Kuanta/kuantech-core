@@ -2,6 +2,7 @@
 using Kuantech.Core.FX;
 using Kuantech.Core.UI;
 using Kuantech.Utils.Mobile;
+using MadPixel.InApps;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -15,6 +16,9 @@ namespace Kuantech.Core.HyperCasual
         [SerializeField] private ToggleButton ToggleSfxButton;
         [SerializeField] private ToggleButton ToggleHapticsButton;
         [SerializeField] private bool PauseGame = true;
+        [SerializeField] private KtButton PrivacyPolicyButton;
+        [SerializeField] private KtButton GDPRButton;
+        [SerializeField] private KtButton RestorePurchasesButton;
         
         public override void Initialize()
         {
@@ -25,6 +29,22 @@ namespace Kuantech.Core.HyperCasual
             if(MusicVolume != null) MusicVolume.onValueChanged.AddListener(OnMusicVolumeChange);
             if (ToggleMusicButton != null) ToggleMusicButton.OnToggle += OnMusicToggle;
             if (ToggleSfxButton != null) ToggleSfxButton.OnToggle += OnSfxToggle;
+
+            if(PrivacyPolicyButton != null )
+            {
+                PrivacyPolicyButton.onClick.AddListener(OnPrivacyPolicyButtonClicked);
+            }
+
+            if(GDPRButton != null)
+            {
+                GDPRButton.onClick.AddListener(OnGDPRButtonClicked);
+            }
+
+            if(RestorePurchasesButton != null)
+            {
+                RestorePurchasesButton.onClick.AddListener(OnRestorePurchasesButtonClicked);
+            }
+
 
             UpdateElements();
 
@@ -118,5 +138,24 @@ namespace Kuantech.Core.HyperCasual
             PlayerPrefs.SetInt("ToggleHaptics", toggle ? 1:0);
             MobileToolsManager.ToggleHaptics(toggle);
         }
+
+        #region Privacy Policy & Terms of Use
+
+        private void OnPrivacyPolicyButtonClicked()
+        {
+            Application.OpenURL("https://madpixel.dev/privacy.html");
+        }
+
+        private void OnGDPRButtonClicked()
+        {
+            
+        }
+
+        private void OnRestorePurchasesButtonClicked()
+        {
+            MobileInAppPurchaser.RestorePurchases();
+        }
+
+        #endregion
     }
 }
