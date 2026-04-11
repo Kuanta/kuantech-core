@@ -59,7 +59,7 @@ namespace Kuantech.Core
            damageText.Show(damageInfo, friendly);
         }
         
-        public static void ShowHealText(Vector3 position, DamageInfo healAmount, bool friendly)
+        public static void ShowHealText(Vector3 position, float amount, bool friendly, bool isCritical)
         {
             CombatManager ctx = GetContext<CombatManager>();
             if (ctx == null) return;
@@ -67,7 +67,7 @@ namespace Kuantech.Core
                 PoolManager.GetObjectFromPool(ctx.HealTextPrefab.gameObject).GetComponent<FloatingDamageText>();
             if (damageText == null) return;
             damageText.transform.position = position;
-            damageText.Show(healAmount, friendly);
+            damageText.Show(amount, friendly, isCritical);
         }
         #endregion
         

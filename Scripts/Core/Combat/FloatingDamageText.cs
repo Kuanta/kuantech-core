@@ -29,41 +29,45 @@ namespace Kuantech.Core
 
         public void Show(DamageInfo damageInfo, bool isFriendly = false)
         {
+           Show(damageInfo.GetDamage(), isFriendly, damageInfo.IsCritical);
+        }
+
+        public void Show(float damageAmount, bool isFriendly = false, bool isCritical = false)
+        {
             if (Animator != null)
             {
                 Animator.SetTrigger(ShowHash);
             }
-            Text.text = damageInfo.GetDamage().Stringfy(true);
+            Text.text = damageAmount.Stringfy(true);
 
             if (AdjustColors)
             {
                 Text.color = isFriendly ? FriendlyColor : EnemyColor;
             }
-            
+
             if (_routine != null)
             {
                 StopCoroutine(_routine);
             }
-        
+
             _routine = DespawnRoutine();
             if (CritIndicator != null)
             {
-                CritIndicator.SetActive(damageInfo.IsCritical);
+                CritIndicator.SetActive(isCritical);
             }
 
             transform.localScale = Vector3.one;
-            if (damageInfo.IsCritical)
+            if (isCritical)
             {
                 transform.localScale = Vector3.one * CritScale;
                 Text.color = CritColor;
             }
-            
+
             //Add random offset 
             transform.position += new Vector3(Random.Range(RandomOffsetMin.x, RandomOffsetMax.x),
                 Random.Range(RandomOffsetMin.y, RandomOffsetMax.y), Random.Range(RandomOffsetMin.z, RandomOffsetMax.z));
             StartCoroutine(_routine);
         }
-
 
         private IEnumerator DespawnRoutine()
         {

@@ -429,7 +429,7 @@ namespace Kuantech.TowerDefense
         #region Wave Completion
 
         private IEnumerator _waveCompleteRoutine = null;
-        public void CompleteWave()
+        public void CompleteWave(bool immediate = false)
         {
             if (_waveCompleteRoutine != null) return;
             if (this == null || ParentLevel == null)
@@ -437,6 +437,12 @@ namespace Kuantech.TowerDefense
                 return;
             }
             StopWave();
+            if(immediate)
+            {
+                OnWaveCompleted?.Invoke();
+                _waveCompleteRoutine = null;
+                return;
+            }
             _waveCompleteRoutine = CompleteWaveRoutine();
             StartCoroutine(_waveCompleteRoutine);
         }

@@ -202,7 +202,7 @@ namespace Kuantech.Core.Combat
         /// Adds resource
         /// </summary>
         /// <param name="heal"></param>
-        public void ReceiveResource(ResourceAsset resourceAsset, float amount)
+        public void ReceiveResource(ResourceAsset resourceAsset, float amount, bool isFriendly)
         {
             if (!Actor.IsAlive()) return; //Can't heal the dead
             float currentRes = GetCurrentResource(resourceAsset);
@@ -214,8 +214,7 @@ namespace Kuantech.Core.Combat
             //Show heal text if health resource is increased
             if (ShowDamageText && resourceAsset == HealthResourceAsset)
             {
-                //CombatManager.ShowHealText(Actor.transform.position, amount, Actor.GetFactionId() == 0); //todo: Fix Friendly check
-                OnHealReceived?.Invoke(amount);
+                CombatManager.ShowHealText(Actor.transform.position, amount, isFriendly, false);
                 OnHealthChanged?.Invoke(this);
             }
             OnResourceChanged?.Invoke(resourceAsset);
@@ -224,8 +223,7 @@ namespace Kuantech.Core.Combat
 
         public void ReceiveHeal(float healAmount)
         {
-            ReceiveResource(HealthResourceAsset, healAmount);
-            
+            ReceiveResource(HealthResourceAsset, healAmount, true);
         }
         
         #region Resource Bars

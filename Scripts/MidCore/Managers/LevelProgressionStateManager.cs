@@ -1,8 +1,8 @@
 using System;
 using Kuantech.Core;
 using Sirenix.OdinInspector;
+using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.Serialization;
 
 namespace Kuantech.Midcore
 {
@@ -42,7 +42,36 @@ namespace Kuantech.Midcore
             if(saveState) SaveState();
             CurrentLevelChanged?.Invoke(CurrentLevelNumberData);
         }
-        
+
+        [Button("Set Next Level")]
+        public void SetNextLevel(bool saveState = true)
+        {
+            LevelManager lm = LevelManager.GetContext<LevelManager>();
+            if (lm == null) return;
+            LevelIndexData next = lm.GetCorrectedLevelIndex(new LevelIndexData()
+            {
+                WorldIndex = CurrentLevelNumberData.WorldIndex,
+                LevelIndex = CurrentLevelNumberData.LevelIndex + 1,
+            });
+            SetCurrentLevel(next.WorldIndex, next.LevelIndex, saveState);
+        }
+
+        [Button("Set Prev Level")]
+        public void SetPreviousLevel(bool saveState = true)
+        {
+            LevelManager lm = LevelManager.GetContext<LevelManager>();
+            if (lm == null) return;
+            int worldIndex = CurrentLevelNumberData.WorldIndex;
+            int levelIndex = CurrentLevelNumberData.LevelIndex - 1;
+            if (levelIndex < 0)
+            {
+                worldIndex = Mathf.Max(0, worldIndex - 1);
+                WorldDataAsset world = lm.GetWorld(worldIndex);
+                levelIndex = world != null ? Mathf.Max(0, world.Levels.Count - 1) : 0;
+            }
+            SetCurrentLevel(worldIndex, levelIndex, saveState);
+        }
+
         [Button("Set Last Completed Level")]
         public void SetLastCompletedLevel(int worldIndex, int levelIndex, bool saveState = true)
         {
