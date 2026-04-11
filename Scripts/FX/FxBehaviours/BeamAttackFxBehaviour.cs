@@ -20,6 +20,7 @@ namespace Kuantech.Core.FX
 
         public override void UpdateFx()
         {
+            base.UpdateFx();
             if (EndPoint == null || _caster == null) return;
             EndPoint.transform.position = _caster.GetTargetPosition();
         }
