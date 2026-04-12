@@ -36,7 +36,16 @@ namespace Kuantech.Core
         /// </summary>
         public virtual void OnSceneLeave()
         {
-            
+
+        }
+
+        /// <summary>
+        /// Called after all sub-managers are initialized and the scene is fully ready.
+        /// Provides the transition data and the name of the previous scene.
+        /// </summary>
+        public virtual void OnPostSceneLoaded(LevelTransitionData transitionData, string previousScene)
+        {
+
         }
 
         /// <summary>

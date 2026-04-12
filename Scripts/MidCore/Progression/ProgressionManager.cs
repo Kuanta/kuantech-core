@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+using Kuantech.Analytics;
 using Kuantech.Core;
 using Kuantech.Core.Combat;
 using Kuantech.Core.HyperCasual;
@@ -154,7 +155,13 @@ namespace Kuantech.Midcore
         [Button("Add Experience")]
         public void AddExperience(int experience)
         {
+            int levelBefore = GetPlayerLevel().CurrentLevel;
             AddRankValue(PlayerLevelDataAsset, experience);
+            int levelAfter = GetPlayerLevel().CurrentLevel;
+            if (levelAfter > levelBefore)
+            {
+                Analytics.Analytics.OnPlayerLevelUp(levelAfter);
+            }
             OnPlayerEarnedExperience?.Invoke(GetPlayerLevel());
             CheckUnlockedCollectibles(false);
             SaveState();
