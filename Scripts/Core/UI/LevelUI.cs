@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Kuantech.Utils;
+using UnityEngine;
 
 namespace Kuantech.Core.UI
 {
@@ -14,6 +15,8 @@ namespace Kuantech.Core.UI
     public class LevelUI : UICanvas
     {
         public List<PhasePanelsEntry> PhasePanels;
+
+        public RectTransform HUD;
         
         //UI elements that could be accessed by other systems
         public List<UIElement> UIElements;
@@ -142,6 +145,12 @@ namespace Kuantech.Core.UI
             return null;
         }
         #endregion
+
+        public void ToggleHUD()
+        {
+            if (HUD == null) return;
+            HUD.gameObject.SetActive(!HUD.gameObject.activeSelf);
+        }
         
         public virtual void Reset()
         {

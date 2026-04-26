@@ -61,8 +61,8 @@ namespace Kuantech.Combat
                 if (damageInfo.IsCritical)
                 {
                     Text.color = CritColor;
-                    Text.fontSize = Text.fontSize * CritScaleMultiplier; // Veya scale ile oyna
-                    Text.text += "!"; // Kritik efekt
+                    Text.fontSize = Text.fontSize * CritScaleMultiplier;
+                    Text.text += "!"; 
                 }
                 else
                 {
@@ -70,7 +70,6 @@ namespace Kuantech.Combat
                     // Font size'ı resetlemeyi unutma (Pool kullandığın için)
                 }
 
-                // 3. Animasyonu Başlat
                 StartCoroutine(AnimateRoutine(damageInfo.IsCritical));
             }
 
@@ -96,21 +95,17 @@ namespace Kuantech.Combat
                     timer += Time.deltaTime;
                     float progress = timer / LifeTime;
 
-                    // A. Yukarı Taşı
                     transform.position = _startPos + (Vector3.up * (MoveSpeed * timer));
 
-                    // B. Scale Animasyonu (Pop Efekti)
                     float scaleEval = ScaleCurve.Evaluate(progress);
                     transform.localScale = originalScale * scaleEval;
 
-                    // C. Fade Out (Şeffaflaşma)
                     float alphaEval = FadeCurve.Evaluate(progress);
                     Text.color = new Color(startColor.r, startColor.g, startColor.b, alphaEval);
 
                     yield return null;
                 }
 
-                // Bitti, havuza geri gönder
                 PoolManager.PoolObject(gameObject);
             }
         }

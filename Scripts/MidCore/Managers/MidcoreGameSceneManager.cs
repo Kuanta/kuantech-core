@@ -42,7 +42,7 @@ namespace Kuantech.Midcore
             return ctx.MenuSceneName;
         }
 
-        public static void GoToMenuScene()
+        public static void GoToMenuScene(LevelTransitionData transitionData = null)
         {
             Level currLevel = LevelManager.GetCurrentLevel();
             if (currLevel != null)
@@ -50,7 +50,7 @@ namespace Kuantech.Midcore
                 currLevel.QuitLevel();
             }
             string menuSceneName = GetMenuSceneName();
-            GameManager.ChangeScene(menuSceneName);
+            GameManager.ChangeScene(menuSceneName, transitionData);
         }
    
     }

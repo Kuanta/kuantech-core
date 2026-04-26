@@ -1,13 +1,12 @@
 ﻿using Kuantech.Utils;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.UI;
 
 namespace Kuantech.Core.UI
 {
     public class ToggleButton : MonoBehaviour
     {
-        public Button Button;
+        public KtButton Button;
         [SerializeField] private GameObject OnImage;
         [SerializeField] private GameObject OffImage;
         
@@ -27,6 +26,15 @@ namespace Kuantech.Core.UI
         private void OnButtonPress()
         {
             SetState(!State);
+            if(Button == null) return;
+            if(State)
+            {
+                Button.TriggerPositiveEffect();
+            }
+            else
+            {
+                Button.TriggerNegativeEffect();
+            }
         }
 
         public void SetState(bool toggle, bool fireEvent = true)

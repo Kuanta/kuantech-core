@@ -92,12 +92,14 @@ namespace Kuantech.TowerDefense
             CurrentWaveIndex = -1;
             _waveCompleteRoutine = null;
             _currentMaxUnitsFactor = BaseMaxUnitsFactor;
+            WaveStarted = false;
+            ToggleSummoners(false);
         }
         
         private void Update()
         {
             if (ParentLevel == null || ParentLevel.CurrentState != LevelState.Playing) return;
-            if (WaveStarted)
+            if (IsLevelInWavePhase() && WaveStarted)
             {
                 SpawnNextWaveElement();
             }
@@ -171,7 +173,6 @@ namespace Kuantech.TowerDefense
         {
             ToggleSpawners(true);
             WaveStarted = true;
-            
         }
 
         public void StopWave()
@@ -192,7 +193,7 @@ namespace Kuantech.TowerDefense
         {
             SetWave(CurrentWaveIndex+1);
         }
-
+        
         [Button("Set Wave")]
         public void SetWave(int waveIndex)
         {
@@ -253,7 +254,14 @@ namespace Kuantech.TowerDefense
         #endregion
         
         #region Summoners
- 
+
+        public void ToggleSummoners(bool toggle)
+        {
+            foreach (var summoner in ActorSummoners)
+            {
+                summoner.Toggled = toggle;
+            }
+        }
         public void SpawnNextWaveElement()
         {
             while (!Helpers.IsNullOrEmpty(_pendingSummons))
@@ -352,6 +360,7 @@ namespace Kuantech.TowerDefense
             index = index % ActorSummoners.Count;
             return ActorSummoners[index];
         }
+        
         public ActorBlueprint GetActorTemplate(int index)
         {
             return SpawnablesCollection.GetActorTemplate(index);
@@ -420,7 +429,7 @@ namespace Kuantech.TowerDefense
         #region Wave Completion
 
         private IEnumerator _waveCompleteRoutine = null;
-        public void CompleteWave()
+        public void CompleteWave(bool immediate = false)
         {
             if (_waveCompleteRoutine != null) return;
             if (this == null || ParentLevel == null)
@@ -428,6 +437,12 @@ namespace Kuantech.TowerDefense
                 return;
             }
             StopWave();
+            if(immediate)
+            {
+                OnWaveCompleted?.Invoke();
+                _waveCompleteRoutine = null;
+                return;
+            }
             _waveCompleteRoutine = CompleteWaveRoutine();
             StartCoroutine(_waveCompleteRoutine);
         }

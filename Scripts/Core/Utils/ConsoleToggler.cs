@@ -50,14 +50,14 @@ namespace Kuantech.Utils
         
 #if DEV_BUILD || UNITY_EDITOR
     if(Input.GetKeyDown(KeyCode.KeypadEnter))
-        {
-            ToggleConsole();
-        }
-#endif
-        HandleTouch();
+    {
+        ToggleConsole();
     }
+    HandleTouch();
+#endif
+        }
 
-    Rect GetHotZonePixels()
+        Rect GetHotZonePixels()
     {
         float w = Screen.width * Mathf.Clamp01(hotZoneSize01.x);
         float h = Screen.height * Mathf.Clamp01(hotZoneSize01.y);

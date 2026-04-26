@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Kuantech.Analytics;
 using Kuantech.Midcore.Tutorial;
 using Kuantech.Utils;
 using Sirenix.OdinInspector;
@@ -71,6 +72,7 @@ namespace Kuantech.Core.MidCore
             if (!tutorialManager.CompletedTutorials.Contains(tutorialId))
             {
                 tutorialManager.CompletedTutorials.Add(tutorialId);
+                Analytics.Analytics.OnTutorialStepCompleted(tutorialId);
             }
             tutorialManager.SaveState();
         }

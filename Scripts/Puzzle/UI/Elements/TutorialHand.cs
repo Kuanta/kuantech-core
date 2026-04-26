@@ -146,6 +146,10 @@ namespace Kuantech.Puzzle.UI
             ParentRectTransform.anchoredPosition = startAnchoredPosition;
             _startSwipePosition = startAnchoredPosition;
             _endSwipePosition = endAnchoredPosition;
+            _swipePoints = new List<Vector2> { startAnchoredPosition, endAnchoredPosition };
+            _currentSwipePointIndex = 1;
+            _dir = 1;
+            LoopPingPong = false;
             CurrentMotion = Motions.Swipe;
         }
 

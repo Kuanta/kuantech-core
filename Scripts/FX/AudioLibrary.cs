@@ -245,6 +245,20 @@ namespace Kuantech.Core.FX
             MasterMixer.SetFloat("sfxVolume", Mathf.Log10(value * 0.5f) * 20);
         }
 
+        public float GetMusicVolume()
+        {
+            if (MasterMixer == null) return 1f;
+            MasterMixer.GetFloat("musicVolume", out float db);
+            return Mathf.Pow(10f, db / 20f) * 2f;
+        }
+
+        public float GetSfxVolume()
+        {
+            if (MasterMixer == null) return 1f;
+            MasterMixer.GetFloat("sfxVolume", out float db);
+            return Mathf.Pow(10f, db / 20f) * 2f;
+        }
+
         #region Music
 
         public void PlayMusicById(string musicId, float? durationOverride = null)

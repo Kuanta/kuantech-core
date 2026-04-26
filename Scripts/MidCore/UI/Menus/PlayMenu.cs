@@ -1,6 +1,7 @@
 using Kuantech.Core;
 using Kuantech.Core.HyperCasual.UI;
 using Kuantech.Core.UI;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -11,8 +12,11 @@ namespace Kuantech.Midcore.UI
         [Header("Components")] [SerializeField]
         private Button PlayButton;
 
-        [Header("World Theme")] [SerializeField]
-        private LevelIndicator LevelIndicator;
+        [Header("World Theme")] 
+        [SerializeField]  private LevelIndicator LevelIndicator;
+        [SerializeField] private TMP_Text WorldNameText;
+        [SerializeField] private TMP_Text StageNameText;
+        [SerializeField] private Image WorldBackgroundImage;
         
         //Runtime
         private int _worldToPlay = -1;
@@ -46,6 +50,38 @@ namespace Kuantech.Midcore.UI
             {
                 LevelIndicator.SetLevel(currentLevelData);
             }
+
+            int worldToGet = currentLevelData.WorldIndex;
+            int levelToGet = currentLevelData.LevelIndex;
+
+            LevelManager lm = LevelManager.GetContext<LevelManager>();
+            if (lm == null) return;
+
+            WorldDataAsset worldDataAsset = lm.GetWorld(worldToGet);
+
+            if (worldDataAsset.Levels.Count <= levelToGet)
+            {
+                //Get next world
+                levelToGet = 0;
+                worldToGet += 1;
+            }
+
+            WorldDataAsset worldToPlay = lm.GetWorld(worldToGet);
+            _worldToPlay = worldToGet;
+            _levelToPlay = levelToGet;
+
+            if (StageNameText != null)
+            {
+                StageNameText.text = $"Stage {_levelToPlay + 1}";
+            }
+            SetWorldTheme(worldToPlay);
+        }
+        
+        private void SetWorldTheme(WorldDataAsset worldDataAsset)
+        {
+            if (worldDataAsset == null) return;
+            if (WorldNameText != null) WorldNameText.text = worldDataAsset.GetName();
+            if (WorldBackgroundImage != null) WorldBackgroundImage.sprite = worldDataAsset.GetIcon();
         }
 
         #region Handlers

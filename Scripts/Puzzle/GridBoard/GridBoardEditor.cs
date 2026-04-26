@@ -257,5 +257,7 @@ namespace Kuantech.Puzzle
         #endif
 
     }
+    #else
+    public class GridBoardEditor : MonoBehaviour { }
     #endif
 }

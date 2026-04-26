@@ -14,7 +14,7 @@ namespace Kuantech.Midcore.UI
             base.OnCompleteLevelButton();
       
             //Go to main menu
-            MidcoreGameSceneManager.GoToMenuScene();
+            MidcoreGameSceneManager.GoToMenuScene(new MenuSceneTransitionData { FromWin = true });
         }
     }
 }

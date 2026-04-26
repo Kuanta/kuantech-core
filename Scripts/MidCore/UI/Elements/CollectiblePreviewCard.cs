@@ -86,7 +86,7 @@ namespace Kuantech.Midcore.UI
         {
             if(!Initialized) Initialize();
             
-            ContentsParent.gameObject.SetActive(CollectibleDataAsset != null);
+            if(ContentsParent != null) ContentsParent.gameObject.SetActive(CollectibleDataAsset != null);
 
             if (CollectibleDataAsset == null)
             {

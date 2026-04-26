@@ -259,6 +259,23 @@ namespace Kuantech.Core
         }
         #endregion
 
+        public static LevelIndexData CorrectLevelIndexData(int worldIndex, int levelIndex)
+        {
+            var ctx = GetContext<LevelManager>();
+            LevelIndexData corrected = new LevelIndexData();
+            WorldDataAsset worldDataAsset = ctx.GetWorld(worldIndex);
+            if (worldDataAsset.Levels.Count <= levelIndex)
+            {
+                //Get next world
+                levelIndex = 0;
+                worldIndex += 1;
+            }
+
+            corrected.LevelIndex = levelIndex;
+            corrected.WorldIndex = worldIndex;
+            return corrected;
+        }
+        
         [ConsoleMethod("setLevel", "Sets the level")]
         public static void SetLevelCC(int levelIndex)
         {

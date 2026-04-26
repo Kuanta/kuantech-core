@@ -10,7 +10,7 @@ namespace Kuantech.TowerDefense
     /// </summary>
     public class BasicAttackAction : BTLeafAction
     {
-        public string TargetKey = "EnemyActor";
+        public string TargetKey = "EnemyTarget";
         private bool _attacked = false;
         private Actor _enemyActor;
         public override void EnterNode(BehaviourTree ownerTree)
