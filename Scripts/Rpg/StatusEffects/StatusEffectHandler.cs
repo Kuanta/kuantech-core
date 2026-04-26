@@ -1,9 +1,20 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using Kuantech.Rpg.Managers;
 using Kuantech.Utils;
 using UnityEngine;
+#if NETWORKING_FISHNET
+using FishNet.Object;
+#endif
 
 namespace Kuantech.Core.Combat
 {
+    [Serializable]
+    public class StatusEffectHandlerState : ActorModuleSerializableData
+    {
+        public List<StatusEffectSerializableData> EffectStates;
+    }
+
     public class StatusEffectHandler : ActorModule
     {
         public Queue<StatusEffect> EffectsToAdd = new Queue<StatusEffect>();
@@ -19,9 +30,18 @@ namespace Kuantech.Core.Combat
         /// <param name="effect"></param>
         public void AddStatusEffect(StatusEffect effect)
         {
+            if(IsServerInitialized)
+            {
+                ExecuteAddStatusEffect(effect);
+                ObserversOnAddEffect_Rpc(effect.GetId(), effect.ApplyData.Duration, effect.ApplyData.TickPeriod, effect.Rank);
+            }
+        }
+
+        private void ExecuteAddStatusEffect(StatusEffect effect)
+        {
             EffectsToAdd.Enqueue(effect);
         }
-        
+
         /// <summary>
         /// Removes a status effect
         /// </summary>
@@ -34,6 +54,8 @@ namespace Kuantech.Core.Combat
             }
             effect.ToBeRemoved = true;
             EffectsToRemove.Enqueue(effect);
+            if (IsServerInitialized)
+                ObserversOnRemoveEffect_Rpc(effect.GetId());
         }
 
         public void Update()
@@ -113,7 +135,7 @@ namespace Kuantech.Core.Combat
             while (effect != null)
             {
                 _RemoveEffect(effect);
-                if (EffectsToAdd.IsNullOrEmpty()) break;
+                if (EffectsToRemove.IsNullOrEmpty()) break;
                 effect = EffectsToRemove.Dequeue();
             }
         }
@@ -147,5 +169,68 @@ namespace Kuantech.Core.Combat
             base.ResetModule();
             ClearStatusEffects();
         }
+
+        #region State
+
+        protected override ActorModuleSerializableData InstantiateState()
+        {
+            var effectStates = new List<StatusEffectSerializableData>();
+            foreach (var effect in Effects)
+            {
+                if (!effect.ToBeRemoved)
+                    effectStates.Add(effect.BuildState());
+            }
+            return new StatusEffectHandlerState { EffectStates = effectStates };
+        }
+
+        public override void LoadState(ActorModuleSerializableData serializableData)
+        {
+            if (serializableData is not StatusEffectHandlerState state) return;
+            if (state.EffectStates == null) return;
+            foreach (var effectData in state.EffectStates)
+            {
+                if (effectData.ToBeRemoved) continue;
+                StatusEffectAsset asset = RpgManager.GetStatusEffectAssetById(effectData.StatusEffectId);
+                if (asset == null)
+                {
+                    continue;
+                }
+                StatusEffect effect = asset.CreateStatusEffect();
+                effect.OnAdd(Actor);       // sets ApplyTime, spawns FX
+                effect.ApplyState(effectData); // overrides timing with saved values
+                // Skip queue — add directly so timing is correct immediately
+                _AddEffect(effect);
+            }
+        }
+
+        #endregion
+
+#if NETWORKING_FISHNET
+        [ObserversRpc]
+        private void ObserversOnAddEffect_Rpc(string effectId, float duration, float tickPeriod, int rank)
+        {
+            if (IsServerInitialized) return;
+            StatusEffectAsset asset = RpgManager.GetStatusEffectAssetById(effectId);
+            if (asset == null) return;
+            StatusEffect effect = asset.CreateStatusEffect();
+            effect.SetRank(rank);
+            var applyData = new StatusEffectApplyData { Duration = duration, TickPeriod = tickPeriod };
+            effect.Initialize(asset, applyData);
+            ExecuteAddStatusEffect(effect);
+        }
+
+        [ObserversRpc]
+        private void ObserversOnRemoveEffect_Rpc(string effectId)
+        {
+            if (IsServerInitialized) return;
+            if (!_statusEffectsMap.ContainsKey(effectId)) return;
+            var list = _statusEffectsMap[effectId];
+            if (list.Count == 0) return;
+            RemoveStatusEffect(list[0]);
+        }
+#else
+        private void ObserversOnAddEffect_Rpc(string effectId, float duration, float tickPeriod, int rank) { }
+        private void ObserversOnRemoveEffect_Rpc(string effectId) { }
+#endif
     }
 }

@@ -10,11 +10,24 @@ namespace Kuantech.Core.Combat
     /// <summary>
     /// Stores parameters for status effect
     /// </summary>
+    [Serializable]
     public class StatusEffectApplyData
     {
         public Actor Applier;
         public float TickPeriod;
         public float Duration;
+    }
+
+    [Serializable]
+    public class StatusEffectSerializableData
+    {
+        public string StatusEffectId;
+        public float RemainingDuration; // session-independent, unlike AppliedTime
+        public float TimeSinceLastTick;
+        public bool ToBeRemoved;
+        public int Rank;
+        public float Duration;
+        public float TickPeriod;
     }
     
     [Serializable]
@@ -28,17 +41,17 @@ namespace Kuantech.Core.Combat
         
         //Runtime
         public StatusEffectAsset StatusEffectAsset;
-        public StatusEffectApplyData ApplyApplyData;
+        public StatusEffectApplyData ApplyData;
         public int Rank;
         
         [NonSerialized] public Effect StatusFx; //The effect that is played when the status effect is applied
 
         private Dictionary<string, StatusEffectVariable> _statusEffectVariables;
 
-        public virtual void Initialize(StatusEffectAsset asset, StatusEffectApplyData applyApplyData)
+        public virtual void Initialize(StatusEffectAsset asset, StatusEffectApplyData applyData)
         {
             StatusEffectAsset = asset;
-            ApplyApplyData = applyApplyData;
+            ApplyData = applyData;
             _statusEffectVariables = new Dictionary<string, StatusEffectVariable>();
             if (!asset.StatusEffectVariables.IsNullOrEmpty())
             {
@@ -83,7 +96,7 @@ namespace Kuantech.Core.Combat
 
         public float GetDuration()
         {
-            return ApplyApplyData.Duration;
+            return ApplyData.Duration;
         }
 
         public float GetElapsedTime()
@@ -93,7 +106,7 @@ namespace Kuantech.Core.Combat
 
         public float GetTickRate()
         {
-            return ApplyApplyData.TickPeriod;
+            return ApplyData.TickPeriod;
         }
                 
         /// <summary>
@@ -147,6 +160,38 @@ namespace Kuantech.Core.Combat
         {
             ApplyTime = Time.time;
         }
+
+        #region Serialization
+
+        public virtual StatusEffectSerializableData BuildState()
+        {
+            var data = new StatusEffectSerializableData
+            {
+                StatusEffectId    = GetId(),
+                RemainingDuration = GetRemainingTime(),
+                TimeSinceLastTick = Time.time - LastTickTime,
+                ToBeRemoved       = ToBeRemoved,
+                Rank              = Rank,
+                Duration          = GetDuration(),
+                TickPeriod        = GetTickRate(),
+            };
+            return data;
+        }
+
+        /// <summary>
+        /// Restores timing state after reconstruction via CreateStatusEffect + OnAdd.
+        /// Call after OnAdd so ApplyTime is set.
+        /// </summary>
+        public virtual void ApplyState(StatusEffectSerializableData data)
+        {
+            Rank = data.Rank;
+            // Shift ApplyTime so remaining duration matches what was saved
+            ApplyTime    = Time.time - (data.Duration - data.RemainingDuration);
+            LastTickTime = Time.time - data.TimeSinceLastTick;
+            ToBeRemoved  = data.ToBeRemoved;
+        }
+
+        #endregion
 
         #region Status Effect Variables
 

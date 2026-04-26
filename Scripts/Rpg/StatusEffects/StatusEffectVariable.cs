@@ -26,9 +26,9 @@ namespace Kuantech.Core.Combat
         public float GetValue()
         {
             //try to get attribute value
-            if (ParentStatusEffect != null && ParentStatusEffect.ApplyApplyData != null && ParentStatusEffect.ApplyApplyData.Applier != null)
+            if (ParentStatusEffect != null && ParentStatusEffect.ApplyData != null && ParentStatusEffect.ApplyData.Applier != null)
             {
-                Actor applier = ParentStatusEffect.ApplyApplyData.Applier;
+                Actor applier = ParentStatusEffect.ApplyData.Applier;
                 float attributeValue = applier.GetModule<StatsModule>().GetAttributeValue(StatusEffectVariableData.AttributeToScaleWith);
                 attributeValue *= StatusEffectVariableData.AttributrScalingFactor;
                 return attributeValue;

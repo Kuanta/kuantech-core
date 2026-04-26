@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Kuantech.Core;
+using Kuantech.Core.Combat;
 using Kuantech.Rpg.Skills;
 using Kuantech.Utils;
 using UnityEngine;
@@ -21,6 +22,10 @@ namespace Kuantech.Rpg.Managers
         
         [Header("Skills")]
         public List<SkillDataAsset> SkillDataAssets = new List<SkillDataAsset>();
+
+        [Header("Status Effects")]
+        public List<StatusEffectAsset> StatusEffectAssets = new List<StatusEffectAsset>();
+        private Dictionary<string, StatusEffectAsset> _statusEffectsById;
 
         private Dictionary<string, SkillDataAsset> _skillsById;
         
@@ -66,6 +71,15 @@ namespace Kuantech.Rpg.Managers
                     _damageTypesById[damageType.GetId()] = damageType;
                 }
             }
+
+            if(StatusEffectAssets != null)
+            {
+                _statusEffectsById = new Dictionary<string, StatusEffectAsset>();
+                foreach (var statusEffectAsset in StatusEffectAssets)
+                {
+                    _statusEffectsById[statusEffectAsset.GetId()] = statusEffectAsset;
+                }
+            }
         }
 
         #region Attributes
@@ -109,6 +123,19 @@ namespace Kuantech.Rpg.Managers
                 return ctx._skillsById[id];
             }
 
+            return null;
+        }
+        #endregion
+
+        #region Status Effects
+        public static StatusEffectAsset GetStatusEffectAssetById(string id)
+        {
+            var ctx = GetContext<RpgManager>();
+            if (ctx == null) return null;
+            if(ctx._statusEffectsById.ContainsKey(id))
+            {
+                return ctx._statusEffectsById[id];
+            }
             return null;
         }
         #endregion
