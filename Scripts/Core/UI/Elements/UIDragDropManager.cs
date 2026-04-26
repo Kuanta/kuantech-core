@@ -1,63 +1,58 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.UI;
 
 namespace Kuantech.Core.UI
 {
     /// <summary>
-    /// Singleton that lives on the Canvas. Manages the ghost image that follows the cursor
-    /// during a drag operation. UIDragSlot talks to this.
-    /// Place this on your root Canvas (or a persistent UI GameObject).
+    /// SubManager that manages the ghost element following the cursor during UI drag operations.
+    /// Access via GetContext&lt;UIDragDropManager&gt;() or the static helper methods called by UIDragSlot.
     /// </summary>
-    public class UIDragDropManager : MonoBehaviour
+    public class UIDragDropManager : SubManager
     {
         [SerializeField] private Canvas _rootCanvas;
-        [SerializeField] private Image _ghostImage;  // Full-screen transparent RectTransform with Image child
+        [SerializeField] private DraggableSlotGhost _ghost;
+        [SerializeField] private LayerMask _slotLayer;
 
-        private static UIDragDropManager _instance;
-
-        /// <summary>The slot that is currently being dragged from. Null when no drag is active.</summary>
         public static UIDragSlot DragSource { get; private set; }
-
-        private RectTransform _ghostRect;
 
         private void Awake()
         {
-            _instance = this;
-            _ghostRect = _ghostImage.GetComponent<RectTransform>();
-            _ghostImage.raycastTarget = false;
-            _ghostImage.gameObject.SetActive(false);
+            _ghost.gameObject.SetActive(false);
         }
 
         // ── Called by UIDragSlot ──────────────────────────────────────────────
 
         public static void BeginDrag(UIDragSlot source, PointerEventData eventData)
         {
-            if (_instance == null) return;
+            var ctx = GetContext<UIDragDropManager>();
+            if (ctx == null) return;
             DragSource = source;
-
-            Sprite icon = source.GetDragIcon();
-            if (icon == null) return;
-
-            _instance._ghostImage.sprite = icon;
-            _instance._ghostImage.gameObject.SetActive(true);
-            _instance.MoveGhost(eventData.position);
+            ctx._ghost.OnBeginDrag(source);
+            ctx.MoveGhost(eventData.position);
         }
 
         public static void UpdateDrag(PointerEventData eventData)
         {
-            if (_instance == null || DragSource == null) return;
-            _instance.MoveGhost(eventData.position);
+            var ctx = GetContext<UIDragDropManager>();
+            if (ctx == null || DragSource == null) return;
+            ctx.MoveGhost(eventData.position);
         }
 
         public static void EndDrag(UIDragSlot source, PointerEventData eventData)
         {
-            if (_instance == null) return;
-            _instance._ghostImage.gameObject.SetActive(false);
+            var ctx = GetContext<UIDragDropManager>();
+            if (ctx == null) return;
+            ctx._ghost.OnDrop();
 
-            // If nothing received the drop, notify the source
-            if (eventData.pointerEnter == null ||
-                eventData.pointerEnter.GetComponentInParent<UIDragSlot>() == null)
+            UIDragSlot target = ctx.RaycastForSlot(eventData.position);
+
+            if (target != null && target != source && target.CanAcceptDrop(source))
+            {
+                target.OnDropReceived(source);
+                source.OnDataAccepted(target);
+            }
+            else
             {
                 source.OnDragCancelled();
             }
@@ -67,6 +62,20 @@ namespace Kuantech.Core.UI
 
         // ── Internal ──────────────────────────────────────────────────────────
 
+        private UIDragSlot RaycastForSlot(Vector2 screenPos)
+        {
+            var pointerData = new PointerEventData(EventSystem.current) { position = screenPos };
+            var results = new List<RaycastResult>();
+            EventSystem.current.RaycastAll(pointerData, results);
+
+            foreach (var result in results)
+            {
+                if ((_slotLayer & (1 << result.gameObject.layer)) == 0) continue;
+                return result.gameObject.GetComponentInParent<UIDragSlot>();
+            }
+            return null;
+        }
+
         private void MoveGhost(Vector2 screenPos)
         {
             RectTransformUtility.ScreenPointToLocalPointInRectangle(
@@ -75,7 +84,7 @@ namespace Kuantech.Core.UI
                 _rootCanvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : _rootCanvas.worldCamera,
                 out Vector2 localPos);
 
-            _ghostRect.anchoredPosition = localPos;
+            _ghost.SetPosition(localPos);
         }
     }
 }

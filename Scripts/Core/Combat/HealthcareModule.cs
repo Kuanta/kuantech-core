@@ -161,7 +161,7 @@ namespace Kuantech.Core.Combat
 
                 if (IsClientInitialized && ShowDamageText)
                 {
-                    CombatManager.ShowDamageText(Actor.transform.position, reducedDamage, Actor.GetFactionId() == 0); //todo: Fix Friendly check
+                    CombatManager.ShowDamageText(Actor, reducedDamage); 
                 }
             }
         }
@@ -228,7 +228,7 @@ namespace Kuantech.Core.Combat
             //Show heal text if health resource is increased
             if (ShowDamageText && resourceAsset == HealthResourceAsset)
             {
-                CombatManager.ShowHealText(Actor.transform.position, amount, isFriendly, false);
+                CombatManager.ShowHealText(Actor, amount, false);
                 OnHealthChanged?.Invoke(this);
             }
             OnResourceChanged?.Invoke(resourceAsset);

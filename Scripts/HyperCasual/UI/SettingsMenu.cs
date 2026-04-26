@@ -2,7 +2,6 @@
 using Kuantech.Core.FX;
 using Kuantech.Core.UI;
 using Kuantech.Utils.Mobile;
-using MadPixel.InApps;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -153,7 +152,6 @@ namespace Kuantech.Core.HyperCasual
 
         private void OnRestorePurchasesButtonClicked()
         {
-            MobileInAppPurchaser.RestorePurchases();
         }
 
         #endregion

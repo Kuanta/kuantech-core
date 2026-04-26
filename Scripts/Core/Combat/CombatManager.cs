@@ -48,26 +48,26 @@ namespace Kuantech.Core
         private float _appliedScale = 1f;
         
         #region Damage Texts
-        public static void ShowDamageText(Vector3 position, DamageInfo damageInfo, bool friendly)
+        public static void ShowDamageText(Actor receiver, DamageInfo damageInfo)
         {
             CombatManager ctx = GetContext<CombatManager>();
             if (ctx == null || ctx.DamageTextPrefab == null) return;
             FloatingDamageText damageText =
                 PoolManager.GetObjectFromPool(ctx.DamageTextPrefab.gameObject).GetComponent<FloatingDamageText>();
            if(damageText == null) return;
-           damageText.transform.position = position;
-           damageText.Show(damageInfo, friendly);
+           damageText.transform.position = receiver.transform.position;
+           damageText.Show(damageInfo, receiver);
         }
         
-        public static void ShowHealText(Vector3 position, float amount, bool friendly, bool isCritical)
+        public static void ShowHealText(Actor receiver, float amount, bool isCritical)
         {
             CombatManager ctx = GetContext<CombatManager>();
             if (ctx == null) return;
             FloatingDamageText damageText =
                 PoolManager.GetObjectFromPool(ctx.HealTextPrefab.gameObject).GetComponent<FloatingDamageText>();
             if (damageText == null) return;
-            damageText.transform.position = position;
-            damageText.Show(amount, friendly, isCritical);
+            damageText.transform.position = receiver.transform.position;
+            damageText.Show(amount, receiver, isCritical);
         }
         #endregion
         

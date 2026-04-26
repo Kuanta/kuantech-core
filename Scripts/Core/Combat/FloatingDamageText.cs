@@ -27,12 +27,13 @@ namespace Kuantech.Core
         private IEnumerator _routine;
         private static readonly int ShowHash = Animator.StringToHash("Show");
 
-        public void Show(DamageInfo damageInfo, bool isFriendly = false)
+        public void Show(DamageInfo damageInfo, Actor owningActor)
         {
-           Show(damageInfo.GetDamage(), isFriendly, damageInfo.IsCritical);
+
+           Show(damageInfo.GetDamage(), owningActor, damageInfo.IsCritical);
         }
 
-        public void Show(float damageAmount, bool isFriendly = false, bool isCritical = false)
+        public virtual void Show(float damageAmount, Actor owningActor, bool isCritical = false)
         {
             if (Animator != null)
             {
@@ -40,10 +41,11 @@ namespace Kuantech.Core
             }
             Text.text = damageAmount.Stringfy(true);
 
-            if (AdjustColors)
-            {
-                Text.color = isFriendly ? FriendlyColor : EnemyColor;
-            }
+            //todo: Find a better way 
+            // if (AdjustColors)
+            // {
+            //     Text.color = isFriendly ? FriendlyColor : EnemyColor;
+            // }
 
             if (_routine != null)
             {

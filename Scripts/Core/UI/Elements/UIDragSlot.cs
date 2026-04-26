@@ -4,21 +4,17 @@ using UnityEngine.UI;
 
 namespace Kuantech.Core.UI
 {
-    public abstract class UIDragSlotData { }
-
     /// <summary>
-    /// A drag-and-drop slot that can hold any UIDragSlotData.
-    /// Subclass and override CanAcceptDrop / OnDropReceived to implement behavior.
-    /// Also override RefreshVisual to update icon/text when data changes.
+    /// Base drag-and-drop slot. Subclass to add data fields and override
+    /// CanAcceptDrop / OnDropReceived / OnDataAccepted with direct casts.
+    /// UIDragDropManager.DragSource always holds the active dragging slot.
     /// </summary>
     [RequireComponent(typeof(CanvasGroup))]
     public class UIDragSlot : MonoBehaviour,
         IBeginDragHandler, IDragHandler, IEndDragHandler,
-        IDropHandler, IPointerEnterHandler, IPointerExitHandler
+        IPointerEnterHandler, IPointerExitHandler
     {
         [SerializeField] protected Image IconImage;
-
-        public UIDragSlotData Data { get; private set; }
 
         private CanvasGroup _canvasGroup;
 
@@ -27,23 +23,6 @@ namespace Kuantech.Core.UI
             _canvasGroup = GetComponent<CanvasGroup>();
         }
 
-        // ── Data ──────────────────────────────────────────────────────────────
-
-        public virtual void SetData(UIDragSlotData data)
-        {
-            Data = data;
-            RefreshVisual();
-        }
-
-        public virtual void ClearData()
-        {
-            Data = null;
-            RefreshVisual();
-        }
-
-        /// <summary>Override to update icon, text, etc. when Data changes.</summary>
-        protected virtual void RefreshVisual() { }
-
         /// <summary>Returns the icon sprite used for the drag ghost. Override if icon is elsewhere.</summary>
         public virtual Sprite GetDragIcon() => IconImage != null ? IconImage.sprite : null;
 
@@ -51,7 +30,7 @@ namespace Kuantech.Core.UI
 
         public void OnBeginDrag(PointerEventData eventData)
         {
-            if (Data == null) return;
+            if (!CanDrag()) return;
             _canvasGroup.blocksRaycasts = false;
             UIDragDropManager.BeginDrag(this, eventData);
         }
@@ -67,28 +46,23 @@ namespace Kuantech.Core.UI
             UIDragDropManager.EndDrag(this, eventData);
         }
 
+        /// <summary>Override to prevent dragging under certain conditions (e.g. empty slot).</summary>
+        protected virtual bool CanDrag() => true;
+
         // ── Drop target ───────────────────────────────────────────────────────
 
-        public void OnDrop(PointerEventData eventData)
-        {
-            UIDragSlot source = UIDragDropManager.DragSource;
-            if (source == null || source == this) return;
-            if (!CanAcceptDrop(source.Data)) return;
-            OnDropReceived(source, source.Data);
-        }
+        /// <summary>Returns true if this slot can accept the dragging slot. Cast source to your subtype.</summary>
+        public virtual bool CanAcceptDrop(UIDragSlot source) => false;
 
-        /// <summary>Returns true if this slot can accept the dragged data.</summary>
-        public virtual bool CanAcceptDrop(UIDragSlotData data) => false;
+        /// <summary>Called on the TARGET when a drop is accepted. Cast source to your subtype to read data.</summary>
+        public virtual void OnDropReceived(UIDragSlot source) { }
 
-        /// <summary>
-        /// Called when a valid drop lands on this slot.
-        /// sourceSlot is the slot the drag originated from.
-        /// </summary>
-        protected virtual void OnDropReceived(UIDragSlot sourceSlot, UIDragSlotData data) { }
+        // ── Notifications ─────────────────────────────────────────────────────
 
-        // ── Called by manager when drag ends without a valid target ───────────
+        /// <summary>Called on the SOURCE when a target accepted the drop.</summary>
+        public virtual void OnDataAccepted(UIDragSlot target) { }
 
-        /// <summary>Called when the drag from this slot was cancelled (dropped on nothing).</summary>
+        /// <summary>Called on the SOURCE when drag ended without hitting any valid target.</summary>
         public virtual void OnDragCancelled() { }
 
         // ── Hover ─────────────────────────────────────────────────────────────
