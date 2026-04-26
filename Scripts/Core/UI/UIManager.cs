@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+using Kuantech.UI;
 using Kuantech.Utils;
 using UnityEngine;
 
@@ -18,6 +19,10 @@ namespace Kuantech.Core.UI
 
         [Header("Game UI")] 
         [SerializeField] private LevelUI LevelUI;
+
+        [Header("Panels")]
+        [SerializeField] private List<KtUIPanel> UIPanels;
+        private Dictionary <string, KtUIPanel> _panelsById;
         
         public override async UniTask Initialize(GameManager gameManager)
         {
@@ -32,6 +37,13 @@ namespace Kuantech.Core.UI
             if (LevelUI != null)
             {
                 LevelUI.Initialize();
+            }
+
+            KtUIPanel[] ktUIPanels = GetComponentsInChildren<KtUIPanel>();
+            foreach(var panel in ktUIPanels)
+            {
+                if(panel.PanelId.IsNullOrEmpty()) continue;
+                _panelsById[panel.PanelId] = panel;
             }
         }
         
@@ -184,5 +196,33 @@ namespace Kuantech.Core.UI
         }
 
         #endregion
+
+        #region Panels
+        public static KtUIPanel GetPanelById(string panelId)
+        {
+            var ctx = GetContext<UIManager>();
+            if (ctx == null) return null;
+            if (ctx._panelsById.ContainsKey(panelId))
+            {
+                return ctx._panelsById[panelId];
+            }
+            return null;
+        }
+
+        public static void OpenPanel(string panelId)
+        {
+            var panel = GetPanelById(panelId);
+            if (panel == null) return;
+            panel.Open();
+        }
+
+        public static void ClosePanel(string panelId)
+        {
+            var panel = GetPanelById(panelId);
+            if (panel == null) return;
+            panel.Close();
+        }        
+        #endregion
+
     }
 }
