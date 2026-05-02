@@ -25,6 +25,7 @@ namespace Kuantech.Rpg.Skills
         public List<string> SkillIds = new();
     }
 
+    #if NETWORKING_FISHNET
     /// <summary>
     /// RPC-safe version of ActionCastData. Actor.Target replaced with NetworkObject
     /// because FishNet cannot serialize MonoBehaviour/UnityEngine.Object references.
@@ -61,6 +62,7 @@ namespace Kuantech.Rpg.Skills
             };
         }
     }
+    #endif
 
     public class SpellBook : ActorModule
     {
@@ -223,9 +225,11 @@ namespace Kuantech.Rpg.Skills
         {
             if (!IsServerInitialized && IsSpawned)
             {
+#if NETWORKING_FISHNET
                 // Client: send to server, server drives the full lifecycle via RPCs
                 SkillCastRpcData rpcData = SkillCastRpcData.From(skillDataAsset.SkillId, skillCastData);
                 ServerCastSkill_Rpc(rpcData);
+#endif
                 return true;
             }
             return ExecuteCastSkill(skillDataAsset, skillCastData);
@@ -296,30 +300,36 @@ namespace Kuantech.Rpg.Skills
 
         public virtual void OnSkillCastStarted(Skill skill)
         {
+            #if NETWORKING_FISHNET
             //CurrentlyCastedSkill = skill;
             if(IsServerInitialized)
             {
                 ObserversSkillCasted_Rpc(skill.GetId());
             }
+            #endif
         }
 
         public void OnSkillBehaviourStarted(SkillBehaviour skillBehaviour)
         {
+             #if NETWORKING_FISHNET
             if (!IsServerInitialized || !IsSpawned) return;
             Skill skill = skillBehaviour.ParentSkill;
             SkillCastRpcData castRpcData = SkillCastRpcData.From(skill.GetId(), skill.CurrentSkillCastData);
             ObserversOnSkillBehaviourStarted_Rpc(skill.GetId(), skill.CurrentSkilLBehaviourIndex, castRpcData);
+            #endif
         }
 
         public virtual void OnSkillCastEnded(Skill skill)
         {
             SkillCastEndedEvent?.Invoke(skill);
+#if NETWORKING_FISHNET
             if(IsServerInitialized)
             {
                 ObserversOnSkillCastEnded_Rpc(skill.GetId());
             }
+#endif
         }
-        #endregion
+#endregion
 
         #region Networking
 
@@ -368,11 +378,6 @@ namespace Kuantech.Rpg.Skills
             Skill skill = GetSkillById(skillId);
             skill?.EndCast();
         }
-#else
-        private void ServerCastSkill_Rpc(SkillCastRpcData rpcData) { }
-        private void ObserversSkillCasted_Rpc(string skillId) { }
-        private void ObserversOnSkillBehaviourStarted_Rpc(string skillId, int behaviourIndex, SkillCastRpcData castData) { }
-        private void ObserversOnSkillCastEnded_Rpc(string skillId) { }
 #endif
 
         #endregion

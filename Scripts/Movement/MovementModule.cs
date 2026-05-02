@@ -385,11 +385,18 @@ namespace Kuantech.Core
             ObserversRpc_Dash(direction);
         }
 
+#if NETWORKING_FISHNET
         // Fires on all observers (incl. listen-server host when not owner). Owner already fired locally.
         [ObserversRpc(ExcludeOwner = true)]
         private void ObserversRpc_Dash(Vector3 direction) { 
             ExecuteDash(direction);
+        },
+#else
+        private void ObserversRpc_Dash(Vector3 direction)
+        {
+            ExecuteDash(direction);
         }
+#endif
 
         private void ExecuteDash(Vector3 direction)
         {

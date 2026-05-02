@@ -1,10 +1,15 @@
+
+#if NETWORKING_FISHNET
 using FishNet.Serializing;
 using FishNet.Object;
+#endif
+
 using Kuantech.Core;
 using UnityEngine;
 
 public static class ActionCastDataSerializer
 {
+    #if NETWORKING_FISHNET
     public static void WriteActionCastData(this Writer writer, ActionCastData data)
     {
         writer.WriteVector3(data.StartPosition);
@@ -24,4 +29,5 @@ public static class ActionCastDataSerializer
         data.Target = nob != null ? nob.GetComponent<Actor>() : null;
         return data;
     }
+    #endif
 }

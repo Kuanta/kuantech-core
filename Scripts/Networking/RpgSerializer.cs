@@ -1,12 +1,15 @@
+#if NETWORKING_FISHNET
 using FishNet.Object;
 using FishNet.Serializing;
+#endif
 using Kuantech.Core;
 using Kuantech.Rpg;
 using Kuantech.Rpg.Managers;
 using UnityEngine;
 
-public static class RpgSerializer
+public static class RpgNetworkingSerializer
 {
+    #if NETWORKING_FISHNET
     public static void WriteAttributeDefinition(this Writer writer, AttributeDefinition value)
     {
         writer.WriteString(value.AttributeAsset != null ? value.AttributeAsset.Id : "");
@@ -115,4 +118,5 @@ public static class RpgSerializer
             KnockbackDuration = reader.ReadSingle(),
         };
     }
+    #endif
 }

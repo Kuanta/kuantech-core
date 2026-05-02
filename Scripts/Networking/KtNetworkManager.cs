@@ -1,5 +1,9 @@
 ﻿
 
+using Cysharp.Threading.Tasks;
+using Kuantech.Core;
+using UnityEngine;
+
 namespace Kuantech.Networking
 {
 #if NETWORKING_FISHNET
@@ -11,7 +15,9 @@ namespace Kuantech.Networking
 #endif
     public class KtNetworkManager : SubManager
     {
+        #if NETWORKING_FISHNET
         [SerializeField] private NetworkManager NetworkManager;
+        #endif
         
         public override async UniTask Initialize(GameManager gameManager)
         {
@@ -29,12 +35,14 @@ namespace Kuantech.Networking
 #endif
         }
 
+#if NETWORKING_FISHNET
         #region Client Events
         private void ClientManager_OnClientConnectionState(ClientConnectionStateArgs args)
         {
             
         }
         #endregion
+#endif
 
         #region Checks
 

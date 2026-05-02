@@ -4,6 +4,13 @@
 // in both offline and networked builds. In offline mode, these are no-ops.
 
 // ReSharper disable All
+using UnityEngine;
+
+namespace FishNet.Connection
+{
+    public class NetworkConnection { }
+}
+
 namespace FishNet.Object
 {
     public class ServerRpcAttribute : System.Attribute
@@ -15,6 +22,11 @@ namespace FishNet.Object
     public class ObserversRpcAttribute : System.Attribute
     {
         public bool BufferLast = false;
+        public bool RunLocally = false;
+    }
+
+    public class TargetRpcAttribute : System.Attribute
+    {
         public bool RunLocally = false;
     }
 
@@ -38,15 +50,15 @@ namespace FishNet.Object.Synchronizing
 namespace Kuantech.Networking{
     public abstract class KtNetworkBehaviourStub : MonoBehaviour
     {
-        public virtual void OnStartNetwork();
+        public virtual void OnStartNetwork(){}
 
-        public virtual void OnStopNetwork();
+        public virtual void OnStopNetwork(){}
 
-        public virtual void OnStartClient();
+        public virtual void OnStartClient(){}
 
-        public virtual void OnStopClient();
+        public virtual void OnStopClient(){}
 
-        public virtual void OnOwnershipClient(NetworkConnection prevOwner);
+        public virtual void OnOwnershipClient(FishNet.Connection.NetworkConnection prevOwner){}
     }
 }
 #endif
