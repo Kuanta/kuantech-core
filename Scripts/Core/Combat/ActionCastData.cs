@@ -12,6 +12,7 @@ namespace Kuantech.Core
         public Vector3 Direction;
         public Vector3 TargetPosition;
         public Actor Target;
+        public bool OverrideRotation = true;
 
         public Vector3 GetCastPoint()
         {
