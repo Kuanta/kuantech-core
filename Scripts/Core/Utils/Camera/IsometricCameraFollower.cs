@@ -43,10 +43,15 @@ namespace Kuantech.Core.Utils
             _currentYaw = Mathf.SmoothDampAngle(
                 _currentYaw, _targetYaw, ref _yawVel, YawSmoothTime, Mathf.Infinity, dt);
 
-            Transform t = GetTransformToUpdate();
-            t.rotation  = GetTargetRotation();
-            t.position  = Vector3.SmoothDamp(
+            Transform t  = GetTransformToUpdate();
+            Vector3 newPos = Vector3.SmoothDamp(
                 t.position, GetTargetPosition(), ref _positionVel, PositionSmoothTime, MaxFollowSpeed, dt);
+            t.position = newPos;
+
+            // Rotation computed from actual new position so it stays in sync with where the camera is.
+            Vector3 toAnchor = GetAnchorWithOffset() - newPos;
+            if (toAnchor.sqrMagnitude >= 1e-8f)
+                t.rotation = Quaternion.LookRotation(toAnchor.normalized, Vector3.up);
         }
 
         // ── Setters ───────────────────────────────────────────────────────────

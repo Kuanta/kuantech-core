@@ -28,6 +28,13 @@ namespace Kuantech.Core
     public class Actor : MonoBehaviour, IHittable, ISpawnable
 #endif
     {
+
+        #if !NETWORKING_FISHNET
+        public bool IsOwner => true;
+        public bool IsServer => true;
+        public bool IsClient => true;
+        #endif
+
         [Serializable]
         public struct KillFeedData
         {

@@ -54,7 +54,7 @@ namespace Kuantech.Rpg.Skills
         public float Duration;
         public float EffectPlayTime;
         [Tooltip("If set to true, skill will wait for rotation alignment before starting the behaviour")]
-        public float WaitForRotationAlign;
+        public bool WaitForRotationAlign;
 
         [Header("Effects")] 
         public List<FxPlayData> SkillBehaviourFxDatas;

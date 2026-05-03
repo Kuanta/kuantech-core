@@ -22,7 +22,7 @@ namespace Kuantech.Core
         public override void ModuleLateUpdate()
         {
             if (!Actor.IsAlive()) return;
-            if(!RotateOnClient && !Actor.IsServerInitialized) return;
+            if(!RotateOnClient && !Actor.IsServer) return;
             if (RotationLock.IsLocked()) return;
             _targetAimVector = Actor.MotionVectorsHandler.GetTargetVector(PrioritizeMovementForTargetVector);
             Transform t = Actor.transform;

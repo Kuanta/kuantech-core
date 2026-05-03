@@ -473,11 +473,12 @@ namespace Kuantech.Core
                     hurtActors.Add(actor);
                 }
             }
-
+#if NETWORKING_FISHNET
             if(!IsSpawned || hurtActors.Count == 0) return;
             List<NetworkObject> nobs = new List<NetworkObject>(hurtActors.Count);
             foreach (var a in hurtActors) nobs.Add(a.GetComponent<NetworkObject>());
             ObserverDamageActors_Rpc(nobs);
+#endif
         }
 
         /// <summary>
@@ -488,7 +489,9 @@ namespace Kuantech.Core
         {
             if (!IsServerInitialized) return;
             bool hit = ExecuteDamageActor(actor);
+#if NETWORKING_FISHNET
             if (hit && IsSpawned) ObserverDamageActor_Rpc(actor.GetComponent<NetworkObject>());
+#endif
         }
 
         private bool ExecuteDamageActor(Actor actor)
@@ -555,7 +558,7 @@ namespace Kuantech.Core
         }
 
   
-        #endregion
+#endregion
 
         #region Attack Pattern Queries
 
@@ -994,7 +997,7 @@ namespace Kuantech.Core
         private void ObserverDamageActor_Rpc(UnityEngine.GameObject target) { }
         private void ObserverDamageActors_Rpc(List<UnityEngine.GameObject> targets) { }
 #endif
-        #endregion
+#endregion
     }
 
 

@@ -3,6 +3,8 @@ using Kuantech.Rpg;
 using UnityEngine;
 #if NETWORKING_FISHNET
 using FishNet.Object;
+#else
+using FishNet.Connection;
 #endif
 
 namespace Kuantech.Core
@@ -19,6 +21,32 @@ namespace Kuantech.Core
     public abstract class ActorModule : MonoBehaviour
 #endif
     {
+#if !NETWORKING_FISHNET
+        // Stub callbacks — no-op in offline builds.
+        // When NETWORKING_FISHNET is defined, NetworkBehaviour provides these.
+        public virtual void OnStartNetwork() { }
+        public virtual void OnStopNetwork() { }
+        public virtual void OnStartServer() { }
+        public virtual void OnStopServer() { }
+        public virtual void OnStartClient() { }
+        public virtual void OnStopClient() { }
+
+        public bool IsOwner => true;
+        public bool IsServer => true;
+        public bool IsClient => true;
+        public bool IsServerStarted => true;
+        public bool IsServerInitialized => true;
+        public bool IsClientStarted => true;
+        public bool IsClientOnlyInitialized => false;
+        public bool IsClientInitialized => true;
+
+        // False in offline: guards ObserversRpc/ClientRpc calls that shouldn't run locally
+        public bool IsSpawned => false;
+
+        // FishNet NetworkBehaviour.Owner stub — always null offline; only reached inside
+        // `if (IsSpawned)` guards which never fire when IsSpawned returns false.
+        protected NetworkConnection Owner => null;
+#endif
         [NonSerialized] public Actor Actor;
         [NonSerialized] public bool Initialized;
         public string ModuleId;
@@ -114,26 +142,7 @@ namespace Kuantech.Core
         // Called on client after actor state is synced from server (late-join sync)
         public virtual void OnNetworkSynced() { }
 
-#if !NETWORKING_FISHNET
-        // Stub callbacks — no-op in offline builds.
-        // When NETWORKING_FISHNET is defined, NetworkBehaviour provides these.
-        public virtual void OnStartNetwork() { }
-        public virtual void OnStopNetwork() { }
-        public virtual void OnStartServer() { }
-        public virtual void OnStopServer() { }
-        public virtual void OnStartClient() { }
-        public virtual void OnStopClient() { }
 
-        public bool IsOwner => true;
-        public bool IsServer => true;
-        public bool IsClient => true;
-        public bool IsServerStarted => true;
-        public bool IsServerInitialized => true;
-        public bool IsClientStarted => true;
-        public bool IsClientOnlyInitialized => false;
-        // False in offline: guards ObserversRpc/ClientRpc calls that shouldn't run locally
-        public bool IsSpawned => false;
-#endif
         #endregion
     }
 }

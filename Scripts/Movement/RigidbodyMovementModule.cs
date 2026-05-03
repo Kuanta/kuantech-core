@@ -32,6 +32,7 @@ namespace Kuantech.Core
                 Rigidbody = GetComponent<Rigidbody>();
             }
 
+            Rigidbody.constraints |= RigidbodyConstraints.FreezeRotation;
             _movementModule = Actor.GetModule<MovementModule>();
         }
     
@@ -170,14 +171,8 @@ namespace Kuantech.Core
         public override void OnStartNetwork()
         {
             base.OnStartNetwork();
-            bool isOwner = Owner.IsLocalClient;
+            bool isOwner = Actor.IsOwner;
             Rigidbody.isKinematic = !isOwner;
-            Debug.Log($"[RigidbodyMovementModule] OnStartNetwork | " +
-                      $"GameObject: {gameObject.name} | " +
-                      $"IsOwner: {isOwner} | " +
-                      $"IsServer: {IsServerStarted} | " +
-                      $"IsClient: {IsClientStarted} | " +
-                      $"IsKinematic: {Rigidbody.isKinematic}");
         }
 
 #if NETWORKING_FISHNET
