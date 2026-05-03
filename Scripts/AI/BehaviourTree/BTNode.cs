@@ -237,7 +237,12 @@ namespace Kuantech.AI
                     // ... Add more types as necessary ...
                 }
             }
-            
+        }
+        
+        public void InitializeLeafAction()
+        {
+            if (_leafAction == null) return;
+            _leafAction.Initialize(Owner);
         }
         
         public override NodeStatus Process()

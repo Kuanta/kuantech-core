@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Generic;
 using Kuantech.Core;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -19,9 +18,8 @@ namespace Kuantech.AI
         
         private float _nextPlanTime;
         
-        public override void Initialize()
+        public override void OnModulesInitialized()
         {
-            //todo: Can we remove this?
             _waitForSeconds = new WaitForSeconds(TickInterval);
             if (DefaultBtBlueprint == null) return;
             SetBehaviourTree(DefaultBtBlueprint.CreateBehaviourTree());
@@ -36,6 +34,9 @@ namespace Kuantech.AI
             else if (oldState != ActorState.Spawned && newState == ActorState.Spawned)
             {
                 StartAgent();
+            }else if(oldState == ActorState.Spawned && newState == ActorState.Spawned)
+            {
+                RestartAgent();
             }
         }
 
@@ -47,8 +48,27 @@ namespace Kuantech.AI
             bt.VariableTable.ClearTable();
             bt.OwnerAgent = this;
             Bt = bt;
+
+            //Init leaf actions
+            InitLeafActions(Bt);
         }
-        
+
+        private void InitLeafActions(BTNode node)
+        {
+            if(node == null || node.Children == null || node.Children.Count == 0) return;
+            foreach(var child in node.Children)
+            {
+                if (child is BTLeaf)
+                {
+                    BTLeaf leaf = (BTLeaf)child;
+                    leaf.InitializeLeafAction();
+                }else
+                {
+                    InitLeafActions(child);
+                }
+            }
+        }
+
         public BehaviourTree GetBehaviourTree()
         {
             return Bt;
@@ -63,7 +83,11 @@ namespace Kuantech.AI
             AgentPaused = false;
             StartCoroutine(_behaveRoutine);
         }
-
+        public void RestartAgent()
+        {
+            StopAgent();
+            StartAgent();
+        }
         public void ResumeAgent()
         {
             AgentPaused = false;
