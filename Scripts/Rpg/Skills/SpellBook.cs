@@ -257,13 +257,12 @@ namespace Kuantech.Rpg.Skills
             }
 
             //Turn towards skill direction?
-            if (skillCastData.Target != null)
+            if (skillCastData.OverrideRotation)
             {
-                Actor.MotionVectorsHandler.SetTargetObject(skillCastData.Target.transform);
-            }
-            else
-            {
-                Actor.MotionVectorsHandler.SetTargetVector(skillCastData.Direction);
+                if (skillCastData.Target != null)
+                    Actor.MotionVectorsHandler.SetTargetObject(skillCastData.Target.transform);
+                else
+                    Actor.MotionVectorsHandler.SetTargetVector(skillCastData.Direction);
             }
             return skillToCast.Cast(skillCastData);
         }

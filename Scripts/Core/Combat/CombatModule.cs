@@ -222,7 +222,8 @@ namespace Kuantech.Core
         /// <returns></returns>
         public Actor GetCurrentTarget()
         {
-            return null;
+            if(_currentCastData == null) return null;
+            return _currentCastData.Target;
         }
         #endregion
 
@@ -729,8 +730,13 @@ namespace Kuantech.Core
             return Attack(castData);
         }
         #endregion
-        
+
         #region Queries
+
+        public bool IsAttacking()
+        {
+            return _isAttacking;
+        }
 
         public int GetCurrentComboIndex()
         {
@@ -757,52 +763,7 @@ namespace Kuantech.Core
             if (attackType == AttackTypes.RangedProjectile || attackType == AttackTypes.RangedRaycast) return false;
             return GetCurrentAttackPattern().IsMelee;
         }
-        
-        /// <summary>
-        /// Checks whether the actor can attack or not
-        /// </summary>
-        /// <returns></returns>
-        public bool CanAttack()
-        {
-            if (_spellBook != null && _spellBook.IsCastingSkill()) return false;
-            return CanUseAttack(GetCurrentAttackPattern());
-        }
-        
-        /// <summary>
-        /// Checks if an attack pattern can be used or not.
-        /// </summary>
-        /// <param name="attackPattern"></param>
-        /// <returns></returns>
-        public bool CanUseAttack(AttackPattern attackPattern)
-        {
-            if (_spellBook != null && _spellBook.IsCastingSkill()) return false;
-            if (attackPattern.AttackType == AttackTypes.Target && GetCurrentTarget() == null) return false;
-            if (!Actor.IsAlive() || AttackLock.IsLocked() || _isAttacking) return false;
-            //Check resource
-            if (_healthcareModule != null && attackPattern.RequiredResource != null)
-            {
-                float currentResource = _healthcareModule.GetCurrentResource(attackPattern.RequiredResource);
-                if (currentResource < attackPattern.RequiredResourceAmount) return false;
-            }
-            return true;
-        }
-        
-        public bool IsAttacking()
-        {
-            return _isAttacking;
-        }
-        
-        /// <summary>
-        /// Checks whether the target point is in attacking range
-        /// </summary>
-        /// <param name="target"></param>
-        /// <returns></returns>
-        public bool IsInAttackRange(WorldPoint target)
-        {
-            float dist = Vector3.Magnitude(target.GetTargetPosition() - Actor.GetActorLocation()) - target.Radius;
-            return dist <= (GetAttackRange() + RangeTolerance);
-        }
-        
+
         public AttackPattern GetCurrentAttackPattern()
         {
             if (_currentAttackPattern == null) return DefaultAttackPattern;
@@ -815,7 +776,80 @@ namespace Kuantech.Core
             _currentAttackPattern = attackPattern;
         }
         #endregion
-        
+
+        #region Attack Checks
+
+        /// <summary>
+        /// Checks if actor is in a state that can attack. Doesn't check for any range etc.
+        /// </summary>
+        /// <returns></returns>
+        public bool CanAttack()
+        {
+            return Actor.IsAlive() && !IsAttackInCooldown() && !IsAttackLocked();
+        }
+
+        public bool HasResourcesToAttack()
+        {
+            AttackPattern attackPattern = GetCurrentAttackPattern();
+            if (_healthcareModule != null && attackPattern.RequiredResource != null)
+            {
+                float currentResource = _healthcareModule.GetCurrentResource(attackPattern.RequiredResource);
+                if (currentResource < attackPattern.RequiredResourceAmount) return false;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Checks if the action cast data can be checked
+        /// </summary>
+        /// <param name="actionCastData"></param>
+        /// <returns></returns>
+        public bool CanCastAction(ActionCastData actionCastData)
+        {
+            AttackPattern attackPattern = GetCurrentAttackPattern();
+
+            //Check target
+            if (attackPattern.AttackType == AttackTypes.Target)
+            {
+                if(actionCastData.Target == null) return false;
+
+                if(!IsInAttackRange(actionCastData.Target.GetHitPoint(Actor)))
+                {
+                    return false;
+                }
+            } 
+            return true;
+        }
+
+        public bool IsAttackInCooldown()
+        {
+            if (IsAttacking()) return true;
+            return false;
+        }
+
+        public bool IsAttackLocked()
+        {
+            return AttackLock.IsLocked();
+        }
+
+        public bool IsInAttackRange(Actor actor)
+        {
+            return IsInAttackRange(actor.GetHitPoint(Actor));
+        }
+
+        /// <summary>
+        /// Checks whether the target point is in attacking range
+        /// </summary>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        public bool IsInAttackRange(WorldPoint target)
+        {
+            float dist = Vector3.Magnitude(target.GetTargetPosition() - Actor.GetActorLocation()) - target.Radius;
+            return dist <= (GetAttackRange() + RangeTolerance);
+        }
+        #endregion
+
+
         #region Attack Lifecycle
         private float _effectPlayTime;
         private float _attackDuration;
