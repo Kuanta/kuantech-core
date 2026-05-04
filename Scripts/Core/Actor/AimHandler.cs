@@ -14,16 +14,24 @@ namespace Kuantech.Core
         private Vector3 _targetAimVector;
         Quaternion _targetRot = Quaternion.identity;
 
-        public LockVariable RotationLock = new LockVariable();
+        public LockKey RotationLockKey;
 
-        public void LockRotation(object locker) => RotationLock.Lock(locker);
-        public void UnlockRotation(object locker) => RotationLock.Unlock(locker);
+        private LockModule _lockModule;
+
+        // public void LockRotation(object locker) => RotationLock.Lock(locker);
+        // public void UnlockRotation(object locker) => RotationLock.Unlock(locker);
+
+        public override void OnModulesInitialized()
+        {
+            base.OnModulesInitialized();
+            _lockModule = Actor.GetModule<LockModule>();    
+        }
 
         public override void ModuleLateUpdate()
         {
             if (!Actor.IsAlive()) return;
             if(!RotateOnClient && !Actor.IsServer) return;
-            if (RotationLock.IsLocked()) return;
+            if (IsRotationLocked()) return;
             _targetAimVector = Actor.MotionVectorsHandler.GetTargetVector(PrioritizeMovementForTargetVector);
             Transform t = Actor.transform;
             if (_targetAimVector.sqrMagnitude < 1e-8f)
@@ -72,5 +80,25 @@ namespace Kuantech.Core
                 Rigidbody.rotation = rot;
             }
         }
+
+        #region Locks
+        public bool IsRotationLocked()
+        {
+            if(_lockModule == null || RotationLockKey == null) return false;
+            return _lockModule.IsLocked(RotationLockKey);
+        }
+
+        public void LockRotation(object locker)
+        {
+            if(_lockModule == null) return;
+            _lockModule.Lock(RotationLockKey, locker);
+        }
+
+        public void UnlockRotation(object locker)
+        {
+            if (_lockModule == null) return;
+            _lockModule.Unlock(RotationLockKey, locker);
+        }
+        #endregion
     }
 }

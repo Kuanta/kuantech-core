@@ -19,6 +19,7 @@ namespace Kuantech.Core
 
         //Target
         public Transform TargetedObject;
+        [NonSerialized] public Vector3 ForceLookDirection = Vector3.zero;
 
         [NonSerialized] public Actor ParentActor;
 
@@ -159,12 +160,15 @@ namespace Kuantech.Core
             // }
             
             
+            if (ForceLookDirection.sqrMagnitude > 0.1f)
+                return ForceLookDirection;
+
             //Check movement priority
             if (prioritizeMovementOverTarget && MovementVector.sqrMagnitude > float.Epsilon)
             {
                 return MovementVector;
             }
-            
+
             //Buisness as usual
             if (TargetedObject != null)
             {
@@ -198,6 +202,20 @@ namespace Kuantech.Core
         {
             SetTargetVector(Vector3.zero);
         }
+        public void ClearTargetObject()
+        {
+            SetTargetObject(null);
+        }
+
+        public void SetForceLookDirection(Vector3 direction)
+        {
+            ForceLookDirection = direction;
+        }
+
+        public void ClearForceLookDirection()
+        {
+            ForceLookDirection = Vector3.zero;
+        }
         #endregion
         
         /// <summary>
@@ -217,6 +235,7 @@ namespace Kuantech.Core
             ForceMoveVector = Vector3.zero;
             TargetVector = Vector3.zero;
             TargetedObject = null;
+            ForceLookDirection = Vector3.zero;
         }
     }
 }

@@ -50,10 +50,11 @@ namespace Kuantech.Core
         private float _lastLandTime;
 
         //Lock
-        public LockVariable MovementLock = new LockVariable();
-        public LockVariable JumpLock = new LockVariable();
+        public LockKey MovementLockKey;
+        public LockKey JumpLockKey;
         
         //Events
+        public EventHandler OnStop;
         public EventHandler OnJumpEvent;
         public EventHandler OnJumpLandEvent;
         public EventHandler<Vector3> DashStartEvent;
@@ -63,11 +64,16 @@ namespace Kuantech.Core
 
         [SerializeReference] public JumpHandler JumpHandler;
         private AimHandler _aimHandler;
+        private LockModule _lockModule;
+
 
         public override void OnModulesInitialized()
         {
             base.OnModulesInitialized();
             _aimHandler = Actor.GetModule<AimHandler>();
+            _lockModule = Actor.GetModule<LockModule>();
+            Actor.OnHitEvent += OnHit;
+            if(_lockModule != null) _lockModule.OnLocked += OnLockHandler;
         }
         
         public override void ModuleUpdate()
@@ -170,9 +176,14 @@ namespace Kuantech.Core
             return _isGrounded;
         }
 
+        public bool IsJumpLocked()
+        {
+            if(_lockModule == null) return false;
+            return _lockModule.IsLocked(JumpLockKey);
+        }
         public void Jump()
         {
-            if (Jumping || !IsGrounded() || JumpLock.IsLocked()) return;
+            if (Jumping || !IsGrounded() || IsJumpLocked()) return;
             if (JumpHandler == null) { Debug.LogWarning("Jump handler is null"); return; }
             if (IsServerInitialized) { ExecuteJump(); _syncedJumping.Value = true; }
             else if (IsOwner)        { ExecuteJump(); ServerRpc_Jump(); }
@@ -246,8 +257,8 @@ namespace Kuantech.Core
 
         public bool IsMovementLocked()
         {
-            if (MovementLock != null && MovementLock.IsLocked()) return true;
-            return false;
+            if(_lockModule == null) return false;
+            return _lockModule.IsLocked(MovementLockKey);
         }
         
         /// <summary>
@@ -256,15 +267,8 @@ namespace Kuantech.Core
         /// <param name="locker"></param>
         public void Lock(object locker)
         {
-            if (MovementLock == null)
-            {
-                MovementLock = new LockVariable();
-            }
-            MovementLock.Lock(locker);
-            if (MovementLock.IsLocked())
-            {
-                MovementLocked();
-            }
+            if(_lockModule == null) return;
+            _lockModule.Lock(MovementLockKey, locker);
         }
         
         /// <summary>
@@ -273,24 +277,17 @@ namespace Kuantech.Core
         /// <param name="locker"></param>
         public void Unlock(object locker)
         {
-            if (!IsMovementLocked()) return;
-            bool alreadyUnlocked = !MovementLock.IsLocked();
-            if (alreadyUnlocked) return;
-            
-            MovementLock.Unlock(locker);
-            if(!MovementLock.IsLocked())
-                MovementUnlocked();
-            else
-                MovementLocked();
+            if(_lockModule == null) return;
+            _lockModule.Unlock(MovementLockKey, locker);
         }
-        protected virtual void MovementLocked()
+
+        private void OnLockHandler(string lockKey)
         {
-            
-        }
-        
-        protected virtual void MovementUnlocked()
-        {
-            
+            if(lockKey == MovementLockKey.LockId)
+            {
+                Stop();
+            }
+            EndDash();
         }
         #endregion
 
@@ -397,31 +394,61 @@ namespace Kuantech.Core
             ExecuteDash(direction);
         }
 #endif
-
+        private Coroutine _dashRoutine;
         private void ExecuteDash(Vector3 direction)
         {
             DashHandler?.OnDashStart(this, direction);
             DashStartEvent?.Invoke(this, direction);
-            if (LockRotationOnDash && _aimHandler != null)
+            if (LockRotationOnDash)
             {
-                if (SnapToDirectionOnDash) _aimHandler.SetDirection(direction);
-                _aimHandler.LockRotation(this);
+                if (SnapToDirectionOnDash && _aimHandler != null) _aimHandler.SetDirection(direction);
+                Actor.MotionVectorsHandler.SetForceLookDirection(direction);
             }
+            if(_dashRoutine != null)
+            {
+                StopCoroutine(_dashRoutine);
+                _dashRoutine = null;
+            }
+            
             DashHandler?.HandleDash(this, direction);
             // OnDashEvent intentionally NOT fired here — caller is responsible
-            StartCoroutine(DashEndRoutine());
+            _dashRoutine =StartCoroutine(DashEndRoutine());
+        }
+
+        private void CancelDash()
+        {
+            if(_dashRoutine != null)
+            {
+                StopCoroutine(_dashRoutine);
+                _dashRoutine = null;
+            }
+            EndDash();
         }
 
         private IEnumerator DashEndRoutine()
         {
             yield return new WaitForSeconds(DashDuration);
+            EndDash();
+        }
+
+        private void EndDash()
+        {
             DashHandler?.OnDashEnd(this);
             DashEndEvent?.Invoke(this, EventArgs.Empty);
-            if (_aimHandler != null) _aimHandler.UnlockRotation(this);
+            Actor.MotionVectorsHandler.ClearForceLookDirection();
         }
 
         #endregion
         #region Knockback
+
+        private void OnHit(HitInfo hitInfo)
+        {
+            if(hitInfo.KnockbackDuration > 0 && hitInfo.KnockbackForce > 0)
+            {
+                Knockback(hitInfo.HitDirection, hitInfo.KnockbackForce, hitInfo.KnockbackDuration);
+            }
+        }
+
         private HashSet<IEnumerator> _knockbackRoutines = new HashSet<IEnumerator>();
         
         public void Knockback(Vector3 direction, float knockback, float knockbackTime)
@@ -460,12 +487,12 @@ namespace Kuantech.Core
         public void Stop()
         {
             SetMovementVector(Vector3.zero);
+            OnStop?.Invoke(this, EventArgs.Empty);
         }
         
         public override void ResetModule()
         {
             base.ResetModule();
-            MovementLock.Reset();
 
             Stop();
             //Zero out the knockback vectors
@@ -481,7 +508,6 @@ namespace Kuantech.Core
             //Reset jump
             Jumping = false;
             if (IsServerInitialized) _syncedJumping.Value = false;
-            JumpLock.Reset();
             _lastGroundedTime = Time.time;
             _crouching = false;
             if (CrouchHandler != null)

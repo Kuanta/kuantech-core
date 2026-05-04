@@ -6,7 +6,8 @@ using Kuantech.Rpg;
 
 
 [Serializable]
-public class CombatVariable
+///Defines a variable that scales with a stat value
+public class StatBasedVariable
 {
     public float BaseValue = 0;
     public AttributeAsset AttributeAsset = null;
@@ -23,10 +24,10 @@ public class CombatVariable
 /// Combat damage variable that handles damage type, attribute scaling, and critical hits.
 /// </summary>
 [Serializable]
-public class CombatDamageVariable : CombatVariable
+public class StatBasedDamageVariable : StatBasedVariable
 {
     public DamageType DamageType;
-    public CombatVariable CriticalMultiplier;
+    public StatBasedVariable CriticalMultiplier;
     public float CriticalChance;
 
     public DamageInfo GetDamageInfo(StatsModule statsModule)

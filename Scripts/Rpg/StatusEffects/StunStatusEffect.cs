@@ -34,12 +34,12 @@ namespace Kuantech.Core.Combat
 
             if (_combatModule != null)
             {
-                _combatModule.AttackLock.Lock(this);
+                _combatModule.LockAttack(this);
             }
 
             if (_spellBook != null)
             {
-                _spellBook.SkillLock.Lock(this);
+                _spellBook.Lock(this);
             }
         }
         
@@ -53,12 +53,12 @@ namespace Kuantech.Core.Combat
 
             if (_combatModule != null)
             {
-                _combatModule.AttackLock.Unlock(this);
+                _combatModule.UnlockAttack(this);
             }
 
             if (_spellBook != null)
             {
-                _spellBook.SkillLock.Unlock(this);
+                _spellBook.Unlock(this);
             }
         }
         

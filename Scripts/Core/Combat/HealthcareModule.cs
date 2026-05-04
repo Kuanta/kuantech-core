@@ -164,6 +164,10 @@ namespace Kuantech.Core.Combat
                     CombatManager.ShowDamageText(Actor, reducedDamage); 
                 }
             }
+            else
+            {
+                OnResourceChanged?.Invoke(resourceAsset);
+            }
         }
 
         /// <summary>

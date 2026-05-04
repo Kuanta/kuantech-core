@@ -46,9 +46,9 @@ namespace Kuantech.Core
         [Header("Attack Shape")]
         public AttackTypes AttackType;
         public bool IsMelee;
-        public CombatVariable Angle;
-        public CombatVariable Width;
-        public CombatVariable Range;
+        public StatBasedVariable Angle;
+        public StatBasedVariable Width;
+        public StatBasedVariable Range;
         
         [Header("Required Resource")]
         public ResourceAsset RequiredResource;
@@ -56,14 +56,14 @@ namespace Kuantech.Core
 
         
         [Header("Damage")]
-        public CombatDamageVariable Damage;
-        public List<CombatDamageVariable> AdditionalDamages;
+        public StatBasedDamageVariable Damage;
+        public List<StatBasedDamageVariable> AdditionalDamages;
         
         [Header("Splash Damage")]
-        public CombatDamageVariable SplashDamage;
-        public List<CombatDamageVariable> AdditionalSplashDamages;
+        public StatBasedDamageVariable SplashDamage;
+        public List<StatBasedDamageVariable> AdditionalSplashDamages;
         
-        public CombatVariable SplashRadius;
+        public StatBasedVariable SplashRadius;
         
         
         [Header("Timings")] 
@@ -79,11 +79,15 @@ namespace Kuantech.Core
         public List<StatusEffectAsset> StatusEffectsToApply;
         
         [Header("Movement Manupilation")]
-        public CombatVariable MovementSlow; //Factor between 0-1, movement speed while attacking will be MovementSpeed * (1-MovementSlow)
+        public StatBasedVariable MovementSlow; //Factor between 0-1, movement speed while attacking will be MovementSpeed * (1-MovementSlow)
 
-        [Header("Knosckback")]
-        public CombatVariable Knockback;
-        public CombatVariable KnockbackTime;
+        [Header("Attack Momentum")]
+        public StatBasedVariable AttackMomentum;
+        public float AttackMomentumDuration = 0.15f;
+
+        [Header("Knockback")]
+        public StatBasedVariable Knockback;
+        public StatBasedVariable KnockbackTime;
         
         [Header("Projectile")]
         public Projectile ProjectilePrefab;
@@ -132,7 +136,7 @@ namespace Kuantech.Core
         
         //Locks & Cooldowns
         //public Cooldown GlobalCooldown;
-        public LockVariable AttackLock = new LockVariable();
+        public LockKey AttackLockKey;
     
         //Events
         public UnityAction<CombatModule> AttackStartedEvent;
@@ -141,6 +145,7 @@ namespace Kuantech.Core
 
 
         //Quick module references
+        private LockModule _lockModule;
         private StatsModule _statModule;
         private AnimationModule _animationModule;
         private ActorSlotsHandler _slotsHandler;
@@ -170,11 +175,13 @@ namespace Kuantech.Core
             _slotsHandler = Actor.GetModule<ActorSlotsHandler>();
             _healthcareModule = Actor.GetModule<HealthcareModule>();
             _spellBook = Actor.GetModule<SpellBook>();
+            _lockModule = Actor.GetModule<LockModule>();
+            if(_lockModule != null) _lockModule.OnLocked += OnLockHandler;
         }
 
         public override void ModuleUpdate()
         {
-            if (!_isAttacking || AttackLock.IsLocked()) return;
+            if (!IsAttacking()) return;
             float elapsedTime = Time.time - _attackStartTime;
             AttackPattern currentPattern = GetCurrentAttackPattern();
             bool isNetworked = Networking.KtNetworkManager.IsNetworked();
@@ -829,7 +836,8 @@ namespace Kuantech.Core
 
         public bool IsAttackLocked()
         {
-            return AttackLock.IsLocked();
+            if(_lockModule == null) return false;
+            return _lockModule.IsLocked(AttackLockKey);
         }
 
         public bool IsInAttackRange(Actor actor)
@@ -849,6 +857,28 @@ namespace Kuantech.Core
         }
         #endregion
 
+        #region Locking
+        public void LockAttack(object locker)
+        {
+            if (_lockModule == null) return;
+            _lockModule.Lock(AttackLockKey, locker);
+        }
+
+        public void UnlockAttack(object locker)
+        {
+            if (_lockModule == null) return;
+            _lockModule.Unlock(AttackLockKey, locker);
+        }
+        
+        private void OnLockHandler(string lockKey)
+        {
+            if(lockKey == AttackLockKey.LockId)
+            {
+                //Cancel attack
+                EndAttack();
+            }
+        }
+        #endregion
 
         #region Attack Lifecycle
         private float _effectPlayTime;

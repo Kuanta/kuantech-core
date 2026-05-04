@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Kuantech.Core;
 using Kuantech.Core.Combat;
@@ -74,7 +75,7 @@ namespace Kuantech.Rpg.Skills
         public List<SkillDataAsset> DefaultSkills;
 
         [Header("Lock")]
-        public LockVariable SkillLock = new LockVariable();
+        public LockKey SkillLockKey;
 
         // Fired on the local client when a skill cast ends (for rotation hold, UI, etc.)
         public UnityAction<Skill> SkillCastEndedEvent;
@@ -84,6 +85,8 @@ namespace Kuantech.Rpg.Skills
 
         //Runtime
         private HealthcareModule _healthcareModule;
+        private LockModule _lockModule;
+
 
         public override void Initialize()
         {
@@ -97,6 +100,11 @@ namespace Kuantech.Rpg.Skills
         {
             base.OnModulesInitialized();
             _healthcareModule = Actor.GetModule<HealthcareModule>();
+            _lockModule = Actor.GetModule<LockModule>();
+            if(_lockModule != null)
+            {
+                _lockModule.OnLocked += OnLockHandler;
+            }
         }
 
         public override void ModuleUpdate()
@@ -208,6 +216,36 @@ namespace Kuantech.Rpg.Skills
 
         #endregion
 
+        #region Lock
+        public bool IsLocked()
+        {
+            if(_lockModule == null) return false;
+            return _lockModule.IsLocked(SkillLockKey);
+        }
+
+        public void Lock(object locker)
+        {
+            if(_lockModule == null) return;
+            _lockModule.Lock(SkillLockKey, locker);
+        }
+
+        public void Unlock(object locker)
+        {
+            if(_lockModule == null) return;
+            _lockModule.Unlock(SkillLockKey, locker);
+        }   
+
+        private void OnLockHandler(string lockKey)
+        {
+            if(lockKey != SkillLockKey.LockId) return;
+            foreach(var skill in _activeSkills)
+            {
+                skill.EndCast();
+            }
+            _activeSkills.Clear();
+        }
+        #endregion
+
         #region Commands
         public bool CastSkill(string skillId, ActionCastData skillCastData)
         {
@@ -241,7 +279,7 @@ namespace Kuantech.Rpg.Skills
         public bool ExecuteCastSkill(SkillDataAsset skillDataAsset, ActionCastData skillCastData)
         {
             if(!IsServerInitialized) return false; //For now execute only at server
-            if (SkillLock.IsLocked()) return false;
+            if (IsLocked()) return false;
             if (!CanCastSkill(skillDataAsset, skillCastData)) return false;
             Skill skillToCast = GetSkillByDataAsset(skillDataAsset);
             if (skillToCast == null) return false;

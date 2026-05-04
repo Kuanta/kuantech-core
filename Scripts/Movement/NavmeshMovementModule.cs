@@ -1,4 +1,5 @@
-﻿using Kuantech.Utils;
+﻿using System;
+using Kuantech.Utils;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -26,6 +27,7 @@ namespace Kuantech.Core
         {
             base.OnModulesInitialized();
             _movementModule = Actor.GetModule<MovementModule>();
+            _movementModule.OnStop += OnStop;
             if (_movementModule == null)
             {
                 Debug.LogError("APP actor module requires movemente module");
@@ -155,6 +157,11 @@ namespace Kuantech.Core
             NavMeshAgent.isStopped = true;
             NavMeshAgent.enabled = false;
             Actor.MotionVectorsHandler.SetMovementVector(Vector3.zero);
+        }
+
+        private void OnStop(object sender, EventArgs args)
+        {
+            Stop();
         }
         
         public override void OnActorStateChanged(ActorState oldState, ActorState newState)
