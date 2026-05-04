@@ -69,7 +69,7 @@ namespace Kuantech.Core
         {
             Vector3 forceMove = Actor.MotionVectorsHandler.ForceMoveVector;
             if (forceMove.sqrMagnitude < MinKnockbackForceRequired) return false;
-            Stop();
+            DisableAgent();
             Actor.transform.position += forceMove * Time.deltaTime;
             return true;
         }
@@ -88,6 +88,9 @@ namespace Kuantech.Core
 
         public virtual void GoToPosition(Vector3 position)
         {
+            if (!NavMeshAgent.enabled) NavMeshAgent.enabled = true;
+            if (!NavMeshAgent.isOnNavMesh) return;
+            NavMeshAgent.isStopped = false;
             NavMeshAgent.SetDestination(position);
         }
         
@@ -155,8 +158,17 @@ namespace Kuantech.Core
         {
             if (NavMeshAgent == null || !NavMeshAgent.isActiveAndEnabled) return;
             NavMeshAgent.isStopped = true;
-            NavMeshAgent.enabled = false;
+            NavMeshAgent.ResetPath();
             Actor.MotionVectorsHandler.SetMovementVector(Vector3.zero);
+        }
+
+        // Fully disables the agent — use only when manually moving the transform (e.g. knockback).
+        // Disabled agents don't participate in local avoidance.
+        private void DisableAgent()
+        {
+            if (NavMeshAgent == null || !NavMeshAgent.enabled) return;
+            NavMeshAgent.isStopped = true;
+            NavMeshAgent.enabled = false;
         }
 
         private void OnStop(object sender, EventArgs args)
