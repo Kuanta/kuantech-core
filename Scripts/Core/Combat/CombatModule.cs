@@ -49,6 +49,7 @@ namespace Kuantech.Core
         public StatBasedVariable Angle;
         public StatBasedVariable Width;
         public StatBasedVariable Range;
+        public bool ShowIndicator;
         
         [Header("Required Resource")]
         public ResourceAsset RequiredResource;
@@ -84,6 +85,10 @@ namespace Kuantech.Core
         [Header("Attack Momentum")]
         public StatBasedVariable AttackMomentum;
         public float AttackMomentumDuration = 0.15f;
+        public bool  LockMovementOnAttack  = false;
+        public bool  LockRotationOnAttack  = false;
+        [Tooltip("Seconds after movement lock before rotation is also locked. Lets the actor finish turning before freezing.")]
+        public float RotationLockDelay     = 0f;
 
         [Header("Knockback")]
         public StatBasedVariable Knockback;
@@ -140,7 +145,8 @@ namespace Kuantech.Core
     
         //Events
         public UnityAction<CombatModule> AttackStartedEvent;
-        public UnityAction<CombatModule> AttackedEvent; //Deals damage here
+        public UnityAction<CombatModule> AlignedEvent;       // fires once when rotational alignment is achieved
+        public UnityAction<CombatModule> AttackedEvent;      // Deals damage here
         public UnityAction<CombatModule> AttackCompletedEvent;
 
 
@@ -197,7 +203,10 @@ namespace Kuantech.Core
             if (IsServerInitialized || !isNetworked)
             {
                 if (_requireAlignment && !_hasAligned)
+                {
                     _hasAligned = HasAlignedWithAttackDirection();
+                    if (_hasAligned) AlignedEvent?.Invoke(this);
+                }
 
                 bool shouldImplement = elapsedTime >= _attackImplementationTime &&
                     (_hasAligned) &&
