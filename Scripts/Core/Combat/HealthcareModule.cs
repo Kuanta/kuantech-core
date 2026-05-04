@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using FishNet.Object;
 using Kuantech.Core.FX;
+using Kuantech.Core.Utils;
 using Kuantech.Rpg;
 using Kuantech.Rpg.Managers;
 using Kuantech.Utils;
@@ -42,7 +43,13 @@ namespace Kuantech.Core.Combat
         public UnityAction<float> OnHealReceived;
         public UnityAction<HitInfo> OnReceivedHitEvent; //Since we cant be sure of the order of Hit event from actor.
         
-        //Runtime 
+        //Invulnerability
+        public LockVariable InvulnerabilityLock = new();
+        public bool IsInvulnerable()              => InvulnerabilityLock.IsLocked();
+        public void SetInvulnerable(object locker)   => InvulnerabilityLock.Lock(locker);
+        public void ClearInvulnerable(object locker) => InvulnerabilityLock.Unlock(locker);
+
+        //Runtime
         private StatsModule _statModule;
         private AnimationModule _animationModule;
         private float _remainingDamageToPlayHitAnim;
@@ -107,6 +114,7 @@ namespace Kuantech.Core.Combat
         {
             if (IsServerInitialized)
             {
+                if (IsInvulnerable()) return;
                 float previousHealth = GetCurrentHealth();
 
                 DamageResource(hitInfo.DamageInfo);
