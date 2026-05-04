@@ -38,8 +38,8 @@ namespace Kuantech.Rpg
         {
             current = Mathf.Clamp(current, 0, max);
 
-            if (CurrentHealthText) CurrentHealthText.text = current.Stringfy();
-            if (MaxHealthText)     MaxHealthText.text     = max.Stringfy(); // <-- BUG düzeltme: current değil max
+            if (CurrentHealthText) CurrentHealthText.text = current.Stringfy(roundToInteger:true);
+            if (MaxHealthText)     MaxHealthText.text     = max.Stringfy(roundToInteger: true);
 
             if (!FrontBar || !BackBar) return;
 

@@ -1,4 +1,6 @@
 ﻿using System;
+using Kuantech.Core.Combat;
+using Unity.VisualScripting.Antlr3.Runtime.Misc;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -50,12 +52,22 @@ namespace Kuantech.Rpg
         public void SetValue(float value)
         {
             CurrentValue = ClampValue(value);
+
+            //TODO: refactor code so that it isn't this ugly
+            //Update resource bar.      
+            if(StatsModule != null)
+            {
+                var hm = StatsModule.Actor.GetModule<HealthcareModule>();   
+                if(hm != null && ResourceAsset != null)
+                {
+                    hm.UpdateResourceBar(ResourceAsset);
+                }
+            }
         }
 
         public void AddValue(float value)
         {
-            CurrentValue += value;
-            CurrentValue = ClampValue(CurrentValue);
+            SetValue(CurrentValue + value);
         }
 
         public float ClampValue(float value)
