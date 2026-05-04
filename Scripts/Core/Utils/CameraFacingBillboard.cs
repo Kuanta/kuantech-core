@@ -26,8 +26,14 @@ namespace Kuantech.UI
 
         private void Update()
         {
+            CheckCamera();
             if (MainCamera == null) return;
             transform.forward = MainCamera.transform.forward * Direction;
+        }
+
+        private void CheckCamera()
+        {
+            if(MainCamera == null) MainCamera = CameraManager.GetCamera();
         }
     }
 }
