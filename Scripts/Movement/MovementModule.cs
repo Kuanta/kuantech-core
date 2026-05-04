@@ -397,6 +397,7 @@ namespace Kuantech.Core
         private Coroutine _dashRoutine;
         private void ExecuteDash(Vector3 direction)
         {
+            if(DashHandler == null || !DashHandler.CanDash(Actor)) return;
             DashHandler?.OnDashStart(this, direction);
             DashStartEvent?.Invoke(this, direction);
             if (LockRotationOnDash)

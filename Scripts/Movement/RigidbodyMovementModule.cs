@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using Kuantech.Core.Utils;
+using Kuantech.Rpg;
 using UnityEngine;
 
 namespace Kuantech.Core
@@ -136,11 +137,7 @@ namespace Kuantech.Core
         }
         
         # region Dodge
-
-        public float GetDodgeEnergyCost()
-        {
-            return DodgeEnergyCost;
-        }
+        
         public void Dodge(Vector3 dodgeDirection, float dodgeDuration, float dodgeSpeed)
         {
             if (_dodging || DodgeLock.IsLocked()) return;

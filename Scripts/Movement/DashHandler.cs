@@ -9,6 +9,11 @@ namespace Kuantech.Core
     {
         public bool GrantInvulnerability = false;
 
+        public virtual bool CanDash(Actor actor)
+        {
+            return true;
+        }
+
         public abstract void HandleDash(MovementModule module, Vector3 direction);
 
         public virtual void OnDashStart(MovementModule module, Vector3 direction)
