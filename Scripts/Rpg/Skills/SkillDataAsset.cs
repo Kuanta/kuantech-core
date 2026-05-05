@@ -23,6 +23,12 @@ namespace Kuantech.Rpg.Skills
         public string SkillDescription;
         public SkillCastTypes SkillCastType;
         public bool WaitRotationalAlignToTarget;
+
+        [Header("Cast Locks")]
+        [Tooltip("Prevents movement input while this skill is casting")]
+        public bool LockMovementOnCast = false;
+        [Tooltip("Prevents rotation while this skill is casting. If WaitRotationalAlignToTarget is true, rotation locks after alignment.")]
+        public bool LockRotationOnCast = false;
         
         [Header("Required Resource")]
         public ResourceAsset RequiredResource;
@@ -37,6 +43,8 @@ namespace Kuantech.Rpg.Skills
         [Header("Skill Variables")]
         public List<SkillVariableData> SkillVariableDatas;
         public float SkillCooldown;
+        [Tooltip("Random seconds added to cooldown after each cast. Prevents groups of enemies casting in sync.")]
+        public float CooldownJitter = 0f;
         public float SkillRange;
         
         //todo: This is ai related, remove it from here

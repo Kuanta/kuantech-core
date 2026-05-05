@@ -86,6 +86,14 @@ namespace Kuantech.Core
         }
         public virtual void OnActorStateChanged(ActorState oldState, ActorState newState)
         {
+            if(oldState != ActorState.Spawned && newState == ActorState.Spawned)
+            {
+                OnActorSpawned();
+            }
+        }
+
+        public virtual void OnActorSpawned()
+        {
             
         }
 

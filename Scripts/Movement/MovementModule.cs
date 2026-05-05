@@ -286,8 +286,8 @@ namespace Kuantech.Core
             if(lockKey == MovementLockKey.LockId)
             {
                 Stop();
+                EndDash();
             }
-            EndDash();
         }
         #endregion
 

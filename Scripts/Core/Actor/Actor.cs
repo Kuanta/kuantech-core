@@ -106,7 +106,8 @@ namespace Kuantech.Core
 
             //Motion vector handler
             MotionVectorsHandler = new MotionVectorsHandler(this, ActorForwardVector, ActorUpVector);
-
+            CurrentActorState = ActorState.Inactive;
+            
             //Modules — discover all first so modules can reference each other during Initialize()
             ActorModulesList = GetComponentsInChildren<ActorModule>().ToList();
             ModulesById = new Dictionary<string, ActorModule>();

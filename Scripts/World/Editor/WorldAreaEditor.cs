@@ -157,10 +157,19 @@ public class WorldAreaEditor : Editor
             float   size  = HandleUtility.GetHandleSize(world) * (selected ? 0.10f : 0.07f);
 
             Handles.color = selected ? Color.yellow : _area.OutlineColor;
-            if (Handles.Button(world, Quaternion.identity, size, size * 1.4f, Handles.SphereHandleCap))
+
+            if (selected)
             {
-                _selectedVertex = vi;
-                Repaint();
+                // Draw visual only — PositionHandle below handles interaction
+                Handles.SphereHandleCap(0, world, Quaternion.identity, size, EventType.Repaint);
+            }
+            else
+            {
+                if (Handles.Button(world, Quaternion.identity, size, size * 1.4f, Handles.SphereHandleCap))
+                {
+                    _selectedVertex = vi;
+                    Repaint();
+                }
             }
         }
 
@@ -206,6 +215,14 @@ public class WorldAreaEditor : Editor
 
     private void HandleAddQuadMode()
     {
+        // Re-render on every mouse move so the edge highlight stays current.
+        if (Event.current.type == EventType.MouseMove)
+            SceneView.RepaintAll();
+
+        // Register a passive control so scene-view default mouse handling
+        // (orbit/pan) doesn't consume clicks meant for our Handles.Button.
+        HandleUtility.AddDefaultControl(GUIUtility.GetControlID(FocusType.Passive));
+
         if (_area.Quads.Count == 0)
         {
             Handles.BeginGUI();
@@ -232,7 +249,7 @@ public class WorldAreaEditor : Editor
 
                 Vector3 wA = _area.transform.TransformPoint(_area.Vertices[iA]);
                 Vector3 wB = _area.transform.TransformPoint(_area.Vertices[iB]);
-                float d = HandleUtility.DistanceToLine(wA, wB);
+                float d = DistanceToSegmentGUI(wA, wB);
                 if (d < bestDist) { bestDist = d; bestQi = qi; bestEi = ei; }
             }
         }
@@ -273,6 +290,18 @@ public class WorldAreaEditor : Editor
             if (Handles.Button(mid, Quaternion.identity, size, size * 1.5f, Handles.SphereHandleCap))
                 ExtrudeQuadFromEdge(bestQi, bestEi);
         }
+    }
+
+    private static float DistanceToSegmentGUI(Vector3 wA, Vector3 wB)
+    {
+        Vector2 guiA  = HandleUtility.WorldToGUIPoint(wA);
+        Vector2 guiB  = HandleUtility.WorldToGUIPoint(wB);
+        Vector2 mouse = Event.current.mousePosition;
+        Vector2 ab    = guiB - guiA;
+        float   len   = ab.magnitude;
+        if (len < 0.001f) return Vector2.Distance(mouse, guiA);
+        float t = Mathf.Clamp01(Vector2.Dot(mouse - guiA, ab) / (len * len));
+        return Vector2.Distance(guiA + ab * t, mouse);
     }
 
     private void ExtrudeQuadFromEdge(int qi, int ei)

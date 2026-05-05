@@ -49,6 +49,10 @@ namespace Kuantech.Rpg.Skills
             }
 
             Reset();
+
+            // Stagger initial cooldown so enemies spawned together don't all cast on the same frame.
+            if (skillDataAsset.CooldownJitter > 0f)
+                _lastCastTime = Time.time - skillDataAsset.SkillCooldown + UnityEngine.Random.Range(0f, skillDataAsset.CooldownJitter);
         }
 
         public string GetId()
@@ -109,25 +113,31 @@ namespace Kuantech.Rpg.Skills
             switch (SkillDataAsset.SkillCastType)
             {
                 case SkillDataAsset.SkillCastTypes.Self:
-                    if (castData.Target == null || castData.Target != ParentSpellBook.Actor)
-                    {
-                        return false;
-                    }
-                    break;
+                    return castData.Target != null && castData.Target == ParentSpellBook.Actor;
                 case Skills.SkillDataAsset.SkillCastTypes.Targeted:
                     if (castData.Target == null) return false;
                     break;
                 case Skills.SkillDataAsset.SkillCastTypes.Directional:
                     if (castData.Direction.sqrMagnitude.Equals(0)) return false;
                     break;
-                case Skills.SkillDataAsset.SkillCastTypes.ToPoint:
-                    //Check range
-                    float dist =
-                        Vector3.SqrMagnitude(castData.TargetPosition - ParentSpellBook.Actor.GetActorLocation());
-                    return dist <= (SkillDataAsset.SkillRange * SkillDataAsset.SkillRange);
+            }
+
+            float range = GetRange();
+            if (range > 0)
+            {
+                Vector3 targetPos = castData.Target != null
+                    ? castData.Target.transform.position
+                    : castData.TargetPosition;
+                float sqrDist = Vector3.SqrMagnitude(targetPos - ParentSpellBook.Actor.GetActorLocation());
+                if (sqrDist > range * range) return false;
             }
 
             return true;
+        }
+
+        public float GetRange()
+        {
+            return SkillDataAsset.SkillRange;
         }
 
         public float GetLastCastTime()
@@ -145,18 +155,25 @@ namespace Kuantech.Rpg.Skills
         {
             if (!CanBeCast(castData) || ParentSpellBook == null) return false;
             _lastCastTime = Time.time;
-           
-           CurrentSkillCastData = castData;
+
+            CurrentSkillCastData = castData;
             _isCasting = true;
             CurrentSkilLBehaviourIndex = 0;
             ParentSpellBook.OnSkillCastStarted(this);
+
+            if (SkillDataAsset.LockMovementOnCast)
+            {
+                MovementModule mm = ParentSpellBook.Actor.GetModule<MovementModule>();
+                if (mm != null) mm.Lock(this);
+            }
+
             _requireAlignment = SkillDataAsset.WaitRotationalAlignToTarget;
             if (_requireAlignment)
             {
                 _hasAligned = false;
                 return true;
             }
-            
+
             StartSkillBehaviour(CurrentSkilLBehaviourIndex);
             return true;
         }
@@ -188,9 +205,24 @@ namespace Kuantech.Rpg.Skills
         
         public void EndCast()
         {
+            ReleaseCastLocks();
             ClearCurrentSkillBehaviour();
             Reset();
             ParentSpellBook.OnSkillCastEnded(this);
+        }
+
+        private void ReleaseCastLocks()
+        {
+            if (SkillDataAsset.LockMovementOnCast)
+            {
+                MovementModule mm = ParentSpellBook.Actor.GetModule<MovementModule>();
+                if (mm != null) mm.Unlock(this);
+            }
+            if (SkillDataAsset.LockRotationOnCast)
+            {
+                AimHandler ah = ParentSpellBook.Actor.GetModule<AimHandler>();
+                if (ah != null) ah.UnlockRotation(this);
+            }
         }
         #endregion
 
@@ -198,6 +230,12 @@ namespace Kuantech.Rpg.Skills
 
         public void StartSkillBehaviour(int skillEffectIndex)
         {
+            if (skillEffectIndex == 0 && SkillDataAsset.LockRotationOnCast)
+            {
+                AimHandler ah = ParentSpellBook.Actor.GetModule<AimHandler>();
+                if (ah != null) ah.LockRotation(this);
+            }
+
             CurrentSkillBehaviour = _skillBehaviours[skillEffectIndex];
             CurrentSkillBehaviour.StartBehaviour(CurrentSkillCastData);
             ParentSpellBook.OnSkillBehaviourStarted(CurrentSkillBehaviour);

@@ -83,11 +83,13 @@ namespace Kuantech.Core
         /// <param name="point"></param>
         public virtual void GoToWorldPoint(WorldPoint point)
         {
+            
             GoToPosition(point.GetTargetPosition());
         }
 
         public virtual void GoToPosition(Vector3 position)
         {
+            if (_movementModule.IsMovementLocked()) return;
             if (!NavMeshAgent.enabled) NavMeshAgent.enabled = true;
             if (!NavMeshAgent.isOnNavMesh) return;
             NavMeshAgent.isStopped = false;

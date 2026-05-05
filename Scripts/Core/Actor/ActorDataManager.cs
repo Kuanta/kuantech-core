@@ -114,15 +114,17 @@ namespace Kuantech.Core
         /// </summary>
         public static Actor InstantiateActor(string actorId)
         {
-            if (!GetActorSpawnData(actorId, out var spawnData)) return null;
 
-            Actor prefab = GetActorPrefab(spawnData.ActorPrefabId);
+            Actor prefab = GetActorPrefab(actorId);
             if (prefab == null) return null;
 
             GameObject go = Instantiate(prefab.gameObject);
             if (!go.TryGetComponent<Actor>(out var actor)) { Destroy(go); return null; }
             actor.Initialize();
-            actor.ApplySpawnData(spawnData);
+            if (GetActorSpawnData(actorId, out var spawnData)) 
+            {
+                actor.ApplySpawnData(spawnData);
+            }
             return actor;
         }
     }
