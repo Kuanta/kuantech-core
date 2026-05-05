@@ -21,6 +21,7 @@ namespace Kuantech.AI
             SUB_GRAPH,
             RANDOM_SELECTOR,
             PARALLEL,
+            REACTIVE_SELECTOR,
         }
         public enum NodeStatus
         {
@@ -36,7 +37,7 @@ namespace Kuantech.AI
         [NonSerialized] public BehaviourTree Owner;
         [NonSerialized] public NodeStatus CurrentStatus;
         [SerializeField] public List<BTNode> Children = new List<BTNode>();
-        private int _currentChildIndex = 0;
+        protected int _currentChildIndex = 0;
         public string Name;
         public bool DebugNode = false;
         protected bool RequiresStart = true;
@@ -108,6 +109,9 @@ namespace Kuantech.AI
                     break;
                 case NodeTypes.RANDOM_SELECTOR:
                     AddChild(new BTRandomSelector(nodeName));
+                    break;
+                case NodeTypes.REACTIVE_SELECTOR:
+                    AddChild(new BTReactiveSelector(nodeName));
                     break;
                 case NodeTypes.PARALLEL:
                     AddChild(new BTParallel(nodeName));
@@ -340,6 +344,72 @@ namespace Kuantech.AI
                 return NodeStatus.RUNNING;
             }
             return NodeStatus.RUNNING;
+        }
+    }
+
+    /// <summary>
+    /// Re-evaluates children from index 0 every tick, even when a lower-priority child is running.
+    /// Use this when a high-priority branch (e.g. skill cast) must interrupt a running low-priority branch (e.g. chase).
+    /// </summary>
+    [Serializable]
+    public class BTReactiveSelector : BTNode
+    {
+        public BTReactiveSelector(string name = "ReactiveSelector")
+        {
+            Name = name;
+        }
+
+        public override NodeStatus Process()
+        {
+            if (Children.Count == 0) return NodeStatus.SUCCESS;
+
+            for (int i = 0; i < Children.Count; i++)
+            {
+                BTNode child = Children[i];
+
+                if (i != _currentChildIndex)
+                {
+                    // Probe: enter fresh, test, exit if fails
+                    child.OnEnter();
+                    NodeStatus probeStatus = child.Process();
+                    if (probeStatus == NodeStatus.FAILURE)
+                    {
+                        child.OnExit();
+                        continue;
+                    }
+
+                    // Higher-priority child wants to run — abort current
+                    Children[_currentChildIndex].OnExit();
+                    _currentChildIndex = i;
+                    return probeStatus;
+                }
+
+                // Current child — process normally
+                NodeStatus childStatus = child.Process();
+                if (childStatus == NodeStatus.RUNNING) return NodeStatus.RUNNING;
+
+                if (childStatus == NodeStatus.SUCCESS)
+                {
+                    _currentChildIndex = 0;
+                    Children[0].OnEnter();
+                    return NodeStatus.SUCCESS;
+                }
+
+                // Current child failed — try next
+                child.OnExit();
+                if (i >= Children.Count - 1)
+                {
+                    _currentChildIndex = 0;
+                    Children[0].OnEnter();
+                    return NodeStatus.FAILURE;
+                }
+
+                _currentChildIndex = i + 1;
+                Children[_currentChildIndex].OnEnter();
+                return NodeStatus.RUNNING;
+            }
+
+            return NodeStatus.FAILURE;
         }
     }
 
