@@ -114,20 +114,38 @@ namespace Kuantech.Core
         {
             return Damage.GetDamageInfo(statsModule);
         }
+
+        public AttackPattern Clone() => (AttackPattern)MemberwiseClone();
+    }
+
+    [Serializable]
+    public class ComboAttackPattern
+    {
+        public List<AttackPattern> Patterns = new();
+
+        public AttackPattern GetPattern(int comboIndex)
+        {
+            if (Patterns == null || Patterns.Count == 0) return null;
+            return Patterns[Patterns.Count > 1 ? comboIndex % Patterns.Count : 0];
+        }
     }
 
     public class CombatModule: ActorModule
     {
-        [Header("Timings")] 
+        [Header("Timings")]
         public AttributeAsset AttackSpeedAttribute;
         public float MinAttackSpeed = 100.0f;
         public float MaxAttackSpeed = 1000.0f;
         public float MinAttackTime = 0.1f;
         public float MaxAttackTime = 50.0f;
-        
+
         [Header("Attack Pattern")]
-        public AttackPattern DefaultAttackPattern;
-        private AttackPattern _currentAttackPattern;
+        public ComboAttackPattern DefaultAttackPattern;
+        private ComboAttackPattern _currentAttackPattern;
+
+        [Header("Defaults")]
+        public ComboAttackPatternAsset DefaultComboPatternAsset;
+        public AttackPatternAsset DefaultPatternAsset;
         
         [Header("Collision")]
         public LayerMask Targets;
@@ -227,6 +245,21 @@ namespace Kuantech.Core
         public override void Cleanup()
         {
             EndAttack();
+        }
+
+        public override void OnActorStateChanged(ActorState oldState, ActorState newState)
+        {
+            base.OnActorStateChanged(oldState, newState);
+            if (newState == ActorState.Spawned)
+                ApplyDefaultPatternAssets();
+        }
+
+        private void ApplyDefaultPatternAssets()
+        {
+            if (DefaultComboPatternAsset != null)
+                DefaultAttackPattern = DefaultComboPatternAsset.GetComboAttackPattern();
+            else if (DefaultPatternAsset != null)
+                DefaultAttackPattern = new ComboAttackPattern { Patterns = new List<AttackPattern> { DefaultPatternAsset.GetAttackPattern() } };
         }
         #endregion
 
@@ -666,6 +699,7 @@ namespace Kuantech.Core
 
             //Common
             AttackPattern currPattern = GetCurrentAttackPattern();
+            Debug.Log($"[Combat] {Actor.name} combo={_currentComboIndex} pattern={currPattern?.AttackAnimationData?.AnimationStateName ?? "null"} (timeSinceLast={timeSinceLastAttack:F2}s)");
             _isAttacking = true;
             _attacked = false;
             _attackStartTime = Time.time;
@@ -775,21 +809,28 @@ namespace Kuantech.Core
         /// <returns></returns>
         public bool IsMelee()
         {
-            AttackTypes attackType = GetCurrentAttackPattern().AttackType;
+            AttackPattern currPattern = GetCurrentAttackPattern();
+            if (currPattern == null) return false;
+            AttackTypes attackType = currPattern.AttackType;
             if (attackType == AttackTypes.RangedProjectile || attackType == AttackTypes.RangedRaycast) return false;
             return GetCurrentAttackPattern().IsMelee;
         }
 
         public AttackPattern GetCurrentAttackPattern()
         {
-            if (_currentAttackPattern == null) return DefaultAttackPattern;
-            return _currentAttackPattern;
+            var combo = _currentAttackPattern ?? DefaultAttackPattern;
+            return combo?.GetPattern(_currentComboIndex);
         }
 
         public void SetCurrentAttackPattern(AttackPattern attackPattern)
         {
-            if (attackPattern.AttackDuration < attackPattern.AttackImplementationTime) attackPattern.AttackDuration = attackPattern.AttackImplementationTime;
-            _currentAttackPattern = attackPattern;
+            ComboAttackPattern cap = new ComboAttackPattern();
+            cap.Patterns.Add(attackPattern);
+            SetCurrentComboAttackPattern(cap);
+        }
+        public void SetCurrentComboAttackPattern(ComboAttackPattern combo)
+        {
+            _currentAttackPattern = combo;
         }
         #endregion
 
@@ -911,6 +952,7 @@ namespace Kuantech.Core
 
         private void ExecuteEndAttack()
         {
+            if (!_isAttacking) return;
             _isAttacking = false;
             _lastAttackCompleteTime = Time.time;
             AttackCompletedEvent?.Invoke(this);
