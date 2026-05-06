@@ -702,7 +702,6 @@ namespace Kuantech.Core
 
             //Common
             AttackPattern currPattern = GetCurrentAttackPattern();
-            Debug.Log($"[Combat] {Actor.name} combo={_currentComboIndex} pattern={currPattern?.AttackAnimationData?.AnimationStateName ?? "null"} (timeSinceLast={timeSinceLastAttack:F2}s)");
             _isAttacking = true;
             _attacked = false;
             _attackStartTime = Time.time;
@@ -724,9 +723,25 @@ namespace Kuantech.Core
                     _animationModule.PlayAnimationData(currPattern.AttackAnimationData, animationTime / timeMultiplier);
                 }
             }
-
             AttackStartedEvent?.Invoke(this);
+            ApplyMovementSlow();
             return true;
+        }
+
+        private void ApplyMovementSlow()
+        {
+            AttackPattern currPattern = GetCurrentAttackPattern();
+            MovementModule mm = Actor.GetModule<MovementModule>();
+            float movementSlow = currPattern.MovementSlow.GetValue(_statModule);
+            float movementSpeedMultiplier = 1 - movementSlow;
+            mm.SetSpeedMultiplier(movementSpeedMultiplier);
+        }
+
+        private void RemoveMovementSlow()
+        {
+            AttackPattern currPattern = GetCurrentAttackPattern();
+            MovementModule mm = Actor.GetModule<MovementModule>();
+            mm.SetSpeedMultiplier(1);
         }
 
         /// <summary>
@@ -958,6 +973,7 @@ namespace Kuantech.Core
             if (!_isAttacking) return;
             _isAttacking = false;
             _lastAttackCompleteTime = Time.time;
+            RemoveMovementSlow(); //TODO: this is probably will be a runtime bug. We can't just set speed multiplier to 1 like this
             AttackCompletedEvent?.Invoke(this);
         }
         
