@@ -254,7 +254,8 @@ namespace Kuantech.Core
             Cleanup();
             ExecuteChangeActorState(ActorState.Despawned);
             if (VisualHandler != null) VisualHandler.ClearCurrentVisual();
-            PoolManager.PoolObject(gameObject);
+            Destroy(gameObject);
+            //PoolManager.PoolObject(gameObject);
         }
 
         // Called from FishNet callbacks — cleanup only, no pooling (FishNet owns the lifecycle)

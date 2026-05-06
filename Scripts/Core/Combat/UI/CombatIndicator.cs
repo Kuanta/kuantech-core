@@ -4,6 +4,15 @@ namespace Kuantech.Core.Combat
 {
     public class CombatIndicator : MonoBehaviour
     {
+        public enum CombatIndicatorType
+        {
+            NONE,
+            ARC,
+            LINEAR,
+            CIRCLE,
+        }
+        public virtual CombatIndicatorType Type => CombatIndicatorType.NONE;
+
         public struct CombatIndicatorData
         {
             public float Duration;

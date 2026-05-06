@@ -5,6 +5,7 @@ namespace Kuantech.Core.Combat
 {
     public class ArcCombatIndicator : CombatIndicator
     {
+        public override CombatIndicatorType Type => CombatIndicatorType.ARC;
         [SerializeField] private ArcRegion _arcRegion;
 
         protected override void Setup(CombatIndicatorData data)

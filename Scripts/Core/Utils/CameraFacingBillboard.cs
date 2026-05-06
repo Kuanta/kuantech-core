@@ -24,7 +24,7 @@ namespace Kuantech.UI
             transform.forward = MainCamera.transform.forward * Direction;
         }
 
-        private void Update()
+        private void LateUpdate()
         {
             CheckCamera();
             if (MainCamera == null) return;

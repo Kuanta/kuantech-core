@@ -5,6 +5,7 @@ namespace Kuantech.Core.Combat
 {
     public class LinearCombatIndicator : CombatIndicator
     {
+        public override CombatIndicatorType Type => CombatIndicatorType.LINEAR;
         [SerializeField] private LineRegion _lineRegion;
 
         protected override void Setup(CombatIndicatorData data)

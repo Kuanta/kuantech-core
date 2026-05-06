@@ -502,7 +502,8 @@ namespace Kuantech.Core
             projectile.Range = GetAttackRange();
             projectile.OnActorHitEvent = DamagedActorEvent;
 
-            if (currentTarget != null)
+            //Is it targeted?
+            if (currentTarget != null && pattern.AttackType == AttackTypes.TargetProjectile)
             {
                 Vector3 targetOffset = currentTarget.GetHitPoint(Actor).GetTargetPosition() - currentTarget.transform.position;
                 projectile.Shoot(Actor, null, GetAttackPosition(), GetAttackDirection(), currentTarget.transform);

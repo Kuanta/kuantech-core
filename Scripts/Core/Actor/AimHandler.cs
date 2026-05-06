@@ -100,7 +100,6 @@ namespace Kuantech.Core
         {
             if (_lockModule == null) return;
             _lockModule.Unlock(RotationLockKey, locker);
-            Debug.Log($"[AimHandler] {Actor.name}: rotation unlocked by {locker}");
         }
         #endregion
     }

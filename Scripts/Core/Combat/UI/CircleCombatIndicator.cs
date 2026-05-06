@@ -5,6 +5,7 @@ namespace Kuantech.Core.Combat
 {
     public class CircleCombatIndicator : CombatIndicator
     {
+        public override CombatIndicatorType Type => CombatIndicatorType.CIRCLE;
         [SerializeField] private CircleRegion _circleRegion;
 
         protected override void Setup(CombatIndicatorData data)

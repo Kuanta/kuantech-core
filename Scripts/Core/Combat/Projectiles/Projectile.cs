@@ -20,6 +20,7 @@ namespace Kuantech.Core
         [Header("Properties")]
         public string ProjectileId;
         public bool Is2D = false;
+        public bool RemoveUpComponent = false;
         public float Speed = 10f;
         public float Range = 10f;
         public float RotationSlerpFactor = 1000f;
@@ -209,8 +210,9 @@ namespace Kuantech.Core
 
             Reset();
 
+            //Remove up component from shootDirection
+            _direction = RemoveUpComponent ? Planar(shootDirection) : shootDirection;
 
-            _direction = shootDirection;
             transform.position = shootPosition;
             transform.rotation = GetForwardRotation(_direction);
 
