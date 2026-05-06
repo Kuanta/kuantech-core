@@ -74,6 +74,7 @@ namespace Kuantech.Core
         public UnityAction<Projectile> ShotEvent;
         public UnityAction<Projectile> LifetimeEndEvent;
         public EventHandler<GameObject> OnImpactEvent;
+        public UnityAction<Actor> OnActorHitEvent;
 
         // Runtime state
         protected bool Despawned = false;
@@ -532,6 +533,7 @@ namespace Kuantech.Core
                     KnockbackForce = Knockback,
                     AdditionalDamages = AdditionalDamages,
                 });
+                OnActorHitEvent?.Invoke(target);
             }
         }
 

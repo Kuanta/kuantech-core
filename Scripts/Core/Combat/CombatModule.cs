@@ -166,6 +166,7 @@ namespace Kuantech.Core
         public UnityAction<CombatModule> AlignedEvent;       // fires once when rotational alignment is achieved
         public UnityAction<CombatModule> AttackedEvent;      // Deals damage here
         public UnityAction<CombatModule> AttackCompletedEvent;
+        public UnityAction<Actor> DamagedActorEvent;
 
 
         //Quick module references
@@ -499,7 +500,8 @@ namespace Kuantech.Core
                 projectile.KnockbackTime = pattern.KnockbackTime.GetValue(_statModule);
             }
             projectile.Range = GetAttackRange();
-             
+            projectile.OnActorHitEvent = DamagedActorEvent;
+
             if (currentTarget != null)
             {
                 Vector3 targetOffset = currentTarget.GetHitPoint(Actor).GetTargetPosition() - currentTarget.transform.position;
@@ -590,6 +592,7 @@ namespace Kuantech.Core
             }
        
             actor.OnHit(hitInfo);
+            DamagedActorEvent?.Invoke(actor);
             return true;
         }
         

@@ -4,8 +4,10 @@ using UnityEngine;
 
 namespace Kuantech.Core.Combat
 {
+   
+    
     [Serializable]
-    public class StatModifierStatusEffectApplyData : StatusEffectApplyData
+    public class StatModifierStatusEffectConfig : StatusEffectConfig
     {
         public StatModifierData StatModifierData;
     }
@@ -18,14 +20,8 @@ namespace Kuantech.Core.Combat
         public override void Initialize(StatusEffectAsset statusEffectAsset, StatusEffectApplyData applyApplyData)
         {
             base.Initialize(statusEffectAsset, applyApplyData);
-            if (applyApplyData is StatModifierStatusEffectApplyData modifierData)
-            {
-                Modifier = new StatModifier(modifierData.StatModifierData);
-            }
-            else
-            {
-                Debug.LogError($"Invalid StatusEffectData type. Expected ModifierStatusEffectData.");
-            }    
+            var config = (StatModifierStatusEffectConfig)statusEffectAsset.Config;
+            Modifier = new StatModifier(config.StatModifierData);
         }
 
         public override void SetRank(int rank)

@@ -74,6 +74,9 @@ namespace Kuantech.Rpg.Skills
         [Tooltip("Skills added here are given to the actor at Initialize — useful for player prefabs.")]
         public List<SkillDataAsset> DefaultSkills;
 
+        [Header("Default Passive Skills")]
+        public List<PassiveSkillDataAsset> DefaultPassiveSkills;
+
         [Header("Lock")]
         public LockKey SkillLockKey;
 
@@ -83,6 +86,8 @@ namespace Kuantech.Rpg.Skills
         private Dictionary<string, Skill> _skills = new Dictionary<string, Skill>();
         private List<Skill> _activeSkills = new();
 
+        private Dictionary<string, PassiveSkill> _passiveSkills = new();
+
         //Runtime
         private HealthcareModule _healthcareModule;
         private LockModule _lockModule;
@@ -91,9 +96,13 @@ namespace Kuantech.Rpg.Skills
         public override void Initialize()
         {
             base.Initialize();
-            if (DefaultSkills == null) return;
-            foreach (var asset in DefaultSkills)
-                if (asset != null) AddSkill(asset);
+            if (DefaultSkills != null)
+                foreach (var asset in DefaultSkills)
+                    if (asset != null) AddSkill(asset);
+
+            if (DefaultPassiveSkills != null)
+                foreach (var asset in DefaultPassiveSkills)
+                    if (asset != null) AddPassiveSkill(asset);
         }
 
         public override void OnModulesInitialized()
@@ -105,6 +114,9 @@ namespace Kuantech.Rpg.Skills
             {
                 _lockModule.OnLocked += OnLockHandler;
             }
+
+            foreach (var passive in _passiveSkills.Values)
+                passive.Activate();
         }
 
         public override void ModuleUpdate()
@@ -116,14 +128,13 @@ namespace Kuantech.Rpg.Skills
             {
                 Skill skill = _activeSkills[i];
                 if (skill.IsCasting())
-                {
                     skill.UpdateSkill(Time.deltaTime);
-                }
                 else
-                {
                     _activeSkills.RemoveAt(i);
-                }
             }
+
+            foreach (var passive in _passiveSkills.Values)
+                passive.Update(Time.deltaTime);
         }
 
         #region Slot
@@ -170,6 +181,38 @@ namespace Kuantech.Rpg.Skills
         }
         #endregion
 
+
+        #region Passive Skill Management
+
+        public PassiveSkill AddPassiveSkill(PassiveSkillDataAsset dataAsset)
+        {
+            if (dataAsset == null || _passiveSkills.ContainsKey(dataAsset.SkillId)) return null;
+            var passive = new PassiveSkill();
+            passive.Initialize(this, dataAsset);
+            _passiveSkills[dataAsset.SkillId] = passive;
+            return passive;
+        }
+
+        public void RemovePassiveSkill(string skillId)
+        {
+            if (!_passiveSkills.TryGetValue(skillId, out var passive)) return;
+            passive.Deactivate();
+            _passiveSkills.Remove(skillId);
+        }
+
+        public void RemovePassiveSkill(PassiveSkillDataAsset dataAsset)
+            => RemovePassiveSkill(dataAsset.SkillId);
+
+        public PassiveSkill GetPassiveSkill(string skillId)
+        {
+            _passiveSkills.TryGetValue(skillId, out var passive);
+            return passive;
+        }
+
+        public bool HasPassiveSkill(string skillId) => _passiveSkills.ContainsKey(skillId);
+        public bool HasPassiveSkill(PassiveSkillDataAsset dataAsset) => HasPassiveSkill(dataAsset.SkillId);
+
+        #endregion
 
         #region Queries
 
@@ -310,6 +353,9 @@ namespace Kuantech.Rpg.Skills
         {
             base.Cleanup();
             _skills.Clear();
+            foreach (var passive in _passiveSkills.Values)
+                passive.Deactivate();
+            _passiveSkills.Clear();
         }
 
         protected override ActorModuleSerializableData InstantiateState()
