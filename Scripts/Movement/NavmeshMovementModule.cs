@@ -11,6 +11,8 @@ namespace Kuantech.Core
         [SerializeField] private bool UpdateRotation = false;
         [Header("Knockback")]
         public float MinKnockbackForceRequired = 0.01f;
+        [Tooltip("Optional. If assigned, knockback uses MovePosition (respects colliders) instead of raw transform.")]
+        [SerializeField] private Rigidbody KnockbackRigidbody;
         
         private MovementModule _movementModule;
         
@@ -37,7 +39,13 @@ namespace Kuantech.Core
         private float _lastEnsureTime;
         public override void ModuleUpdate()
         {
-            if (!Actor.IsAlive() || _movementModule.IsMovementLocked()) return;
+            if (!Actor.IsAlive()) return;
+
+            // Knockback/force movement bypasses the movement lock so enemies can be
+            // knocked back even while their movement is locked (e.g. during an attack).
+            if (CheckKnockback()) return;
+
+            if (_movementModule.IsMovementLocked()) return;
 
             if (!IsOnNavmesh() && Time.time - _lastEnsureTime > 0.5f)
             {
@@ -46,21 +54,11 @@ namespace Kuantech.Core
                 return;
             }
             UpdateSpeed();
-            
-            //Check knockback
-            if(!CheckKnockback())
+
+            if (_movementModule != null)
             {
-                if (_movementModule != null)
-                {
-                    //Set animation vectors
-                    Vector3 movementVector = !IsMoving() ? Vector3.zero : GetAgentVelocity().normalized;
-                    _movementModule.SetMovementVector(movementVector);
-                    //
-                    // if (IsMoving())
-                    // {
-                    //     Actor.MotionVectorsHandler.SetTargetVector(movementVector);
-                    // }
-                }
+                Vector3 movementVector = !IsMoving() ? Vector3.zero : GetAgentVelocity().normalized;
+                _movementModule.SetMovementVector(movementVector);
             }
         }
 
@@ -70,7 +68,10 @@ namespace Kuantech.Core
             Vector3 forceMove = Actor.MotionVectorsHandler.ForceMoveVector;
             if (forceMove.sqrMagnitude < MinKnockbackForceRequired) return false;
             DisableAgent();
-            Actor.transform.position += forceMove * Time.deltaTime;
+            if (KnockbackRigidbody != null)
+                KnockbackRigidbody.MovePosition(KnockbackRigidbody.position + forceMove * Time.deltaTime);
+            else
+                Actor.transform.position += forceMove * Time.deltaTime;
             return true;
         }
         #endregion
