@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using Kuantech.Core;
-using Kuantech.Core.Combat;
 using UnityEngine;
 
 namespace Kuantech.Rpg.Skills

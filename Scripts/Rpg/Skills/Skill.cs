@@ -118,8 +118,8 @@ namespace Kuantech.Rpg.Skills
                     if (castData.Target == null) return false;
                     break;
                 case Skills.SkillDataAsset.SkillCastTypes.Directional:
-                    if (castData.Direction.sqrMagnitude.Equals(0)) return false;
-                    break;
+                    return castData.Direction.sqrMagnitude > 0;
+    
             }
 
             float range = GetRange();

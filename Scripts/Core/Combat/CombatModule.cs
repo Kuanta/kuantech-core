@@ -49,7 +49,7 @@ namespace Kuantech.Core
         public StatBasedVariable Angle;
         public StatBasedVariable Width;
         public StatBasedVariable Range;
-        public bool ShowIndicator;
+        public CombatIndicator.CombatIndicatorType IndicatorType = CombatIndicator.CombatIndicatorType.NONE;
         
         [Header("Required Resource")]
         public ResourceAsset RequiredResource;

@@ -1,13 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
-using Kuantech.Combat.Kuantech.Core;
+using Kuantech.Core.Combat;
 using UnityEngine;
 
 namespace Kuantech.Core
 {
     public class CombatManager : SubManager
     {
+        [Header("Combat Indicators")]
+        [SerializeField] private List<CombatIndicator> CombatIndicators;
+
         [Header("Damage Texts")] [SerializeField]
         private FloatingDamageText DamageTextPrefab;
 
@@ -75,6 +78,15 @@ namespace Kuantech.Core
         {
             await base.Initialize(gameManager);
             _baseFixedDeltaTime = Time.fixedDeltaTime;
+
+            if(CombatIndicators != null)
+            {
+                _combatIndicators = new Dictionary<CombatIndicator.CombatIndicatorType, CombatIndicator>();
+                foreach(var ci in CombatIndicators)
+                {
+                    _combatIndicators.Add(ci.Type, ci);
+                }
+            }
         }
 
         private void Update()
@@ -200,6 +212,26 @@ namespace Kuantech.Core
 
         #endregion
         
+        #region CombatIndicators
+        private Dictionary<CombatIndicator.CombatIndicatorType, CombatIndicator> _combatIndicators = new Dictionary<CombatIndicator.CombatIndicatorType, CombatIndicator>();
+
+        public static CombatIndicator GetCombatIndicator(CombatIndicator.CombatIndicatorType type)
+        {
+            var ctx = GetContext<CombatManager>();
+            if (ctx == null || ctx._combatIndicators == null || !ctx._combatIndicators.ContainsKey(type)) return null;
+            return ctx._combatIndicators[type];
+        }
+        public static void ShowCombatIndicator(CombatIndicator.CombatIndicatorType type, CombatIndicator.CombatIndicatorData data)
+        {
+            var ctx = GetContext<CombatManager>();
+            if(ctx == null) return;
+            CombatIndicator indicator = GetCombatIndicator(type);
+            if (indicator == null) return;
+            indicator.DespawnAfterEnd = true;
+            indicator.Show(data);
+        }
+        #endregion
+
         public override void Cleanup()
         {
             base.Cleanup();

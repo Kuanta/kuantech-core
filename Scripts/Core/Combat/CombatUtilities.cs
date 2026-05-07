@@ -271,6 +271,33 @@ namespace Kuantech.Core.Combat
             }
         }
         
+        public static void HitActorsInArc3D(Vector3 center,
+            Vector3 direction,
+            float range,
+            float angle,
+            LayerMask layerMask,
+            HitInfo hitInfo,
+            HashSet<int> factionFilter = null,
+            UnityAction<Actor> damageHandler = null,
+            float backOffset = 0.5f,
+            float forwardGuard = 0f,
+            bool useClosestPoint = true,
+            int maxActorCount = 128)
+        {
+            var actors = GetActorsInArc3D(center, direction, range, angle, layerMask, factionFilter, backOffset, forwardGuard, useClosestPoint, maxActorCount);  
+            foreach(var actor in actors)
+            {
+                if(actor == null || !actor.IsAlive()) continue;
+                int actorFaction = actor.GetFactionId();
+                if (factionFilter != null && !factionFilter.IsNullOrEmpty() && !factionFilter.Contains(actorFaction)) continue;
+                actor.OnHit(hitInfo);
+                if (damageHandler != null)
+                {
+                    damageHandler(actor);
+                }
+            }
+        }
+        
         /// <summary>
         /// Damages actors in a box
         /// </summary>
