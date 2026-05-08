@@ -234,7 +234,7 @@ namespace Kuantech.Rpg.Skills
         }
         public bool CanCastSkill(SkillDataAsset skillDataAsset, ActionCastData skillCastData)
         {
-            if (!CanSkillBeCasted(skillDataAsset)) return false;
+            if (!IsSkillReady(skillDataAsset)) return false;
             Skill skill = GetSkillByDataAsset(skillDataAsset);
             return skill.CanBeCast(skillCastData);
         }
@@ -244,7 +244,7 @@ namespace Kuantech.Rpg.Skills
         /// </summary>
         /// <param name="skillDataAsset"></param>
         /// <returns></returns>
-        public bool CanSkillBeCasted(SkillDataAsset skillDataAsset)
+        public bool IsSkillReady(SkillDataAsset skillDataAsset)
         {
             if (!HasSkill(skillDataAsset)) return false;
 

@@ -1,13 +1,39 @@
 using System.Collections.Generic;
+using Kuantech.Core;
+using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.AI
 {
-    public class ActionPlanner : Kuantech.Core.ActorModule
+    public class ActionPlanner : ActorModule
     {
         [SerializeField] private List<ActionEntry> Entries = new();
 
+        
+        //Runtime
         public Action CurrentAction { get; private set; }
+        private PriorityBasedSelector<ActionEntry> _selector = new PriorityBasedSelector<ActionEntry>();
+        public float Cooldown = 1.0f;
+        private float _lastActionDecidedTime;
+
+        public override void Initialize()
+        {
+            if (Initialized) return;
+            base.Initialize();
+            
+            _selector = new PriorityBasedSelector<ActionEntry>();
+            foreach(var entry in Entries)
+            {
+                _selector.AddElement(new PriorityBasedSelector<ActionEntry>.PriorityBasedSelectorElement
+                {
+                    Element = entry,
+                    Priority = entry.Priority,
+                    Probability = entry.Probability,
+                }, false);
+            }
+
+            _selector.RebuildElements();
+        }
 
         /// <summary>
         /// Evaluates all entries and activates the highest-priority valid one.
@@ -16,24 +42,11 @@ namespace Kuantech.AI
         /// </summary>
         public bool TrySelectAction()
         {
-            ActionEntry best = null;
-            float bestPriority = float.MinValue;
-
-            foreach (var entry in Entries)
-            {
-                if (entry.Asset == null) continue;
-                if (!entry.IsReady()) continue;
-                if (!entry.EvaluateConditions(Actor)) continue;
-                if (entry.Priority > bestPriority)
-                {
-                    bestPriority = entry.Priority;
-                    best = entry;
-                }
-            }
-
-            if (best == null) return false;
-
-            ActivateEntry(best);
+            if(Time.time - _lastActionDecidedTime < Cooldown) return false;
+            ActionEntry selectedEntry = _selector.SelectElement(Actor);
+            if (selectedEntry == null) return false;
+            ActivateEntry(selectedEntry);
+            _lastActionDecidedTime = Time.time;
             return true;
         }
 

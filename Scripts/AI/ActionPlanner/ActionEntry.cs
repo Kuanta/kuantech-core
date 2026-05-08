@@ -7,10 +7,11 @@ using UnityEngine;
 namespace Kuantech.AI
 {
     [Serializable]
-    public class ActionEntry
+    public class ActionEntry : IPriorityBasedSelectorElement
     {
         public ActionAsset Asset;
-        public float Priority;
+        public int Priority;
+        public float Probability;
         public float Cooldown;
         [SerializeReference] public List<ActorCondition> Conditions = new();
 
@@ -26,8 +27,24 @@ namespace Kuantech.AI
             return true;
         }
 
+        //Checks both readiness and conditions
+        public bool CanBeActivated(Actor owner)
+        {
+            return IsReady() && EvaluateConditions(owner);
+        }
+
         public void RecordExecution() => _lastExecutedTime = Time.time;
 
         public void ResetCooldown() => _lastExecutedTime = float.MinValue;
+
+        public bool CanBeSelected(object userData = null)
+        {
+            if(userData is Actor owner)
+            {
+                return CanBeActivated(owner);
+            }
+            return IsReady();
+        }
+
     }
 }

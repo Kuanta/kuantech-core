@@ -41,9 +41,15 @@ namespace Kuantech.Core
         {
             if (!Actor.IsAlive()) return;
 
-            // Knockback/force movement bypasses the movement lock so enemies can be
-            // knocked back even while their movement is locked (e.g. during an attack).
-            if (CheckKnockback()) return;
+            // Knockback bypasses movement lock. Agent is disabled here regardless of
+            // whether a Rigidbody is present; actual position update is split below.
+            if (IsKnockbackActive())
+            {
+                DisableAgent();
+                if (KnockbackRigidbody == null)
+                    Actor.transform.position += Actor.MotionVectorsHandler.ForceMoveVector * Time.deltaTime;
+                return;
+            }
 
             if (_movementModule.IsMovementLocked()) return;
 
@@ -62,17 +68,20 @@ namespace Kuantech.Core
             }
         }
 
-        #region Knockback
-        protected virtual bool CheckKnockback()
+        public override void ModuleFixedUpdate()
         {
-            Vector3 forceMove = Actor.MotionVectorsHandler.ForceMoveVector;
-            if (forceMove.sqrMagnitude < MinKnockbackForceRequired) return false;
-            DisableAgent();
-            if (KnockbackRigidbody != null)
-                KnockbackRigidbody.MovePosition(KnockbackRigidbody.position + forceMove * Time.deltaTime);
-            else
-                Actor.transform.position += forceMove * Time.deltaTime;
-            return true;
+            if (KnockbackRigidbody == null) return;
+            if (IsKnockbackActive())
+            {
+                KnockbackRigidbody.MovePosition(KnockbackRigidbody.position + Actor.MotionVectorsHandler.ForceMoveVector * Time.fixedDeltaTime);
+            }
+           
+        }
+
+        #region Knockback
+        private bool IsKnockbackActive()
+        {
+            return Actor.MotionVectorsHandler.ForceMoveVector.sqrMagnitude >= MinKnockbackForceRequired;
         }
         #endregion
 
@@ -185,12 +194,18 @@ namespace Kuantech.Core
             if (newState == ActorState.Spawned)
             {
                 NavMeshAgent.Warp(transform.position);
+                SyncRigidbodyToTransform(); // reset interpolation buffer after warp
             }
             if (newState != ActorState.Spawned)
             {
-                //On actor state changed to something else than spawned, stop the agent
                 Stop();
             }
+        }
+
+        private void SyncRigidbodyToTransform()
+        {
+            if (KnockbackRigidbody == null) return;
+            KnockbackRigidbody.position = Actor.transform.position;
         }
         
         public static bool EnsureOnNavMesh(NavMeshAgent agent, float searchRadius = 2f)
