@@ -93,7 +93,6 @@ namespace Kuantech.Core
             if (_lockModule == null)     { Debug.LogWarning($"[AimHandler] {Actor.name}: LockModule is null");      return; }
             if (RotationLockKey == null) { Debug.LogWarning($"[AimHandler] {Actor.name}: RotationLockKey is null"); return; }
             _lockModule.Lock(RotationLockKey, locker);
-            Debug.Log($"[AimHandler] {Actor.name}: rotation locked by {locker}");
         }
 
         public void UnlockRotation(object locker)

@@ -22,10 +22,18 @@ namespace Kuantech.Rpg.Skills
     {
         public enum SkillBehaviourFxPlayType
         {
-            OnCaster, //Attached to caster
-            AtCaster, //At casters position, without attaching to caster
+            OnCaster,    //Attached to caster
+            AtCaster,    //At casters position, without attaching to caster
             AtCastPoint, //At point of cast
-            OnTarget, //On top of the target
+            OnTarget,    //On top of the target
+        }
+
+        public enum DirectionMode
+        {
+            None,             // Don't override rotation
+            CastDirection,    // Frozen direction from skill cast data
+            ActorForward,     // Actor's transform.forward at effect play time
+            LiveTarget,       // Recalculated toward live target position
         }
 
         public SkillBehaviourFxPlayType PlayType;
@@ -33,8 +41,8 @@ namespace Kuantech.Rpg.Skills
         public bool StopOnBehaviourEnd;
         [Tooltip("Useful for OnCaster or AtCaster. If play type is OnTarget, effect will be played attached to given slot")]
         public string ActorSlotName;
-        [Tooltip("If set to true, will face the effect towards the direction")]
-        public bool RotateTowardsDirection;
+        [Tooltip("Which direction source to use when rotating the effect")]
+        public DirectionMode FxDirectionMode;
     }
     
     [Serializable]
@@ -56,9 +64,15 @@ namespace Kuantech.Rpg.Skills
         [Tooltip("If set to true, skill will wait for rotation alignment before starting the behaviour")]
         public bool WaitForRotationAlign;
 
-        [Header("Effects")] 
+        [Header("Locks")]
+        public bool LockMovement;
+        public float MovementLockDelay;
+        public bool LockRotation;
+        public float RotationLockDelay;
+
+        [Header("Effects")]
         public List<FxPlayData> SkillBehaviourFxDatas;
-        
+
         //Animation data
         public AnimationData BehaviourStartAnimationData;
         
@@ -77,6 +91,8 @@ namespace Kuantech.Rpg.Skills
         private float _castStartTime;
         protected bool _playedEffect;
         private bool _implemented;
+        private bool _movementLocked;
+        private bool _rotationLocked;
         public HashSet<Effect> PlayedEffects = new HashSet<Effect>();
         
         /// <summary>
@@ -106,11 +122,16 @@ namespace Kuantech.Rpg.Skills
             _isCompleted = false;
             _playedEffect = false;
             _implemented = false;
+            _movementLocked = false;
+            _rotationLocked = false;
 
             //Play animation
             PlayBehaviourAnimation();
 
             OnBehaviourStarted();
+
+            // Apply locks with zero delay immediately (avoids one-frame gap)
+            TryApplyLocks(0f);
         }
 
         protected virtual void PlayBehaviourAnimation()
@@ -192,9 +213,15 @@ namespace Kuantech.Rpg.Skills
                         break;
                 }
 
-                if (effect != null && fx.RotateTowardsDirection)
+                if (effect != null && fx.FxDirectionMode != FxPlayData.DirectionMode.None)
                 {
-                    effect.transform.forward = CurrentSkillCastData.Direction;
+                    effect.transform.forward = fx.FxDirectionMode switch
+                    {
+                        FxPlayData.DirectionMode.CastDirection => CurrentSkillCastData.Direction,
+                        FxPlayData.DirectionMode.ActorForward  => GetParentActor().transform.forward,
+                        FxPlayData.DirectionMode.LiveTarget    => GetLiveDirection(),
+                        _                                        => GetLiveDirection(),
+                    };
                 }
                 if (effect != null && fx.StopOnBehaviourEnd)
                 {
@@ -207,6 +234,46 @@ namespace Kuantech.Rpg.Skills
             
         }
         
+        private void TryApplyLocks(float elapsedTime)
+        {
+            if (BehaviourData.LockMovement && !_movementLocked && elapsedTime >= BehaviourData.MovementLockDelay)
+            {
+                Actor actor = GetParentActor();
+                if (actor != null)
+                {
+                    MovementModule mm = actor.GetModule<MovementModule>();
+                    if (mm != null) { mm.Lock(this); _movementLocked = true; }
+                }
+            }
+            if (BehaviourData.LockRotation && !_rotationLocked && elapsedTime >= BehaviourData.RotationLockDelay)
+            {
+                Actor actor = GetParentActor();
+                if (actor != null)
+                {
+                    AimHandler ah = actor.GetModule<AimHandler>();
+                    if (ah != null) { ah.LockRotation(this); _rotationLocked = true; }
+                }
+            }
+        }
+
+        private void ReleaseLocks()
+        {
+            Actor actor = GetParentActor();
+            if (actor == null) return;
+            if (_movementLocked)
+            {
+                MovementModule mm = actor.GetModule<MovementModule>();
+                if (mm != null) mm.Unlock(this);
+                _movementLocked = false;
+            }
+            if (_rotationLocked)
+            {
+                AimHandler ah = actor.GetModule<AimHandler>();
+                if (ah != null) ah.UnlockRotation(this);
+                _rotationLocked = false;
+            }
+        }
+
         public void UpdateBehaviour()
         {
             if (_isCompleted) return;
@@ -215,6 +282,8 @@ namespace Kuantech.Rpg.Skills
             bool  isNetworked = KtNetworkManager.IsNetworked();
             bool  isServer    = ParentSkill.ParentSpellBook.IsServerInitialized;
             bool  isClient    = ParentSkill.ParentSpellBook.IsClientInitialized;
+
+            TryApplyLocks(elapsedTime);
 
             if (elapsedTime >= BehaviourData.CastTime && !_implemented)
             {
@@ -473,7 +542,7 @@ namespace Kuantech.Rpg.Skills
         
         public virtual void ClearBehaviour()
         {
-            //clear effects
+            ReleaseLocks();
             StopSkillEffects();
         }
         

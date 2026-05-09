@@ -247,6 +247,9 @@ namespace Kuantech.Rpg.Skills
         public bool IsSkillReady(SkillDataAsset skillDataAsset)
         {
             if (!HasSkill(skillDataAsset)) return false;
+            
+            Skill skill = GetSkillByDataAsset(skillDataAsset);
+            if (!skill.IsSkillReady()) return false;
 
             //Check resource
             if (_healthcareModule != null && skillDataAsset.RequiredResource != null)

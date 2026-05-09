@@ -23,12 +23,6 @@ namespace Kuantech.Rpg.Skills
         public SkillCastTypes SkillCastType;
         public bool WaitRotationalAlignToTarget;
 
-        [Header("Cast Locks")]
-        [Tooltip("Prevents movement input while this skill is casting")]
-        public bool LockMovementOnCast = false;
-        [Tooltip("Prevents rotation while this skill is casting. If WaitRotationalAlignToTarget is true, rotation locks after alignment.")]
-        public bool LockRotationOnCast = false;
-        
         [Header("Required Resource")]
         public ResourceAsset RequiredResource;
         public float RequiredResourceAmount;

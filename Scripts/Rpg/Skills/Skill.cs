@@ -82,19 +82,23 @@ namespace Kuantech.Rpg.Skills
             _isCasting = true;
         }
         
+        public bool IsSkillReady()
+        {
+            if (SkillDataAsset == null || _isCasting) return false;
+            float elapsedTime = Time.time - _lastCastTime;
+
+            if (elapsedTime < SkillDataAsset.SkillCooldown) return false;
+
+            //todo: Check skill resource
+            return true;
+        }
         /// <summary>
         /// Check if the skill can be casted.
         /// </summary>
         /// <returns></returns>
         public virtual bool CanBeCast(ActionCastData castData)
         {
-            if (SkillDataAsset == null || _isCasting) return false;
-            float elapsedTime = Time.time - _lastCastTime;
-            
-            //todo(skill): Check skill resource here
-            if (elapsedTime < SkillDataAsset.SkillCooldown) return false;
-    
-            
+            if(!IsSkillReady()) return false;
             //Check cast data
             if (!CheckCastData(castData)) return false;
             
@@ -161,12 +165,6 @@ namespace Kuantech.Rpg.Skills
             CurrentSkilLBehaviourIndex = 0;
             ParentSpellBook.OnSkillCastStarted(this);
 
-            if (SkillDataAsset.LockMovementOnCast)
-            {
-                MovementModule mm = ParentSpellBook.Actor.GetModule<MovementModule>();
-                if (mm != null) mm.Lock(this);
-            }
-
             _requireAlignment = SkillDataAsset.WaitRotationalAlignToTarget;
             if (_requireAlignment)
             {
@@ -205,24 +203,9 @@ namespace Kuantech.Rpg.Skills
         
         public void EndCast()
         {
-            ReleaseCastLocks();
             ClearCurrentSkillBehaviour();
             Reset();
             ParentSpellBook.OnSkillCastEnded(this);
-        }
-
-        private void ReleaseCastLocks()
-        {
-            if (SkillDataAsset.LockMovementOnCast)
-            {
-                MovementModule mm = ParentSpellBook.Actor.GetModule<MovementModule>();
-                if (mm != null) mm.Unlock(this);
-            }
-            if (SkillDataAsset.LockRotationOnCast)
-            {
-                AimHandler ah = ParentSpellBook.Actor.GetModule<AimHandler>();
-                if (ah != null) ah.UnlockRotation(this);
-            }
         }
         #endregion
 
@@ -230,12 +213,6 @@ namespace Kuantech.Rpg.Skills
 
         public void StartSkillBehaviour(int skillEffectIndex)
         {
-            if (skillEffectIndex == 0 && SkillDataAsset.LockRotationOnCast)
-            {
-                AimHandler ah = ParentSpellBook.Actor.GetModule<AimHandler>();
-                if (ah != null) ah.LockRotation(this);
-            }
-
             CurrentSkillBehaviour = _skillBehaviours[skillEffectIndex];
             CurrentSkillBehaviour.StartBehaviour(CurrentSkillCastData);
             ParentSpellBook.OnSkillBehaviourStarted(CurrentSkillBehaviour);

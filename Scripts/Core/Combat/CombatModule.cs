@@ -921,7 +921,7 @@ namespace Kuantech.Core
         /// <returns></returns>
         public bool IsInAttackRange(WorldPoint target)
         {
-            float dist = Vector3.Magnitude(target.GetTargetPosition() - Actor.GetActorLocation()) - target.Radius;
+            float dist = Vector3.Magnitude(target.GetTargetPosition() - Actor.GetActorLocation()) - target.Radius - Actor.ActorRadius;
             return dist <= (GetAttackRange() + RangeTolerance);
         }
         #endregion
