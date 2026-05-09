@@ -149,7 +149,6 @@ namespace Kuantech.Core
         {
             if (!Initialized)
                 Initialize();
-            Debug.Log("Spawning "+name);
             ResetActor();
             ChangeActorState(ActorState.Spawned);
         }
