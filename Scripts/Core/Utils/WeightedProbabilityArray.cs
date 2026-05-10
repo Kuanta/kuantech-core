@@ -220,6 +220,12 @@ namespace Kuantech.Core.Utils
             return Elements.IsNullOrEmpty();
         }
         
+        public int GetCount()
+        {
+            if(Elements.IsNullOrEmpty()) return 0;
+            return Elements.Count;
+        }
+
         public void Clear()
         {
             Elements.Clear();

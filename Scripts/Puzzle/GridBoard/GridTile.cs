@@ -29,6 +29,27 @@ namespace Kuantech.Puzzle
             Column = col;
             Layer = layer;
         }
+        public void Invert()
+        {
+            Row = -Row;
+            Column = -Column;
+            Layer = -Layer;
+        }
+
+        public void Rotate(float angle)
+        {
+            int sign = Math.Sign(angle);
+            angle = Math.Abs(angle);
+            Vector2 curr = ToVector2();
+            while(angle >= 90)
+            {
+                //rotate curr 90 * sign degrees
+                curr = new Vector2(-curr.y * sign, curr.x * sign);
+                angle -= 90;
+            }
+            Row = (int)curr.y;
+            Column = (int)curr.x;
+        }
         
         public static GridTileCoordinate FromVector2(Vector2Int rowCol)
         {
@@ -58,6 +79,16 @@ namespace Kuantech.Puzzle
             );
         }
 
+        public static GridTileCoordinate operator -(GridTileCoordinate coord, GridTileCoordinate other)
+        {
+            return new GridTileCoordinate
+            (
+                row: coord.Row - other.Row,
+                col: coord.Column - other.Column,
+                layer: coord.Layer
+            );
+        }
+
         public override BoardTileCoordinate GetGlobalCoordinate(BoardTileCoordinate localCoordinate)
         {
             return new GridTileCoordinate()
@@ -83,6 +114,20 @@ namespace Kuantech.Puzzle
                 hash = hash * 23 + Layer.GetHashCode();
                 return hash;
             }
+        }
+
+        public string Stringfy()
+        {
+            return $"Row: {Row}, Col: {Column}, Layer: {Layer}";
+        }
+
+        public Vector2Int ToVector2Int()
+        {
+            return new Vector2Int(Column, Row);
+        }
+        public Vector2 ToVector2()
+        {
+            return new Vector2(Column, Row);
         }
     }
     
