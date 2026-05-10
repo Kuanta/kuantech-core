@@ -237,18 +237,26 @@ namespace Kuantech.Rpg
         
         public float GetAttributeValue(AttributeAsset attributeAsset)
         {
-            if(attributeAsset == null)
-            {
-                return 0f;
-            }
-            return GetAttributeValue(attributeAsset.Id);
+            if (attributeAsset == null) return 0f;
+            return GetAttributeValue(attributeAsset.Id, null);
+        }
+
+        public float GetAttributeValue(AttributeAsset attributeAsset, HashSet<AttributeAsset> visiting)
+        {
+            if (attributeAsset == null) return 0f;
+            return GetAttributeValue(attributeAsset.Id, visiting);
         }
 
         public float GetAttributeValue(string statId)
         {
+            return GetAttributeValue(statId, null);
+        }
+
+        private float GetAttributeValue(string statId, HashSet<AttributeAsset> visiting)
+        {
             Attribute att = GetAttribute(statId);
             if (att == null) return 0f;
-            return att.GetValue(GetActorLevel());
+            return att.GetValue(GetActorLevel(), this, visiting);
         }
 
         /// <summary>

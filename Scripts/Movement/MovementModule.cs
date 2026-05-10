@@ -111,10 +111,9 @@ namespace Kuantech.Core
         {
             if (IsMovementLocked()) return 0f;
             StatsModule sm = Actor.GetModule<StatsModule>();
-            if (sm == null) return Speed * GetSpeedMultiplier();
-            Attribute speedAtt = sm.GetAttribute(SpeedAttribute);
-            if (speedAtt == null) return Speed;
-            return speedAtt.GetValue(sm.GetActorLevel()) * GetSpeedMultiplier();
+            if (sm == null || SpeedAttribute == null) return Speed * GetSpeedMultiplier();
+            float speedVal = sm.GetAttributeValue(SpeedAttribute);
+            return speedVal * GetSpeedMultiplier();
         }
 
         public float GetNormalizedSpeed()

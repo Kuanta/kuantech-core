@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Kuantech.Rpg
@@ -67,26 +68,36 @@ namespace Kuantech.Rpg
         
         public float GetBaseValue(int level)
         {
-            float finalValue = BaseValue + Rank * ValuePerRank + level * ValuePerLevel;
-            if (Limits.x != 0 && Limits.y != 0)
+            return BaseValue + Rank * ValuePerRank + level * ValuePerLevel;
+        }
+
+        public float GetValue(int level, StatsModule statsModule, HashSet<AttributeAsset> visiting = null)
+        {
+            float val = GetBaseValue(level);
+
+            if (attributeAsset != null && attributeAsset.Dependencies != null)
             {
-                finalValue = Mathf.Clamp(finalValue, Limits.x, Limits.y);
+                visiting ??= new HashSet<AttributeAsset>();
+                if (visiting.Add(attributeAsset))
+                {
+                    foreach (var dep in attributeAsset.Dependencies)
+                    {
+                        if (dep.DependentAttribute == null || dep.DependencyFormula == null) continue;
+                        float source = statsModule.GetAttributeValue(dep.DependentAttribute, visiting);
+                        val += dep.DependencyFormula.Evaluate(source);
+                    }
+                    visiting.Remove(attributeAsset);
+                }
+                else
+                {
+                    Debug.LogWarning($"[Attribute] Circular dependency on '{attributeAsset.Id}' — skipping.");
+                }
             }
 
-            return finalValue;
-        }
-        
+            val = (val + FlatModifier) * PercentAddModifier * PercentMultModifier;
 
-
-        public float GetValue(int level)
-        {
-            float baseVal = GetBaseValue(level);
-    
-            float val = baseVal + FlatModifier;
-    
-            val *= PercentAddModifier;
-    
-            val *= PercentMultModifier;
+            if (Limits.x != 0 || Limits.y != 0)
+                val = Mathf.Clamp(val, Limits.x, Limits.y);
 
             return val;
         }
