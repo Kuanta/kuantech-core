@@ -46,26 +46,33 @@ namespace Kuantech.Core
         [Header("Attack Shape")]
         public AttackTypes AttackType;
         public bool IsMelee;
-        public StatBasedVariable Angle;
-        public StatBasedVariable Width;
-        public StatBasedVariable Range;
+
+        #region Attributr Based Variables
+        [Header("Damage")]
+        public AtributeBasedDamageVariable Damage;
+        public List<AtributeBasedDamageVariable> AdditionalDamages;
+
+        [Header("Splash Damage")]
+        public AtributeBasedDamageVariable SplashDamage;
+        public List<AtributeBasedDamageVariable> AdditionalSplashDamages;
+
+        [Header("hape")]
+        public AttributeBasedVariable SplashRadius;
+        public AttributeBasedVariable Angle;
+        public AttributeBasedVariable Width;
+        public AttributeBasedVariable Range;
         public CombatIndicator.CombatIndicatorType IndicatorType = CombatIndicator.CombatIndicatorType.NONE;
-        
+
+        [Header("Knockback")]
+        public AttributeBasedVariable Knockback;
+        public AttributeBasedVariable KnockbackTime;
+
+        #endregion
+
+
         [Header("Required Resource")]
         public ResourceAsset RequiredResource;
         public float RequiredResourceAmount = 0;
-
-        
-        [Header("Damage")]
-        public StatBasedDamageVariable Damage;
-        public List<StatBasedDamageVariable> AdditionalDamages;
-        
-        [Header("Splash Damage")]
-        public StatBasedDamageVariable SplashDamage;
-        public List<StatBasedDamageVariable> AdditionalSplashDamages;
-        
-        public StatBasedVariable SplashRadius;
-        
         
         [Header("Timings")] 
         public float AttackImplementationTime;
@@ -80,20 +87,16 @@ namespace Kuantech.Core
         public List<StatusEffectAsset> StatusEffectsToApply;
         
         [Header("Movement Manupilation")]
-        public StatBasedVariable MovementSlow; //Factor between 0-1, movement speed while attacking will be MovementSpeed * (1-MovementSlow)
+        public AttributeBasedVariable MovementSlow; //Factor between 0-1, movement speed while attacking will be MovementSpeed * (1-MovementSlow)
 
         [Header("Attack Momentum")]
-        public StatBasedVariable AttackMomentum;
+        public AttributeBasedVariable AttackMomentum;
         public float AttackMomentumDuration = 0.15f;
         public bool  LockMovementOnAttack  = false;
         public bool  LockRotationOnAttack  = false;
         [Tooltip("Seconds after movement lock before rotation is also locked. Lets the actor finish turning before freezing.")]
         public float RotationLockDelay     = 0f;
 
-        [Header("Knockback")]
-        public StatBasedVariable Knockback;
-        public StatBasedVariable KnockbackTime;
-        
         [Header("Projectile")]
         public Projectile ProjectilePrefab;
 
