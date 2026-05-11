@@ -1,5 +1,4 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
 using Kuantech.Core;
 using Kuantech.Core.Store;
 using Kuantech.Core.UI;
@@ -17,6 +16,7 @@ namespace Kuantech.HyperCasual.UI
 
         [SerializeField] private Image CurrencyIcon;
         [SerializeField] private TMP_Text CurrencyAmount;
+        [SerializeField] private bool InitializeOnStart = false;
         [SerializeField] private float InitializeOnStartDelay = 0f;
         
         public bool CanGetCurrency()
@@ -26,6 +26,11 @@ namespace Kuantech.HyperCasual.UI
         }
         protected virtual void Start()
         {
+            if(!InitializeOnStart)
+            {
+                return;
+            }
+        
             //Set currency icon
             if (InitializeOnStartDelay > 0)
             {
@@ -63,6 +68,7 @@ namespace Kuantech.HyperCasual.UI
         {
             if (Initialized) return;
             base.Initialize();
+            SetCurrency(CurrencyAsset);
             if (!CanGetCurrency()) return;
 
             if (!AutoUpdate) return;

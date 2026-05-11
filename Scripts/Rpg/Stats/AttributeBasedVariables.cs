@@ -34,7 +34,7 @@ namespace Kuantech.Rpg
         public DamageInfo GetDamageInfo(StatsModule statsModule)
         {
             //Calculate damage
-            AttributeAsset attAsset = DamageType.DamageScaleAttribute;
+            AttributeAsset attAsset = DamageType != null ? DamageType.DamageScaleAttribute : null;
             float attributeValue = (attAsset != null && statsModule != null) ? statsModule.GetAttributeValue(attAsset) : 0;
             float damage = 0f;
             if (ScaleFormula != null)
