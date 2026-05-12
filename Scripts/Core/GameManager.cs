@@ -119,17 +119,16 @@ namespace Kuantech.Core
         public SubManager GetSubManagerByType<T>() where T : SubManager
         {
             var type = typeof(T);
-            if (_persistentManagersByType.TryGetValue(type, out var manager))
-            {
-                return manager;
-            }
+            if (_persistentManagersByType.TryGetValue(type, out var manager)) return manager;
+            if (_sceneManagersByType.TryGetValue(type, out manager)) return manager;
 
-            if (_sceneManagersByType.TryGetValue(type, out manager))
-            {
-                return manager;
-            }
-        
-            return null; // Return null if no matching submanager is found
+            // Polymorphic fallback: find a registered manager that is assignable to T
+            foreach (var kv in _persistentManagersByType)
+                if (type.IsAssignableFrom(kv.Key)) return kv.Value;
+            foreach (var kv in _sceneManagersByType)
+                if (type.IsAssignableFrom(kv.Key)) return kv.Value;
+
+            return null;
         }
 
         protected virtual void OnSubmanagersInitialized(SubManager[] subManagers)

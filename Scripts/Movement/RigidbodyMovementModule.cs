@@ -2,6 +2,7 @@
 using System.Collections;
 using Kuantech.Core.Utils;
 using Kuantech.Rpg;
+using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Core
@@ -35,6 +36,7 @@ namespace Kuantech.Core
 
             Rigidbody.constraints |= RigidbodyConstraints.FreezeRotation;
             _movementModule = Actor.GetModule<MovementModule>();
+            Actor.OnActorWarped += OnActorWarped;
         }
     
         public override void ModuleFixedUpdate()
@@ -160,6 +162,15 @@ namespace Kuantech.Core
             _dodging = false;
             _dodgeSpeed = 0f;
             _movementModule.Unlock(this);
+        }
+        #endregion
+
+        #region Event Handlers
+        private void OnActorWarped(object sender, WorldPoint point)
+        {
+            if(Rigidbody == null) return;
+            Rigidbody.position = point.Position;
+            Rigidbody.rotation = point.Rotation;
         }
         #endregion
 

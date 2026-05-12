@@ -39,8 +39,16 @@ namespace Kuantech.Core.UI
                 LevelUI.Initialize();
             }
 
+            _panelsById = new Dictionary<string, KtUIPanel>();
+
+            foreach(var panel in UIPanels)
+            {
+                _panelsById[panel.PanelId] = panel;
+            }
+
+            //Auto detect
             KtUIPanel[] ktUIPanels = GetComponentsInChildren<KtUIPanel>();
-            foreach(var panel in ktUIPanels)
+            foreach (var panel in ktUIPanels)
             {
                 if(panel.PanelId.IsNullOrEmpty()) continue;
                 _panelsById[panel.PanelId] = panel;

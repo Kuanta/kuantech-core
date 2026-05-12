@@ -81,6 +81,7 @@ namespace Kuantech.Core
         //Events
         public EventHandler OnModulesInitialized;
         public EventHandler<float> OnActorRadiusSet;
+        public EventHandler<WorldPoint> OnActorWarped;
         
         //Lifecycle events
         public UnityAction<ActorState> OnActorStateChanged;
@@ -148,7 +149,9 @@ namespace Kuantech.Core
         public void Spawn()
         {
             if (!Initialized)
+            {
                 Initialize();
+            }
             ResetActor();
             ChangeActorState(ActorState.Spawned);
         }
@@ -572,6 +575,17 @@ namespace Kuantech.Core
         #endregion
         
         #region Utitilities
+
+        public void WarpToPoint(Vector3 position, Quaternion rotation)
+        {
+            transform.position = position;
+            transform.rotation = rotation;
+            OnActorWarped?.Invoke(this, new WorldPoint()
+            {
+                Position = position,
+                Rotation = rotation,
+            });
+        }
 
         public Vector3 GetActorDirection()
         {

@@ -28,18 +28,27 @@ namespace Kuantech.Core.Store
         //Event
         public UnityAction<CurrencyData> CurrencyUpdated;
         public UnityAction<string> CurrencyUpdatedById;
-        
+
         public override async UniTask Initialize(GameManager gameManager)
         {
             await base.Initialize(gameManager);
+            _assetsById = new Dictionary<string, CurrencyAsset>();
+            foreach (var asset in CurrencyAssets)
+            {
+                _assetsById[asset.GetId()] = asset;
+            }       
+        }
 
+        public override void SetDefaultState()
+        {
+            base.SetDefaultState();
             _amountsById = new Dictionary<string, int>();
             foreach (var asset in CurrencyAssets)
             {
                 _amountsById[asset.GetId()] = 0; //Default
-                _assetsById[asset.GetId()] = asset;
             }
         }
+
         public override void OnSubmanagersInitialized()
         {
             base.OnSubmanagersInitialized();

@@ -74,14 +74,18 @@ public class GameStateManager : SubManager
     {
         var ctx = GetContext<GameStateManager>();
         if (ctx == null) return;
-        GetProvider<BinaryStorageProvider>(providerId ?? ctx.DefaultBinaryProviderId)?.SaveData(saveable);
+        var provider = GetProvider<BinaryStorageProvider>(providerId ?? ctx.DefaultBinaryProviderId);
+        if (provider == null) return;
+        provider.SaveData(saveable);
     }
 
     public static bool LoadData(ISaveable saveable, string providerId = null)
     {
         var ctx = GetContext<GameStateManager>();
         if (ctx == null) return false;
-        return GetProvider<BinaryStorageProvider>(providerId ?? ctx.DefaultBinaryProviderId)?.LoadData(saveable) ?? false;
+        var provider = GetProvider<BinaryStorageProvider>(providerId ?? ctx.DefaultBinaryProviderId);
+        if (provider == null) return false;
+        return provider.LoadData(saveable);
     }
 
     public static void ClearSaveData(ISaveable saveable, string providerId = null)

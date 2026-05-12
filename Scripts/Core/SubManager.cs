@@ -8,6 +8,7 @@ namespace Kuantech.Core
     {
         [NonSaveableField] protected GameManager ParentManager;
         [NonSaveableField] protected bool Initialized = false;
+        public bool LoadStateOnInitialize;
 
         [Header("SubManager")]
         public string DataStorageProviderId;
@@ -16,6 +17,7 @@ namespace Kuantech.Core
         {
             ParentManager = gameManager;
             Initialized = true;
+            if(LoadStateOnInitialize) LoadState();
         }
 
         public virtual void OnSubmanagersInitialized()

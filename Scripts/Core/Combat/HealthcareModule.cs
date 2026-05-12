@@ -331,9 +331,16 @@ namespace Kuantech.Core.Combat
             resourceBar.SetHealth(currentValue, GetMaxResourceValue(resourceType));
         }
 
+        public void SetResourceBar(ResourceBar resourceBar)
+        {
+            if (IsDedicatedServer || resourceBar == null) return;
+
+            SetResourceBar(resourceBar.ResourceAsset, resourceBar);
+        }
+
         public void SetResourceBar(ResourceAsset resourceType, ResourceBar resourceBar)
         {
-            if (IsDedicatedServer) return;
+            if (IsDedicatedServer || resourceType == null || resourceBar == null) return;
 
             if (_resourceBars == null) _resourceBars = new Dictionary<ResourceAsset, ResourceBar>();
             _resourceBars[resourceType] = resourceBar;

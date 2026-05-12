@@ -98,7 +98,7 @@ namespace Kuantech.Rpg
             attribute.ApplyAttributeDefinition(attributeDefinition);
             _statMap[attribute.attributeAsset.Id] = attribute;
         }
-        
+
         public override void LoadState(ActorModuleSerializableData serializableData)
         {
             base.LoadState(serializableData);
