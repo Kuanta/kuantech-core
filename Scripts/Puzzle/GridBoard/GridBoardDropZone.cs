@@ -53,9 +53,7 @@ namespace Kuantech.Puzzle
         {
             Vector3 positionToCheck = draggable.GetAnchorTilePosition(GridBoard);
             return GridBoard.GetRowColFromPosition(positionToCheck);
-
         }
-
        
         public virtual bool HandleDroppedTile(GridTileDraggable draggableTile, int row, int col)
         {

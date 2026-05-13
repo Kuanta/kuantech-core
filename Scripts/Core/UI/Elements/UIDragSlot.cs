@@ -16,6 +16,8 @@ namespace Kuantech.Core.UI
     {
         [SerializeField] protected Image IconImage;
 
+        // Set at runtime to override the default ghost for this slot type
+        public DraggableSlotGhost GhostOverride;
         private CanvasGroup _canvasGroup;
 
         protected virtual void Awake()

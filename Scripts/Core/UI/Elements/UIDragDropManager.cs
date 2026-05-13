@@ -16,6 +16,9 @@ namespace Kuantech.Core.UI
 
         public static UIDragSlot DragSource { get; private set; }
 
+        private UIDragSlot _lastHoveredSlot;
+        private DraggableSlotGhost _activeGhost;
+
         private void Awake()
         {
             _ghost.gameObject.SetActive(false);
@@ -28,22 +31,25 @@ namespace Kuantech.Core.UI
             var ctx = GetContext<UIDragDropManager>();
             if (ctx == null) return;
             DragSource = source;
-            ctx._ghost.OnBeginDrag(source);
-            ctx.MoveGhost(eventData.position);
+            ctx._activeGhost = source.GhostOverride != null ? source.GhostOverride : ctx._ghost;
+            ctx._activeGhost.OnBeginDrag(source);
+            ctx.MoveActiveGhost(eventData.position);
         }
 
         public static void UpdateDrag(PointerEventData eventData)
         {
             var ctx = GetContext<UIDragDropManager>();
             if (ctx == null || DragSource == null) return;
-            ctx.MoveGhost(eventData.position);
+            ctx.MoveActiveGhost(eventData.position);
+            ctx.UpdateHover(eventData.position);
         }
 
         public static void EndDrag(UIDragSlot source, PointerEventData eventData)
         {
             var ctx = GetContext<UIDragDropManager>();
             if (ctx == null) return;
-            ctx._ghost.OnDrop();
+            ctx.ClearHover();
+            ctx._activeGhost.OnDrop();
 
             UIDragSlot target = ctx.RaycastForSlot(eventData.position);
 
@@ -62,6 +68,21 @@ namespace Kuantech.Core.UI
 
         // ── Internal ──────────────────────────────────────────────────────────
 
+        private void UpdateHover(Vector2 screenPos)
+        {
+            UIDragSlot hovered = RaycastForSlot(screenPos);
+            if (hovered == _lastHoveredSlot) return;
+            if (_lastHoveredSlot is IDragHoverable prev) prev.OnDragHoverExit();
+            if (hovered is IDragHoverable next) next.OnDragHoverEnter(DragSource);
+            _lastHoveredSlot = hovered;
+        }
+
+        private void ClearHover()
+        {
+            if (_lastHoveredSlot is IDragHoverable h) h.OnDragHoverExit();
+            _lastHoveredSlot = null;
+        }
+
         private UIDragSlot RaycastForSlot(Vector2 screenPos)
         {
             var pointerData = new PointerEventData(EventSystem.current) { position = screenPos };
@@ -76,7 +97,7 @@ namespace Kuantech.Core.UI
             return null;
         }
 
-        private void MoveGhost(Vector2 screenPos)
+        private void MoveActiveGhost(Vector2 screenPos)
         {
             RectTransformUtility.ScreenPointToLocalPointInRectangle(
                 _rootCanvas.transform as RectTransform,
@@ -84,7 +105,7 @@ namespace Kuantech.Core.UI
                 _rootCanvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : _rootCanvas.worldCamera,
                 out Vector2 localPos);
 
-            _ghost.SetPosition(localPos);
+            _activeGhost.SetPosition(localPos);
         }
     }
 }

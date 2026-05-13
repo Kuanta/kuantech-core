@@ -47,6 +47,7 @@ namespace Kuantech.Utils
         
         [Header("UI Draggable")]
         [SerializeField] private RectTransform RectTransform;
+        [SerializeField] private Canvas _rootCanvas;
         
         [Header("Effects")]
         [SerializeField] private EffectPlayer DropEffect;
@@ -154,7 +155,7 @@ namespace Kuantech.Utils
                 _positionBeforeDrag = transform.position;
             }
             _parentBeforeDrag = transform.parent;
-            _dragPositionOffset = dragHitPoint - transform.position;
+            _dragPositionOffset = IsCanvasElement() ? Vector3.zero : dragHitPoint - transform.position;
             
             //Check Proxy Draggable
             CheckProxyDraggable();
@@ -162,16 +163,40 @@ namespace Kuantech.Utils
             if (_ghostInstance != null)
             {
                 _ghostInstance.gameObject.SetActive(true);
-                _ghostInstance.transform.SetParent(null);
-                _ghostInstance.transform.localScale = Vector3.one;
-                
-                //Position _ghostInstance 
-                _ghostInstance.transform.position = GetWorldPositionFromCursor();
+                if (IsCanvasElement())
+                {
+                    var ghostRect = _ghostInstance.GetComponent<RectTransform>();
+                    Canvas canvas = GetCanvas();
+                    if (canvas != null && ghostRect != null)
+                    {
+                        ghostRect.SetParent(canvas.transform, false);
+                        SetCanvasPosition(ghostRect, dragHitPoint);
+                    }
+                }
+                else
+                {
+                    _ghostInstance.transform.SetParent(null);
+                    _ghostInstance.transform.localScale = Vector3.one;
+                    _ghostInstance.transform.position = GetWorldPositionFromCursor();
+                }
             }
             else
             {
-                transform.SetParent(null);
-                transform.localScale = Vector3.one;
+                if (IsCanvasElement())
+                {
+                    Canvas canvas = GetCanvas();
+                    if (canvas != null)
+                    {
+                        transform.SetParent(canvas.transform, false);
+                        if (RectTransform != null)
+                            SetCanvasPosition(RectTransform, dragHitPoint);
+                    }
+                }
+                else
+                {
+                    transform.SetParent(null);
+                    transform.localScale = Vector3.one;
+                }
             }
             
             
@@ -205,7 +230,20 @@ namespace Kuantech.Utils
                 ProxyDraggable.Drag(cursorPosition, cursorPositionChange);
                 return;
             }
-            
+
+            if (IsCanvasElement())
+            {
+                IDropZone hoveredZone = CheckForDragBench();
+                RectTransform target = _ghostInstance != null ? _ghostInstance.GetComponent<RectTransform>() : RectTransform;
+                if (target == null) target = RectTransform;
+                SetCanvasPosition(target, cursorPosition);
+                _lastDragPosition = cursorPosition;
+                if (DropZone != null && hoveredZone == null) OnLeftDropZone(DropZone);
+                if (DropZone == null && hoveredZone != null) OnEnteredDropZone(hoveredZone);
+                DropZone = hoveredZone;
+                return;
+            }
+
             IDropZone newZone = CheckForDragBench();
        
             if (PositionWithPlane)
@@ -286,6 +324,31 @@ namespace Kuantech.Utils
         #endregion
 
         #region Queries
+        private bool _isCanvas;
+        private bool _isCanvasCached;
+        public bool IsCanvasElement()
+        {
+            if (!_isCanvasCached)
+            {
+                _isCanvas = GetComponentInParent<Canvas>() != null;
+                _isCanvasCached = true;
+            }
+            return _isCanvas;
+        }
+
+        protected Canvas GetCanvas() => _rootCanvas != null ? _rootCanvas : GetComponentInParent<Canvas>();
+
+        protected void SetCanvasPosition(RectTransform rect, Vector2 screenPos)
+        {
+            Canvas canvas = GetCanvas();
+            if (canvas == null || rect == null) return;
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                canvas.transform as RectTransform, screenPos,
+                canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera,
+                out Vector2 localPos);
+            rect.anchoredPosition = localPos;
+        }
+
         public bool IsDragged()
         {
             return _isDragged;
@@ -338,6 +401,11 @@ namespace Kuantech.Utils
         }
         public virtual Vector3 GetCurrentPosition()
         {
+            if (IsCanvasElement())
+            {
+                RectTransform r = _ghostInstance != null ? _ghostInstance.GetComponent<RectTransform>() : RectTransform;
+                return r != null ? (Vector3)r.anchoredPosition : transform.position;
+            }
             if (_ghostInstance != null) return _ghostInstance.transform.position;
             return transform.position;
         }
@@ -454,6 +522,13 @@ namespace Kuantech.Utils
         
         public virtual void ReturnToPreviousPosition()
         {
+            if (IsCanvasElement())
+            {
+                transform.SetParent(_parentBeforeDrag, false);
+                if (RectTransform != null) RectTransform.anchoredPosition = _positionBeforeDrag;
+                transform.localScale = Vector3.one;
+                return;
+            }
             transform.SetParent(_parentBeforeDrag, true);
             SetPosition(_positionBeforeDrag);
             transform.localScale = Vector3.one;

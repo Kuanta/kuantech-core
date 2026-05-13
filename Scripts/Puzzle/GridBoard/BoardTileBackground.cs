@@ -25,6 +25,7 @@ namespace Kuantech.Puzzle
 
         public void SetMasked(bool masked)
         {
+            if(HighlightRenderer == null) return;
             if (HighlightRenderer.material.HasProperty(BaseColorKey))
             {
                 Color baseColor = HighlightRenderer.material.GetColor(BaseColorKey);

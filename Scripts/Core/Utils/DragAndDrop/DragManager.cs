@@ -127,9 +127,11 @@ namespace Kuantech.Utils
                 if (draggedObject != null && _draggedInterface != null)
                 {
                     _dragging = true;
-                    Vector3 worldPosition = GetMouseWorldPosition();
-                    _draggedInterface.Drag(worldPosition, worldPosition - _lastCursorWorldPosition);
-                    _lastCursorWorldPosition = worldPosition;
+                    Vector3 dragPosition = _draggedInterface.IsCanvasElement()
+                        ? GetCursorPosition(true)
+                        : GetMouseWorldPosition();
+                    _draggedInterface.Drag(dragPosition, dragPosition - _lastCursorWorldPosition);
+                    _lastCursorWorldPosition = dragPosition;
                 }
             }
             else if (Input.GetMouseButtonUp(0) && _draggedInterface != null)
@@ -255,11 +257,17 @@ namespace Kuantech.Utils
                 {
                     _draggedInterface = draggable;
                     _draggedInterface.OnClickDown();
-                    if (_draggedInterface.DragStart(result.worldPosition))
+                    Vector3 startPos = draggable.IsCanvasElement()
+                        ? GetCursorPosition(false)
+                        : result.worldPosition;
+                    if (_draggedInterface.DragStart(startPos))
                     {
                         draggedObject = (draggable as MonoBehaviour).transform;
-                        _dragCameraDistance = Vector3.Distance(GetMainCamera().transform.position, draggedObject.position) + DragCameraDistanceOffset;
-                        _lastCursorWorldPosition = GetMouseWorldPosition();
+                        if (!draggable.IsCanvasElement())
+                            _dragCameraDistance = Vector3.Distance(GetMainCamera().transform.position, draggedObject.position) + DragCameraDistanceOffset;
+                        _lastCursorWorldPosition = draggable.IsCanvasElement()
+                            ? GetCursorPosition(true)
+                            : GetMouseWorldPosition();
                         OnDragStart?.Invoke(this, _draggedInterface);
                     }
                     return true;

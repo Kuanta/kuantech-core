@@ -84,7 +84,7 @@ namespace Kuantech.Puzzle
         public virtual bool CanBeMergedWith(BoardTile other)
         {
             if (other == null || other == this) return false;
-            return true;
+            return false;
         }
         
         /// <summary>
