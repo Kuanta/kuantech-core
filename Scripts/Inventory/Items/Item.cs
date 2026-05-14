@@ -35,6 +35,7 @@ namespace Kuantech.Inventory
     public class Item
     {
         public InventoryModule ParentInvetory;
+        public Inventory ParentInventory;
         public ItemData Data;
         
         //Stats
@@ -160,7 +161,7 @@ namespace Kuantech.Inventory
         
         public int GetInventoryId()
         {
-            if (_stateData == null || ParentInvetory == null) return -1;
+            if (_stateData == null || (ParentInvetory == null && ParentInventory == null)) return -1;
             return _stateData.InventoryId;
         }
         public bool IsEquipped()
@@ -244,6 +245,26 @@ namespace Kuantech.Inventory
             item.ParentInvetory        = inventory;
             inventory.ExtendInventory(state.InventoryId + 1);
             inventory.items[state.InventoryId] = item;
+            return item;
+        }
+
+        public static Item FromState(SerializableItemState state, Inventory inventory)
+        {
+            ItemData itemData = ItemsManager.GetItemData(state.ItemDataId);
+            if (itemData == null)
+            {
+                Debug.LogWarning($"[Item] FromState: ItemData '{state.ItemDataId}' not found.");
+                return null;
+            }
+            Item item = new Item(itemData);
+            item.SetAmount(state.Amount);
+            item._stateData.ItemId      = state.ItemDataId;
+            item._stateData.InventoryId = state.InventoryId;
+            item._stateData.ItemLevel   = state.ItemLevel;
+            item._stateData.Equipped    = state.Equipped;
+            item.ParentInventory        = inventory;
+            inventory.Extend(state.InventoryId + 1);
+            inventory.Items[state.InventoryId] = item;
             return item;
         }
 
