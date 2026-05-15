@@ -17,6 +17,13 @@ namespace Kuantech.Inventory
         public EquipmentSlotType EquippedSlot;
     }
 
+    [Serializable]
+    public struct ComponentStateEntry
+    {
+        public string TypeName;
+        public string Data;
+    }
+
     /// <summary>
     /// Compact, ScriptableObject-free snapshot of an item. Safe to send over RPCs and save to disk.
     /// </summary>
@@ -29,6 +36,7 @@ namespace Kuantech.Inventory
         public int ItemLevel;
         public bool Equipped;
         public string EquippedSlotId;
+        public List<ComponentStateEntry> ComponentStates;
     }
 
     [Serializable]
@@ -53,9 +61,7 @@ namespace Kuantech.Inventory
             _components = new Dictionary<Type, ItemComponent>();
             if(Data.Components == null) return;
             foreach(var component in Data.Components)
-            {
-                _components[component.GetType()] = component; //Is this polymorphic?
-            }
+                _components[component.GetType()] = component.Clone();
         }
 
         private void CreateStateData()
@@ -212,15 +218,40 @@ namespace Kuantech.Inventory
 
         public SerializableItemState BuildState()
         {
+            var compStates = new List<ComponentStateEntry>();
+            foreach (var comp in _components.Values)
+            {
+                string data = comp.BuildComponentState();
+                if (data != null)
+                    compStates.Add(new ComponentStateEntry { TypeName = comp.GetType().Name, Data = data });
+            }
+
             return new SerializableItemState
             {
-                ItemDataId     = Data.Id,
-                InventoryId    = _stateData.InventoryId,
-                Amount         = _stateData.Amount,
-                ItemLevel      = _stateData.ItemLevel,
-                Equipped       = _stateData.Equipped,
-                EquippedSlotId = GetEquippedSlotId(),
+                ItemDataId       = Data.Id,
+                InventoryId      = _stateData.InventoryId,
+                Amount           = _stateData.Amount,
+                ItemLevel        = _stateData.ItemLevel,
+                Equipped         = _stateData.Equipped,
+                EquippedSlotId   = GetEquippedSlotId(),
+                ComponentStates  = compStates.Count > 0 ? compStates : null,
             };
+        }
+
+        private void LoadComponentStates(List<ComponentStateEntry> entries)
+        {
+            if (entries == null) return;
+            foreach (var entry in entries)
+            {
+                foreach (var comp in _components.Values)
+                {
+                    if (comp.GetType().Name == entry.TypeName)
+                    {
+                        comp.LoadComponentState(entry.Data);
+                        break;
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -245,6 +276,7 @@ namespace Kuantech.Inventory
             item.ParentInvetory        = inventory;
             inventory.ExtendInventory(state.InventoryId + 1);
             inventory.items[state.InventoryId] = item;
+            item.LoadComponentStates(state.ComponentStates);
             return item;
         }
 
@@ -265,6 +297,7 @@ namespace Kuantech.Inventory
             item.ParentInventory        = inventory;
             inventory.Extend(state.InventoryId + 1);
             inventory.Items[state.InventoryId] = item;
+            item.LoadComponentStates(state.ComponentStates);
             return item;
         }
 

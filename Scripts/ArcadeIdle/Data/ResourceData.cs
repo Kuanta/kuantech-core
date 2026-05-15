@@ -1,6 +1,5 @@
 ﻿using System;
 using Kuantech.Core;
-using Kuantech.Rpg;
 using Kuantech.Inventory;
 using Kuantech.Utils;
 using UnityEngine;
@@ -36,7 +35,7 @@ namespace Kuantech.ArcadeIdle
 
         public Sprite GetResourceIcon()
         {
-            return Librarian.GetItemIcon(Id);
+            return ItemsManager.GetItemIcon(Id);
         }
         
         public bool IsCurrency()

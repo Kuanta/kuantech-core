@@ -1,42 +1,48 @@
-using System;
+using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Kuantech.Core;
 using UnityEngine;
 
 namespace Kuantech.Inventory
 {
-    /// <summary>
-    /// A librarian that handles items
-    /// </summary>
-    [Serializable]
-    public abstract class ItemLibrarian
-    {
-        public virtual void Initialize(ItemsManager parentManager){}
-        public abstract ItemData GetItemData(string itemId);
-    }
-
     public class ItemsManager : SubManager
     {
-        [SerializeReference]
-        public ItemLibrarian Librarian;
+        public List<ItemDataAsset> ItemAssets;
+        private Dictionary<string, ItemDataAsset> _assetMap;
 
-        public async override UniTask Initialize(GameManager parentManager)
+        public override async UniTask Initialize(GameManager parentManager)
         {
             await base.Initialize(parentManager);
-            if (Librarian != null) Librarian.Initialize(this);
+            _assetMap = new Dictionary<string, ItemDataAsset>();
+            foreach (var asset in ItemAssets)
+            {
+                if (asset == null) continue;
+                string id = asset.GetId();
+                if (string.IsNullOrEmpty(id)) continue;
+                if (asset.ItemData != null) asset.ItemData.Id = id;
+                _assetMap[id] = asset;
+            }
         }
 
         public static ItemData GetItemData(string itemId)
         {
             var ctx = GetContext<ItemsManager>();
-            if (ctx == null) return null;
-            return ctx._GetItemData(itemId);
+            if (ctx?._assetMap == null) return null;
+            ctx._assetMap.TryGetValue(itemId, out var asset);
+            return asset?.ItemData;
         }
 
-        protected virtual ItemData _GetItemData(string itemId)
+        public static ItemDataAsset GetItemAsset(string itemId)
         {
-            if(Librarian == null) return null;
-            return Librarian.GetItemData(itemId);
+            var ctx = GetContext<ItemsManager>();
+            if (ctx?._assetMap == null) return null;
+            ctx._assetMap.TryGetValue(itemId, out var asset);
+            return asset;
+        }
+
+        public static Sprite GetItemIcon(string itemId)
+        {
+            return GetItemAsset(itemId)?.GetIcon();
         }
     }
 }

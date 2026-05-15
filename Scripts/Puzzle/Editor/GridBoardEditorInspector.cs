@@ -34,7 +34,6 @@ namespace Kuantech.Puzzle
 
         }
 
-        [SerializeField]
         private GridTileLibrary TileCollection
         {
             get => _gridBoardEditor.TileCollection;

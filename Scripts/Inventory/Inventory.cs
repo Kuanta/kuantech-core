@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Kuantech.Core;
 
 namespace Kuantech.Inventory
 {
@@ -10,7 +11,7 @@ namespace Kuantech.Inventory
         public List<SerializableItemState> ItemStates = new();
     }
 
-    public class Inventory
+    public class Inventory : ISaveable
     {
         public Item[] Items { get; private set; }
         public Equipment Equipment { get; set; }

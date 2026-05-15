@@ -31,5 +31,10 @@ namespace Kuantech.Inventory
             return true;
         }
         #endregion
+
+        public virtual ItemComponent Clone() => (ItemComponent)MemberwiseClone();
+
+        public virtual string BuildComponentState() => null;
+        public virtual void LoadComponentState(string data) { }
     }
 }

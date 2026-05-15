@@ -30,5 +30,13 @@ namespace Kuantech.Inventory
         
         // Icon
         public string IconId;
+
+        public T GetComponent<T>() where T : ItemComponent
+        {
+            if (Components == null) return null;
+            foreach (var comp in Components)
+                if (comp is T t) return t;
+            return null;
+        }
     }
 }
