@@ -199,5 +199,13 @@ namespace Kuantech.Inventory
                     EquipItem(item, Equipment.GetEquipmentSlotType(state.EquippedSlotId));
             }
         }
+
+        #region Save & Load
+
+        public byte[] Serialize() => SaveUtility.SerializePoco(BuildState());
+
+        public void Deserialize(byte[] data) => LoadState(SaveUtility.DeserializePoco<InventoryData>(data));
+
+        #endregion
     }
 }
