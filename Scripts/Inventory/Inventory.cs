@@ -55,18 +55,42 @@ namespace Kuantech.Inventory
             return -1;
         }
 
-        public bool CanAddItem(ItemData data) => GetAvailableSlot() >= 0;
+        public bool CanAddItem(ItemDataAsset data) => GetAvailableSlot() >= 0;
+
+        public List<T> GetItemComponents<T>() where T : ItemComponent
+        {
+            var result = new List<T>();
+            foreach (var item in Items)
+            {
+                if (item == null) continue;
+                T comp = item.GetItemComponent<T>();
+                if (comp != null) result.Add(comp);
+            }
+            return result;
+        }
+
+        public List<(Item item, T comp)> GetItemsWithComponent<T>() where T : ItemComponent
+        {
+            var result = new List<(Item, T)>();
+            foreach (var item in Items)
+            {
+                if (item == null) continue;
+                T comp = item.GetItemComponent<T>();
+                if (comp != null) result.Add((item, comp));
+            }
+            return result;
+        }
 
         // ── Add ───────────────────────────────────────────────────────────────
 
-        public Item AddItem(ItemData data, int amount = 1, int slot = -1)
+        public Item AddItem(ItemDataAsset data, int amount = 1, int slot = -1)
         {
             if (data == null) return null;
             amount = Mathf.Max(1, amount);
 
             if (data.stackable)
             {
-                Item existing = GetItemById(data.Id);
+                Item existing = GetItemById(data.GetId());
                 if (existing != null)
                 {
                     existing.AddAmount(amount);
@@ -91,7 +115,7 @@ namespace Kuantech.Inventory
 
         public Item AddItem(string itemId, int amount = 1)
         {
-            ItemData data = ItemsManager.GetItemData(itemId);
+            ItemDataAsset data = ItemsManager.GetItemAsset(itemId);
             return data != null ? AddItem(data, amount) : null;
         }
 
@@ -149,7 +173,7 @@ namespace Kuantech.Inventory
             return true;
         }
 
-        public bool AddAndEquipItem(ItemData data, EquipmentSlotType slotType, int amount = 1)
+        public bool AddAndEquipItem(ItemDataAsset data, EquipmentSlotType slotType, int amount = 1)
         {
             Item item = AddItem(data, amount);
             return item != null && EquipItem(item, slotType);
@@ -204,7 +228,10 @@ namespace Kuantech.Inventory
 
         public byte[] Serialize() => SaveUtility.SerializePoco(BuildState());
 
-        public void Deserialize(byte[] data) => LoadState(SaveUtility.DeserializePoco<InventoryData>(data));
+        public void Deserialize(byte[] data)
+        {
+            LoadState(SaveUtility.DeserializePoco<InventoryData>(data));
+        }
 
         #endregion
     }

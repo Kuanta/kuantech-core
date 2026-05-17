@@ -19,17 +19,8 @@ namespace Kuantech.Inventory
                 if (asset == null) continue;
                 string id = asset.GetId();
                 if (string.IsNullOrEmpty(id)) continue;
-                if (asset.ItemData != null) asset.ItemData.Id = id;
                 _assetMap[id] = asset;
             }
-        }
-
-        public static ItemData GetItemData(string itemId)
-        {
-            var ctx = GetContext<ItemsManager>();
-            if (ctx?._assetMap == null) return null;
-            ctx._assetMap.TryGetValue(itemId, out var asset);
-            return asset?.ItemData;
         }
 
         public static ItemDataAsset GetItemAsset(string itemId)

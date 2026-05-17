@@ -92,7 +92,7 @@ namespace Kuantech.Inventory
 
         #region Add Item
 
-        public virtual bool CanAddItem(ItemData itemData)
+        public virtual bool CanAddItem(ItemDataAsset itemData)
         {
             int availableInventoryId = GetAvailableSlotId();
             if(availableInventoryId < 0) return false;
@@ -121,7 +121,7 @@ namespace Kuantech.Inventory
         }
         public bool AddItemById(string itemId, int amount = 1)
         {
-            ItemData itemData = ItemsManager.GetItemData(itemId);
+            ItemDataAsset itemData = ItemsManager.GetItemAsset(itemId);
             if (itemData == null) return false;
             return AddItem(itemData, amount);
         }
@@ -130,7 +130,7 @@ namespace Kuantech.Inventory
         /// Adds an item. On server/single-player: executes immediately, onAdded fires synchronously.
         /// On client: sends ServerRpc and fires onAdded when server confirms via TargetRpc.
         /// </summary>
-        public bool AddItem(ItemData itemData, int amount = 1)
+        public bool AddItem(ItemDataAsset itemData, int amount = 1)
         {
             if (IsServerInitialized)
             {
@@ -138,24 +138,24 @@ namespace Kuantech.Inventory
                 if (item == null) return false;
                 if (IsSpawned)
                 {
-                    ObserversOnItemAdded_Rpc(itemData.Id, amount, item.GetInventoryId());
+                    ObserversOnItemAdded_Rpc(itemData.GetId(), amount, item.GetInventoryId());
                 } 
                 return true;
             }
             // Client: register callback and send request to server
-            ServerAddItem_Rpc(itemData.Id, amount);
+            ServerAddItem_Rpc(itemData.GetId(), amount);
             return true;
         }
 
         private Item ExecuteAddItem(string itemId, int amount, int inventoryId=-1)
         {
-            ItemData itemData = ItemsManager.GetItemData(itemId);
+            ItemDataAsset itemData = ItemsManager.GetItemAsset(itemId);
             if (itemData == null) return null;
             return ExecuteAddItem(itemData, amount, inventoryId);
         }
 
         // Returns the item that was added (or the existing stack), null on failure.
-        private Item ExecuteAddItem(ItemData itemData, int amount, int inventoryId=-1)
+        private Item ExecuteAddItem(ItemDataAsset itemData, int amount, int inventoryId=-1)
         {
             if(!CanAddItem(itemData)) return null;
             Item item = Item.GetItemFromData(itemData);
@@ -396,7 +396,7 @@ namespace Kuantech.Inventory
         [ServerRpc]
         private void ServerAddItem_Rpc(string itemId, int amount)
         {
-            ItemData itemData = ItemsManager.GetItemData(itemId);
+            ItemDataAsset itemData = ItemsManager.GetItemAsset(itemId);
             if (itemData == null) return;
             AddItem(itemData,amount);
         }
