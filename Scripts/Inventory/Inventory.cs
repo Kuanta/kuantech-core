@@ -57,6 +57,14 @@ namespace Kuantech.Inventory
 
         public bool CanAddItem(ItemDataAsset data) => GetAvailableSlot() >= 0;
 
+        public List<Item> GetAllItems()
+        {
+            var result = new List<Item>();
+            foreach (var item in Items)
+                if (item != null) result.Add(item);
+            return result;
+        }
+
         public List<T> GetItemComponents<T>() where T : ItemComponent
         {
             var result = new List<T>();
