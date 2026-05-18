@@ -153,6 +153,14 @@ namespace Kuantech.Core
             if (subManager == null) return;
             subManager.enabled = toggle;
         }
+
+        public void ResetAllSubManagerStates()
+        {
+            if (_subManagers != null)
+                foreach (var sm in _subManagers) sm?.SetDefaultState();
+            if (_sceneSubManagers != null)
+                foreach (var sm in _sceneSubManagers) sm?.SetDefaultState();
+        }
         #endregion
         
         #region SceneManagement

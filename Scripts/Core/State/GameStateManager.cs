@@ -100,8 +100,16 @@ public class GameStateManager : SubManager
     {
         var ctx = GetContext<GameStateManager>();
         if (ctx == null) return;
+
+        // 1. Clear all provider caches
         foreach (var provider in ctx._storageProviders)
             provider?.Clear();
+
+        // 2. Flush immediately so disk is written before any SubManager re-saves
+        ctx.FlushProviders();
+
+        // 3. Reset in-memory state of all SubManagers
+        GameManager.Instance.ResetAllSubManagerStates();
     }
 
     // --- POCO helpers (raw key-value binary storage) ---
