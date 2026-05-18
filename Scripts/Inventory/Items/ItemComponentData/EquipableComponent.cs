@@ -22,24 +22,15 @@ namespace Kuantech.Inventory
 
         public override void OnItemEquipped(Item item, EquipmentSlotType slotType)
         {
-            if (item.ParentInventory == null) return;
-            Equipment equipment = item.ParentInventory.Equipment;
-            if (equipment == null) return;
             if (slotType == null)
             {
                 if (_suitableSlots == null || _suitableSlots.Count == 0) return;
                 slotType = _suitableSlots[0];
             }
-            equipment.EquipItem(item, slotType);
+            item.SetEquippedSlot(slotType);
         }
 
-        public override void OnItemUnequipped(Item item)
-        {
-            if (item.ParentInventory == null) return;
-            Equipment equipment = item.ParentInventory.Equipment;
-            if (equipment == null) return;
-            equipment.UnequipItem(item);
-        }
+        public override void OnItemUnequipped(Item item) { }
 
         public override void OnItemAdded(Item item) { }
         public override void OnItemRemoved(Item item) { }

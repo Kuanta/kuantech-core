@@ -1,6 +1,5 @@
 using System;
 using Kuantech.Core;
-using UnityEngine;
 using Kuantech.Networking;
 
 #if NETWORKING_FISHNET
@@ -31,10 +30,12 @@ namespace Kuantech.Inventory
 
         public override void Initialize()
         {
-            if (Equipment == null)
-                Equipment = GetComponent<Equipment>();
             if (Equipment != null)
-                Equipment.Initialize(this);
+            {
+                Equipment.Initialize();
+                Equipment.OnItemSlotted += HandleItemSlotted;
+                Equipment.OnItemUnslotted += HandleItemUnslotted;
+            }
         }
 
         // ── Inventory attachment ───────────────────────────────────────────────
@@ -42,15 +43,15 @@ namespace Kuantech.Inventory
         public void SetInventory(Inventory inventory)
         {
             DetachInventory();
-            inventory.AttachToActor(Actor);
             _inventory = inventory;
             if (_inventory == null) return;
 
-            _inventory.Equipment = Equipment;
             _inventory.OnItemAdded += HandleItemAdded;
             _inventory.OnItemRemoved += HandleItemRemoved;
             _inventory.OnItemEquipped += HandleItemEquipped;
             _inventory.OnItemUnequipped += HandleItemUnequipped;
+            _inventory.AttachToActor(Actor);
+            RestoreEquipmentState();
         }
 
         public void DetachInventory()
@@ -60,8 +61,29 @@ namespace Kuantech.Inventory
             _inventory.OnItemRemoved -= HandleItemRemoved;
             _inventory.OnItemEquipped -= HandleItemEquipped;
             _inventory.OnItemUnequipped -= HandleItemUnequipped;
+            if (Equipment != null)
+            {
+                foreach (var slot in Equipment.slotTable.Values)
+                    HandleItemUnslotted(slot.item);
+                Equipment.UnequipAll();
+            }
             _inventory.Detach();
             _inventory = null;
+        }
+
+        private void RestoreEquipmentState()
+        {
+            if (Equipment == null || _inventory == null) return;
+            foreach (var item in _inventory.GetAllItems())
+            {
+                if (!item.IsEquipped()) continue;
+                string slotId = item.GetEquippedSlotId();
+                if (string.IsNullOrEmpty(slotId)) continue;
+                EquipmentSlotType slotType = Equipment.GetEquipmentSlotType(slotId);
+                if (slotType == null) continue;
+                item.SetEquippedSlot(slotType);
+                Equipment.EquipItem(item, slotType);
+            }
         }
 
         // ── Event handlers → send RPCs from server, relay events to listeners ─
@@ -82,16 +104,40 @@ namespace Kuantech.Inventory
 
         private void HandleItemEquipped(Item item, EquipmentSlotType slotType)
         {
+            // EquipableComponent already resolved the actual slot into item.GetEquippedSlot()
+            Equipment?.EquipItem(item, item.GetEquippedSlot());
             OnItemEquipped?.Invoke(item, slotType);
             if (!IsServerInitialized || !IsSpawned) return;
-            ObserversEquipItem_Rpc(item.GetInventoryId(), slotType != null ? slotType.Id : "");
+            ObserversEquipItem_Rpc(item.GetInventoryId(), item.GetEquippedSlotId());
         }
 
         private void HandleItemUnequipped(Item item)
         {
+            Equipment?.UnequipItem(item);
             OnItemUnequipped?.Invoke(item);
             if (!IsServerInitialized || !IsSpawned) return;
             ObserversUnequipItem_Rpc(item.GetInventoryId());
+        }
+
+        private void HandleItemSlotted(Item item, EquipmentSlotType slotType)
+        {
+            if (!KtNetworkManager.IsClient()) return;
+            ActorVisual visual = Actor.VisualHandler.GetActorVisual();
+            if (visual != null)
+                item.ItemVisual = visual.SlotItem(slotType, item);
+        }
+
+        private void HandleItemUnslotted(Item item)
+        {
+            if (item == null) return;
+            if (item.ItemVisual != null)
+            {
+                PoolManager.PoolObject(item.ItemVisual.gameObject);
+                item.ItemVisual = null;
+            }
+            // If still marked equipped, this was a displacement — clean up item state
+            if (item.IsEquipped())
+                _inventory?.UnequipItem(item);
         }
 
         // ── Public API (delegates to inventory, respects server authority) ─────
@@ -174,17 +220,18 @@ namespace Kuantech.Inventory
         {
             if (_inventory == null || serializableData is not InventoryState state) return;
             _inventory.LoadState(new InventoryData { ItemStates = state.ItemStates });
+            RestoreEquipmentState();
         }
 
         public override void OnNetworkSynced()
         {
-            if (!KtNetworkManager.IsClient() || Equipment == null) return;
+            if (!KtNetworkManager.IsClient() || Equipment?.slotTable == null) return;
+            ActorVisual visual = Actor.VisualHandler.GetActorVisual();
+            if (visual == null) return;
             foreach (var slot in Equipment.slotTable.Values)
             {
                 Item item = slot.item;
                 if (item == null || item.ItemVisual != null) continue;
-                ActorVisual visual = Equipment.GetActorVisual();
-                if (visual == null) continue;
                 item.ItemVisual = visual.SlotItem(slot.SlotType, item);
             }
         }

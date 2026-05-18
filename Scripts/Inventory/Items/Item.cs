@@ -15,6 +15,7 @@ namespace Kuantech.Inventory
         public bool Equipped;
         public int Amount;
         public EquipmentSlotType EquippedSlot;
+        public string EquippedSlotId; // cached after load, before slot type is resolved
     }
 
     [Serializable]
@@ -62,6 +63,7 @@ namespace Kuantech.Inventory
             foreach (var def in Data.Components)
             {
                 ItemComponent instance = def.CreateInstance();
+                instance.ParentItem = this;
                 _components[instance.GetType()] = instance;
             }
         }
@@ -136,6 +138,7 @@ namespace Kuantech.Inventory
         {
             if (_stateData == null) _stateData = new ItemStateData();
             _stateData.EquippedSlot = slotType;
+            _stateData.EquippedSlotId = slotType != null ? slotType.Id : "";
         }
 
         #endregion
@@ -158,8 +161,9 @@ namespace Kuantech.Inventory
 
         public string GetEquippedSlotId()
         {
-            if (_stateData?.EquippedSlot == null) return "";
-            return _stateData.EquippedSlot.Id;
+            if (_stateData == null) return "";
+            if (_stateData.EquippedSlot != null) return _stateData.EquippedSlot.Id;
+            return _stateData.EquippedSlotId ?? "";
         }
 
         public int GetAmount() => _stateData?.Amount ?? 0;
@@ -221,7 +225,8 @@ namespace Kuantech.Inventory
             item._stateData.InventoryId = state.InventoryId;
             item._stateData.Amount      = state.Amount;
             item._stateData.ItemLevel   = state.ItemLevel;
-            item._stateData.Equipped    = state.Equipped;
+            item._stateData.Equipped       = state.Equipped;
+            item._stateData.EquippedSlotId = state.EquippedSlotId ?? "";
             item.ParentInventory = inventory;
             inventory.Extend(state.InventoryId + 1);
             inventory.Items[state.InventoryId] = item;
@@ -248,10 +253,10 @@ namespace Kuantech.Inventory
         public bool Equip(EquipmentSlotType slotType = null)
         {
             if (!CanEquip(slotType)) return false;
+            _stateData.Equipped = true;
             foreach (var comp in _components.Values)
                 comp.OnItemEquipped(this, slotType);
-            _stateData.Equipped = true;
-            _stateData.EquippedSlot = slotType;
+            // EquippedSlot is set by EquipableComponent.OnItemEquipped (auto-resolves null slot)
             return true;
         }
 

@@ -14,7 +14,6 @@ namespace Kuantech.Inventory
     public class Inventory : ISaveable
     {
         public Item[] Items { get; private set; }
-        public Equipment Equipment { get; set; }
 
         public event Action<Item> OnItemAdded;
         public event Action<Item> OnItemRemoved;
@@ -149,19 +148,15 @@ namespace Kuantech.Inventory
                 if (remaining > 0) { item.SetAmount(remaining); return; }
             }
 
-            TryUnequipFromEquipment(item);
+            TryUnequipItem(item);
             Items[slot] = null;
             item.OnRemoved();
             OnItemRemoved?.Invoke(item);
         }
 
-        private void TryUnequipFromEquipment(Item item)
+        private void TryUnequipItem(Item item)
         {
-            if (Equipment == null) return;
-            var equippedSlot = item.GetEquippedSlot();
-            if (equippedSlot == null) return;
-            if (Equipment.slotTable.TryGetValue(equippedSlot, out var equipSlot) && equipSlot.item == item)
-                Equipment.UnequipItem(item);
+            if (item.IsEquipped()) UnequipItem(item);
         }
 
         // ── Equip ─────────────────────────────────────────────────────────────
@@ -194,10 +189,10 @@ namespace Kuantech.Inventory
 
         public void Clear()
         {
-            Equipment?.UnequipAll();
             for (int i = 0; i < Items.Length; i++)
             {
                 if (Items[i] == null) continue;
+                TryUnequipItem(Items[i]);
                 Items[i].OnRemoved();
                 OnItemRemoved?.Invoke(Items[i]);
                 Items[i] = null;
@@ -228,10 +223,7 @@ namespace Kuantech.Inventory
             foreach (var state in data.ItemStates)
             {
                 if (GetItemAtSlot(state.InventoryId) != null) continue;
-                Item item = Item.FromState(state, this);
-                if (item == null) continue;
-                if (state.Equipped && Equipment != null)
-                    EquipItem(item, Equipment.GetEquipmentSlotType(state.EquippedSlotId));
+                Item.FromState(state, this);
             }
         }
 

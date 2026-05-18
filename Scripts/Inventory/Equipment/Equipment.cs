@@ -1,9 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using Kuantech.Core;
-using Kuantech.Networking;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace Kuantech.Inventory
 {
@@ -14,110 +11,68 @@ namespace Kuantech.Inventory
         [SerializeReference] public Item item = null;
     }
 
-    public class Equipment :MonoBehaviour
+    [Serializable]
+    public class Equipment
     {
-        public InventoryModule ParentInventory;
-        public List<EquipmentSlot> slotTypes;
+        [SerializeField] public List<EquipmentSlot> SlotTypes;
+
         public Dictionary<EquipmentSlotType, EquipmentSlot> slotTable;
         private Dictionary<string, EquipmentSlotType> _slotTypesById;
 
-        public void Initialize(InventoryModule parentInventory)
+        public event Action<Item, EquipmentSlotType> OnItemSlotted;
+        public event Action<Item> OnItemUnslotted;
+
+        public void Initialize()
         {
-            ParentInventory = parentInventory;
-            if (slotTable != null) return;
             slotTable = new Dictionary<EquipmentSlotType, EquipmentSlot>();
             _slotTypesById = new Dictionary<string, EquipmentSlotType>();
-            foreach (EquipmentSlot slot in slotTypes)
+            if (SlotTypes == null) return;
+            foreach (var slot in SlotTypes)
             {
                 slot.item = null;
-                slotTable.Add(slot.SlotType, slot);
+                slotTable[slot.SlotType] = slot;
                 _slotTypesById[slot.SlotType.Id] = slot.SlotType;
             }
         }
 
-        /// <summary>
-        /// Gets equipment slot type by id
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
         public EquipmentSlotType GetEquipmentSlotType(string id)
         {
-            if(_slotTypesById == null) return null;
-            if(_slotTypesById.ContainsKey(id)) return _slotTypesById[id];
-            return null;
+            if (_slotTypesById == null) return null;
+            _slotTypesById.TryGetValue(id, out var slotType);
+            return slotType;
         }
 
-        public Item GetEquipedItem(EquipmentSlotType slot)
+        public Item GetEquippedItem(EquipmentSlotType slot)
         {
-            if (!slotTable.ContainsKey(slot)) return null;
-
+            if (slotTable == null || !slotTable.ContainsKey(slot)) return null;
             return slotTable[slot].item;
         }
 
-        // Equips an item for the proper slot
         public void EquipItem(Item item, EquipmentSlotType slotType)
         {
-            if (item == null) return;
-            EquipmentSlotType itemSlotType = slotType;
-            
-            if (!slotTable.ContainsKey(itemSlotType)) return;
-            
-            Item existingItem = slotTable[itemSlotType].item;
-            if (existingItem != null && existingItem != item)
-            {
-                ParentInventory.UnequipItem(existingItem);
-            }
-            
-            slotTable[itemSlotType].item = item;
-            
-            // Spawn visual only on clients (or single-player). Dedicated server has no visuals.
-            if (KtNetworkManager.IsClient())
-            {
-                ActorVisual visual = GetActorVisual();
-                if (visual != null)
-                    item.ItemVisual = visual.SlotItem(itemSlotType, item);
-            }
- 
+            if (item == null || slotType == null) return;
+            if (!slotTable.ContainsKey(slotType)) return;
 
-            //UI handler
-            try
-            {
-                //todo: UI handle for equipment
-            }
-            catch (Exception e)
-            {
-                Debug.LogError(e.Message);
-            }
+            Item existing = slotTable[slotType].item;
+            if (existing != null && existing != item)
+                UnequipItem(existing);
+
+            slotTable[slotType].item = item;
+            OnItemSlotted?.Invoke(item, slotType);
         }
-        
+
         public void UnequipItem(Item item)
         {
-            if (item == null) return;
-            if (!slotTable.ContainsKey(item.GetEquippedSlot())) return;
-            EquipmentSlot slot = slotTable[item.GetEquippedSlot()];
-            if (slot.item == item)
+            if (item == null || slotTable == null) return;
+            foreach (var slot in slotTable.Values)
             {
+                if (slot.item != item) continue;
                 slot.item = null;
-            }
-
-            if (item.ItemVisual != null)
-            {
-                PoolManager.PoolObject(item.ItemVisual.gameObject);
-                item.ItemVisual = null;
-            }
-            item.SetEquippedState(false);
-            
-            //UI handler
-            try
-            {
-                //todo: UI handle for equipment
-            }
-            catch (Exception e)
-            {
-                Debug.LogError(e.Message);
+                OnItemUnslotted?.Invoke(item);
+                return;
             }
         }
-        
+
         public void UnequipAll()
         {
             if (slotTable == null) return;
@@ -126,17 +81,6 @@ namespace Kuantech.Inventory
                 if (slot.item != null)
                     UnequipItem(slot.item);
             }
-        }
-
-        public ActorVisual GetActorVisual()
-        {
-            if (ParentInventory == null)
-            {
-                Debug.LogError("Parent inventory for equipment is null");
-                return null;
-            }
-
-            return ParentInventory.Actor.VisualHandler.GetActorVisual();
         }
     }
 }
