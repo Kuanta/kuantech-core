@@ -173,6 +173,11 @@ namespace Kuantech.Rpg.Skills
             return skill;
         }
 
+        public void RemoveSkill(SkillDataAsset skillAsset)
+        {
+            if (skillAsset != null) _skills.Remove(skillAsset.SkillId);
+        }
+
         public bool HasSkill(SkillDataAsset skilLDataAsset)
         {
             Skill skill = GetSkillByDataAsset(skilLDataAsset);

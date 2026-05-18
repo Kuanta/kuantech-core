@@ -237,8 +237,8 @@ namespace Kuantech.Puzzle
             if (!CanSetTile(tile, coordinate)) return false;
             if (tile.ParentBoard != null)
             {
-                //Clear previous position
-                ClearTileArrayForTile(tile);
+                //Clear previous position on the OLD board, not this one
+                tile.ParentBoard.ClearTileArrayForTile(tile);
             }
             List<BoardTile> tilesThatCanBeMerged = new List<BoardTile>();
             if (!tile.Coordinates.IsNullOrEmpty())

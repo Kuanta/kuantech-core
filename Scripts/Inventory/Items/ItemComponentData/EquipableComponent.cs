@@ -22,8 +22,8 @@ namespace Kuantech.Inventory
 
         public override void OnItemEquipped(Item item, EquipmentSlotType slotType)
         {
-            if (item.ParentInvetory == null) return;
-            Equipment equipment = item.ParentInvetory.Equipment;
+            if (item.ParentInventory == null) return;
+            Equipment equipment = item.ParentInventory.Equipment;
             if (equipment == null) return;
             if (slotType == null)
             {
@@ -35,8 +35,8 @@ namespace Kuantech.Inventory
 
         public override void OnItemUnequipped(Item item)
         {
-            if (item.ParentInvetory == null) return;
-            Equipment equipment = item.ParentInvetory.Equipment;
+            if (item.ParentInventory == null) return;
+            Equipment equipment = item.ParentInventory.Equipment;
             if (equipment == null) return;
             equipment.UnequipItem(item);
         }

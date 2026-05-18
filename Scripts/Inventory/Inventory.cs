@@ -21,6 +21,9 @@ namespace Kuantech.Inventory
         public event Action<Item, EquipmentSlotType> OnItemEquipped;
         public event Action<Item> OnItemUnequipped;
 
+        //Runtime
+        [NonSerialized] public Actor Owner;
+
         public Inventory(int size)
         {
             Items = new Item[size];
@@ -241,6 +244,30 @@ namespace Kuantech.Inventory
             LoadState(SaveUtility.DeserializePoco<InventoryData>(data));
         }
 
+        #endregion
+
+        #region Attaching
+        public void AttachToActor(Actor actor)
+        {
+            Owner = actor;
+            foreach (var item in Items)
+            {
+                if (item == null) continue;
+                item.OnAttachedToActor(actor);
+            }
+        }
+
+        public void Detach()
+        {
+            Actor actor = Owner;
+            Owner = null;
+            if (actor == null) return;
+            foreach (var item in Items)
+            {
+                if (item == null) continue;
+                item.OnDetachedFromActor(actor);
+            }
+        }
         #endregion
     }
 }

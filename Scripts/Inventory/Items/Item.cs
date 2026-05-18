@@ -39,7 +39,6 @@ namespace Kuantech.Inventory
     [Serializable]
     public class Item
     {
-        public InventoryModule ParentInvetory;
         public Inventory ParentInventory;
         public ItemDataAsset Data;
 
@@ -109,8 +108,6 @@ namespace Kuantech.Inventory
 
         #region Setters
 
-        public void SetParentInventory(InventoryModule inventory) => ParentInvetory = inventory;
-
         public void SetInventoryId(int inventoryId)
         {
             if (_stateData == null) _stateData = new ItemStateData();
@@ -151,7 +148,7 @@ namespace Kuantech.Inventory
 
         public int GetInventoryId()
         {
-            if (_stateData == null || (ParentInvetory == null && ParentInventory == null)) return -1;
+            if (_stateData == null || (ParentInventory == null)) return -1;
             return _stateData.InventoryId;
         }
 
@@ -209,28 +206,6 @@ namespace Kuantech.Inventory
                     }
                 }
             }
-        }
-
-        public static Item FromState(SerializableItemState state, InventoryModule inventory)
-        {
-            ItemDataAsset asset = ItemsManager.GetItemAsset(state.ItemDataId);
-            if (asset == null)
-            {
-                Debug.LogWarning($"[Item] FromState: asset '{state.ItemDataId}' not found.");
-                return null;
-            }
-            Item item = new Item(asset);
-            item._stateData.ItemId      = state.ItemDataId;
-            item._stateData.InventoryId = state.InventoryId;
-            item._stateData.Amount      = state.Amount;
-            item._stateData.ItemLevel   = state.ItemLevel;
-            item._stateData.Equipped    = state.Equipped;
-            item.SetEquippedSlot(inventory.GetEquipmentSlotTypeFromId(state.EquippedSlotId));
-            item.ParentInvetory = inventory;
-            inventory.ExtendInventory(state.InventoryId + 1);
-            inventory.items[state.InventoryId] = item;
-            item.LoadComponentStates(state.ComponentStates);
-            return item;
         }
 
         public static Item FromState(SerializableItemState state, Inventory inventory)
@@ -294,6 +269,20 @@ namespace Kuantech.Inventory
         {
             foreach (var comp in _components.Values)
                 comp.OnItemUsed(this);
+        }
+
+        public void OnAttachedToActor(Actor actor)
+        {
+            foreach(var comp in _components.Values)
+            {
+                comp.OnAttachedToActor(actor);
+            }
+        }
+
+        public void OnDetachedFromActor(Actor actor)
+        {
+            foreach (var comp in _components.Values)
+                comp.OnDetachedFromActor(actor);
         }
 
         #endregion
