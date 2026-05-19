@@ -51,8 +51,15 @@ namespace Kuantech.Puzzle
 
         public GridTileCoordinate GetRowColFromDraggablePosition(GridTileDraggable draggable)
         {
-            if (UseCursorPositionForDropPoint || draggable.IsCanvasElement())
+            if (UseCursorPositionForDropPoint)
                 return GetRowColFromCursorPosition();
+
+            if (draggable.IsCanvasElement())
+            {
+                if (draggable.GridTileGroup != null)
+                    return GetRowColFromGroupAnchor(draggable.GridTileGroup);
+                return GetRowColFromCanvasSingleTile(draggable);
+            }
 
             Vector3 positionToCheck = draggable.GetAnchorTilePosition(GridBoard);
             return GridBoard.GetRowColFromPosition(positionToCheck);
@@ -70,6 +77,62 @@ namespace Kuantech.Puzzle
                 : null;
 
             Vector2 screenPos = DragManager.GetCursorPosition(true);
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(boardRect, screenPos, cam, out Vector2 localPoint);
+            Vector3 worldPos = boardRect.TransformPoint(localPoint);
+            return GridBoard.GetRowColFromPosition(worldPos);
+        }
+
+        private GridTileCoordinate GetRowColFromCanvasSingleTile(GridTileDraggable draggable)
+        {
+            RectTransform boardRect = GridBoard.GetComponent<RectTransform>();
+            if (boardRect == null)
+                return GridBoard.GetRowColFromPosition(Vector3.zero);
+
+            Canvas canvas = boardRect.GetComponentInParent<Canvas>();
+            Camera cam = (canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay)
+                ? canvas.worldCamera
+                : null;
+
+            Vector2 screenPos = DragManager.GetCursorPosition(true);
+
+            // AnchorOffset is in canvas pixels; multiply by scaleFactor to convert to screen pixels
+            if (draggable.GridTile != null && draggable.GridTile.AnchorOffset != Vector3.zero)
+            {
+                float scale = canvas != null ? canvas.scaleFactor : 1f;
+                screenPos += (Vector2)draggable.GridTile.AnchorOffset * scale;
+            }
+
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(boardRect, screenPos, cam, out Vector2 localPoint);
+            Vector3 worldPos = boardRect.TransformPoint(localPoint);
+            return GridBoard.GetRowColFromPosition(worldPos);
+        }
+
+        private GridTileCoordinate GetRowColFromGroupAnchor(GridTileGroup group)
+        {
+            RectTransform boardRect = GridBoard.GetComponent<RectTransform>();
+            if (boardRect == null)
+                return GridBoard.GetRowColFromPosition(Vector3.zero);
+
+            GridTile anchorTile = null;
+            foreach (var pair in group.ChildTiles)
+            {
+                if (pair.Key.Row == 0 && pair.Key.Column == 0)
+                {
+                    anchorTile = pair.Value;
+                    break;
+                }
+            }
+
+            if (anchorTile == null)
+                return GetRowColFromCursorPosition();
+
+            Canvas canvas = boardRect.GetComponentInParent<Canvas>();
+            Camera cam = (canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay)
+                ? canvas.worldCamera
+                : null;
+
+            // For SSO canvas, transform.position is already in screen pixels
+            Vector2 screenPos = anchorTile.transform.position;
             RectTransformUtility.ScreenPointToLocalPointInRectangle(boardRect, screenPos, cam, out Vector2 localPoint);
             Vector3 worldPos = boardRect.TransformPoint(localPoint);
             return GridBoard.GetRowColFromPosition(worldPos);
