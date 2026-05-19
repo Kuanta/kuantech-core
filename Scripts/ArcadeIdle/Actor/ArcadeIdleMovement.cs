@@ -36,7 +36,7 @@ namespace Kuantech.ArcadeIdle
         private void FixedUpdate()
         {
             if (!Initialized || _statModule == null) return;
-            _rigidbody.linearVelocity = _currentMovementVector * _statModule.GetAttributeValue(movementSpeedAttributeAsset.Id);
+            _rigidbody.linearVelocity = _currentMovementVector * _statModule.GetAttributeValue(movementSpeedAttributeAsset.GetId());
             if(_currentMovementVector != Vector3.zero)
             {
                 //Use target movement vector so that the player moves exactly where they aim for
@@ -49,7 +49,7 @@ namespace Kuantech.ArcadeIdle
             if(!Initialized || _statModule == null) return;
             _currentMovementVector =
                 Vector3.Lerp(_currentMovementVector, _movementVector, Time.deltaTime * MoveVectorLerpFactor);
-            if (_arcadeIdleAnimator != null) _arcadeIdleAnimator.SetSpeed(_currentMovementVector.magnitude * _statModule.GetAttributeValue(movementSpeedAttributeAsset.Id));
+            if (_arcadeIdleAnimator != null) _arcadeIdleAnimator.SetSpeed(_currentMovementVector.magnitude * _statModule.GetAttributeValue(movementSpeedAttributeAsset.GetId()));
         }
 
         public void SetMovement(Vector2 movement)

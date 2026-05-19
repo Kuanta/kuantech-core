@@ -18,7 +18,7 @@ namespace Kuantech.Midcore.UI
 
         public void SetAttribute(AttributeDefinition attributeDefinition, int level)
         {
-            Icon.sprite = attributeDefinition.AttributeAsset.Icon;
+            Icon.sprite = attributeDefinition.AttributeAsset.GetIcon();
             float baseValue = attributeDefinition.BaseValue;
             float bonusValue = attributeDefinition.ValuePerLevel * level;
             ValueText.text = ShowBonusSeperately ? baseValue.Stringfy() : (baseValue + bonusValue).Stringfy();

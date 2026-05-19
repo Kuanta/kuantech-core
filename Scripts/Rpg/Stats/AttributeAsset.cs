@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Kuantech.Core;
 using Kuantech.Utils;
 using UnityEngine;
 
@@ -13,11 +14,7 @@ namespace Kuantech.Rpg
     }
 
     [CreateAssetMenu(fileName = "AttributeAsset", menuName = "Kuantech/Rpg/StatAttribute")]
-    public class AttributeAsset : ScriptableObject {
-        public string Id;
-        public string Name;
-        public Sprite Icon;
-        public string Description;
+    public class AttributeAsset : MetadataAsset {
         public List<DependencyData> Dependencies;
     }
 }

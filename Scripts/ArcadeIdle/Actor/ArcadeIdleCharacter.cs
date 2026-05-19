@@ -64,7 +64,7 @@ namespace Kuantech.ArcadeIdle
             foreach(var pair in UpgradeStatPairs)
             {
                 int upgradeRank = UpgradeManager.GetCurrentUpgradeLevel(pair.UpgradeData.UpgradeId);
-                StatsModule.SetAttributeRank(pair.attributeAsset.Id,upgradeRank);
+                StatsModule.SetAttributeRank(pair.attributeAsset.GetId(),upgradeRank);
                 _upgradesToAttributes[pair.UpgradeData] = pair.attributeAsset;
             }
             if(StatsModule != null)
@@ -95,7 +95,7 @@ namespace Kuantech.ArcadeIdle
         private void OnUpgradeHandler(object sender, UpgradeData upgradeData)
         {
             if (!_upgradesToAttributes.ContainsKey(upgradeData)) return;
-            StatsModule.SetAttributeRank(_upgradesToAttributes[upgradeData].Id,
+            StatsModule.SetAttributeRank(_upgradesToAttributes[upgradeData].GetId(),
              UpgradeManager.GetCurrentUpgradeLevel(upgradeData.UpgradeId));
             UpdateStats();
         }
@@ -105,7 +105,7 @@ namespace Kuantech.ArcadeIdle
             if (StatsModule == null) return;
             foreach (var pair in _upgradesToAttributes)
             {
-                StatsModule.SetAttributeRank(pair.Value.Id,
+                StatsModule.SetAttributeRank(pair.Value.GetId(),
              UpgradeManager.GetCurrentUpgradeLevel(pair.Key.UpgradeId));
             }
             if (CharacterInventory != null && carryCapacityAttributeAsset != null) CharacterInventory.InventoryCapacity = (int)StatsModule.GetAttributeValue(carryCapacityAttributeAsset);

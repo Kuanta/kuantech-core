@@ -72,7 +72,7 @@ namespace Kuantech.Midcore.UI
                 foreach (var attributeIndicator in AttributeIndicators)
                 {
                     if(attributeIndicator == null) continue;
-                    _attributeIndicatorsById[attributeIndicator.AttributeAsset.Id] = attributeIndicator;
+                    _attributeIndicatorsById[attributeIndicator.AttributeAsset.GetId()] = attributeIndicator;
                 }
             }
             ActorBlueprint actorBlueprint = collectableAsset.ActorBlueprint;

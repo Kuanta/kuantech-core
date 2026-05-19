@@ -90,7 +90,7 @@ namespace Kuantech.Rpg
                 }
                 else
                 {
-                    Debug.LogWarning($"[Attribute] Circular dependency on '{attributeAsset.Id}' — skipping.");
+                    Debug.LogWarning($"[Attribute] Circular dependency on '{attributeAsset.GetId()}' — skipping.");
                 }
             }
 

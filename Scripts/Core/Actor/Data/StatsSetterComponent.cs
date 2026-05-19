@@ -34,7 +34,7 @@ namespace Kuantech.Core
         {
             foreach (var attribDefinition in AttributeDefinitions)
             {
-                string attributeId = attribDefinition.AttributeAsset.Id;
+                string attributeId = attribDefinition.AttributeAsset.GetId();
                 string entry = database.GetString(tableName, rowId, attributeId);
                 
                 //base and per level must be sepeated by '/'
@@ -60,7 +60,7 @@ namespace Kuantech.Core
         {
             foreach (var attribDefinition in AttributeDefinitions)
             {
-                string attributeId = attribDefinition.AttributeAsset.Id;
+                string attributeId = attribDefinition.AttributeAsset.GetId();
                 try
                 {
                     attribDefinition.BaseValue = 0;

@@ -48,7 +48,7 @@ namespace Kuantech.Rpg.Managers
                 _attributesById = new Dictionary<string, AttributeAsset>();
                 foreach (var attributeAsset in AttributeAssets)
                 {
-                    _attributesById[attributeAsset.Id] = attributeAsset;
+                    _attributesById[attributeAsset.GetId()] = attributeAsset;
                 }
             }
 

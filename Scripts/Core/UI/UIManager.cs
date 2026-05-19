@@ -43,6 +43,7 @@ namespace Kuantech.Core.UI
 
             foreach(var panel in UIPanels)
             {
+                if(panel == null) continue;
                 _panelsById[panel.PanelId] = panel;
             }
 

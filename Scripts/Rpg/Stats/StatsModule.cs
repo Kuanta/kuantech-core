@@ -57,6 +57,7 @@ namespace Kuantech.Rpg
         //Events
         public UnityAction<int> LevelChangeEvent;
         public UnityAction ExperienceEarnedEvent;
+        public UnityAction OnAttributeChanged;
 
         [NonSerialized] private Dictionary<AttributeAsset, HashSet<StatModifier>> Modifiers;
         [NonSerialized] private Queue<AttributeAsset> DirtiedStats = new Queue<AttributeAsset>();
@@ -96,7 +97,7 @@ namespace Kuantech.Rpg
         {
             Attribute attribute = new Attribute();
             attribute.ApplyAttributeDefinition(attributeDefinition);
-            _statMap[attribute.attributeAsset.Id] = attribute;
+            _statMap[attribute.attributeAsset.GetId()] = attribute;
         }
 
         public override void LoadState(ActorModuleSerializableData serializableData)
@@ -202,7 +203,7 @@ namespace Kuantech.Rpg
         public Attribute GetAttribute(AttributeAsset attributeAsset)
         {
             if (attributeAsset == null) return null;
-            return GetAttribute(attributeAsset.Id);
+            return GetAttribute(attributeAsset.GetId());
         }
         
         public Attribute GetAttribute(string attributeId)
@@ -238,13 +239,13 @@ namespace Kuantech.Rpg
         public float GetAttributeValue(AttributeAsset attributeAsset)
         {
             if (attributeAsset == null) return 0f;
-            return GetAttributeValue(attributeAsset.Id, null);
+            return GetAttributeValue(attributeAsset.GetId(), null);
         }
 
         public float GetAttributeValue(AttributeAsset attributeAsset, HashSet<AttributeAsset> visiting)
         {
             if (attributeAsset == null) return 0f;
-            return GetAttributeValue(attributeAsset.Id, visiting);
+            return GetAttributeValue(attributeAsset.GetId(), visiting);
         }
 
         public float GetAttributeValue(string statId)
@@ -299,7 +300,7 @@ namespace Kuantech.Rpg
         {
             if (!IsServerInitialized) return;
             ExecuteSetAttributeValue(attributeAsset, value);
-            if (IsSpawned) TargetSetAttributeValue_Rpc(Owner, attributeAsset.Id, value);
+            if (IsSpawned) TargetSetAttributeValue_Rpc(Owner, attributeAsset.GetId(), value);
         }
 
         private void ExecuteSetAttributeValue(AttributeAsset attributeAsset, float value)
@@ -307,6 +308,7 @@ namespace Kuantech.Rpg
             Attribute att = GetAttribute(attributeAsset);
             if (att == null) return;
             att.BaseValue = value;
+            OnAttributeChanged?.Invoke();
         }
 
         private void ExecuteSetAttributeValue(string attributeId, float value)
@@ -314,6 +316,7 @@ namespace Kuantech.Rpg
             Attribute att = GetAttribute(attributeId);
             if (att == null) return;
             att.BaseValue = value;
+            OnAttributeChanged?.Invoke();
         }
 
         /// <summary>
@@ -337,7 +340,7 @@ namespace Kuantech.Rpg
         /// <returns></returns>
         public int GetAttributeRank(AttributeAsset attributeAsset)
         {
-            return GetAttributeRank(attributeAsset.Id);
+            return GetAttributeRank(attributeAsset.GetId());
         }
 
         /// <summary>
@@ -358,7 +361,7 @@ namespace Kuantech.Rpg
         /// <param name="amountToIncrease">Amount to increase</param>
         public void IncreaseAttributeRank(AttributeAsset attributeAsset, int amountToIncrease)
         {
-            IncreaseAttributeRank(attributeAsset.Id, amountToIncrease);
+            IncreaseAttributeRank(attributeAsset.GetId(), amountToIncrease);
         }
 
         /// <summary>
@@ -569,7 +572,7 @@ namespace Kuantech.Rpg
                 AttributeAsset type = DirtiedStats.Dequeue();
                 
                 // Eğer stat haritada yoksa atla
-                if (!_statMap.ContainsKey(type.Id)) continue;
+                if (!_statMap.ContainsKey(type.GetId())) continue;
 
                 float finalFlat = 0;
                 float finalPercentAdd = 1f; // %100 (1.0) ile başlar
@@ -605,7 +608,7 @@ namespace Kuantech.Rpg
                 // PercentAdd toplamı 0'ın altına düşerse stat negatif olmasın (oyun kuralına göre değişir)
                 finalPercentAdd = Mathf.Max(0, finalPercentAdd);
 
-                Attribute currAttribute = _statMap[type.Id];
+                Attribute currAttribute = _statMap[type.GetId()];
                 
                 // Attribute sınıfına bu değerleri set ediyoruz
                 // Not: Attribute sınıfında alanların isimlerini güncellemen gerekebilir
@@ -613,8 +616,10 @@ namespace Kuantech.Rpg
                 currAttribute.PercentAddModifier = finalPercentAdd;
                 currAttribute.PercentMultModifier = finalPercentMult;
                 
-                _statMap[type.Id] = currAttribute;
+                _statMap[type.GetId()] = currAttribute;
             }
+
+            OnAttributeChanged?.Invoke();
         }
         #endregion
 
