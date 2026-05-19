@@ -85,12 +85,15 @@ namespace Kuantech.Rpg.Skills
 
         private Dictionary<string, Skill> _skills = new Dictionary<string, Skill>();
         private List<Skill> _activeSkills = new();
+        private Dictionary<string, List<SkillDataAsset>> _skillSourcesByFamily = new();
 
         private Dictionary<string, PassiveSkill> _passiveSkills = new();
+        private Dictionary<string, List<PassiveSkillDataAsset>> _passiveSkillSourcesByFamily = new();
 
         //Runtime
         private HealthcareModule _healthcareModule;
         private LockModule _lockModule;
+        private bool _modulesInitialized;
 
 
         public override void Initialize()
@@ -115,6 +118,7 @@ namespace Kuantech.Rpg.Skills
                 _lockModule.OnLocked += OnLockHandler;
             }
 
+            _modulesInitialized = true;
             foreach (var passive in _passiveSkills.Values)
                 passive.Activate();
         }
@@ -184,6 +188,64 @@ namespace Kuantech.Rpg.Skills
             if (skill == null) return false;
             return true;
         }
+
+        // Rank-aware registration — multiple sources per family; active skill is always the highest rank.
+        public void RegisterSkill(SkillDataAsset asset)
+        {
+            if (asset == null) return;
+            string family = GetFamilyId(asset);
+            if (!_skillSourcesByFamily.TryGetValue(family, out var sources))
+            {
+                sources = new List<SkillDataAsset>();
+                _skillSourcesByFamily[family] = sources;
+            }
+            if (!sources.Contains(asset)) sources.Add(asset);
+            RefreshBestSkillForFamily(family);
+        }
+
+        public void UnregisterSkill(SkillDataAsset asset)
+        {
+            if (asset == null) return;
+            string family = GetFamilyId(asset);
+            if (!_skillSourcesByFamily.TryGetValue(family, out var sources)) return;
+            sources.Remove(asset);
+            RefreshBestSkillForFamily(family);
+        }
+
+        private static string GetFamilyId(SkillDataAsset asset)
+            => !string.IsNullOrEmpty(asset.BaseSkillId) ? asset.BaseSkillId : asset.SkillId;
+
+        private void RefreshBestSkillForFamily(string family)
+        {
+            if (!_skillSourcesByFamily.TryGetValue(family, out var sources)) return;
+
+            // Find which skill (if any) is currently active for this family
+            string currentActiveId = null;
+            foreach (var pair in _skills)
+            {
+                if (GetFamilyId(pair.Value.SkillDataAsset) == family)
+                {
+                    currentActiveId = pair.Key;
+                    break;
+                }
+            }
+
+            if (sources.Count == 0)
+            {
+                if (currentActiveId != null) _skills.Remove(currentActiveId);
+                return;
+            }
+
+            // Pick highest rank
+            SkillDataAsset best = null;
+            foreach (var s in sources)
+                if (best == null || s.Rank > best.Rank) best = s;
+
+            if (currentActiveId == best.SkillId) return; // already correct
+
+            if (currentActiveId != null) _skills.Remove(currentActiveId);
+            if (!_skills.ContainsKey(best.SkillId)) AddSkill(best);
+        }
         #endregion
 
 
@@ -216,6 +278,77 @@ namespace Kuantech.Rpg.Skills
 
         public bool HasPassiveSkill(string skillId) => _passiveSkills.ContainsKey(skillId);
         public bool HasPassiveSkill(PassiveSkillDataAsset dataAsset) => HasPassiveSkill(dataAsset.SkillId);
+
+        // Rank-aware registration — mirrors the active skill RegisterSkill pattern.
+        public void RegisterPassiveSkill(PassiveSkillDataAsset asset)
+        {
+            if (asset == null) return;
+            string family = GetPassiveFamilyId(asset);
+            if (!_passiveSkillSourcesByFamily.TryGetValue(family, out var sources))
+            {
+                sources = new List<PassiveSkillDataAsset>();
+                _passiveSkillSourcesByFamily[family] = sources;
+            }
+            if (!sources.Contains(asset)) sources.Add(asset);
+            RefreshBestPassiveSkillForFamily(family);
+        }
+
+        public void UnregisterPassiveSkill(PassiveSkillDataAsset asset)
+        {
+            if (asset == null) return;
+            string family = GetPassiveFamilyId(asset);
+            if (!_passiveSkillSourcesByFamily.TryGetValue(family, out var sources)) return;
+            sources.Remove(asset);
+            RefreshBestPassiveSkillForFamily(family);
+        }
+
+        private static string GetPassiveFamilyId(PassiveSkillDataAsset asset)
+            => !string.IsNullOrEmpty(asset.BaseSkillId) ? asset.BaseSkillId : asset.SkillId;
+
+        private void RefreshBestPassiveSkillForFamily(string family)
+        {
+            if (!_passiveSkillSourcesByFamily.TryGetValue(family, out var sources)) return;
+
+            // Find currently active passive for this family
+            string currentActiveId = null;
+            foreach (var pair in _passiveSkills)
+            {
+                if (GetPassiveFamilyId(pair.Value.DataAsset) == family)
+                {
+                    currentActiveId = pair.Key;
+                    break;
+                }
+            }
+
+            if (sources.Count == 0)
+            {
+                if (currentActiveId != null)
+                {
+                    _passiveSkills[currentActiveId].Deactivate();
+                    _passiveSkills.Remove(currentActiveId);
+                }
+                return;
+            }
+
+            // Pick highest rank
+            PassiveSkillDataAsset best = null;
+            foreach (var s in sources)
+                if (best == null || s.Rank > best.Rank) best = s;
+
+            if (currentActiveId == best.SkillId) return; // already correct
+
+            // Deactivate and remove current
+            if (currentActiveId != null)
+            {
+                _passiveSkills[currentActiveId].Deactivate();
+                _passiveSkills.Remove(currentActiveId);
+            }
+
+            // Add new best and activate if modules are ready
+            PassiveSkill newPassive = AddPassiveSkill(best);
+            if (newPassive != null && _modulesInitialized)
+                newPassive.Activate();
+        }
 
         #endregion
 
@@ -361,9 +494,11 @@ namespace Kuantech.Rpg.Skills
         {
             base.Cleanup();
             _skills.Clear();
+            _skillSourcesByFamily.Clear();
             foreach (var passive in _passiveSkills.Values)
                 passive.Deactivate();
             _passiveSkills.Clear();
+            _passiveSkillSourcesByFamily.Clear();
         }
 
         protected override ActorModuleSerializableData InstantiateState()

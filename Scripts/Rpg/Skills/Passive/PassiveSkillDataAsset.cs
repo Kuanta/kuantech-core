@@ -8,6 +8,9 @@ namespace Kuantech.Rpg.Skills
     {
         [Header("Info")]
         public string SkillId;
+        [Tooltip("Leave empty for skills that have no rank variants.")]
+        public string BaseSkillId;
+        public int Rank = 0;
         public string SkillName;
         public string SkillDescription;
 

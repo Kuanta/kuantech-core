@@ -92,7 +92,7 @@ namespace Kuantech.Utils
         {
             if (MainCamera == null)
             {
-                MainCamera = Camera.main;
+                MainCamera = CameraManager.GetCamera();
             }
             return MainCamera;
         }

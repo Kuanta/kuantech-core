@@ -68,6 +68,12 @@ namespace Kuantech.Inventory
             }
         }
 
+        public Actor GetOwner()
+        {
+            if (ParentInventory == null) return null;
+            return ParentInventory.Owner;
+        }
+
         #region Components
 
         public T GetItemComponent<T>() where T : ItemComponent

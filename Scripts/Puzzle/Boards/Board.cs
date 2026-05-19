@@ -158,6 +158,7 @@ namespace Kuantech.Puzzle
             {
                 BoardTileBackground bgObj = Instantiate(BackgroundGameObjectPrefab);
                 bgObj.transform.parent = transform;
+                bgObj.transform.localScale = Vector3.one;
                 BackgroundTiles[coordinate] = bgObj;
                 return bgObj;
             }
