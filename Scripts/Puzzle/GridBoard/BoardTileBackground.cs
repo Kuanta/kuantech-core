@@ -1,16 +1,11 @@
+using UnityEditor;
 using UnityEngine;
 namespace Kuantech.Puzzle
 {
     public class BoardTileBackground : MonoBehaviour
     {
-        [Header("Base Color")] [SerializeField]
-        private string BaseColorKey = "_BaseColor";
-        public float MaskedOpacity = 0.5f;
-        public float UnmaskedOpacity = 1f;
-        
         [Header("Highlighting")] 
-        [SerializeField] protected Renderer HighlightRenderer;
-        [SerializeField] private string HighlightToggleFieldKey = "_HighlightToggle";
+        [SerializeField] private TileHighlighter Highlighter;
 
         [Header("Even & Odd")]
         [SerializeField] private GameObject EvenBackground;
@@ -25,35 +20,26 @@ namespace Kuantech.Puzzle
 
         public void SetMasked(bool masked)
         {
-            if(HighlightRenderer == null) return;
-            if (HighlightRenderer.material.HasProperty(BaseColorKey))
+            if (Highlighter != null)
             {
-                Color baseColor = HighlightRenderer.material.GetColor(BaseColorKey);
-                baseColor.a = masked ? MaskedOpacity : UnmaskedOpacity;
-                HighlightRenderer.material.SetColor(BaseColorKey, baseColor);
+                Highlighter.SetMasked(masked);
             }
-            gameObject.SetActive(!masked);
 
         }
-        public virtual void SetColor(Color color)
-        {
-            HighlightRenderer.material.SetColor(BaseColorKey, color);
-        }
+   
         public virtual void Highlight()
         {
-            if (HighlightRenderer == null) return;
-            if (HighlightRenderer.material.HasProperty(HighlightToggleFieldKey))
+            if(Highlighter != null)
             {
-                HighlightRenderer.material.SetFloat(HighlightToggleFieldKey, 1);
+                Highlighter.ToggleHighlight(true);
             }
         }
 
         public virtual void ClearHighlight()
         {
-            if (HighlightRenderer == null) return;
-            if (HighlightRenderer.material.HasProperty(HighlightToggleFieldKey))
+            if (Highlighter != null)
             {
-                HighlightRenderer.material.SetFloat(HighlightToggleFieldKey, 0);
+                Highlighter.ToggleHighlight(false);
             }
         }
         

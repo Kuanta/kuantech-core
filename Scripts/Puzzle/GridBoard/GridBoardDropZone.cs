@@ -51,8 +51,28 @@ namespace Kuantech.Puzzle
 
         public GridTileCoordinate GetRowColFromDraggablePosition(GridTileDraggable draggable)
         {
+            if (UseCursorPositionForDropPoint || draggable.IsCanvasElement())
+                return GetRowColFromCursorPosition();
+
             Vector3 positionToCheck = draggable.GetAnchorTilePosition(GridBoard);
             return GridBoard.GetRowColFromPosition(positionToCheck);
+        }
+
+        private GridTileCoordinate GetRowColFromCursorPosition()
+        {
+            RectTransform boardRect = GridBoard.GetComponent<RectTransform>();
+            if (boardRect == null)
+                return GridBoard.GetRowColFromPosition(Vector3.zero);
+
+            Canvas canvas = boardRect.GetComponentInParent<Canvas>();
+            Camera cam = (canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay)
+                ? canvas.worldCamera
+                : null;
+
+            Vector2 screenPos = DragManager.GetCursorPosition(true);
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(boardRect, screenPos, cam, out Vector2 localPoint);
+            Vector3 worldPos = boardRect.TransformPoint(localPoint);
+            return GridBoard.GetRowColFromPosition(worldPos);
         }
        
         public virtual bool HandleDroppedTile(GridTileDraggable draggableTile, int row, int col)

@@ -245,7 +245,6 @@ namespace Kuantech.Utils
             {
                 OnClickedEmpty?.Invoke();
             }
-            OnClickedEmpty?.Invoke();
         }
 
         protected virtual bool HandleUIRaycastHit(List<RaycastResult> results)
