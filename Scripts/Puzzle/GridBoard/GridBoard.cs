@@ -664,7 +664,7 @@ namespace Kuantech.Puzzle
             Vector3 localBotLeft = ForwardVector * GetDepth() * OriginOffset.y + RightVector * GetWidth() * OriginOffset.x;
             Vector3 botLeftPoint = transform.TransformPoint(localBotLeft);
             Vector3 diff = pointOnGrid - botLeftPoint;
-            Vector3 localDiff = transform.InverseTransformDirection(diff);
+            Vector3 localDiff = transform.worldToLocalMatrix.MultiplyVector(diff);
             float horDist = Kuantech.Utils.Helpers.DotProjection(localDiff, RightVector);
             float depthDist = Kuantech.Utils.Helpers.DotProjection(localDiff, ForwardVector);
             coord.Column = Mathf.FloorToInt(horDist / CellWidth);
