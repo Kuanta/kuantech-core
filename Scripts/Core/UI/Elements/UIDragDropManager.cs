@@ -4,25 +4,16 @@ using UnityEngine.EventSystems;
 
 namespace Kuantech.Core.UI
 {
-    /// <summary>
-    /// SubManager that manages the ghost element following the cursor during UI drag operations.
-    /// Access via GetContext&lt;UIDragDropManager&gt;() or the static helper methods called by UIDragSlot.
-    /// </summary>
     public class UIDragDropManager : SubManager
     {
         [SerializeField] private Canvas _rootCanvas;
-        [SerializeField] private DraggableSlotGhost _ghost;
+        [SerializeField] private DraggableSlotGhost _defaultGhostPrefab;
         [SerializeField] private LayerMask _slotLayer;
 
         public static UIDragSlot DragSource { get; private set; }
 
         private UIDragSlot _lastHoveredSlot;
         private DraggableSlotGhost _activeGhost;
-
-        private void Awake()
-        {
-            _ghost.gameObject.SetActive(false);
-        }
 
         // ── Called by UIDragSlot ──────────────────────────────────────────────
 
@@ -31,16 +22,21 @@ namespace Kuantech.Core.UI
             var ctx = GetContext<UIDragDropManager>();
             if (ctx == null) return;
             DragSource = source;
-            ctx._activeGhost = source.GhostOverride != null ? source.GhostOverride : ctx._ghost;
-            ctx._activeGhost.OnBeginDrag(source);
-            ctx.MoveActiveGhost(eventData.position);
+
+            DraggableSlotGhost prefab = source.GhostPrefab != null ? source.GhostPrefab : ctx._defaultGhostPrefab;
+            if (prefab != null)
+            {
+                ctx._activeGhost = Instantiate(prefab, ctx._rootCanvas.transform);
+                ctx._activeGhost.OnBeginDrag(source);
+                ctx.MoveActiveGhost(eventData.position);
+            }
         }
 
         public static void UpdateDrag(PointerEventData eventData)
         {
             var ctx = GetContext<UIDragDropManager>();
             if (ctx == null || DragSource == null) return;
-            ctx.MoveActiveGhost(eventData.position);
+            if (ctx._activeGhost != null) ctx.MoveActiveGhost(eventData.position);
             ctx.UpdateHover(eventData.position);
         }
 
@@ -49,7 +45,13 @@ namespace Kuantech.Core.UI
             var ctx = GetContext<UIDragDropManager>();
             if (ctx == null) return;
             ctx.ClearHover();
-            ctx._activeGhost.OnDrop();
+
+            if (ctx._activeGhost != null)
+            {
+                ctx._activeGhost.OnDrop();
+                Destroy(ctx._activeGhost.gameObject);
+                ctx._activeGhost = null;
+            }
 
             UIDragSlot target = ctx.RaycastForSlot(eventData.position);
 

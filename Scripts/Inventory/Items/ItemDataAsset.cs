@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Kuantech.Core;
+using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Inventory
@@ -10,6 +11,8 @@ namespace Kuantech.Inventory
         public float weight;
         public float value;
         public bool stackable;
+
+        [KTTag("ItemTag")] public int Tag;
 
         public string ItemTemplateId;
         public string IconId;

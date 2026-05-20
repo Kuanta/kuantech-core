@@ -696,17 +696,15 @@ namespace Kuantech.Puzzle
 
         public override List<BoardTile> GetAllTiles()
         {
-            List<BoardTile> tiles = new List<BoardTile>();
-            for(int r=0;r<RowCount;++r)
-            {
-                for(int c=0;c<ColumnCount;++c)
+            var seen = new HashSet<BoardTile>();
+            for (int r = 0; r < RowCount; ++r)
+                for (int c = 0; c < ColumnCount; ++c)
                 {
                     BoardTile tile = GetTile(r, c, 0);
-                    if(tile == null || !tile.IsPlacedToBoard()) continue;
-                    tiles.Add(tile);
+                    if (tile == null || !tile.IsPlacedToBoard()) continue;
+                    seen.Add(tile);
                 }
-            }
-            return tiles;
+            return new List<BoardTile>(seen);
         }
         
         #region Core Set & Clear

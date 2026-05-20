@@ -1,33 +1,31 @@
 using System.Collections.Generic;
 using Kuantech.Core.UI;
-using Kuantech.Inventory.UI;
+using Kuantech.Utils;
 using UnityEngine;
 
-namespace Kuantech.Inventory
+namespace Kuantech.Inventory.UI
 {
-    public abstract class GridInventoryPanel : UIElement
+    public class GridInventoryPanel : UIElement
     {
         [SerializeField] protected Transform Container;
         [SerializeField] protected int SlotCount = 32;
+        [SerializeField] private InventoryItemSlot SlotPrefab;
+        [KTTag("ItemTag")] [SerializeField] private List<int> FilterTags;
 
         private readonly List<InventoryItemSlot> _slots = new();
 
         public void Populate(Inventory inventory)
         {
             Clear();
-
-            for (int i = 0; i < SlotCount; i++)
-                _slots.Add(CreateSlot());
-
             if (inventory == null) return;
 
-            int slotIdx = 0;
             foreach (var item in inventory.GetAllItems())
             {
-                if (slotIdx >= SlotCount) break;
                 if (!ShouldDisplayItem(item)) continue;
-                _slots[slotIdx].SetItem(item);
-                slotIdx++;
+                var slot = CreateSlot();
+                slot.SetInventory(inventory);
+                slot.SetItem(item);
+                _slots.Add(slot);
             }
         }
 
@@ -38,8 +36,12 @@ namespace Kuantech.Inventory
             _slots.Clear();
         }
 
-        protected abstract InventoryItemSlot CreateSlot();
+        protected virtual InventoryItemSlot CreateSlot() => Instantiate(SlotPrefab, Container);
 
-        protected virtual bool ShouldDisplayItem(Item item) => true;
+        protected virtual bool ShouldDisplayItem(Item item)
+        {
+            if (FilterTags == null || FilterTags.Count == 0) return true;
+            return FilterTags.Contains(item.Data.Tag);
+        }
     }
 }

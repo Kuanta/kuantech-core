@@ -14,6 +14,7 @@ namespace Kuantech.Inventory
     public class Inventory : ISaveable
     {
         public Item[] Items { get; private set; }
+        public int Capacity => Items.Length;
 
         public event Action<Item> OnItemAdded;
         public event Action<Item> OnItemRemoved;
@@ -30,6 +31,11 @@ namespace Kuantech.Inventory
 
         // ── Queries ───────────────────────────────────────────────────────────
 
+        public Equipment GetEquipment()
+        {
+            return null;
+        }
+        
         public Item GetItemAtSlot(int slot)
         {
             if (slot < 0 || slot >= Items.Length) return null;
@@ -197,6 +203,17 @@ namespace Kuantech.Inventory
                 OnItemRemoved?.Invoke(Items[i]);
                 Items[i] = null;
             }
+        }
+
+        public void SwapItems(int slotA, int slotB)
+        {
+            if (slotA < 0 || slotA >= Items.Length || slotB < 0 || slotB >= Items.Length) return;
+            Item a = Items[slotA];
+            Item b = Items[slotB];
+            Items[slotA] = b;
+            Items[slotB] = a;
+            a?.SetInventoryId(slotB);
+            b?.SetInventoryId(slotA);
         }
 
         public void Extend(int newSize)
