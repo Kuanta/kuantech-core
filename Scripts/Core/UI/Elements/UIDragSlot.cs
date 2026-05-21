@@ -4,34 +4,44 @@ using UnityEngine.UI;
 
 namespace Kuantech.Core.UI
 {
-    /// <summary>
-    /// Base drag-and-drop slot. Subclass to add data fields and override
-    /// CanAcceptDrop / OnDropReceived / OnDataAccepted with direct casts.
-    /// UIDragDropManager.DragSource always holds the active dragging slot.
-    /// </summary>
     [RequireComponent(typeof(CanvasGroup))]
     public class UIDragSlot : MonoBehaviour,
         IBeginDragHandler, IDragHandler, IEndDragHandler,
+        IPointerDownHandler, IPointerUpHandler,
         IPointerEnterHandler, IPointerExitHandler
     {
         [SerializeField] protected Image IconImage;
 
         [SerializeField] public DraggableSlotGhost GhostPrefab;
         private CanvasGroup _canvasGroup;
+        private bool _dragStarted;
 
         protected virtual void Awake()
         {
             _canvasGroup = GetComponent<CanvasGroup>();
         }
 
-        /// <summary>Returns the icon sprite used for the drag ghost. Override if icon is elsewhere.</summary>
         public virtual Sprite GetDragIcon() => IconImage != null ? IconImage.sprite : null;
+
+        // ── Tap ───────────────────────────────────────────────────────────────
+
+        public void OnPointerDown(PointerEventData eventData)
+        {
+            _dragStarted = false;
+        }
+
+        public void OnPointerUp(PointerEventData eventData)
+        {
+            if (!_dragStarted)
+                UIDragDropManager.NotifySlotTapped(this);
+        }
 
         // ── Drag source ───────────────────────────────────────────────────────
 
         public void OnBeginDrag(PointerEventData eventData)
         {
             if (!CanDrag()) return;
+            _dragStarted = true;
             _canvasGroup.blocksRaycasts = false;
             UIDragDropManager.BeginDrag(this, eventData);
         }
@@ -47,7 +57,6 @@ namespace Kuantech.Core.UI
             UIDragDropManager.EndDrag(this, eventData);
         }
 
-        /// <summary>Override to prevent dragging under certain conditions (e.g. empty slot).</summary>
         protected virtual bool CanDrag() => true;
 
         // ── Drop target ───────────────────────────────────────────────────────

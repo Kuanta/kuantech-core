@@ -14,8 +14,8 @@ namespace Kuantech.Inventory
     [Serializable]
     public class Equipment
     {
-        [SerializeField] public List<EquipmentSlot> SlotTypes;
-
+        public List<EquipmentSlotType> SlotTypes;
+        private List<EquipmentSlot> _slots;
         public Dictionary<EquipmentSlotType, EquipmentSlot> slotTable;
         private Dictionary<string, EquipmentSlotType> _slotTypesById;
 
@@ -26,10 +26,13 @@ namespace Kuantech.Inventory
         {
             slotTable = new Dictionary<EquipmentSlotType, EquipmentSlot>();
             _slotTypesById = new Dictionary<string, EquipmentSlotType>();
+            _slots = new List<EquipmentSlot>();
             if (SlotTypes == null) return;
-            foreach (var slot in SlotTypes)
+            foreach (var slotType in SlotTypes)
             {
+                var slot = new EquipmentSlot { SlotType = slotType };
                 slot.item = null;
+                _slots.Add(slot);
                 slotTable[slot.SlotType] = slot;
                 _slotTypesById[slot.SlotType.Id] = slot.SlotType;
             }
@@ -40,6 +43,13 @@ namespace Kuantech.Inventory
             if (_slotTypesById == null) return null;
             _slotTypesById.TryGetValue(id, out var slotType);
             return slotType;
+        }
+
+        public bool CanEquip(EquipmentSlotType slotType)
+        {
+            if (slotTable == null) return false;
+            if (slotType != null) return slotTable.ContainsKey(slotType);
+            return slotTable.Count > 0;
         }
 
         public Item GetEquippedItem(EquipmentSlotType slot)

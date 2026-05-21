@@ -1,22 +1,16 @@
 using Kuantech.Core.UI;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Kuantech.Inventory.UI
 {
     public class EquipmentItemSlot : InventoryItemSlot
     {
         public EquipmentSlotType SlotType;
+        public Image EmptySlotIcon;
         [SerializeField] public TMP_Text SlotNameText;
 
-        private Inventory _inventory;
-        private Equipment _equipment;
-
-        public void Setup(Inventory inventory, Equipment equipment)
-        {
-            _inventory = inventory;
-            _equipment = equipment;
-        }
 
         protected override bool ShouldAcceptItem(Item item)
         {
@@ -38,16 +32,10 @@ namespace Kuantech.Inventory.UI
             Item outgoing = Item;
 
             if (incoming != null)
-            {
                 _inventory.EquipItem(incoming, SlotType);
-                _equipment?.EquipItem(incoming, SlotType);
-            }
 
             if (outgoing != null)
-            {
                 _inventory.UnequipItem(outgoing);
-                _equipment?.UnequipItem(outgoing);
-            }
 
             SetItem(incoming);
             other.SetItem(outgoing);
@@ -59,6 +47,10 @@ namespace Kuantech.Inventory.UI
             if(SlotNameText != null)
             {
                 SlotNameText.text = slotType.SlotName;
+            }
+            if(EmptySlotIcon != null && SlotType != null && SlotType.DefaultIcon != null)
+            {
+                EmptySlotIcon.sprite = SlotType.DefaultIcon;
             }
         }
     }

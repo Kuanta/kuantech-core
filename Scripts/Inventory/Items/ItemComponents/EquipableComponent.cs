@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Kuantech.Utils;
 
 namespace Kuantech.Inventory
 {
@@ -11,6 +12,16 @@ namespace Kuantech.Inventory
         {
             _suitableSlots = data.SuitableSlots;
             _occupiedSlots = data.OccupiedSlots;
+        }
+
+        /// <summary>
+        /// Returns default suitable slot
+        /// </summary>
+        /// <returns></returns>
+        public EquipmentSlotType GetSuitableSlot()
+        {
+            if(_suitableSlots.IsNullOrEmpty()) return null;
+            return _suitableSlots[0];    
         }
 
         public override int CanEquipItem(Item item, EquipmentSlotType slotType)

@@ -11,10 +11,12 @@ namespace Kuantech.Inventory
         public List<SerializableItemState> ItemStates = new();
     }
 
+    [Serializable]
     public class Inventory : ISaveable
     {
         public Item[] Items { get; private set; }
         public int Capacity => Items.Length;
+        public Equipment Equipment;
 
         public event Action<Item> OnItemAdded;
         public event Action<Item> OnItemRemoved;
@@ -29,13 +31,21 @@ namespace Kuantech.Inventory
             Items = new Item[size];
         }
 
+        public void Initialize(int size)
+        {
+            Items = new Item[size];
+            Owner = null;
+            if(Equipment != null) Equipment.Initialize();
+        }
+
         // ── Queries ───────────────────────────────────────────────────────────
 
-        public Equipment GetEquipment()
+        public void SetEquipment(Equipment equipment)
         {
-            return null;
+            Equipment = equipment;
+            RestoreEquipmentState();
         }
-        
+
         public Item GetItemAtSlot(int slot)
         {
             if (slot < 0 || slot >= Items.Length) return null;
@@ -172,7 +182,10 @@ namespace Kuantech.Inventory
             if (item == null) return false;
             if (!Contains(item) && AddItem(item.Data) == null) return false;
             if (!item.CanEquip(slotType)) return false;
+            if (Equipment != null && !Equipment.CanEquip(slotType)) return false;
             item.Equip(slotType);
+            EquipmentSlotType resolvedSlot = item.GetEquippedSlot() != null ? item.GetEquippedSlot() : slotType;
+            Equipment?.EquipItem(item, resolvedSlot);
             OnItemEquipped?.Invoke(item, slotType);
             return true;
         }
@@ -181,6 +194,7 @@ namespace Kuantech.Inventory
         {
             if (item == null || !item.CanUnequip()) return false;
             item.Unequip();
+            Equipment?.UnequipItem(item);
             OnItemUnequipped?.Invoke(item);
             return true;
         }
@@ -241,6 +255,22 @@ namespace Kuantech.Inventory
             {
                 if (GetItemAtSlot(state.InventoryId) != null) continue;
                 Item.FromState(state, this);
+            }
+            RestoreEquipmentState();
+        }
+
+        private void RestoreEquipmentState()
+        {
+            if (Equipment == null) return;
+            foreach (var item in GetAllItems())
+            {
+                if (!item.IsEquipped()) continue;
+                string slotId = item.GetEquippedSlotId();
+                if (string.IsNullOrEmpty(slotId)) continue;
+                EquipmentSlotType slotType = Equipment.GetEquipmentSlotType(slotId);
+                if (slotType == null) continue;
+                item.SetEquippedSlot(slotType);
+                Equipment.EquipItem(item, slotType);
             }
         }
 

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using GLTFast.Schema;
 using UnityEngine;
 
 namespace Kuantech.Inventory
@@ -11,6 +12,7 @@ namespace Kuantech.Inventory
 
         [Tooltip("Slot name in actor slot handler")]
         public string SlotName;
+        public Sprite DefaultIcon;
         public List<EquipmentSlotType> OverlappingSlot; //For two handed weapons
     }
 }

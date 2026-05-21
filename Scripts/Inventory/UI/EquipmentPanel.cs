@@ -25,11 +25,13 @@ namespace Kuantech.Inventory.UI
             }
         }
 
-        public void Populate(Inventory inventory, Equipment equipment)
+        public void Populate(Inventory inventory)
         {
             foreach (var slot in Slots)
-                slot.Setup(inventory, equipment);
-            SetFromEquipment(equipment);
+            {
+                slot.SetInventory(inventory);
+            }
+            SetFromEquipment(inventory?.Equipment);
         }
 
         public void SetFromEquipment(Equipment equipment)

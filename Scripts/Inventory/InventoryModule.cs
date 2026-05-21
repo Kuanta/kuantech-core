@@ -28,16 +28,6 @@ namespace Kuantech.Inventory
         public event Action<Item, EquipmentSlotType> OnItemEquipped;
         public event Action<Item> OnItemUnequipped;
 
-        public override void Initialize()
-        {
-            if (Equipment != null)
-            {
-                Equipment.Initialize();
-                Equipment.OnItemSlotted += HandleItemSlotted;
-                Equipment.OnItemUnslotted += HandleItemUnslotted;
-            }
-        }
-
         // ── Inventory attachment ───────────────────────────────────────────────
 
         public void SetInventory(Inventory inventory)
@@ -46,44 +36,40 @@ namespace Kuantech.Inventory
             _inventory = inventory;
             if (_inventory == null) return;
 
+            var eq = _inventory.Equipment;
+            if (eq != null)
+            {
+                eq.OnItemSlotted += HandleItemSlotted;
+                eq.OnItemUnslotted += HandleItemUnslotted;
+            }
+
             _inventory.OnItemAdded += HandleItemAdded;
             _inventory.OnItemRemoved += HandleItemRemoved;
             _inventory.OnItemEquipped += HandleItemEquipped;
             _inventory.OnItemUnequipped += HandleItemUnequipped;
             _inventory.AttachToActor(Actor);
-            RestoreEquipmentState();
         }
 
         public void DetachInventory()
         {
             if (_inventory == null) return;
+
+            var eq = _inventory.Equipment;
+            if (eq != null)
+            {
+                eq.OnItemSlotted -= HandleItemSlotted;
+                eq.OnItemUnslotted -= HandleItemUnslotted;
+                foreach (var slot in eq.slotTable.Values)
+                    HandleItemUnslotted(slot.item);
+                eq.UnequipAll();
+            }
+
             _inventory.OnItemAdded -= HandleItemAdded;
             _inventory.OnItemRemoved -= HandleItemRemoved;
             _inventory.OnItemEquipped -= HandleItemEquipped;
             _inventory.OnItemUnequipped -= HandleItemUnequipped;
-            if (Equipment != null)
-            {
-                foreach (var slot in Equipment.slotTable.Values)
-                    HandleItemUnslotted(slot.item);
-                Equipment.UnequipAll();
-            }
             _inventory.Detach();
             _inventory = null;
-        }
-
-        private void RestoreEquipmentState()
-        {
-            if (Equipment == null || _inventory == null) return;
-            foreach (var item in _inventory.GetAllItems())
-            {
-                if (!item.IsEquipped()) continue;
-                string slotId = item.GetEquippedSlotId();
-                if (string.IsNullOrEmpty(slotId)) continue;
-                EquipmentSlotType slotType = Equipment.GetEquipmentSlotType(slotId);
-                if (slotType == null) continue;
-                item.SetEquippedSlot(slotType);
-                Equipment.EquipItem(item, slotType);
-            }
         }
 
         // ── Event handlers → send RPCs from server, relay events to listeners ─
@@ -104,8 +90,7 @@ namespace Kuantech.Inventory
 
         private void HandleItemEquipped(Item item, EquipmentSlotType slotType)
         {
-            // EquipableComponent already resolved the actual slot into item.GetEquippedSlot()
-            Equipment?.EquipItem(item, item.GetEquippedSlot());
+            // Equipment sync is handled by Inventory.EquipItem
             OnItemEquipped?.Invoke(item, slotType);
             if (!IsServerInitialized || !IsSpawned) return;
             ObserversEquipItem_Rpc(item.GetInventoryId(), item.GetEquippedSlotId());
@@ -113,7 +98,7 @@ namespace Kuantech.Inventory
 
         private void HandleItemUnequipped(Item item)
         {
-            Equipment?.UnequipItem(item);
+            // Equipment sync is handled by Inventory.UnequipItem
             OnItemUnequipped?.Invoke(item);
             if (!IsServerInitialized || !IsSpawned) return;
             ObserversUnequipItem_Rpc(item.GetInventoryId());
@@ -220,7 +205,6 @@ namespace Kuantech.Inventory
         {
             if (_inventory == null || serializableData is not InventoryState state) return;
             _inventory.LoadState(new InventoryData { ItemStates = state.ItemStates });
-            RestoreEquipmentState();
         }
 
         public override void OnNetworkSynced()

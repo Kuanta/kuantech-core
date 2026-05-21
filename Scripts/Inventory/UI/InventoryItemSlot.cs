@@ -5,9 +5,11 @@ namespace Kuantech.Inventory.UI
 {
     public class InventoryItemSlot : UIDragSlot
     {
+        public GameObject NullItemContents;
+        public GameObject SetItemContents;
         public Item Item { get; private set; }
 
-        private Inventory _inventory;
+        protected Inventory _inventory;
 
         public void SetInventory(Inventory inventory) => _inventory = inventory;
 
@@ -16,6 +18,16 @@ namespace Kuantech.Inventory.UI
             Item = item;
             if (IconImage != null)
                 IconImage.sprite = item != null ? ItemsManager.GetItemAsset(item.GetId())?.GetIcon() : null;
+
+            if(NullItemContents != null)
+            {
+                NullItemContents.SetActive(item == null);
+            }
+
+            if(SetItemContents != null)
+            {
+                SetItemContents.SetActive(item != null);
+            }
         }
 
         public virtual void ClearSlot()

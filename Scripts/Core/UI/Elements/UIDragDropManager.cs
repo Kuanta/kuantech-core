@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -11,6 +12,9 @@ namespace Kuantech.Core.UI
         [SerializeField] private LayerMask _slotLayer;
 
         public static UIDragSlot DragSource { get; private set; }
+
+        // slot is null when the background was clicked
+        public static event Action<UIDragSlot> OnSlotTapped;
 
         private UIDragSlot _lastHoveredSlot;
         private DraggableSlotGhost _activeGhost;
@@ -67,6 +71,14 @@ namespace Kuantech.Core.UI
 
             DragSource = null;
         }
+
+        public static void NotifySlotTapped(UIDragSlot slot)
+        {
+            if (DragSource != null) return; // suppress tap events mid-drag
+            OnSlotTapped?.Invoke(slot);
+        }
+
+        public static void NotifyBackgroundClicked() => NotifySlotTapped(null);
 
         // ── Internal ──────────────────────────────────────────────────────────
 

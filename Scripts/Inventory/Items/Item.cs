@@ -310,5 +310,6 @@ namespace Kuantech.Inventory
         }
 
         #endregion
+
     }
 }
