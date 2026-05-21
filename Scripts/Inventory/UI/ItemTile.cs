@@ -24,8 +24,8 @@ namespace Kuantech.Inventory.UI
 
             if (item == null) return;
 
-            ItemDataAsset asset = ItemsManager.GetItemAsset(item.GetId());
-            GridBoardComponentData data = asset?.GetDefinition<GridBoardComponentData>();
+            ItemDataAsset asset = ItemsManager.GetItemData(item.GetId());
+            GridBoardComponentData data = asset?.GetItemComponentData<GridBoardComponentData>();
 
             if (data != null)
             {

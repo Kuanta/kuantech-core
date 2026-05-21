@@ -1,6 +1,4 @@
-using System.Collections.Generic;
 using Kuantech.Core;
-using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Inventory
@@ -8,24 +6,18 @@ namespace Kuantech.Inventory
     [CreateAssetMenu(fileName = "ItemData", menuName = "Kuantech/Inventory/ItemData")]
     public class ItemDataAsset : MetadataAsset
     {
-        public float weight;
-        public float value;
-        public bool stackable;
+        [SerializeField] private ItemData ItemData;
 
-        [KTTag("ItemTag")] public int Tag;
-
-        public string ItemTemplateId;
-        public string IconId;
-
-        [SerializeReference]
-        public List<ItemComponentData> Components;
-
-        public T GetDefinition<T>() where T : ItemComponentData
+        public ItemData GetItemData()
         {
-            if (Components == null) return null;
-            foreach (var comp in Components)
-                if (comp is T t) return t;
-            return null;
+            ItemData.Id = GetId();
+            ItemData.Name = GetName();
+            ItemData.Description = GetDescription();
+            return ItemData;
+        }
+        public T GetItemComponentData<T>() where T : ItemComponentData
+        {
+            return ItemData.GetItemComponentData<T>();
         }
     }
 }

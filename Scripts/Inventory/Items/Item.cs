@@ -41,14 +41,14 @@ namespace Kuantech.Inventory
     public class Item
     {
         public Inventory ParentInventory;
-        public ItemDataAsset Data;
+        public ItemData Data;
 
         private ItemStateData _stateData;
         [NonSerialized] public ItemVisual ItemVisual;
 
         private Dictionary<Type, ItemComponent> _components;
 
-        public Item(ItemDataAsset data)
+        public Item(ItemData data)
         {
             Data = data;
             _stateData = new ItemStateData
@@ -176,7 +176,7 @@ namespace Kuantech.Inventory
 
         #endregion
 
-        public static Item GetItemFromData(ItemDataAsset data) => new Item(data);
+        public static Item GetItemFromData(ItemData data) => new Item(data);
 
         #region Serialization
 
@@ -220,7 +220,7 @@ namespace Kuantech.Inventory
 
         public static Item FromState(SerializableItemState state, Inventory inventory)
         {
-            ItemDataAsset asset = ItemsManager.GetItemAsset(state.ItemDataId);
+            ItemDataAsset asset = ItemsManager.GetItemData(state.ItemDataId);
             if (asset == null)
             {
                 Debug.LogWarning($"[Item] FromState: asset '{state.ItemDataId}' not found.");

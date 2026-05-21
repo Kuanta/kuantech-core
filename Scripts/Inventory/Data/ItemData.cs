@@ -1,5 +1,7 @@
 using System;
-using Kuantech.Core.Data;
+using System.Collections.Generic;
+using Kuantech.Utils;
+using UnityEngine;
 
 namespace Kuantech.Inventory
 {
@@ -13,13 +15,46 @@ namespace Kuantech.Inventory
     }
 
     [Serializable]
-    public class ItemData : VaultData
+    public class ItemData
     {
+        public string Id;
         public string Name;
-        public float weight;
-        public float value;
-        public bool stackable;
+        public string Description;
         public string ItemTemplateId;
         public string IconId;
+        public bool Stackable;
+        [KTTag("ItemTag")] public int Tag;
+        [SerializeReference]
+        public List<ItemComponentData> Components;
+
+        #region Metadata
+        public string GetId()
+        {
+            return Id;
+        }
+
+        public string GetName()
+        {
+            return Name;
+        }
+
+        public string GetDescription()
+        {
+            return Description;
+        }
+
+        public Sprite GetIcon()
+        {
+            return AssetLibrary.GetSprite(IconId);
+        }
+
+        #endregion
+        public T GetItemComponentData<T>() where T : ItemComponentData
+        {
+            if (Components== null) return null;
+            foreach (var compData in Components)
+                if (compData is T t) return t;
+            return null;
+        }
     }
 }

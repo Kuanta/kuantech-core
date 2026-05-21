@@ -137,7 +137,7 @@ namespace Kuantech.Inventory
 
         public bool AddItemById(string itemId, int amount = 1)
         {
-            ItemDataAsset data = ItemsManager.GetItemAsset(itemId);
+            ItemDataAsset data = ItemsManager.GetItemData(itemId);
             return data != null && AddItem(data, amount);
         }
 
@@ -170,7 +170,7 @@ namespace Kuantech.Inventory
 
         public bool AddAndEquipItem(string itemId, EquipmentSlotType slotType = null, int amount = 1)
         {
-            ItemDataAsset data = ItemsManager.GetItemAsset(itemId);
+            ItemDataAsset data = ItemsManager.GetItemData(itemId);
             if (data == null) return false;
             if (IsServerInitialized)
             {

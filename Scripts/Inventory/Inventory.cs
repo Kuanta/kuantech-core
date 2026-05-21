@@ -110,12 +110,12 @@ namespace Kuantech.Inventory
 
         // ── Add ───────────────────────────────────────────────────────────────
 
-        public Item AddItem(ItemDataAsset data, int amount = 1, int slot = -1)
+        public Item AddItem(ItemData data, int amount = 1, int slot = -1)
         {
             if (data == null) return null;
             amount = Mathf.Max(1, amount);
 
-            if (data.stackable)
+            if (data.Stackable)
             {
                 Item existing = GetItemById(data.GetId());
                 if (existing != null)
@@ -144,7 +144,7 @@ namespace Kuantech.Inventory
 
         public Item AddItem(string itemId, int amount = 1)
         {
-            ItemDataAsset data = ItemsManager.GetItemAsset(itemId);
+            ItemDataAsset data = ItemsManager.GetItemData(itemId);
             return data != null ? AddItem(data, amount) : null;
         }
 
@@ -161,7 +161,7 @@ namespace Kuantech.Inventory
             Item item = GetItemAtSlot(slot);
             if (item == null) return;
 
-            if (item.Data.stackable)
+            if (item.Data.Stackable)
             {
                 int remaining = item.GetAmount() - amount;
                 if (remaining > 0) { item.SetAmount(remaining); return; }

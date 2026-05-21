@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using ArcadeIdle.Data;
 using Cysharp.Threading.Tasks;
 using Kuantech.Core;
 using Kuantech.Core.Store;
@@ -21,7 +20,7 @@ namespace Kuantech.ArcadeIdle
         [SerializeField] private ResourceShop ResourceShop;
 
         public List<ResourceData> Resources;
-        public ResourcesVault ResourcesVault;
+        //public ResourcesVault ResourcesVault;
         //private Dictionary<string, ResourceData> _idToResourceData;
 
 
@@ -43,11 +42,11 @@ namespace Kuantech.ArcadeIdle
                 }
                 _tagsToNpcList[npcPrefab.CharacterTag].Add(npcPrefab);
             }
-            //Resources
-            if (ResourcesVault != null)
-            {
-                await ResourcesVault.LoadDataFromList(Resources);
-            }
+            // //Resources
+            // if (ResourcesVault != null)
+            // {
+            //     await ResourcesVault.LoadDataFromList(Resources);
+            // }
             
             //todo: Read resource datas from db
             
@@ -116,8 +115,9 @@ namespace Kuantech.ArcadeIdle
         {
             ArcadeIdleManager context = GetContext<ArcadeIdleManager>();
             if(context == null) return null;
-            ItemData itemData = context.ResourcesVault.GetDataById(id);
-            return itemData as ResourceData;
+            //ItemData itemData = context.ResourcesVault.GetDataById(id);
+            //TODO: Fix here (arcade idle)
+            return null;
         }
         #endregion
 

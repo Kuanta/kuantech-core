@@ -8,22 +8,22 @@ namespace Kuantech.Inventory
     public class ItemsManager : SubManager
     {
         public List<ItemDataAsset> ItemAssets;
-        private Dictionary<string, ItemDataAsset> _assetMap;
+        private Dictionary<string, ItemData> _assetMap;
 
         public override async UniTask Initialize(GameManager parentManager)
         {
             await base.Initialize(parentManager);
-            _assetMap = new Dictionary<string, ItemDataAsset>();
+            _assetMap = new Dictionary<string, ItemData>();
             foreach (var asset in ItemAssets)
             {
                 if (asset == null) continue;
                 string id = asset.GetId();
                 if (string.IsNullOrEmpty(id)) continue;
-                _assetMap[id] = asset;
+                _assetMap[id] = asset.GetItemData();
             }
         }
 
-        public static ItemDataAsset GetItemAsset(string itemId)
+        public static ItemData GetItemData(string itemId)
         {
             var ctx = GetContext<ItemsManager>();
             if (ctx?._assetMap == null) return null;
@@ -33,7 +33,7 @@ namespace Kuantech.Inventory
 
         public static Sprite GetItemIcon(string itemId)
         {
-            return GetItemAsset(itemId)?.GetIcon();
+            return GetItemData(itemId)?.GetIcon();
         }
     }
 }
