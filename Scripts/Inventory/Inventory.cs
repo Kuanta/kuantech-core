@@ -22,6 +22,7 @@ namespace Kuantech.Inventory
         public event Action<Item> OnItemRemoved;
         public event Action<Item, EquipmentSlotType> OnItemEquipped;
         public event Action<Item> OnItemUnequipped;
+        public event Action OnInventoryChanged;
 
         //Runtime
         [NonSerialized] public Actor Owner;
@@ -121,6 +122,7 @@ namespace Kuantech.Inventory
                 {
                     existing.AddAmount(amount);
                     OnItemAdded?.Invoke(existing);
+                    OnInventoryChanged?.Invoke();
                     return existing;
                 }
             }
@@ -136,6 +138,7 @@ namespace Kuantech.Inventory
             Items[target] = item;
             item.OnAdded();
             OnItemAdded?.Invoke(item);
+            OnInventoryChanged?.Invoke();
             return item;
         }
 
@@ -168,6 +171,7 @@ namespace Kuantech.Inventory
             Items[slot] = null;
             item.OnRemoved();
             OnItemRemoved?.Invoke(item);
+            OnInventoryChanged?.Invoke();
         }
 
         private void TryUnequipItem(Item item)
@@ -187,6 +191,7 @@ namespace Kuantech.Inventory
             EquipmentSlotType resolvedSlot = item.GetEquippedSlot() != null ? item.GetEquippedSlot() : slotType;
             Equipment?.EquipItem(item, resolvedSlot);
             OnItemEquipped?.Invoke(item, slotType);
+            OnInventoryChanged?.Invoke();
             return true;
         }
 
@@ -196,6 +201,7 @@ namespace Kuantech.Inventory
             item.Unequip();
             Equipment?.UnequipItem(item);
             OnItemUnequipped?.Invoke(item);
+            OnInventoryChanged?.Invoke();
             return true;
         }
 

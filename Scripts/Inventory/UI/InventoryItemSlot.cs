@@ -1,3 +1,4 @@
+using System;
 using Kuantech.Core.UI;
 using UnityEngine;
 
@@ -5,6 +6,7 @@ namespace Kuantech.Inventory.UI
 {
     public class InventoryItemSlot : UIDragSlot
     {
+        public static event Action<InventoryItemSlot> OnSlotTapped;
         public GameObject NullItemContents;
         public GameObject SetItemContents;
         public Item Item { get; private set; }
@@ -36,6 +38,12 @@ namespace Kuantech.Inventory.UI
         }
 
         protected override bool CanDrag() => Item != null;
+
+        protected override void OnTapped()
+        {
+            if (Item != null)
+                OnSlotTapped?.Invoke(this);
+        }
 
         public override bool CanAcceptDrop(UIDragSlot source)
         {

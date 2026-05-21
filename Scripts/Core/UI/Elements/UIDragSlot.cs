@@ -33,7 +33,12 @@ namespace Kuantech.Core.UI
         public void OnPointerUp(PointerEventData eventData)
         {
             if (!_dragStarted)
-                UIDragDropManager.NotifySlotTapped(this);
+                OnTapped();
+        }
+
+        protected virtual void OnTapped()
+        {
+            UIDragDropManager.NotifySlotTapped(this);
         }
 
         // ── Drag source ───────────────────────────────────────────────────────
