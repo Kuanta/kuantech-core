@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
 using Kuantech.Utils;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -173,6 +174,71 @@ namespace Kuantech.Core.Database
         }
         #endregion
 
-        
+        #region Data Setting
+        /// <summary>
+        /// Given an object, set KtDatabaseVariables from RowData
+        /// </summary>
+        public static void SetVariablesFromRow(object instance, RowData row)
+        {
+            if (instance == null || row == null) return;
+
+            var type = instance.GetType();
+            var members = type.GetMembers(System.Reflection.BindingFlags.Public |
+                                          System.Reflection.BindingFlags.NonPublic |
+                                          System.Reflection.BindingFlags.Instance);
+
+            foreach (var member in members)
+            {
+                // Detect Ktdatabasevariables
+                var attribute = member.GetCustomAttribute<Attributes.KtDatabaseVariableAttribute>();
+                if (attribute == null) continue;
+
+                string columnName = attribute.ColumnName;
+
+                if (member is System.Reflection.PropertyInfo prop && prop.CanWrite)
+                {
+                    SetValueForMember(prop.PropertyType, value => prop.SetValue(instance, value), row, columnName);
+                }
+                else if (member is System.Reflection.FieldInfo field)
+                {
+                    SetValueForMember(field.FieldType, value => field.SetValue(instance, value), row, columnName);
+                }
+            }
+        }
+        private static void SetValueForMember(System.Type memberType, System.Action<object> assign, RowData row, string column)
+        {
+            object result = null;
+
+            // Hücre verisini RowData içindeki tip güvenli metotlardan çekiyoruz
+            if (memberType == typeof(int))
+                result = row.GetIntValue(column, 0);
+            else if (memberType == typeof(float))
+                result = row.GetFloatValue(column, 0f);
+            else if (memberType == typeof(string))
+                result = row.GetStringValue(column, "");
+            else if (memberType == typeof(bool))
+            {
+                CellData cellData = row.GetCellData(column);
+                if (cellData != null && cellData.Value != null)
+                    result = cellData.Value.Get<bool>();
+            }
+            else if (memberType.IsEnum)
+            {
+                string enumString = row.GetStringValue(column, "");
+                if (System.Enum.TryParse(memberType, enumString, out var enumValue))
+                    result = enumValue;
+            }
+            else
+            {
+                CellData cellData = row.GetCellData(column);
+                if (cellData != null && cellData.Value != null)
+                    result = cellData.Value.GetValue(); // ya da cellData.Value.Get<object>()
+            }
+
+            if (result != null)
+                assign(result);
+        }
+        #endregion
+
     }
 }
