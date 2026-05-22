@@ -19,7 +19,7 @@ namespace Kuantech.Inventory.UI
         {
             Item = item;
             if (IconImage != null)
-                IconImage.sprite = item != null ? ItemsManager.GetItemData(item.GetId())?.GetIcon() : null;
+                IconImage.sprite = item != null ? ItemsLibrary.GetItemData(item.GetId())?.GetIcon() : null;
 
             if(NullItemContents != null)
             {

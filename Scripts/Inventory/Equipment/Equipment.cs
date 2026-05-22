@@ -58,17 +58,18 @@ namespace Kuantech.Inventory
             return slotTable[slot].item;
         }
 
-        public void EquipItem(Item item, EquipmentSlotType slotType)
+        public bool EquipItem(Item item, EquipmentSlotType slotType)
         {
-            if (item == null || slotType == null) return;
-            if (!slotTable.ContainsKey(slotType)) return;
+            if (item == null || slotType == null) return false;
+            if (!slotTable.ContainsKey(slotType)) return false;
 
-            Item existing = slotTable[slotType].item;
-            if (existing != null && existing != item)
-                UnequipItem(existing);
+            var equipable = item.GetItemComponent<EquipableComponent>();
+            if (equipable == null) return false;
+            if (equipable.CanEquipItem(item, slotType) < 0) return false;
 
             slotTable[slotType].item = item;
             OnItemSlotted?.Invoke(item, slotType);
+            return true;
         }
 
         public void UnequipItem(Item item)

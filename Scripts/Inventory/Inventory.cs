@@ -74,7 +74,7 @@ namespace Kuantech.Inventory
             return -1;
         }
 
-        public bool CanAddItem(ItemDataAsset data) => GetAvailableSlot() >= 0;
+        public bool CanAddItem(ItemData data) => GetAvailableSlot() >= 0;
 
         public List<Item> GetAllItems()
         {
@@ -144,7 +144,7 @@ namespace Kuantech.Inventory
 
         public Item AddItem(string itemId, int amount = 1)
         {
-            ItemDataAsset data = ItemsManager.GetItemData(itemId);
+            ItemData data = ItemsLibrary.GetItemData(itemId);
             return data != null ? AddItem(data, amount) : null;
         }
 
@@ -181,15 +181,76 @@ namespace Kuantech.Inventory
 
         // ── Equip ─────────────────────────────────────────────────────────────
 
+        public bool CanEquip(Item item, EquipmentSlotType slotType = null)
+        {
+            if(item == null) return false;
+            EquipableComponent equipable = item.GetItemComponent<EquipableComponent>();
+            if (equipable == null) return false;
+
+            if (slotType == null)
+            {
+                slotType = equipable.GetSuitableSlot();
+                if (slotType == null) return false;
+            }
+
+            if (!item.CanEquip(slotType)) return false;
+            if(Equipment == null) return false;
+            if (!Equipment.CanEquip(slotType)) return false;
+
+            foreach(var overlapping in equipable.GetOccupiedSlots())
+            {
+                Item existingItem = Equipment.GetEquippedItem(overlapping);
+                if (existingItem == null) continue;
+                if(!CanUnequip(existingItem)) return false;
+            }
+
+            return true;
+        }
+
+        public bool CanUnequip(Item item)
+        {
+            return item.CanUnequip();
+        }
+
         public bool EquipItem(Item item, EquipmentSlotType slotType = null)
         {
-            if (item == null) return false;
-            if (!Contains(item) && AddItem(item.Data) == null) return false;
-            if (!item.CanEquip(slotType)) return false;
-            if (Equipment != null && !Equipment.CanEquip(slotType)) return false;
+            if(!CanEquip(item, slotType)) return false;
+            
+            var eqComp = item.GetItemComponent<EquipableComponent>();
+            EquipmentSlotType resolvedSlot = slotType != null ? slotType : eqComp?.GetSuitableSlot();
+
+            if (Equipment != null)
+            {
+                // If item is already equipped somewhere, clear it from the old slot first
+                if (item.IsEquipped())
+                    Equipment.UnequipItem(item);
+
+                if (resolvedSlot != null)
+                {
+                    // Properly unequip whatever is already in the target slot
+                    Item displaced = Equipment.GetEquippedItem(resolvedSlot);
+                    if (displaced != null && displaced != item)
+                        UnequipItem(displaced);
+
+                    // Unequip items in slots this item occupies (e.g. two-handers)
+                    var occupied = eqComp?.GetOccupiedSlots();
+                    if (occupied != null)
+                        foreach (var occSlot in occupied)
+                            if (occSlot != resolvedSlot)
+                            {
+                                Item occ = Equipment.GetEquippedItem(occSlot);
+                                if (occ != null) UnequipItem(occ);
+                            }
+                }
+            }
+
             item.Equip(slotType);
-            EquipmentSlotType resolvedSlot = item.GetEquippedSlot() != null ? item.GetEquippedSlot() : slotType;
-            Equipment?.EquipItem(item, resolvedSlot);
+            EquipmentSlotType finalSlot = item.GetEquippedSlot() != null ? item.GetEquippedSlot() : resolvedSlot;
+            if (Equipment != null && !Equipment.EquipItem(item, finalSlot))
+            {
+                item.Unequip();
+                return false;
+            }
             OnItemEquipped?.Invoke(item, slotType);
             OnInventoryChanged?.Invoke();
             return true;
@@ -205,7 +266,7 @@ namespace Kuantech.Inventory
             return true;
         }
 
-        public bool AddAndEquipItem(ItemDataAsset data, EquipmentSlotType slotType, int amount = 1)
+        public bool AddAndEquipItem(ItemData data, EquipmentSlotType slotType, int amount = 1)
         {
             Item item = AddItem(data, amount);
             return item != null && EquipItem(item, slotType);

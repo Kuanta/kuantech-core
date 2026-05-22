@@ -35,7 +35,7 @@ namespace Kuantech.ArcadeIdle
 
         public Sprite GetResourceIcon()
         {
-            return ItemsManager.GetItemIcon(Id);
+            return ItemsLibrary.GetItemIcon(Id);
         }
         
         public bool IsCurrency()

@@ -12,10 +12,7 @@ namespace Kuantech.Inventory
         public string ItemId;
         public int InventoryId;
         public int ItemLevel;
-        public bool Equipped;
         public int Amount;
-        public EquipmentSlotType EquippedSlot;
-        public string EquippedSlotId; // cached after load, before slot type is resolved
     }
 
     [Serializable]
@@ -55,8 +52,6 @@ namespace Kuantech.Inventory
             {
                 ItemId = data.GetId(),
                 InventoryId = -1,
-                Equipped = false,
-                EquippedSlot = null,
             };
             _components = new Dictionary<Type, ItemComponent>();
             if (Data.Components == null) return;
@@ -94,7 +89,9 @@ namespace Kuantech.Inventory
 
         public bool CanEquip(EquipmentSlotType slotType)
         {
-            if (_components.IsNullOrEmpty()) return true;
+            //Require equipable component
+            if (_components.IsNullOrEmpty()) return false;
+            if (!HasItemComponent<EquipableComponent>()) return false;
             foreach (var pair in _components)
             {
                 if (pair.Value.CanEquipItem(this, slotType) < 0) return false;
@@ -134,17 +131,9 @@ namespace Kuantech.Inventory
             _stateData.Amount = amount;
         }
 
-        public void SetEquippedState(bool equipped)
-        {
-            if (_stateData == null) _stateData = new ItemStateData();
-            _stateData.Equipped = equipped;
-        }
-
         public void SetEquippedSlot(EquipmentSlotType slotType)
         {
-            if (_stateData == null) _stateData = new ItemStateData();
-            _stateData.EquippedSlot = slotType;
-            _stateData.EquippedSlotId = slotType != null ? slotType.Id : "";
+            GetItemComponent<EquipableComponent>()?.SetEquippedSlot(slotType);
         }
 
         #endregion
@@ -161,15 +150,23 @@ namespace Kuantech.Inventory
             return _stateData.InventoryId;
         }
 
-        public bool IsEquipped() => _stateData?.Equipped ?? false;
+        public bool IsEquipped()
+        {
+            EquipableComponent equipable = GetItemComponent<EquipableComponent>();
+            if (equipable == null) return false;
+            return equipable.IsEquipped();
+        }
 
-        public EquipmentSlotType GetEquippedSlot() => _stateData?.EquippedSlot;
+        public EquipmentSlotType GetEquippedSlot()
+        {
+            return GetItemComponent<EquipableComponent>()?.GetEquippedSlot();
+        }
 
         public string GetEquippedSlotId()
         {
-            if (_stateData == null) return "";
-            if (_stateData.EquippedSlot != null) return _stateData.EquippedSlot.Id;
-            return _stateData.EquippedSlotId ?? "";
+            EquipableComponent equipable = GetItemComponent<EquipableComponent>();
+            if (equipable == null) return "";
+            return equipable.GetEquippedSlotId();
         }
 
         public int GetAmount() => _stateData?.Amount ?? 0;
@@ -190,14 +187,15 @@ namespace Kuantech.Inventory
                     compStates.Add(new ComponentStateEntry { TypeName = comp.GetType().Name, Data = state });
             }
 
+            EquipableComponent equipable = GetItemComponent<EquipableComponent>();
             return new SerializableItemState
             {
                 ItemDataId      = Data.GetId(),
                 InventoryId     = _stateData.InventoryId,
                 Amount          = _stateData.Amount,
                 ItemLevel       = _stateData.ItemLevel,
-                Equipped        = _stateData.Equipped,
-                EquippedSlotId  = GetEquippedSlotId(),
+                Equipped        = equipable != null && equipable.IsEquipped(),
+                EquippedSlotId  = equipable != null ? equipable.GetEquippedSlotId() : "",
                 ComponentStates = compStates.Count > 0 ? compStates : null,
             };
         }
@@ -220,7 +218,7 @@ namespace Kuantech.Inventory
 
         public static Item FromState(SerializableItemState state, Inventory inventory)
         {
-            ItemDataAsset asset = ItemsManager.GetItemData(state.ItemDataId);
+            ItemData asset = ItemsLibrary.GetItemData(state.ItemDataId);
             if (asset == null)
             {
                 Debug.LogWarning($"[Item] FromState: asset '{state.ItemDataId}' not found.");
@@ -231,12 +229,16 @@ namespace Kuantech.Inventory
             item._stateData.InventoryId = state.InventoryId;
             item._stateData.Amount      = state.Amount;
             item._stateData.ItemLevel   = state.ItemLevel;
-            item._stateData.Equipped       = state.Equipped;
-            item._stateData.EquippedSlotId = state.EquippedSlotId ?? "";
             item.ParentInventory = inventory;
             inventory.Extend(state.InventoryId + 1);
             inventory.Items[state.InventoryId] = item;
             item.LoadComponentStates(state.ComponentStates);
+
+            // Migration: if no component state serialized equipped info, restore from item-level fields
+            EquipableComponent equipable = item.GetItemComponent<EquipableComponent>();
+            if (equipable != null && !equipable.IsEquipped() && state.Equipped)
+                equipable.InitFromLegacyState(state.Equipped, state.EquippedSlotId);
+
             return item;
         }
 
@@ -259,10 +261,9 @@ namespace Kuantech.Inventory
         public bool Equip(EquipmentSlotType slotType = null)
         {
             if (!CanEquip(slotType)) return false;
-            _stateData.Equipped = true;
             foreach (var comp in _components.Values)
                 comp.OnItemEquipped(this, slotType);
-            // EquippedSlot is set by EquipableComponent.OnItemEquipped (auto-resolves null slot)
+            // EquipableComponent.OnItemEquipped sets _isEquipped and resolves the slot
             return true;
         }
 
@@ -271,8 +272,7 @@ namespace Kuantech.Inventory
             if (!CanUnequip()) return false;
             foreach (var comp in _components.Values)
                 comp.OnItemUnequipped(this);
-            _stateData.Equipped = false;
-            _stateData.EquippedSlot = null;
+            // EquipableComponent.OnItemUnequipped clears _isEquipped and _equippedSlot
             return true;
         }
 
@@ -285,9 +285,7 @@ namespace Kuantech.Inventory
         public void OnAttachedToActor(Actor actor)
         {
             foreach(var comp in _components.Values)
-            {
                 comp.OnAttachedToActor(actor);
-            }
         }
 
         public void OnDetachedFromActor(Actor actor)
@@ -310,6 +308,5 @@ namespace Kuantech.Inventory
         }
 
         #endregion
-
     }
 }

@@ -31,10 +31,11 @@ namespace Kuantech.Inventory.UI
             Item incoming = other.Item;
             Item outgoing = Item;
 
-            if (incoming != null)
-                _inventory.EquipItem(incoming, SlotType);
+            if (incoming != null && !_inventory.EquipItem(incoming, SlotType))
+                return;
 
-            if (outgoing != null)
+            // Only unequip explicitly when dropping an empty slot onto this slot (moving equip out)
+            if (incoming == null && outgoing != null)
                 _inventory.UnequipItem(outgoing);
 
             SetItem(incoming);

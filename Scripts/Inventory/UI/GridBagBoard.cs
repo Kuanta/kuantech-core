@@ -105,7 +105,7 @@ namespace Kuantech.Inventory.UI
 
         // ── New item from asset ───────────────────────────────────────────────
 
-        public bool PlaceNewItem(ItemDataAsset asset, GridTileCoordinate coord, Inventory inventory)
+        public bool PlaceNewItem(ItemData asset, GridTileCoordinate coord, Inventory inventory)
         {
             if (asset == null || coord == null || inventory == null) return false;
             Item item = inventory.AddItem(asset);

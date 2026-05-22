@@ -31,7 +31,7 @@ namespace Kuantech.ArcadeIdle
         public Sprite GetResourceIcon()
         {
             ResourceData rd = GetResourceData();
-            return AssetCollection.GetSprite(rd.IconId);
+            return rd.Icon;
         }
 
         public ResourceVisual GetResourceVisual()

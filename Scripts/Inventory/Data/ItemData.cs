@@ -21,7 +21,7 @@ namespace Kuantech.Inventory
         public string Name;
         public string Description;
         public string ItemTemplateId;
-        public string IconId;
+        public Sprite Icon;
         public bool Stackable;
         [KTTag("ItemTag")] public int Tag;
         [SerializeReference]
@@ -45,7 +45,7 @@ namespace Kuantech.Inventory
 
         public Sprite GetIcon()
         {
-            return AssetLibrary.GetSprite(IconId);
+            return Icon;
         }
 
         #endregion

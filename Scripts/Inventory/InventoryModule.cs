@@ -127,7 +127,7 @@ namespace Kuantech.Inventory
 
         // ── Public API (delegates to inventory, respects server authority) ─────
 
-        public bool AddItem(ItemDataAsset itemData, int amount = 1)
+        public bool AddItem(ItemData itemData, int amount = 1)
         {
             if (IsServerInitialized)
                 return _inventory?.AddItem(itemData, amount) != null;
@@ -137,7 +137,7 @@ namespace Kuantech.Inventory
 
         public bool AddItemById(string itemId, int amount = 1)
         {
-            ItemDataAsset data = ItemsManager.GetItemData(itemId);
+            ItemData data = ItemsLibrary.GetItemData(itemId);
             return data != null && AddItem(data, amount);
         }
 
@@ -170,7 +170,7 @@ namespace Kuantech.Inventory
 
         public bool AddAndEquipItem(string itemId, EquipmentSlotType slotType = null, int amount = 1)
         {
-            ItemDataAsset data = ItemsManager.GetItemData(itemId);
+            ItemData data = ItemsLibrary.GetItemData(itemId);
             if (data == null) return false;
             if (IsServerInitialized)
             {

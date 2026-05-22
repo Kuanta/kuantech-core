@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Kuantech.Inventory
 {
-    public class ItemsManager : SubManager
+    public class ItemsLibrary : SubManager
     {
         public List<ItemDataAsset> ItemAssets;
         private Dictionary<string, ItemData> _assetMap;
@@ -25,7 +25,7 @@ namespace Kuantech.Inventory
 
         public static ItemData GetItemData(string itemId)
         {
-            var ctx = GetContext<ItemsManager>();
+            var ctx = GetContext<ItemsLibrary>();
             if (ctx?._assetMap == null) return null;
             ctx._assetMap.TryGetValue(itemId, out var asset);
             return asset;

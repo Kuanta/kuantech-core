@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Kuantech.Core;
@@ -7,12 +8,14 @@ namespace Kuantech.Utils
 {
     public class AssetLibrary : SubManager
     {
+        [Serializable]
         public struct SpriteEntry
         {
             public string Id;
             public Sprite Sprite;
         }
 
+        [Serializable]
         public struct GameObjectEntry
         {
             public string Id;

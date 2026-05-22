@@ -13,6 +13,7 @@ namespace Kuantech.Inventory
             ItemData.Id = GetId();
             ItemData.Name = GetName();
             ItemData.Description = GetDescription();
+            ItemData.Icon = GetIcon();
             return ItemData;
         }
         public T GetItemComponentData<T>() where T : ItemComponentData
