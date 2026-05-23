@@ -49,6 +49,11 @@ namespace Kuantech.Inventory
         }
 
         #endregion
+        public void AddComponentData<T>(T data) where T : ItemComponentData
+        {
+            if (Components == null) Components = new();
+            Components.Add(data);
+        }
         public T GetItemComponentData<T>() where T : ItemComponentData
         {
             if (Components== null) return null;

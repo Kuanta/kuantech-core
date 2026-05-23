@@ -19,16 +19,17 @@ namespace Kuantech.Rpg
         public float LevelToValueFactor;
         public ModifierTypes ModifierType;
         public bool IsPercentage;
-        public float GetValue(int level)
-        {
-            return BaseValue + LevelToValueFactor * level * (BaseValue != 0 ? Math.Sign(BaseValue) : 1);
-        }
+        // public float GetValue(int level)
+        // {
+        //     return BaseValue + LevelToValueFactor * level * (BaseValue != 0 ? Math.Sign(BaseValue) : 1);
+        // }
     }
 
     [Serializable]
     public class StatModifier
     {
         public int Level = 0; //Required for items
+        public float Scale = 1;
         public string ModifierTag = "";
         public AttributeAsset AttributeAsset;
         public float BaseValue;
@@ -46,7 +47,7 @@ namespace Kuantech.Rpg
         }
         public float GetValue()
         {
-            return BaseValue + LevelToValueFactor * Level;
+            return Scale*(BaseValue + LevelToValueFactor * Level);
         }
         public ModifierTypes ModifierType;
     }

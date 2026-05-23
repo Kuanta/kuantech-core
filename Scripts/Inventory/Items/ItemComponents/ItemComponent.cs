@@ -6,6 +6,11 @@ namespace Kuantech.Inventory
     public abstract class ItemComponent
     {
         [NonSerialized] public Item ParentItem;
+        public virtual void Initialize(Item item)
+        {
+            ParentItem = item;
+        }
+        public virtual void OnItemInitialized(){}
         public abstract void OnItemAdded(Item item);
         public abstract void OnItemRemoved(Item item);
         public abstract void OnItemUsed(Item item);

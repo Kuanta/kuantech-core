@@ -58,8 +58,13 @@ namespace Kuantech.Inventory
             foreach (var def in Data.Components)
             {
                 ItemComponent instance = def.CreateInstance();
-                instance.ParentItem = this;
+                instance.Initialize(this);
                 _components[instance.GetType()] = instance;
+            }
+
+            foreach(var comp in _components.Values)
+            {
+                comp.OnItemInitialized();
             }
         }
 
@@ -67,6 +72,12 @@ namespace Kuantech.Inventory
         {
             if (ParentInventory == null) return null;
             return ParentInventory.Owner;
+        }
+
+        public int GetLevel()
+        {
+            if (_stateData == null) return 0;
+            return _stateData.ItemLevel;
         }
 
         #region Components
@@ -258,7 +269,7 @@ namespace Kuantech.Inventory
                 comp.OnItemRemoved(this);
         }
 
-        public bool Equip(EquipmentSlotType slotType = null)
+        public bool Equip(EquipmentSlotType slotType)
         {
             if (!CanEquip(slotType)) return false;
             foreach (var comp in _components.Values)

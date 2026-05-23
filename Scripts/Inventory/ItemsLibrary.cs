@@ -7,6 +7,7 @@ namespace Kuantech.Inventory
 {
     public class ItemsLibrary : SubManager
     {
+        public List<ItemData> ItemDatas;
         public List<ItemDataAsset> ItemAssets;
         private Dictionary<string, ItemData> _assetMap;
 
