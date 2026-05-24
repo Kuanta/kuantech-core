@@ -20,6 +20,12 @@ namespace Kuantech.Rpg
         public bool AddBuffsOnEquip;
         public BuffAdderItemComponent(BuffAdderItemComponentData data) => Data = data;
 
+        public override void OnAttachedToActor(Actor actor)
+        {
+            if (AddBuffsOnEquip && ParentItem.IsEquipped())
+                AddBuffToActor(actor);
+        }
+
         public override void OnItemAdded(Item item) { }
         public override void OnItemEquipped(Item item, EquipmentSlotType slotType)
         {

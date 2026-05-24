@@ -17,8 +17,6 @@ namespace Kuantech.Inventory
 
     public class InventoryModule : ActorModule
     {
-        public Equipment Equipment;
-
         private Inventory _inventory;
         public Inventory Inventory => _inventory;
 
@@ -29,6 +27,13 @@ namespace Kuantech.Inventory
         public event Action<Item> OnItemUnequipped;
 
         // ── Inventory attachment ───────────────────────────────────────────────
+
+        public override void Initialize()
+        {
+            base.Initialize();
+            if (Actor.VisualHandler != null)
+                Actor.VisualHandler.OnActorVisualSet += OnActorVisualSet;
+        }
 
         public void SetInventory(Inventory inventory)
         {
@@ -48,6 +53,7 @@ namespace Kuantech.Inventory
             _inventory.OnItemEquipped += HandleItemEquipped;
             _inventory.OnItemUnequipped += HandleItemUnequipped;
             _inventory.AttachToActor(Actor);
+            RefreshEquippedVisuals();
         }
 
         public void DetachInventory()
@@ -104,9 +110,24 @@ namespace Kuantech.Inventory
             ObserversUnequipItem_Rpc(item.GetInventoryId());
         }
 
+        private void OnActorVisualSet(ActorVisual visual) => RefreshEquippedVisuals();
+
+        private void RefreshEquippedVisuals()
+        {
+            if (_inventory?.Equipment?.slotTable == null) return;
+            ActorVisual visual = Actor.VisualHandler != null ? Actor.VisualHandler.GetActorVisual() : null;
+            if (visual == null) return;
+            foreach (var slot in _inventory.Equipment.slotTable.Values)
+            {
+                Item item = slot.item;
+                if (item == null || item.ItemVisual != null) continue;
+                item.ItemVisual = visual.SlotItem(slot.SlotType, item);
+            }
+        }
+
         private void HandleItemSlotted(Item item, EquipmentSlotType slotType)
         {
-            if (!KtNetworkManager.IsClient()) return;
+            if (Actor.VisualHandler == null) return;
             ActorVisual visual = Actor.VisualHandler.GetActorVisual();
             if (visual != null)
                 item.ItemVisual = visual.SlotItem(slotType, item);
@@ -190,7 +211,7 @@ namespace Kuantech.Inventory
         public Item GetItemAtInventoryId(int id) => _inventory?.GetItemAtSlot(id);
         public Item GetItemById(string id) => _inventory?.GetItemById(id);
         public bool ContainsItemReference(Item item) => _inventory?.Contains(item) ?? false;
-        public EquipmentSlotType GetEquipmentSlotTypeFromId(string id) => Equipment?.GetEquipmentSlotType(id);
+        public EquipmentSlotType GetEquipmentSlotTypeFromId(string id) => _inventory?.Equipment?.GetEquipmentSlotType(id);
 
         // ── Network state sync ────────────────────────────────────────────────
 
@@ -209,15 +230,8 @@ namespace Kuantech.Inventory
 
         public override void OnNetworkSynced()
         {
-            if (!KtNetworkManager.IsClient() || Equipment?.slotTable == null) return;
-            ActorVisual visual = Actor.VisualHandler.GetActorVisual();
-            if (visual == null) return;
-            foreach (var slot in Equipment.slotTable.Values)
-            {
-                Item item = slot.item;
-                if (item == null || item.ItemVisual != null) continue;
-                item.ItemVisual = visual.SlotItem(slot.SlotType, item);
-            }
+            if (!KtNetworkManager.IsClient()) return;
+            RefreshEquippedVisuals();
         }
 
         // ── Networking ────────────────────────────────────────────────────────
@@ -242,13 +256,13 @@ namespace Kuantech.Inventory
         {
             Item item = _inventory?.GetItemAtSlot(inventoryId);
             if (item == null) return;
-            _inventory.EquipItem(item, Equipment != null ? Equipment.GetEquipmentSlotType(slotId) : null);
+            _inventory.EquipItem(item, _inventory.Equipment?.GetEquipmentSlotType(slotId));
         }
 
         [ServerRpc]
         private void ServerAddAndEquipItem_Rpc(string itemId, int amount, string slotId)
         {
-            AddAndEquipItem(itemId, Equipment != null ? Equipment.GetEquipmentSlotType(slotId) : null, amount);
+            AddAndEquipItem(itemId, _inventory?.Equipment?.GetEquipmentSlotType(slotId), amount);
         }
 
         [ServerRpc]
@@ -280,7 +294,7 @@ namespace Kuantech.Inventory
             if (IsServerInitialized) return;
             Item item = _inventory?.GetItemAtSlot(inventoryId);
             if (item == null) return;
-            _inventory.EquipItem(item, Equipment != null ? Equipment.GetEquipmentSlotType(slotId) : null);
+            _inventory.EquipItem(item, _inventory.Equipment?.GetEquipmentSlotType(slotId));
         }
 
         [ObserversRpc]
