@@ -43,11 +43,12 @@ namespace Kuantech.Core.Database
 
             public CellData GetCellData(string key)
             {
+                // "ID" is stored as RowData.Id, not as a cell value
+                if (key == "ID")
+                    return new CellData { Key = "ID", Value = new KtString { Value = Id } };
+
                 int columnIndex = Values.FindIndex(c => c.Key == key);
-                if (columnIndex < 0)
-                {
-                    return null;
-                }
+                if (columnIndex < 0) return null;
                 return Values[columnIndex];
             }
             
@@ -182,34 +183,42 @@ namespace Kuantech.Core.Database
         {
             if (instance == null || row == null) return;
 
+            // Traverse the full hierarchy with DeclaredOnly so that private setters
+            // on base-class properties are accessible from their declaring type's context.
             var type = instance.GetType();
-            var members = type.GetMembers(System.Reflection.BindingFlags.Public |
-                                          System.Reflection.BindingFlags.NonPublic |
-                                          System.Reflection.BindingFlags.Instance);
-
-            foreach (var member in members)
+            while (type != null && type != typeof(object))
             {
-                // Detect Ktdatabasevariables
-                var attribute = member.GetCustomAttribute<Attributes.KtDatabaseVariableAttribute>();
-                if (attribute == null) continue;
+                var flags = BindingFlags.Public |
+                            BindingFlags.NonPublic |
+                            BindingFlags.Instance |
+                            BindingFlags.DeclaredOnly;
 
-                string columnName = attribute.ColumnName;
+                foreach (var member in type.GetMembers(flags))
+                {
+                    var attribute = member.GetCustomAttribute<Attributes.KtDatabaseVariableAttribute>();
+                    if (attribute == null) continue;
 
-                if (member is System.Reflection.PropertyInfo prop && prop.CanWrite)
-                {
-                    SetValueForMember(prop.PropertyType, value => prop.SetValue(instance, value), row, columnName);
+                    string columnName = attribute.ColumnName;
+
+                    if (member is PropertyInfo prop)
+                    {
+                        var setter = prop.GetSetMethod(nonPublic: true);
+                        if (setter != null)
+                            SetValueForMember(prop.PropertyType, v => setter.Invoke(instance, new[] { v }), row, columnName);
+                    }
+                    else if (member is FieldInfo field)
+                    {
+                        SetValueForMember(field.FieldType, v => field.SetValue(instance, v), row, columnName);
+                    }
                 }
-                else if (member is System.Reflection.FieldInfo field)
-                {
-                    SetValueForMember(field.FieldType, value => field.SetValue(instance, value), row, columnName);
-                }
+
+                type = type.BaseType;
             }
         }
         private static void SetValueForMember(System.Type memberType, System.Action<object> assign, RowData row, string column)
         {
             object result = null;
 
-            // Hücre verisini RowData içindeki tip güvenli metotlardan çekiyoruz
             if (memberType == typeof(int))
                 result = row.GetIntValue(column, 0);
             else if (memberType == typeof(float))
@@ -219,9 +228,15 @@ namespace Kuantech.Core.Database
             else if (memberType == typeof(bool))
             {
                 CellData cellData = row.GetCellData(column);
-                if (cellData != null && cellData.Value != null)
+                if (cellData?.Value != null)
                     result = cellData.Value.Get<bool>();
             }
+            else if (memberType == typeof(float[]))
+                result = ParseArrayFromCell<KtFloatArray, float>(row, column, s => { var a = new KtFloatArray(); a.ParseString(s); return a.Values; }, a => a.Values);
+            else if (memberType == typeof(int[]))
+                result = ParseArrayFromCell<KtIntArray, int>(row, column, s => { var a = new KtIntArray(); a.ParseString(s); return a.Values; }, a => a.Values);
+            else if (memberType == typeof(string[]))
+                result = ParseArrayFromCell<KtStringArray, string>(row, column, s => { var a = new KtStringArray(); a.ParseString(s); return a.Values; }, a => a.Values);
             else if (memberType.IsEnum)
             {
                 string enumString = row.GetStringValue(column, "");
@@ -231,12 +246,23 @@ namespace Kuantech.Core.Database
             else
             {
                 CellData cellData = row.GetCellData(column);
-                if (cellData != null && cellData.Value != null)
-                    result = cellData.Value.GetValue(); // ya da cellData.Value.Get<object>()
+                if (cellData?.Value != null)
+                    result = cellData.Value.GetValue();
             }
 
             if (result != null)
                 assign(result);
+        }
+
+        private static TVal[] ParseArrayFromCell<TKt, TVal>(RowData row, string column,
+            System.Func<string, TVal[]> fromString, System.Func<TKt, TVal[]> fromTyped) where TKt : KtDataType
+        {
+            CellData cell = row.GetCellData(column);
+            if (cell?.Value == null) return null;
+            if (cell.Value is TKt typed) return fromTyped(typed);
+            // Fallback: cell stored as KtString with comma-separated values
+            string raw = cell.Value.Get<string>();
+            return string.IsNullOrWhiteSpace(raw) ? null : fromString(raw);
         }
         #endregion
 

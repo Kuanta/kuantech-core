@@ -19,10 +19,10 @@ namespace Kuantech.Rpg
         public float LevelToValueFactor;
         public ModifierTypes ModifierType;
         public bool IsPercentage;
-        // public float GetValue(int level)
-        // {
-        //     return BaseValue + LevelToValueFactor * level * (BaseValue != 0 ? Math.Sign(BaseValue) : 1);
-        // }
+        public float GetValue(int level)
+        {
+            return BaseValue + LevelToValueFactor * level * (BaseValue != 0 ? Math.Sign(BaseValue) : 1);
+        }
     }
 
     [Serializable]

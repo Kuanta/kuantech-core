@@ -125,6 +125,27 @@ namespace Kuantech.Editor.Database
                 case KtBool b:
                     b.Value = EditorGUILayout.Toggle(b.Value, GUILayout.Width(100));
                     break;
+                case KtFloatArray fa:
+                {
+                    string current = fa.Values != null ? string.Join(",", fa.Values) : "";
+                    string edited = EditorGUILayout.TextField(current, GUILayout.Width(100));
+                    if (edited != current) fa.ParseString(edited);
+                    break;
+                }
+                case KtIntArray ia:
+                {
+                    string current = ia.Values != null ? string.Join(",", ia.Values) : "";
+                    string edited = EditorGUILayout.TextField(current, GUILayout.Width(100));
+                    if (edited != current) ia.ParseString(edited);
+                    break;
+                }
+                case KtStringArray sa:
+                {
+                    string current = sa.Values != null ? string.Join(",", sa.Values) : "";
+                    string edited = EditorGUILayout.TextField(current, GUILayout.Width(100));
+                    if (edited != current) sa.ParseString(edited);
+                    break;
+                }
                 default:
                     EditorGUILayout.LabelField("?", GUILayout.Width(100));
                     break;

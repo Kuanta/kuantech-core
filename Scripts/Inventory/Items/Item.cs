@@ -98,6 +98,10 @@ namespace Kuantech.Inventory
 
         #region Checks
 
+        public bool IsEquipable()
+        {
+            return HasItemComponent<EquipableComponent>();
+        }
         public bool CanEquip(EquipmentSlotType slotType)
         {
             //Require equipable component
@@ -128,6 +132,12 @@ namespace Kuantech.Inventory
         {
             if (_stateData == null) _stateData = new ItemStateData();
             _stateData.InventoryId = inventoryId;
+        }
+
+        public void SetItemLevel(int level)
+        {
+            if (_stateData == null) _stateData = new ItemStateData();
+            _stateData.ItemLevel = level;
         }
 
         public void AddAmount(int amount)

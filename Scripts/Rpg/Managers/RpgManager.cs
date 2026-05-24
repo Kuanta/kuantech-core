@@ -86,7 +86,7 @@ namespace Kuantech.Rpg.Managers
         public static AttributeAsset GetAttributeAssetById(string id)
         {
             var ctx = GetContext<RpgManager>();
-            if (ctx == null) return null;
+            if (ctx == null || id==null) return null;
             if(ctx._attributesById.ContainsKey(id))
             {
                 return ctx._attributesById[id];

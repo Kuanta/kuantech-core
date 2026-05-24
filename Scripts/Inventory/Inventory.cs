@@ -148,6 +148,23 @@ namespace Kuantech.Inventory
             return data != null ? AddItem(data, amount) : null;
         }
 
+        // Adds a pre-built Item (e.g. from LootGenerator) into the inventory.
+        public bool AddItem(Item item, int slot = -1)
+        {
+            if (item == null) return false;
+            int target = slot >= 0 ? slot : GetAvailableSlot();
+            if (target < 0) return false;
+            if (target >= Items.Length) Extend(target + 1);
+            if (Items[target] != null) return false;
+            item.SetInventoryId(target);
+            item.ParentInventory = this;
+            Items[target] = item;
+            item.OnAdded();
+            OnItemAdded?.Invoke(item);
+            OnInventoryChanged?.Invoke();
+            return true;
+        }
+
         // ── Remove ────────────────────────────────────────────────────────────
 
         public void RemoveItem(Item item)
@@ -167,16 +184,21 @@ namespace Kuantech.Inventory
                 if (remaining > 0) { item.SetAmount(remaining); return; }
             }
 
-            TryUnequipItem(item);
+            bool unequipped = TryUnequipItem(item);
+            if(!unequipped) return;
             Items[slot] = null;
             item.OnRemoved();
             OnItemRemoved?.Invoke(item);
             OnInventoryChanged?.Invoke();
         }
 
-        private void TryUnequipItem(Item item)
+        private bool TryUnequipItem(Item item)
         {
-            if (item.IsEquipped()) UnequipItem(item);
+            if (item.IsEquipped()) 
+            {
+                return UnequipItem(item);
+            }
+            return true; //Not equipped anyway
         }
 
         // ── Equip ─────────────────────────────────────────────────────────────
