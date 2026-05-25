@@ -136,9 +136,12 @@ namespace Kuantech.Inventory
         private void HandleItemUnslotted(Item item)
         {
             if (item == null) return;
-            if (item.ItemVisual != null)
+            ActorVisual actorVisual = Actor.VisualHandler != null ? Actor.VisualHandler.GetActorVisual() : null;
+            if (actorVisual != null)
+                actorVisual.UnslotItem(item);
+            else if (item.ItemVisual != null)
             {
-                PoolManager.PoolObject(item.ItemVisual.gameObject);
+                item.ItemVisual.Despawn();
                 item.ItemVisual = null;
             }
             // If still marked equipped, this was a displacement — clean up item state

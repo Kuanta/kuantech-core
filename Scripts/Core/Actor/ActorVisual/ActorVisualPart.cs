@@ -1,28 +1,25 @@
-﻿using System.Collections.Generic;
-using Kuantech.Utils;
+using System.Collections.Generic;
+using Kuantech.Inventory;
 using UnityEngine;
 
 namespace Kuantech.Core
 {
-   
-
     /// <summary>
-    /// Visual parts like hair, beard, naked body etc.
+    /// A visual piece that lives on the actor prefab — defaults (hair, beard, naked body)
+    /// and in-place equipment meshes (Synty-style pre-placed armor).
+    /// Extends ItemVisual so the inventory system can treat it as any other item visual.
     /// </summary>
-    public class ActorVisualPart : MonoBehaviour
+    public class ActorVisualPart : ItemVisual
     {
-        public List<GameObject> ConnectedObjects; //For cases where
+        public bool IsDefault;
+        public List<GameObject> ConnectedObjects;
 
-        public void Toggle(bool toggle)
+        public void Toggle(bool active)
         {
-            if (!ConnectedObjects.IsNullOrEmpty())
-            {
-                foreach (GameObject obj in ConnectedObjects)
-                {
-                    obj.SetActive(toggle);
-                }
-            }
-            gameObject.SetActive(toggle);
+            gameObject.SetActive(active);
+            if (ConnectedObjects == null) return;
+            foreach (var obj in ConnectedObjects)
+                if (obj != null) obj.SetActive(active);
         }
     }
 }

@@ -1,18 +1,15 @@
-﻿using System.Collections.Generic;
-using GLTFast.Schema;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Kuantech.Inventory
 {
     [CreateAssetMenu(fileName = "EquipmentSlotType", menuName = "Kuantech/Rpg/EquipmentSlotType")]
-    public class EquipmentSlotType: ScriptableObject
+    public class EquipmentSlotType : ScriptableObject
     {
         [Tooltip("Slot id")]
         public string Id;
 
-        [Tooltip("Slot name in actor slot handler")]
+        [Tooltip("Socket transform name on the actor")]
         public string SlotName;
         public Sprite DefaultIcon;
-        public List<EquipmentSlotType> OverlappingSlot; //For two handed weapons
     }
 }

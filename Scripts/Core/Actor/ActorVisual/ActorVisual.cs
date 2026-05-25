@@ -8,21 +8,6 @@ using UnityEngine;
 
 namespace Kuantech.Core
 {
-
-
-    [Serializable]
-    public struct ActorVisualSerializableData
-    {
-        public List<ActorVisualPartSerializableData> VisualPartsData;
-    }
-
-    [Serializable]
-    public struct ActorVisualPartSerializableData
-    {
-        public string SlotName;
-        public int SlottedPartIndex;
-    }
-    
     public class ActorVisual : MonoBehaviour
     {
         [Header("Info")]
@@ -31,8 +16,11 @@ namespace Kuantech.Core
         [Header("Animations")] 
         public Animator Animator;
 
-        [Header("Visual Parts")] 
+        [Header("Visual Parts")]
         public ActorVisualPartsHandler VisualPartsHandler;
+
+        [Header("Skinned Mesh")]
+        public Transform SkeletonRoot;
 
 
         [Header("Shader Effects")] 
@@ -55,7 +43,7 @@ namespace Kuantech.Core
             if (Initialized) return;
             Initialized = true;
 
-            VisualPartsHandler.Initialize();
+            VisualPartsHandler.Initialize(this);
 
             ModuleHandler = new ModuleHandler<ActorVisualModule>();
             ActorVisualModule[] actorVisualModules = GetComponentsInChildren<ActorVisualModule>();
@@ -129,43 +117,66 @@ namespace Kuantech.Core
         }
         
         /// <summary>
-        /// Slots a visual to the given slot
+        /// Slots a visual to the given slot. Hides default visual parts declared on the visual.
         /// </summary>
-        /// <param name="slot"></param>
-        /// <param name="objectToSlot"></param>
-        /// <returns></returns>
         public ItemVisual SlotItem(EquipmentSlotType slot, Item itemToSlot)
         {
+            // In-place visuals live on the model — no socket needed, check before HasSlotFor
+            string templateId = itemToSlot.Data.ItemTemplateId;
+            ItemVisual visual = FindInPlaceVisual(templateId);
+            if (visual != null)
+            {
+                visual.IsInPlace = true;
+                visual.gameObject.SetActive(true);
+                visual.Spawn(itemToSlot.Data);
+                visual.RuntimeVisualSlot = visual.VisualSlot;
+                VisualPartsHandler.OnSlotEquipped(visual.VisualSlot, visual);
+                return visual;
+            }
+
+            // Spawned visuals require a socket
             if (!HasSlotFor(slot)) return null;
-            //todo: Implement actor visual toggling (Like beards when helmet is equipped etc.)
-            // EquipableItemComponentData equipableItemComponentData = itemToSlot.GetItemComponent<EquipableItemComponentData>();
-           
-            // if (equipableItemComponentData == null) return null;
-            
-            // //Clear occupying slots
-            // foreach (var occupying in equipableItemComponentData.OccupiedSlots)
-            // {
-            //     ToggleVisualPartForSlot(occupying, false);
-            // }
 
-            Transform socket = GetObjectSlot(slot.SlotName);
-            if(socket == null) return null;
-
-            //is in place?
-            ItemVisual visual = itemToSlot.SpawnItemVisual();
+            visual = itemToSlot.SpawnItemVisual();
             if (visual == null) return null;
-            visual.gameObject.AttachToParent(socket);
+
+            if (visual.IsSkinned)
+            {
+                visual.gameObject.AttachToParent(transform);
+                if (SkeletonRoot != null)
+                    visual.RebindBones(SkeletonRoot.GetComponentsInChildren<Transform>());
+            }
+            else
+            {
+                Transform socket = GetObjectSlot(slot.SlotName);
+                if (socket == null) { visual.Despawn(); return null; }
+                visual.gameObject.AttachToParent(socket);
+            }
+
+            visual.RuntimeVisualSlot = visual.VisualSlot;
+            VisualPartsHandler.OnSlotEquipped(visual.VisualSlot, visual);
             return visual;
         }
-        
+
         /// <summary>
-        /// Toggles the visual part
+        /// Despawns the item's visual and restores any hidden default parts.
         /// </summary>
-        /// <param name="slot"></param>
-        /// <param name="toggle"></param>
-        private void ToggleVisualPartForSlot(EquipmentSlotType slot, bool toggle)
+        public void UnslotItem(Item item)
         {
-            VisualPartsHandler.ToggleVisualPart(slot, toggle);
+            if (item == null || item.ItemVisual == null) return;
+            VisualPartsHandler.OnSlotUnequipped(item.ItemVisual.RuntimeVisualSlot, item.ItemVisual);
+            item.ItemVisual.Despawn();
+            item.ItemVisual = null;
+        }
+
+        private ItemVisual FindInPlaceVisual(string templateId)
+        {
+            if (string.IsNullOrEmpty(templateId)) return null;
+            var visuals = GetComponentsInChildren<ItemVisual>(includeInactive: true);
+            foreach (var v in visuals)
+                if (v.TemplateId == templateId && !v.gameObject.activeSelf)
+                    return v;
+            return null;
         }
 
         #endregion

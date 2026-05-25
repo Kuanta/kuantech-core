@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Kuantech.Core.UI;
 using UnityEngine;
 
@@ -14,7 +15,7 @@ namespace Kuantech.Inventory.UI
         {
             if (Initialized) return;
             base.Initialize();
-
+            Slots = GetComponentsInChildren<EquipmentItemSlot>().ToList();
             _slots = new Dictionary<EquipmentSlotType, EquipmentItemSlot>();
             if (Slots == null) return;
             foreach (var slot in Slots)

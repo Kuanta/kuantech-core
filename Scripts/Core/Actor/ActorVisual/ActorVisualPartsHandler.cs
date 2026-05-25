@@ -1,112 +1,71 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Kuantech.Inventory;
-using Kuantech.Utils;
+using UnityEngine;
 
 namespace Kuantech.Core
 {
     [Serializable]
-    public struct ActorVisualPartEntry
-    {
-        public EquipmentSlotType SlotType;
-        public List<ActorVisualPart> VisualParts;
-    }
-    
-    [Serializable]
-    public class ActorVisualPartsCollection
-    {
-        public List<ActorVisualPartEntry> VisualPartEntries;
-    }
-
-    [Serializable]
     public class ActorVisualPartsHandler
     {
-        public ActorVisualPartsCollection PartsCollection;
-        private Dictionary<EquipmentSlotType, List<ActorVisualPart>> _visualPartsBySlots;
-        private Dictionary<EquipmentSlotType, int> _currentVisualParts;
+        private Dictionary<VisualSlotType, List<ActorVisualPart>> _partsBySlot;
 
-        public void Initialize()
+        /// <summary>
+        /// Auto-discovers all ActorVisualPart children (including inactive) and builds the slot map.
+        /// Defaults start visible; non-default equipment pieces start hidden.
+        /// </summary>
+        public void Initialize(MonoBehaviour root)
         {
-            _visualPartsBySlots = new Dictionary<EquipmentSlotType, List<ActorVisualPart>>();
-            _currentVisualParts = new Dictionary<EquipmentSlotType, int>();
-            
-            foreach (var entry in PartsCollection.VisualPartEntries)
+            _partsBySlot = new Dictionary<VisualSlotType, List<ActorVisualPart>>();
+            var parts = root.GetComponentsInChildren<ActorVisualPart>(includeInactive: true);
+            foreach (var part in parts)
             {
-                if(entry.VisualParts.IsNullOrEmpty()) continue;
-                if (!_visualPartsBySlots.ContainsKey(entry.SlotType))
-                {
-                    _visualPartsBySlots[entry.SlotType] = new List<ActorVisualPart>();
-                }
+                if (part.VisualSlot == null) continue;
+                if (!_partsBySlot.TryGetValue(part.VisualSlot, out var list))
+                    _partsBySlot[part.VisualSlot] = list = new List<ActorVisualPart>();
+                list.Add(part);
+            }
+            foreach (var list in _partsBySlot.Values)
+                foreach (var part in list)
+                    part.Toggle(part.IsDefault);
+        }
 
-                foreach (var part in entry.VisualParts)
-                {
-                    _visualPartsBySlots[entry.SlotType].Add(part);
-                }
+        /// <summary>
+        /// Called when an item visual is assigned to a slot.
+        /// Shows the equipped in-place part, hides all others in that slot, then masks declared slots.
+        /// </summary>
+        public void OnSlotEquipped(VisualSlotType slot, ItemVisual equippedVisual)
+        {
+            if (slot == null) return;
+            ActorVisualPart equippedPart = equippedVisual as ActorVisualPart;
 
-                _currentVisualParts[entry.SlotType] = 0;
-            }
+            if (_partsBySlot.TryGetValue(slot, out var parts))
+                foreach (var p in parts)
+                    p.Toggle(p == equippedPart);
+
+            if (equippedVisual == null || equippedVisual.SlotsToMask == null) return;
+            foreach (var masked in equippedVisual.SlotsToMask)
+                SetDefaultsVisible(masked, false);
         }
-        
+
         /// <summary>
-        /// Toggles the actor visual part
+        /// Called when an item visual is removed from a slot.
+        /// Restores masked slots and shows defaults for the vacated slot.
         /// </summary>
-        /// <param name="slotType"></param>
-        /// <param name="toggle"></param>
-        public void ToggleVisualPart(EquipmentSlotType slotType, bool toggle)
+        public void OnSlotUnequipped(VisualSlotType slot, ItemVisual unequippedVisual)
         {
-            ActorVisualPart part = GetActiveVisualPart(slotType);
-            if (part == null) return;
-            part.gameObject.SetActive(toggle);
+            if (unequippedVisual != null && unequippedVisual.SlotsToMask != null)
+                foreach (var masked in unequippedVisual.SlotsToMask)
+                    SetDefaultsVisible(masked, true);
+
+            if (slot != null) SetDefaultsVisible(slot, true);
         }
-        
-        /// <summary>
-        /// Returns the active visual part
-        /// </summary>
-        /// <param name="slotType"></param>
-        /// <returns></returns>
-        public ActorVisualPart GetActiveVisualPart(EquipmentSlotType slotType)
+
+        private void SetDefaultsVisible(VisualSlotType slot, bool visible)
         {
-            if (_visualPartsBySlots == null) return null;
-            if (!_visualPartsBySlots.ContainsKey(slotType)) return null;
-            int activePartIndexForSlot = GetIndexForActiveVisualPart(slotType);
-            return _visualPartsBySlots[slotType][activePartIndexForSlot];
-        }
-        
-        /// <summary>
-        /// Returns the active index for visual part. Like the index of active hair, beard, etc.
-        /// </summary>
-        /// <param name="slotType"></param>
-        /// <returns></returns>
-        public int GetIndexForActiveVisualPart(EquipmentSlotType slotType)
-        {
-            if (_currentVisualParts == null) return -1;
-            if (!_currentVisualParts.ContainsKey(slotType)) return -1;
-            return _currentVisualParts[slotType];
-        }
-        /// <summary>
-        /// Toggles actor part by given index
-        /// </summary>
-        /// <param name="slotType"></param>
-        /// <param name="index"></param>
-        public void SetActiveVisualPart(EquipmentSlotType slotType, int index)
-        {
-            if (!_visualPartsBySlots.ContainsKey(slotType)) return;
-            index = index % _visualPartsBySlots[slotType].Count;
-            for (int i = 0; i < _visualPartsBySlots[slotType].Count; ++i)
-            {
-                _visualPartsBySlots[slotType][i].Toggle(i == index);
-            }
-        }
-        
-        /// <summary>
-        /// Toggles all active visual parts
-        /// </summary>
-        public void RefreshVisualParts()
-        {
-            foreach (var pair in _currentVisualParts)
-            {
-                SetActiveVisualPart(pair.Key, pair.Value);
-            }
+            if (!_partsBySlot.TryGetValue(slot, out var parts)) return;
+            foreach (var p in parts)
+                if (p.IsDefault) p.Toggle(visible);
         }
     }
 }
