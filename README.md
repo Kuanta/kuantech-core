@@ -1,14 +1,20 @@
 # Description
 
-# KuantechCore — Technical Reference
+## Design Philosophy
 
-KuantechCore is a reusable Unity game framework. It is engine-agnostic (no hard gameplay dependencies) and networking-optional (`#if NETWORKING_FISHNET` gates all FishNet code).
+KuantechCore is a **game-agnostic foundation**. It provides reusable building blocks; game-specific rules, values, and logic live in the consuming project — not here.
 
-**Namespaces:** `Kuantech.Core`, `Kuantech.Rpg`, `Kuantech.AI`**Networking:** FishNet (optional, compile flag)
-**Serialization:** Newtonsoft.Json (`TypeNameHandling.Auto`)
-**Async:** UniTask
+**Key principles:**
+
+- **No hardcoded gameplay assumptions.** A module must never embed game-specific constants (e.g. reward values, damage numbers, faction names, ability IDs). These are always injected via ScriptableObjects, configuration assets, or virtual method overrides.
+- **Extend, don't modify.** Game-specific behaviour is added by subclassing `ActorModule`, `SubManager`, `BTLeafAction`, etc. The core classes remain untouched across projects.
+- **Override points over conditionals.** When a system needs to vary per game, expose a `virtual` method or an event/callback — not an `if (gameType == ...)` branch.
+- **Separation of definition and execution.** What counts as a "reward", a "goal", or a "threat" is defined by the game project. The core framework only provides the execution machinery (scheduling, ticking, state storage).
+
+Example: an AI scoring system in core would expose `protected virtual float EvaluateAction(BTLeafAction action)` returning a normalized score — the game project overrides this method to define what "good" means in that specific game.
 
 ---
+
 
 ## GameManager & SubManager System
 
@@ -357,6 +363,8 @@ FishNet custom serializer for RPG types. Handles:
 
 ## AI System
 
+Currently, only major AI system is Behaviour Trees. 
+
 ### Behaviour Tree
 
 ```
@@ -378,20 +386,6 @@ public class MoveToPlayerAction : BTLeafAction
 ```
 
 `BTAgent` ticks the tree at configurable interval with random jitter. Pauses automatically on actor death. Resumes on spawn.
-
-### Pathfinding
-
-```csharp
-PathfindingAgent agent = GetModule<PathfindingAgent>();
-agent.SetDestination(targetPosition);
-
-PathFollower follower = GetModule<PathFollower>();
-follower.Follow(path);
-```
-
-A* implementation. `SurroundSystem` handles multi-enemy positioning around a single target.
-
----
 
 ## Pool Manager
 
@@ -439,29 +433,6 @@ RpgManager.GetContext<RpgManager>()
 GameStateManager.GetContext<GameStateManager>()
 ```
 
----
-
-## New Actor Prefab Checklist (Networked)
-
-1. **Root GameObject:**
-    - `Actor` (or subclass) component
-    - `NetworkObject` component (FishNet)
-    - `NetworkTransform` (position/rotation sync)
-    - `NetworkAnimator` (animation sync)
-2. **Child components (ActorModules):**
-    - `StatsModule` — **`ModuleId = "stats"`**
-    - `HealthcareModule` — resource bars wired
-    - `CombatModule` — attack patterns configured
-    - `MovementModule` — speed attribute linked
-    - `AnimationModule` — animator parameter names set
-3. **Player actor only:**
-    - `DepthsOfVolanActorNetworkBehaviour` — camera + controller binding
-4. **AI actor only:**
-    - `BTAgent` — behaviour tree assigned
-    - `PathfindingAgent` + `PathFollower`
-    - `TargetDetectionModule` — detection radius + faction filter
-
----
 
 ## Third-Party Licenses
 
