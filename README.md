@@ -7,7 +7,7 @@ KuantechCore is a **game-agnostic foundation**. It provides reusable building bl
 **Key principles:**
 
 - **No hardcoded gameplay assumptions.** A module must never embed game-specific constants (e.g. reward values, damage numbers, faction names, ability IDs). These are always injected via ScriptableObjects, configuration assets, or virtual method overrides.
-- **Extend, don't modify.** Game-specific behaviour is added by subclassing `ActorModule`, `SubManager`, `BTLeafAction`, etc. The core classes remain untouched across projects.
+- **Composition over inheritance.** Game-specific behaviour is added by writing new `ActorModule` components and attaching them to actors — not by subclassing existing modules. Features are combined at the prefab level, not through deep class hierarchies.
 - **Override points over conditionals.** When a system needs to vary per game, expose a `virtual` method or an event/callback — not an `if (gameType == ...)` branch.
 - **Separation of definition and execution.** What counts as a "reward", a "goal", or a "threat" is defined by the game project. The core framework only provides the execution machinery (scheduling, ticking, state storage).
 
