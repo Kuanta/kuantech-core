@@ -13,6 +13,8 @@ namespace Kuantech.Inventory.UI
         public string BoardId => _boardId;
 
         public event Action OnInventoryChanged;
+        public event Action<ItemTile> OnTileDropped;
+
 
         public override void CreateBoard()
         {
@@ -122,6 +124,7 @@ namespace Kuantech.Inventory.UI
 
             tile.AssignedItem.GetItemComponent<GridBoardComponent>()?.SetPlacement(data.coord, _boardId);
             OnInventoryChanged?.Invoke();
+            OnTileDropped?.Invoke(tile);
         }
     }
 }
