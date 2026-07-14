@@ -1,28 +1,99 @@
-# KuantechCore — Technical Reference
+# Description
 
-KuantechCore is a reusable Unity game framework. It is engine-agnostic (no hard gameplay dependencies) and networking-optional (`#if NETWORKING_FISHNET` gates all FishNet code).
+## Design Philosophy
 
-**Namespaces:** `Kuantech.Core`, `Kuantech.Rpg`, `Kuantech.AI`
-**Networking:** FishNet (optional, compile flag)
-**Serialization:** Newtonsoft.Json (`TypeNameHandling.Auto`)
-**Async:** UniTask
+KuantechCore is a **game-agnostic foundation**. It provides reusable building blocks; game-specific rules, values, and logic live in the consuming project — not here.
+
+**Key principles:**
+
+- **No hardcoded gameplay assumptions.** A module must never embed game-specific constants (e.g. reward values, damage numbers, faction names, ability IDs). These are always injected via ScriptableObjects, configuration assets, or virtual method overrides.
+- **Composition over inheritance.** Game-specific behaviour is added by writing new `ActorModule` components and attaching them to actors — not by subclassing existing modules. Features are combined at the prefab level, not through deep class hierarchies.
+- **Override points over conditionals.** When a system needs to vary per game, expose a `virtual` method or an event/callback — not an `if (gameType == ...)` branch.
+- **Separation of definition and execution.** What counts as a "reward", a "goal", or a "threat" is defined by the game project. The core framework only provides the execution machinery (scheduling, ticking, state storage).
+
+Example: an AI scoring system in core would expose `protected virtual float EvaluateAction(BTLeafAction action)` returning a normalized score — the game project overrides this method to define what "good" means in that specific game.
 
 ---
 
-## Current Networking Status (Depths Of Volan)
 
-| System | Status |
-|---|---|
-| Actor state changes (Spawned/Dead/Despawned) | ✅ Server-authoritative, ObserversRpc |
-| Melee combat | ✅ Server validates, ObserversRpc for animations |
-| Projectile combat | ✅ Networked |
-| Healthcare (health/resource bars) | ✅ Live sync via ObserversRpc + late-join sync |
-| Stats (attributes, level, resources) | ✅ TargetRpc (owner-only) |
-| Late-join state sync | ✅ OnSpawnServer → TargetSyncActorState_Rpc |
-| Player lifecycle (camera, controller) | ✅ OnLocalPlayerStart/Stop |
-| Despawn | ✅ FishNet owns lifecycle, no double-pool |
-| Skills | ⬜ Not yet networked |
-| Inventory | ⬜ Not yet networked |
+## GameManager & SubManager System
+
+`GameManager` is the root singleton that survives scene loads (`DontDestroyOnLoad`). It owns all **SubManagers** and orchestrates their lifecycle.
+
+### Two Manager Categories
+
+| Category | Lifetime | Discovery |
+| --- | --- | --- |
+| **Persistent** | Entire game session | Children of `GameManager` in the first scene |
+| **Scene-specific** | Current scene only | Children of `SceneSubManagerContainer` in the scene |
+
+`GetSubManagerByType<T>()` checks persistent first, then scene managers. Cleaned up on scene change.
+
+### Initialization Flow
+
+```
+GameManager.Start()
+  → GetComponentsInChildren<SubManager>()          // discover persistent managers
+  → InitializeSubManagers()                         // parallel: UniTask.WhenAll
+      → each subManager.Initialize(gameManager)     // async, run in parallel
+  → OnSubmanagersInitialized()                      // all ready, called sequentially
+  → OnNewScene()                                    // discover scene managers + repeat
+```
+
+On scene load, `SceneSubManagerContainer` (a component placed in the scene) provides the scene-specific managers. They go through the same `Initialize → OnSubmanagersInitialized` cycle, then all managers receive `OnSceneEntry` and `OnPostSceneLoaded`.
+
+### SubManager Lifecycle Hooks
+
+```csharp
+public class MyManager : SubManager
+{
+    // Called once, async — fetch remote data, warm caches, etc.
+    public override async UniTask Initialize(GameManager gm) { ... }
+
+    // All managers initialized — safe to call GetContext<OtherManager>()
+    public override void OnSubmanagersInitialized() { ... }
+
+    // Player just entered a new scene
+    public override void OnSceneEntry() { ... }
+
+    // Player is leaving the current scene (before load)
+    public override void OnSceneLeave() { ... }
+
+    // Scene fully loaded + all managers initialized, transition data available
+    public override void OnPostSceneLoaded(LevelTransitionData data, string prevScene) { ... }
+
+    // Scene-specific manager being torn down
+    public override void Cleanup() { ... }
+}
+```
+
+### Scene Transitions
+
+```
+GameManager.ChangeScene("DungeonScene", transitionData)
+  → foreach sceneSubManager: Cleanup()     // tear down scene managers
+  → foreach allManagers: OnSceneLeave()    // persistent managers notified
+  → LoadingScreen.SetActive(true)
+  → SceneManager.LoadScene()
+  → OnSceneLoaded fires
+    → discover SceneSubManagerContainer
+    → InitializeSubManagers(sceneManagers)
+    → OnSubmanagersInitialized()
+    → OnSceneEntry() + OnPostSceneLoaded()  // all managers
+    → LoadingScreen.SetActive(false)
+```
+
+**`LevelTransitionData`** is an abstract class — subclass it to pass typed data between scenes (e.g. chosen character, dungeon seed).
+
+### Access Pattern
+
+Every `SubManager` has a static helper that routes through `GameManager.Instance`:
+
+```csharp
+MyManager.GetContext<MyManager>()   // from anywhere, including other SubManagers
+// equivalent to:
+GameManager.Instance.GetSubManagerByType<MyManager>() as MyManager
+```
 
 ---
 
@@ -71,6 +142,7 @@ UnityAction<Actor> OnStateLoaded       // fires after LoadActorState
 ```
 
 **Module discovery:** On `Initialize()`, all `ActorModule` children are discovered via `GetComponentsInChildren`. Stored in:
+
 - `ActorModulesList` — all modules (ordered)
 - `Modules` — `Dictionary<Type, List<ActorModule>>`
 - `ModulesById` — `Dictionary<string, ActorModule>` — **only modules with `ModuleId` set in inspector**
@@ -141,7 +213,7 @@ private void ObserverSyncResource_Rpc(ResourceAsset asset, float value)
 ### FishNet Callback Order (Scene Objects)
 
 | Callback | Fires on | When |
-|---|---|---|
+| --- | --- | --- |
 | `OnStartNetwork()` | All peers | Network initializes — fires for late-joining clients too |
 | `OnStartServer()` | Server | Server-side init |
 | `OnStartClient()` | Client | Client-side init |
@@ -260,6 +332,7 @@ void ClearModifiers()
 ```
 
 **Save data (`StatsSerializableData`):**
+
 ```csharp
 int Level;
 Dictionary<string, int> AttributeRanks;   // key = AttributeAsset.Id
@@ -280,6 +353,7 @@ Dictionary<string, float> ResourceValues; // key = ResourceAsset.Id
 ### RpgSerializer
 
 FishNet custom serializer for RPG types. Handles:
+
 - `ResourceAsset` ↔ `string Id` (via `RpgManager.GetResourceAssetById`)
 - `DamageType` ↔ `string Id`
 - `AttributeDefinition`, `StatModifier`, `DamageInfo`, `HitInfo`
@@ -288,6 +362,8 @@ FishNet custom serializer for RPG types. Handles:
 ---
 
 ## AI System
+
+Currently, only major AI system is Behaviour Trees. 
 
 ### Behaviour Tree
 
@@ -310,20 +386,6 @@ public class MoveToPlayerAction : BTLeafAction
 ```
 
 `BTAgent` ticks the tree at configurable interval with random jitter. Pauses automatically on actor death. Resumes on spawn.
-
-### Pathfinding
-
-```csharp
-PathfindingAgent agent = GetModule<PathfindingAgent>();
-agent.SetDestination(targetPosition);
-
-PathFollower follower = GetModule<PathFollower>();
-follower.Follow(path);
-```
-
-A* implementation. `SurroundSystem` handles multi-enemy positioning around a single target.
-
----
 
 ## Pool Manager
 
@@ -371,37 +433,11 @@ RpgManager.GetContext<RpgManager>()
 GameStateManager.GetContext<GameStateManager>()
 ```
 
----
-
-## New Actor Prefab Checklist (Networked)
-
-1. **Root GameObject:**
-   - `Actor` (or subclass) component
-   - `NetworkObject` component (FishNet)
-   - `NetworkTransform` (position/rotation sync)
-   - `NetworkAnimator` (animation sync)
-
-2. **Child components (ActorModules):**
-   - `StatsModule` — **`ModuleId = "stats"`**
-   - `HealthcareModule` — resource bars wired
-   - `CombatModule` — attack patterns configured
-   - `MovementModule` — speed attribute linked
-   - `AnimationModule` — animator parameter names set
-
-3. **Player actor only:**
-   - `DepthsOfVolanActorNetworkBehaviour` — camera + controller binding
-
-4. **AI actor only:**
-   - `BTAgent` — behaviour tree assigned
-   - `PathfindingAgent` + `PathFollower`
-   - `TargetDetectionModule` — detection radius + faction filter
-
----
 
 ## Third-Party Licenses
 
 | Package | License | Commercial Use |
-|---|---|---|
+| --- | --- | --- |
 | FishNet | Asset Store (free) | ✅ |
 | Newtonsoft.Json | MIT | ✅ |
 | UniTask | MIT | ✅ |
