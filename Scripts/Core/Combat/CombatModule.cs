@@ -652,6 +652,7 @@ namespace Kuantech.Core
         #region Attack Commands
         public bool Attack(ActionCastData castData)
         {
+            if(GetCurrentAttackPattern() == null) return false;
             bool canAttack = ExecuteAttack(castData);
             if (IsServerInitialized && IsSpawned)
             {

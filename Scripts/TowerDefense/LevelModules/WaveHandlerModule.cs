@@ -453,6 +453,7 @@ namespace Kuantech.TowerDefense
             OnWaveCompleted?.Invoke();
             _waveCompleteRoutine = null;
         }
+
         #endregion
 
         #region Event
