@@ -253,8 +253,10 @@ namespace Kuantech.Core
 
         private void ExecuteLocalDespawn()
         {
-            Cleanup();
+            // Fire the Despawned state change (and OnDespawnedEvent) BEFORE Cleanup nulls the delegates,
+            // otherwise external subscribers never get notified of the despawn.
             ExecuteChangeActorState(ActorState.Despawned);
+            Cleanup();
             if (VisualHandler != null) VisualHandler.ClearCurrentVisual();
             Destroy(gameObject);
             //PoolManager.PoolObject(gameObject);
@@ -263,8 +265,9 @@ namespace Kuantech.Core
         // Called from FishNet callbacks — cleanup only, no pooling (FishNet owns the lifecycle)
         private void ExecuteNetworkDespawn()
         {
-            Cleanup();
+            // Notify despawn before Cleanup wipes the event delegates (see ExecuteLocalDespawn).
             ExecuteChangeActorState(ActorState.Despawned);
+            Cleanup();
             if (VisualHandler != null) VisualHandler.ClearCurrentVisual();
         }
 
