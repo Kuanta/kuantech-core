@@ -11,7 +11,7 @@ namespace Kuantech.Core
     /// <summary>
     /// Defines a template for an actor.
     /// </summary>
-    [CreateAssetMenu(fileName = "ActorTemplate", menuName = "Kuantech/Midcore/Actor Template")]
+    [CreateAssetMenu(fileName = "ActorBlueprint", menuName = "Kuantech/Data/Actor Template")]
     public class ActorBlueprint : MetadataAsset
     {
         [Header("Actor Prefab")] 
