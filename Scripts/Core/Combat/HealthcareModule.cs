@@ -152,6 +152,7 @@ namespace Kuantech.Core.Combat
         {
             if (!Actor.IsAlive() || !IsServerInitialized) return;
             ResourceAsset resourceAsset = GetAffectedResource(damageInfo);
+            Debug.Log($"{Actor.name} received {damageInfo.GetDamage()} amount of dmg");
             ExecuteDamageResource(damageInfo);
             if (IsSpawned) ObserverSyncResource_Rpc(resourceAsset.Id, GetCurrentResource(resourceAsset));
         }
@@ -235,7 +236,7 @@ namespace Kuantech.Core.Combat
             float maxRes = GetMaxResourceValue(resourceAsset);
             float newRes = Mathf.Clamp(currentRes + amount, 0, maxRes);
 
-            _statModule.SetResourceValue(HealthResourceAsset, newRes);
+            _statModule.SetResourceValue(resourceAsset, newRes);
 
             //Show heal text if health resource is increased
             if (ShowDamageText && resourceAsset == HealthResourceAsset)
