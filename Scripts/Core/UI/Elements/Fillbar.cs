@@ -1,4 +1,5 @@
-﻿using Kuantech.Utils;
+﻿using DG.Tweening;
+using Kuantech.Utils;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -7,6 +8,7 @@ namespace Kuantech.Core.UI
 {
     public class Fillbar : MonoBehaviour
     {
+        private Tween _fillTween;
         public RectTransform FillImage;
         public TMP_Text ValueText;
         public float FillAmount = 1f;
@@ -103,5 +105,72 @@ namespace Kuantech.Core.UI
                 ValueText.text = $"{value} / {maxValue}";
             }
         }
+
+        #region Animated Fill
+
+        /// <summary>Tweens the fill toward target over duration (instant if duration &lt;= 0).</summary>
+        public Tween AnimateFill(float target, float duration, Ease ease = Ease.OutCubic)
+        {
+            _fillTween?.Kill();
+            if (duration <= 0f)
+            {
+                SetFill(target);
+                return null;
+            }
+            _fillTween = BuildFillTween(FillAmount, target, duration, ease);
+            return _fillTween;
+        }
+
+        /// <summary>
+        /// Like AnimateFill, but if the fill would drop (a bar that wrapped, e.g. an XP level-up) it first
+        /// fills to full, snaps to empty, then fills to the new amount.
+        /// </summary>
+        public Tween AnimateFillWrap(float target, float duration, Ease ease = Ease.OutCubic)
+        {
+            _fillTween?.Kill();
+            if (duration <= 0f)
+            {
+                SetFill(target);
+                return null;
+            }
+
+            if (target < FillAmount - 0.001f)
+            {
+                Sequence seq = DOTween.Sequence();
+                seq.Append(BuildFillTween(FillAmount, 1f, duration * 0.5f, ease));
+                seq.AppendCallback(() => SetFill(0f));
+                seq.Append(BuildFillTween(0f, target, duration * 0.5f, ease));
+                _fillTween = seq;
+            }
+            else
+            {
+                _fillTween = BuildFillTween(FillAmount, target, duration, ease);
+            }
+            return _fillTween;
+        }
+
+        public void KillFillTween()
+        {
+            _fillTween?.Kill();
+            _fillTween = null;
+        }
+
+        private Tween BuildFillTween(float from, float to, float duration, Ease ease)
+        {
+            float value = from;
+            return DOTween.To(() => value, x =>
+                {
+                    value = x;
+                    SetFill(x);
+                }, to, duration)
+                .SetEase(ease);
+        }
+
+        private void OnDestroy()
+        {
+            _fillTween?.Kill();
+        }
+
+        #endregion
     }
 }

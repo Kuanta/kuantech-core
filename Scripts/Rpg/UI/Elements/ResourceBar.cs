@@ -41,7 +41,7 @@ namespace Kuantech.Rpg
             if (CurrentHealthText) CurrentHealthText.text = current.Stringfy(roundToInteger:true);
             if (MaxHealthText)     MaxHealthText.text     = max.Stringfy(roundToInteger: true);
 
-            if (!FrontBar || !BackBar) return;
+            if (!FrontBar) return; // FrontBar is required; BackBar (the trailing animation) is optional
 
             var newTarget = max > 0 ? Mathf.Clamp01(current / max) : 0f;
 
@@ -49,7 +49,7 @@ namespace Kuantech.Rpg
             if (HideOnFullHealth && newTarget >= 1f && HideParent)
             {
                 FrontBar.value = 1f;
-                BackBar.value  = 1f;
+                if (BackBar) BackBar.value = 1f;
                 _backAnimInProgress = false;
                 _backBarDelayTimer  = 0f;
                 ToggleVisual(ShowAlways);
@@ -63,30 +63,34 @@ namespace Kuantech.Rpg
             // Ön bar anında gerçek sağlığa gider
             FrontBar.value = newTarget;
 
-            bool isHeal = newTarget > _lastTargetFill + Mathf.Epsilon;
+            // BackBar yoksa trailing animasyon yok — front bar tek başına yeterli
+            if (BackBar)
+            {
+                bool isHeal = newTarget > _lastTargetFill + Mathf.Epsilon;
 
-            if (isHeal)
-            {
-                // HEAL: trailing bar'ı anında yeni hedefe çek, animasyonu iptal et
-                BackBar.value        = newTarget;
-                _backAnimInProgress  = false;
-                _backBarDelayTimer   = 0f;
-            }
-            else
-            {
-                // DAMAGE: gecikmeli düşür
-                if (BackBar.value <= newTarget)
+                if (isHeal)
                 {
-                    // edge-case güvenlik
-                    BackBar.value       = newTarget;
-                    _backAnimInProgress = false;
-                    _backBarDelayTimer  = 0f;
+                    // HEAL: trailing bar'ı anında yeni hedefe çek, animasyonu iptal et
+                    BackBar.value        = newTarget;
+                    _backAnimInProgress  = false;
+                    _backBarDelayTimer   = 0f;
                 }
                 else
                 {
-                    _targetFill          = newTarget;
-                    _backBarDelayTimer   = BackBarDelay;
-                    _backAnimInProgress  = true;
+                    // DAMAGE: gecikmeli düşür
+                    if (BackBar.value <= newTarget)
+                    {
+                        // edge-case güvenlik
+                        BackBar.value       = newTarget;
+                        _backAnimInProgress = false;
+                        _backBarDelayTimer  = 0f;
+                    }
+                    else
+                    {
+                        _targetFill          = newTarget;
+                        _backBarDelayTimer   = BackBarDelay;
+                        _backAnimInProgress  = true;
+                    }
                 }
             }
 
@@ -125,8 +129,8 @@ namespace Kuantech.Rpg
 
         public void Reset()
         {
-            FrontBar.value = 1.0f;
-            BackBar.value = 1.0f;
+            if (FrontBar) FrontBar.value = 1.0f;
+            if (BackBar)  BackBar.value = 1.0f;
         }
 
     }

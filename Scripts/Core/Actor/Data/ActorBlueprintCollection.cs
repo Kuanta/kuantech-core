@@ -27,7 +27,6 @@ namespace Kuantech.Core
                     if(bpId == id)
                     {
                         toReturn = blueprint;
-                        break;
                     }
                 }
             }
