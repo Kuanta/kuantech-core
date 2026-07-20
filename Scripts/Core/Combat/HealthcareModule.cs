@@ -42,6 +42,12 @@ namespace Kuantech.Core.Combat
         public UnityAction<ResourceAsset> OnResourceChanged;
         public UnityAction<float> OnHealReceived;
         public UnityAction<HitInfo> OnReceivedHitEvent; //Since we cant be sure of the order of Hit event from actor.
+        /// <summary>
+        /// Fired once per damage entry in a hit (the main damage and every additional damage), with the
+        /// hit it came from. Lets a reaction key off one specific damage type and its magnitude instead of
+        /// the hit as a whole — e.g. only a blunt entry launches the body, and its amount says how hard.
+        /// </summary>
+        public UnityAction<DamageInfo, HitInfo> OnDamageReceivedEvent;
         
         //Invulnerability
         public LockVariable InvulnerabilityLock = new();
@@ -141,6 +147,16 @@ namespace Kuantech.Core.Combat
             }
 
             OnReceivedHitEvent?.Invoke(hitInfo);
+
+            // Fired alongside OnReceivedHitEvent (not inside the server block) so reactions behave the
+            // same way on every peer, exactly like the whole-hit event above.
+            if (OnDamageReceivedEvent != null)
+            {
+                OnDamageReceivedEvent.Invoke(hitInfo.DamageInfo, hitInfo);
+                if (hitInfo.AdditionalDamages != null)
+                    foreach (var additionalDamage in hitInfo.AdditionalDamages)
+                        OnDamageReceivedEvent.Invoke(additionalDamage, hitInfo);
+            }
         }
 
         #region Resource Manipulation
@@ -152,6 +168,10 @@ namespace Kuantech.Core.Combat
         {
             if (!Actor.IsAlive() || !IsServerInitialized) return;
             ResourceAsset resourceAsset = GetAffectedResource(damageInfo);
+            // A damage type with no affected resource carries no damage at all — it is a pure signal
+            // travelling with the hit (yeet power, stagger, ...) that reactions read via
+            // OnDamageReceivedEvent. Without this it would fall through and corrupt a null resource.
+            if (resourceAsset == null) return;
             ExecuteDamageResource(damageInfo);
             if (IsSpawned) ObserverSyncResource_Rpc(resourceAsset.Id, GetCurrentResource(resourceAsset));
         }
