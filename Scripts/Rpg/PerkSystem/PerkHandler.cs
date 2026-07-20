@@ -44,18 +44,18 @@ namespace Kuantech.Rpg
         {
             if (IsPerkUnlocked(perkAsset))
             {
-                RankUpPerk(perkAsset);
+                RankUpPerk(perkAsset); // owned → rank up (re-applies its effect)
                 return null;
             }
             Perk perk = perkAsset.CreatePerk();
+            if (perk == null) return null;
             perk.CurrentRank = 0;
             if (PerkDatas == null)
             {
                 PerkDatas = new Dictionary<PerkAsset, Perk>();
             }
             PerkDatas.Add(perkAsset, perk);
-            perk.UpdatePerkEffect();
-            return perk;
+            return perk; // caller binds + applies
         }
 
         public void RankUpPerk(PerkAsset perkAsset)
@@ -74,12 +74,13 @@ namespace Kuantech.Rpg
         /// </summary>
         public void UpdatePerkEffects()
         {
+            if (PerkDatas == null) return;
             foreach (var pair in PerkDatas)
             {
-                pair.Value.UpdatePerkEffect();
+                pair.Value.Apply();
             }
         }
-        
+
         /// <summary>
         /// Removes all perks
         /// </summary>
@@ -88,7 +89,7 @@ namespace Kuantech.Rpg
             if (PerkDatas == null) return;
             foreach (var perk in PerkDatas.Values)
             {
-                perk.ClearPerk();
+                perk.Remove();
             }
             PerkDatas.Clear();
         }

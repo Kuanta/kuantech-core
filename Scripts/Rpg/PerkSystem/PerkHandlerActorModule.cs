@@ -19,8 +19,9 @@ namespace Kuantech.Rpg
         public void AddPerk(PerkAsset perkAsset)
         {
             Perk perk = _perkHandler.AddPerk(perkAsset);
-            if (perk == null) return;
-            perk.ApplyToTarget(Actor);
+            if (perk == null) return; // already owned → ranked up (already re-applied), or creation failed
+            perk.Bind(Actor);
+            perk.Apply();
         }
         
         public void IncreasePerkRank(PerkAsset perkAsset)
@@ -42,6 +43,12 @@ namespace Kuantech.Rpg
         {
             if (_perkHandler == null) return null;
             return _perkHandler.GetPerk(perkAsset);
+        }
+
+        public int GetCurrentPerkRank(PerkAsset perkAsset)
+        {
+            if (_perkHandler == null) return -1;
+            return _perkHandler.GetCurrentPerkRank(perkAsset);
         }
 
         public override void ResetModule()

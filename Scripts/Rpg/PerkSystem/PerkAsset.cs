@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text.RegularExpressions;
 using Kuantech.Core;
 using Kuantech.Utils;
@@ -23,6 +24,21 @@ namespace Kuantech.Rpg
             return PerkVariables.Find(v => v.Name == variableName);
         }
         
+        /// <summary>
+        /// Builds the display description for a given rank by filling the description template's
+        /// {Placeholders} from <see cref="PerkVariables"/>.
+        ///
+        /// The asset's Description is a template, e.g. "Increases Max Health by {HealthIncrease}".
+        /// Every {Name} is looked up in PerkVariables by Name and replaced with that variable's value at
+        /// this rank (BaseValue + ValuePerRank * rank, or just BaseValue when DisplayOnlyBaseValue),
+        /// wrapped in the variable's TextColor as rich text, and suffixed with '%' when IsPercentage.
+        /// A "{Name:format}" suffix applies any standard numeric format string (e.g. "{Damage:F1}").
+        /// Placeholders with no matching variable are replaced with an empty string.
+        ///
+        /// PerkVariables are the single source of truth: perk configs reference them by name for their
+        /// numbers too (see StatModifierPerkConfig.ValueVariableName), so what is shown is what is applied.
+        /// </summary>
+        /// <param name="rank">Rank to show values for — usually the rank the player would end up at.</param>
         public string BuildDescription(int rank)
         {
             string descriptionTemplate = GetDescription();
@@ -40,8 +56,13 @@ namespace Kuantech.Rpg
                 }
 
                 float value = variable.GetDisplayValue(rank);
+                if (variable.IsPercentage) value *= 100f;
 
-                string valueString = variable.IsPercentage ? ((value * 100).Stringfy()) + '%' : value.Stringfy();
+                // Optional "{Name:format}" suffix — any standard numeric format string (F1, N0, ...).
+                string valueString = string.IsNullOrEmpty(fmt)
+                    ? value.Stringfy()
+                    : value.ToString(fmt.Trim(), CultureInfo.InvariantCulture);
+                if (variable.IsPercentage) valueString += '%';
                 return "<color=#" + ColorUtility.ToHtmlStringRGBA(variable.TextColor) + ">" + valueString + "</color>";
             
             });
@@ -52,6 +73,7 @@ namespace Kuantech.Rpg
         {
             if (string.IsNullOrEmpty(PerkClassName))
             {
+                Debug.LogWarning($"PerkAsset ({name}): PerkClassName is empty — no perk created, so it will never be acquired or ranked up.");
                 return null;
             }
 

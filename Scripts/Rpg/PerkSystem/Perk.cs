@@ -1,4 +1,5 @@
 ﻿using System;
+using Kuantech.Core;
 using UnityEngine;
 
 namespace Kuantech.Rpg
@@ -13,8 +14,8 @@ namespace Kuantech.Rpg
     public class PerkVariable
     {
         public string Name;
-        [SerializeReference] public float BaseValue;
-        [SerializeReference] public float ValuePerRank;
+        public float BaseValue;
+        public float ValuePerRank;
         public Color TextColor;
         public bool IsPercentage = false;
         public bool DisplayOnlyBaseValue = false;
@@ -38,27 +39,37 @@ namespace Kuantech.Rpg
     {
         [NonSerialized] public int CurrentRank;
         [NonSerialized] public PerkAsset PerkAsset;
+        [NonSerialized] protected Actor Owner;
 
         public virtual void Initialize(PerkAsset parentAsset)
         {
             PerkAsset = parentAsset;
         }
 
-        public virtual void ApplyToTarget(object target)
+        /// <summary>Binds the perk to the actor that owns it. Called once, when the perk is first acquired.</summary>
+        public virtual void Bind(Actor owner)
         {
-            
+            Owner = owner;
         }
-        
-        public virtual void UpdatePerkEffect()
+
+        /// <summary>
+        /// Applies (or re-applies) the perk's effect for the current rank. Called on acquire and on every
+        /// rank-up — implementations should refresh their effect (e.g. swap a stat modifier, bump a skill rank).
+        /// </summary>
+        public virtual void Apply()
         {
-            //Any logic to apply the perk
         }
-        
+
+        /// <summary>Fully removes the perk's effect (run reset / clear).</summary>
+        public virtual void Remove()
+        {
+        }
+
         public int GetCurrentRank()
         {
             return CurrentRank;
         }
-        
+
         public void SetCurrentRank(int rank)
         {
             CurrentRank = rank;
@@ -66,13 +77,8 @@ namespace Kuantech.Rpg
 
         public void IncreaseRank()
         {
-            SetCurrentRank(GetCurrentRank()+1);
-            UpdatePerkEffect(); //todo: Is this necessary?
-        }
-
-        public virtual void ClearPerk()
-        {
-            
+            CurrentRank++;
+            Apply(); // re-apply for the new rank
         }
     }
 }
