@@ -18,6 +18,13 @@ namespace Kuantech.Rpg
         public bool VacuumEnabled = true;
         public float CollectRange = 0.35f;
 
+        [Header("Pickup On Touch")]
+        [Tooltip("Collect this by walking into it rather than having it fly over. Needs a trigger collider " +
+                 "on this object. Independent of vacuum — a drop can use either, both, or neither.")]
+        public bool PickupOnTouch = false;
+        [Tooltip("Layers allowed to pick this up by touching it.")]
+        public LayerMask PickupLayers;
+
         [Header("Scatter")]
         [Tooltip("Initial launch speed (split into outward + upward by PitchAngle).")]
         public float ThrowForce = 5f;
@@ -151,6 +158,26 @@ namespace Kuantech.Rpg
             {
                 Collect();
             }
+        }
+
+        // Deliberately OnTriggerStay, not OnTriggerEnter: a drop can land right on top of the player while
+        // still scattering, where PickUp refuses it. Enter would already have fired and never fire again,
+        // leaving a coin sitting under the player forever. Stay re-offers it once the drop settles.
+        private void OnTriggerStay(Collider other)
+        {
+            if (!PickupOnTouch || _collected || _isScattering) return;
+            // An unset mask means "any layer" rather than "no layer" — otherwise forgetting to fill it in
+            // silently disables pickup entirely, with nothing to see in the console.
+            if (PickupLayers.value != 0 && (PickupLayers.value & (1 << other.gameObject.layer)) == 0) return;
+
+            Actor collector = other.GetComponentInParent<Actor>();
+            if (collector == null || !collector.IsAlive()) return;
+            // Collecting loot is a capability, not a matter of which team you are on: an actor picks drops
+            // up only if it is a looter. Enemies walk straight over them without a LootVacuumModule.
+            if (collector.GetModule<LootVacuumModule>() == null) return;
+
+            _claimedActor = collector;
+            PickUp();
         }
 
         public void PickUp()
