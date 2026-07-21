@@ -253,6 +253,7 @@ namespace Kuantech.Rpg.Skills
             }
             return _skillVariables[variableId];
         }
+
         
         /// <summary>
         /// Returns the current value of the skill
