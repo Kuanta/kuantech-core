@@ -258,7 +258,7 @@ namespace Kuantech.Core.FX
         
         public override void OnSceneLeave()
         {
-            AudioLibrary.StopMusic();
+            if(AudioLibrary != null) AudioLibrary.StopMusic();
         }
     }
 }
