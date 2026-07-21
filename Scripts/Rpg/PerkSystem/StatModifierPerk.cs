@@ -1,4 +1,5 @@
 using System;
+using Kuantech.Rpg.Skills;
 using UnityEngine;
 
 namespace Kuantech.Rpg
@@ -53,7 +54,7 @@ namespace Kuantech.Rpg
                 return;
             }
 
-            PerkVariable variable = PerkAsset.GetPerkVariable(config.ValueVariableName);
+            SkillVariableData variable = PerkAsset.GetPerkVariable(config.ValueVariableName);
             if (variable == null)
             {
                 Debug.LogWarning($"StatModifierPerk ({PerkAsset.name}): no PerkVariable named '{config.ValueVariableName}' — perk has no effect.");

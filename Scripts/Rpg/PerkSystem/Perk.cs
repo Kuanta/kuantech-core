@@ -1,36 +1,24 @@
 ﻿using System;
 using Kuantech.Core;
-using UnityEngine;
+using Kuantech.Rpg.Skills;
 
 namespace Kuantech.Rpg
 {
     [Serializable]
     public abstract class PerkConfig
     {
-        
-    }
-    
-    [Serializable]
-    public class PerkVariable
-    {
-        public string Name;
-        public float BaseValue;
-        public float ValuePerRank;
-        public Color TextColor;
-        public bool IsPercentage = false;
-        public bool DisplayOnlyBaseValue = false;
-        
-        public float GetValue(int rank)
+        /// <summary>
+        /// Lets a config expose variables it does not own, so the perk description can print numbers that
+        /// live somewhere else — e.g. a skill-granting perk resolving them from the granted skill's own
+        /// variables, so the values are balanced in exactly one place. Return false if unknown.
+        /// </summary>
+        public virtual bool TryGetVariable(string variableId, out SkillVariableData variable)
         {
-            return BaseValue + ValuePerRank * rank;
+            variable = null;
+            return false;
         }
+    }
 
-        public float GetDisplayValue(int rank)
-        {
-            return DisplayOnlyBaseValue ? BaseValue : GetValue(rank);
-        }
-    }
-    
     /// <summary>
     /// A perk data
     /// </summary>

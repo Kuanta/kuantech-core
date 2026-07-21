@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using Kuantech.Core;
+using Kuantech.Rpg.Skills;
 using Kuantech.Utils;
 using UnityEngine;
 using ColorUtility = UnityEngine.ColorUtility;
@@ -16,12 +17,21 @@ namespace Kuantech.Rpg
         [SerializeField] private string PerkClassName;
         [SerializeReference] public PerkConfig PerkConfig;
         
-        [Tooltip("For description building")]
-        public List<PerkVariable> PerkVariables;
+        [Tooltip("For description building. Same type skills use, so a value can live in either place.")]
+        public List<SkillVariableData> PerkVariables;
         public int MaxRank = 5;
-        public PerkVariable GetPerkVariable(string variableName)
+
+        /// <summary>
+        /// Finds a variable by id: the perk's own list first, then whatever the config can resolve (a
+        /// skill-granting perk forwards to the granted skill, so those numbers are never duplicated here).
+        /// </summary>
+        public SkillVariableData GetPerkVariable(string variableId)
         {
-            return PerkVariables.Find(v => v.Name == variableName);
+            SkillVariableData own = PerkVariables != null ? PerkVariables.Find(v => v.VariableId == variableId) : null;
+            if (own != null) return own;
+
+            if (PerkConfig != null && PerkConfig.TryGetVariable(variableId, out SkillVariableData fromConfig)) return fromConfig;
+            return null;
         }
         
         /// <summary>
@@ -35,8 +45,9 @@ namespace Kuantech.Rpg
         /// A "{Name:format}" suffix applies any standard numeric format string (e.g. "{Damage:F1}").
         /// Placeholders with no matching variable are replaced with an empty string.
         ///
-        /// PerkVariables are the single source of truth: perk configs reference them by name for their
-        /// numbers too (see StatModifierPerkConfig.ValueVariableName), so what is shown is what is applied.
+        /// A placeholder is resolved from PerkVariables first, then from the config (see
+        /// PerkConfig.TryGetVariable) — so a skill-granting perk prints the granted skill's own numbers
+        /// instead of keeping a second copy of them here.
         /// </summary>
         /// <param name="rank">Rank to show values for — usually the rank the player would end up at.</param>
         public string BuildDescription(int rank)
@@ -48,12 +59,8 @@ namespace Kuantech.Rpg
                 string varName = m.Groups[1].Value;
                 string fmt     = m.Groups[2].Success ? m.Groups[2].Value : null;
 
-                PerkVariable variable = GetPerkVariable(varName);
-                if (variable == null)
-
-                {
-                    return "";
-                }
+                SkillVariableData variable = GetPerkVariable(varName);
+                if (variable == null) return "";
 
                 float value = variable.GetDisplayValue(rank);
                 if (variable.IsPercentage) value *= 100f;
