@@ -150,12 +150,30 @@ namespace Kuantech.Core.Combat
             effect.OnRemove();
         }
 
+        /// <summary>
+        /// Ends every active effect and forgets them. OnRemove stops each effect's attached FX, so nothing
+        /// keeps burning/glowing on a body that is no longer in that state.
+        /// </summary>
         public void ClearStatusEffects()
         {
             foreach(var effect in Effects)
             {
                 effect.OnRemove();
             }
+            // Actually forget them — otherwise Update keeps ticking these effects on a reset actor.
+            Effects.Clear();
+            _statusEffectsMap?.Clear();
+            EffectsToAdd.Clear();
+            EffectsToRemove.Clear();
+        }
+
+        public override void OnActorStateChanged(ActorState oldState, ActorState newState)
+        {
+            base.OnActorStateChanged(oldState, newState);
+            // Death ends every status effect: a corpse should not keep taking damage-over-time, and its
+            // attached FX must stop here rather than lingering until despawn (a yeeted body would fly
+            // across the arena still on fire).
+            if (newState == ActorState.Dead) ClearStatusEffects();
         }
 
         public override void Cleanup()

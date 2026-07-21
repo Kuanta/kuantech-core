@@ -25,13 +25,17 @@ namespace Kuantech.Core.Combat
 
         public float GetValue()
         {
-            //try to get attribute value
-            if (ParentStatusEffect != null && ParentStatusEffect.ApplyData != null && ParentStatusEffect.ApplyData.Applier != null)
+            // Attribute scaling is added ON TOP of the base value, not instead of it — and only when the
+            // applier is still around with a stat module and an attribute to scale with.
+            if (StatusEffectVariableData.AttributeToScaleWith != null &&
+                ParentStatusEffect != null && ParentStatusEffect.ApplyData != null && ParentStatusEffect.ApplyData.Applier != null)
             {
-                Actor applier = ParentStatusEffect.ApplyData.Applier;
-                float attributeValue = applier.GetModule<StatsModule>().GetAttributeValue(StatusEffectVariableData.AttributeToScaleWith);
-                attributeValue *= StatusEffectVariableData.AttributrScalingFactor;
-                return attributeValue;
+                StatsModule stats = ParentStatusEffect.ApplyData.Applier.GetModule<StatsModule>();
+                if (stats != null)
+                {
+                    float attributeValue = stats.GetAttributeValue(StatusEffectVariableData.AttributeToScaleWith);
+                    return StatusEffectVariableData.Value + attributeValue * StatusEffectVariableData.AttributrScalingFactor;
+                }
             }
 
             return StatusEffectVariableData.Value;

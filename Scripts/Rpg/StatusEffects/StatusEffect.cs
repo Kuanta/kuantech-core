@@ -195,9 +195,29 @@ namespace Kuantech.Core.Combat
 
         #region Status Effect Variables
 
+        /// <summary>
+        /// Overrides one variable's value for THIS application only — for callers that compute the number
+        /// themselves (a skill passing its rank-scaled damage into a burn it applies).
+        ///
+        /// The asset's variable data is shared by every application of the effect, so it is copied rather
+        /// than written to; any attribute scaling the asset declared is kept.
+        /// </summary>
+        public void SetVariableOverride(string key, float value)
+        {
+            if (string.IsNullOrEmpty(key)) return;
+            _statusEffectVariables ??= new Dictionary<string, StatusEffectVariable>();
+
+            StatusEffectVariableData data = _statusEffectVariables.TryGetValue(key, out var existing)
+                ? existing.StatusEffectVariableData // struct copy — keeps AttributeToScaleWith etc.
+                : new StatusEffectVariableData { VariableId = key };
+            data.Value = value;
+
+            _statusEffectVariables[key] = new StatusEffectVariable(data) { ParentStatusEffect = this };
+        }
+
         public float GetVariable(string key, float defaultValue = 0)
         {
-            if (_statusEffectVariables.IsNullOrEmpty() || _statusEffectVariables.ContainsKey(key)) return defaultValue;
+            if (_statusEffectVariables.IsNullOrEmpty() || !_statusEffectVariables.ContainsKey(key)) return defaultValue;
             StatusEffectVariable variable = _statusEffectVariables[key];
             return variable.GetValue();
         }
