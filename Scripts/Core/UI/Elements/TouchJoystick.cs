@@ -65,7 +65,6 @@ namespace Kuantech.Core.UI
         public UnityAction OnReleased;
         public UnityAction<Vector2> OnDirectionChanged;
 
-        private RectTransform _rect;
         private Vector2 _backgroundHome;
         private CanvasGroup _canvasGroup;
 
@@ -75,8 +74,6 @@ namespace Kuantech.Core.UI
 
         private void Awake()
         {
-            _rect = GetComponent<RectTransform>();
-
             if (Background == null || Handle == null)
             {
                 Debug.LogError($"TouchJoystick ({name}): Background and Handle must both be assigned.");
@@ -86,6 +83,12 @@ namespace Kuantech.Core.UI
 
             _backgroundHome = Background.anchoredPosition;
 
+            // A stretched background (anchorMin != anchorMax) has a size that follows the screen, so its
+            // radius changes per aspect ratio — that is the iOS stretch. Give it a fixed size instead.
+            if (Background.anchorMin != Background.anchorMax)
+                Debug.LogWarning($"TouchJoystick ({name}): Background has stretched anchors. Anchor it to a " +
+                                 "single point (e.g. center) with a fixed width/height, or it will resize per device.");
+
             // A CanvasGroup fades the whole stick without disabling it — disabling the object would drop
             // the pointer events mid-drag.
             _canvasGroup = Background.GetComponent<CanvasGroup>();
@@ -94,17 +97,29 @@ namespace Kuantech.Core.UI
             SetVisible(!AutoHides);
         }
 
+        // Places the background under a screen point, correct for ANY anchor/pivot: convert the point into
+        // the background's parent space, then subtract where the anchor sits so the result is a valid
+        // anchoredPosition. Setting anchoredPosition from a point measured against a different origin is
+        // what left the stick offset from the finger.
+        private void MoveBackgroundUnder(Vector2 screenPos, UnityEngine.Camera cam)
+        {
+            RectTransform parent = Background.parent as RectTransform;
+            if (parent == null) return;
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(parent, screenPos, cam, out Vector2 local))
+                return;
+
+            Vector2 anchorCenter = (Background.anchorMin + Background.anchorMax) * 0.5f;
+            Vector2 anchorOffset = (anchorCenter - parent.pivot) * parent.rect.size;
+            Background.anchoredPosition = local - anchorOffset;
+        }
+
         public void OnPointerDown(PointerEventData eventData)
         {
             IsPressed = true;
 
             // Floating and Dynamic drop the stick wherever the finger landed.
-            if (Mode != JoystickMode.Fixed &&
-                RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                    _rect, eventData.position, eventData.pressEventCamera, out Vector2 localTouch))
-            {
-                Background.anchoredPosition = localTouch;
-            }
+            if (Mode != JoystickMode.Fixed)
+                MoveBackgroundUnder(eventData.position, eventData.pressEventCamera);
 
             SetVisible(true);
             OnPressed?.Invoke();
