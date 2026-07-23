@@ -40,13 +40,16 @@ namespace Kuantech.Midcore
         public void Initilaze()
         {
             _unlockConditions = new Dictionary<(ProgressableDataAsset, int), ProgressableDependencyEntry>();
-            _progressibleDatas = new Dictionary<string, ProgressibleData>();
             foreach (var items in UpgradeDependencies)
             {
                 int rank = items.RankToUpgrade;
                 ProgressableDataAsset asset = items.AssetToUpgrade;
                 _unlockConditions.Add((asset, rank), items);
             }
+
+            // Do NOT blow away progression already restored by LoadState — only create the store when
+            // there is none yet. Unconditionally new-ing it here wiped freshly-loaded save data.
+            _progressibleDatas ??= new Dictionary<string, ProgressibleData>();
         }
         
         /// <summary>
@@ -142,7 +145,8 @@ namespace Kuantech.Midcore
             if (dependencyEntry == null) return true;
             
             //Check player level
-            int playerLevel = ProgressionManager.GetPlayerLevel().CurrentLevel;
+            var playerLevelable = ProgressionManager.GetPlayerLevel();
+            int playerLevel = playerLevelable != null ? playerLevelable.CurrentLevel : 0;
             if(dependencyEntry.RequiredPlayerRank > playerLevel) return false;
             
             //Check other conditions

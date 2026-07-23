@@ -5,6 +5,13 @@ using Kuantech.Rpg.Skills;
 namespace Kuantech.Rpg
 {
     [Serializable]
+    public struct PerkStateData
+    {
+        public int Rank;
+        public string PerkId;
+    }
+
+    [Serializable]
     public abstract class PerkConfig
     {
         /// <summary>

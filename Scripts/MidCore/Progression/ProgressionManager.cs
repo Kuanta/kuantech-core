@@ -1,15 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
-using Kuantech.Analytics;
 using Kuantech.Core;
 using Kuantech.Core.Combat;
-using Kuantech.Core.HyperCasual;
 using Kuantech.Rpg;
 using Kuantech.Utils;
 using Sirenix.OdinInspector;
 using UnityEngine;
-using UnityEngine.Assertions;
 
 namespace Kuantech.Midcore
 {
@@ -71,10 +68,10 @@ namespace Kuantech.Midcore
 
         public override async UniTask Initialize(GameManager gameManager)
         {
+            ProgressiblesHandler.Initilaze();
             await base.Initialize(gameManager);
-           ProgressiblesHandler.Initilaze();
-           SetCollectibles();
-           SetDefaultProgressables(); //Unlocks defaults if they are not unlocked
+            SetCollectibles();
+            SetDefaultProgressables(); //Unlocks defaults if they are not unlocked
         }
 
         public override void OnSubmanagersInitialized()
@@ -97,13 +94,16 @@ namespace Kuantech.Midcore
         
         public override void LoadState()
         {
+            // Load the saved progression first (it replaces the whole store), THEN top up any defaults
+            // that are missing from the save — e.g. progressables added in a newer build. Doing defaults
+            // first would just get discarded when base.LoadState swaps the dictionary in.
             base.LoadState();
-            //Justin Case
             SetDefaultProgressables();
         }
 
         private void SetDefaultProgressables()
         {
+            if(DefaultProgressables == null) return;
             foreach(var defaultProgressable in DefaultProgressables)
             {
                 int currRank = GetCurrentRank(defaultProgressable.Asset);
@@ -122,7 +122,7 @@ namespace Kuantech.Midcore
         public static LevelVariable GetPlayerLevel()
         {
             var ctx = GetContext<ProgressionManager>();
-            if (ctx == null) return null;
+            if (ctx == null || ctx.PlayerLevelDataAsset == null) return null;
             ProgressibleData data = ctx.ProgressiblesHandler.GetProgressibleData(ctx.PlayerLevelDataAsset);
             if (data == null)
             {
