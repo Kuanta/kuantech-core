@@ -80,6 +80,20 @@ namespace Kuantech.Inventory
             return _stateData.ItemLevel;
         }
 
+        /// <summary>
+        /// The item's magnitude multiplier (e.g. from rarity). Returns the first component that provides a
+        /// scale (<see cref="IItemScaleProvider"/>), or 1 when none does — so scaling is opt-in per item and
+        /// Core stays free of any game-specific scale component.
+        /// </summary>
+        public float GetScale()
+        {
+            if (_components == null) return 1f;
+            foreach (var comp in _components.Values)
+                if (comp is IItemScaleProvider provider)
+                    return provider.GetScale();
+            return 1f;
+        }
+
         #region Components
 
         public T GetItemComponent<T>() where T : ItemComponent

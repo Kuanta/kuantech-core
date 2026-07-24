@@ -64,11 +64,12 @@ namespace Kuantech.Inventory
             if (stats == null) return;
 
             int itemLevel = ParentItem != null ? ParentItem.GetLevel() : 0;
+            float itemScale = ParentItem != null ? ParentItem.GetScale() : 1f;
             foreach (var data in _modifierDatas)
             {
                 if (data.Stat == null) continue;
-                // Level = item level, so the modifier value scales with how upgraded the item is.
-                StatModifier modifier = new StatModifier(data) { Level = itemLevel };
+                // Level = item level (upgrades) and Scale = item scale (rarity), so the modifier tracks both.
+                StatModifier modifier = new StatModifier(data) { Level = itemLevel, Scale = itemScale };
                 stats.AddModifier(modifier);
                 _applied.Add(modifier);
             }
@@ -95,11 +96,12 @@ namespace Kuantech.Inventory
             if (attribute == null || _modifierDatas.IsNullOrEmpty()) return false;
 
             int itemLevel = ParentItem != null ? ParentItem.GetLevel() : 0;
+            float itemScale = ParentItem != null ? ParentItem.GetScale() : 1f;
             bool found = false;
             foreach (var data in _modifierDatas)
             {
                 if (data.Stat != attribute) continue;
-                value += data.GetValue(itemLevel);
+                value += data.GetValue(itemLevel, itemScale);
                 found = true;
             }
             return found;
@@ -116,10 +118,11 @@ namespace Kuantech.Inventory
             if (_modifierDatas.IsNullOrEmpty()) return lines;
 
             int itemLevel = ParentItem != null ? ParentItem.GetLevel() : 0;
+            float itemScale = ParentItem != null ? ParentItem.GetScale() : 1f;
             foreach (var data in _modifierDatas)
             {
                 if (data.Stat == null) continue;
-                lines.Add(new AttributeValue(data.Stat, data.GetValue(itemLevel)));
+                lines.Add(new AttributeValue(data.Stat, data.GetValue(itemLevel, itemScale)));
             }
             return lines;
         }
@@ -134,10 +137,11 @@ namespace Kuantech.Inventory
             if (_modifierDatas.IsNullOrEmpty()) return lines;
 
             int itemLevel = ParentItem != null ? ParentItem.GetLevel() : 0;
+            float itemScale = ParentItem != null ? ParentItem.GetScale() : 1f;
             foreach (var data in _modifierDatas)
             {
                 if (data.Stat == null) continue;
-                float value = data.GetValue(itemLevel);
+                float value = data.GetValue(itemLevel, itemScale);
                 lines.Add($"+{value} {data.Stat.GetName()}");
             }
             return lines;

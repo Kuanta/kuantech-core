@@ -19,9 +19,9 @@ namespace Kuantech.Rpg
         public float LevelToValueFactor;
         public ModifierTypes ModifierType;
         public bool IsPercentage;
-        public float GetValue(int level)
+        public float GetValue(int level, float scale=1f)
         {
-            return BaseValue + LevelToValueFactor * level * (BaseValue != 0 ? Math.Sign(BaseValue) : 1);
+            return StatModifier.GetStatModifierValue(BaseValue, LevelToValueFactor, level, scale);
         }
     }
 
@@ -34,20 +34,30 @@ namespace Kuantech.Rpg
         public AttributeAsset AttributeAsset;
         public float BaseValue;
         public float LevelToValueFactor = 1;
-        private StatModifierData _data;
         public StatModifier() { }
         public StatModifier(StatModifierData data)
         {
-            _data = data;
             BaseValue = data.BaseValue;
             ModifierTag = data.ModifierTag;
             LevelToValueFactor = data.LevelToValueFactor;
             ModifierType = data.ModifierType;
             AttributeAsset = data.Stat;
         }
+        // Computes from this instance's own fields, so it is correct however the modifier was built — via the
+        // StatModifierData constructor OR via object initializer (perks, network deserialize, ...).
         public float GetValue()
         {
-            return Scale*(BaseValue + LevelToValueFactor * Level);
+            return GetStatModifierValue(BaseValue, LevelToValueFactor, Level, Scale);
+        }
+
+        public static float GetStatModifierValue(StatModifierData data, int modifierLevel, float scale=1)
+        {
+            return GetStatModifierValue(data.BaseValue, data.LevelToValueFactor, modifierLevel, scale);
+        }
+
+        public static float GetStatModifierValue(float baseValue, float levelToValueFactor, int modifierLevel, float scale=1)
+        {
+            return scale * (baseValue + levelToValueFactor * modifierLevel * (baseValue != 0 ? Math.Sign(baseValue) : 1));
         }
         public ModifierTypes ModifierType;
     }

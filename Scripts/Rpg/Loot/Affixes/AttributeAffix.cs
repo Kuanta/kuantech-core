@@ -1,17 +1,41 @@
 using System;
 using Kuantech.Core;
-using Kuantech.Core.Database.Attributes;
 using Kuantech.Rpg.Managers;
 using UnityEngine;
 
 namespace Kuantech.Rpg
 {
+    /// <summary>
+    /// Authorable definition of an attribute affix (a flat bonus to one attribute). Edit these in the
+    /// inspector via a [SerializeReference] list; each produces a runtime <see cref="AttributeAffix"/>.
+    /// </summary>
+    [Serializable]
+    public class AttributeAffixData : AffixData
+    {
+        public string AttributeId;
+        public float BaseValue;
+        public float ValuePerLevel;
+
+        protected override Affix Instantiate()
+        {
+            return new AttributeAffix
+            {
+                AttributeId = AttributeId,
+                BaseValue = BaseValue,
+                ValuePerLevel = ValuePerLevel,
+            };
+        }
+    }
+
+    /// <summary>
+    /// Runtime attribute affix: applies a flat StatModifier to one attribute, scaled by the affix's level.
+    /// Item rarity does not scale affixes (it governs how many roll); Scale stays 1 here.
+    /// </summary>
     public class AttributeAffix : Affix
     {
-        [KtDatabaseVariable("AttributeId")] public string AttributeId { get; protected set; }
-        [KtDatabaseVariable("BaseValue")] public float BaseValue { get; protected set; }
-        [KtDatabaseVariable("ValuePerLevel")] public float ValuePerLevel { get; protected set; }
-        [KtDatabaseVariable("RarityScales")] public float[] RarityScales { get; protected set; }
+        public string AttributeId;
+        public float BaseValue;
+        public float ValuePerLevel;
         [NonSerialized] public int AffixLevel;
 
         private StatModifier _addedModifier;
@@ -19,41 +43,21 @@ namespace Kuantech.Rpg
         [Serializable]
         private class AttributeAffixState
         {
-            public string AffixId;
-            public string AffixName;
-            public float Weight;
-            public string AttributeId;
-            public float BaseValue;
-            public float ValuePerLevel;
-            public float[] RarityScales;
             public int AffixLevel;
         }
 
+        public override void SetAffixLevel(int level) => AffixLevel = level;
+
+        // Only the mutable state (level) is saved; AttributeId/BaseValue/ValuePerLevel come from AffixData.
         public override string SerializeAffix()
         {
-            return JsonUtility.ToJson(new AttributeAffixState
-            {
-                AffixId = AffixId,
-                AffixName = AffixName,
-                Weight = Weight,
-                AttributeId = AttributeId,
-                BaseValue = BaseValue,
-                ValuePerLevel = ValuePerLevel,
-                RarityScales = RarityScales,
-                AffixLevel = AffixLevel
-            });
+            return JsonUtility.ToJson(new AttributeAffixState { AffixLevel = AffixLevel });
         }
 
         public override void DeserializeAffix(string data)
         {
+            if (string.IsNullOrEmpty(data)) return;
             var state = JsonUtility.FromJson<AttributeAffixState>(data);
-            AffixId = state.AffixId;
-            AffixName = state.AffixName;
-            Weight = state.Weight;
-            AttributeId = state.AttributeId;
-            BaseValue = state.BaseValue;
-            ValuePerLevel = state.ValuePerLevel;
-            RarityScales = state.RarityScales;
             AffixLevel = state.AffixLevel;
         }
 
@@ -61,7 +65,9 @@ namespace Kuantech.Rpg
         {
             StatModifierData data = GetStatModifierData();
             StatsModule statsModule = actor.GetModule<StatsModule>();
-            _addedModifier = new StatModifier(data);
+            // Level = AffixLevel so the applied value matches what Stringfy() shows; affixes are not scaled
+            // by item rarity (rarity governs how many affixes roll, not their magnitude), so Scale stays 1.
+            _addedModifier = new StatModifier(data) { Level = AffixLevel };
             statsModule.AddModifier(_addedModifier);
         }
 
