@@ -33,5 +33,10 @@ namespace Kuantech.Core
         {
             return Icon;
         }
+
+        public virtual Color GetColor()
+        {
+            return MainColor;
+        }
     }
 }
