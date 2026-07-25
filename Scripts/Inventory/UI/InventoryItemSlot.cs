@@ -1,6 +1,8 @@
 using System;
 using Kuantech.Core.UI;
+using Kuantech.Core.Utils;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Kuantech.Inventory.UI
 {
@@ -9,6 +11,8 @@ namespace Kuantech.Inventory.UI
         public static event Action<InventoryItemSlot> OnSlotTapped;
         public GameObject NullItemContents;
         public GameObject SetItemContents;
+        [SerializeField] private Image RarityColorImage;
+        [SerializeField] private ColorPalette RarityColors;
         public Item Item { get; private set; }
 
         protected Inventory _inventory;
@@ -30,6 +34,25 @@ namespace Kuantech.Inventory.UI
             {
                 SetItemContents.SetActive(item != null);
             }
+
+            SetRarityColor(item);
+        }
+
+        // Colors the rarity swatch from the item's rarity (via IItemRarityProvider). Hidden for empty slots
+        // and for items with no rarity, so Core stays free of any game-specific rarity component.
+        private void SetRarityColor(Item item)
+        {
+            if (RarityColorImage == null) return;
+
+            int rarity = item != null ? item.GetRarity() : -1;
+            if (RarityColors == null || rarity < 0)
+            {
+                RarityColorImage.enabled = false;
+                return;
+            }
+
+            RarityColorImage.enabled = true;
+            RarityColorImage.color = RarityColors.GetColor(rarity);
         }
 
         public virtual void ClearSlot()

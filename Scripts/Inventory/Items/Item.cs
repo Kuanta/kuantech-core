@@ -94,6 +94,20 @@ namespace Kuantech.Inventory
             return 1f;
         }
 
+        /// <summary>
+        /// The item's rarity index. Returns the first component that provides one
+        /// (<see cref="IItemRarityProvider"/>), or -1 when none does — so rarity is opt-in per item and Core
+        /// stays free of any game-specific rarity component.
+        /// </summary>
+        public int GetRarity()
+        {
+            if (_components == null) return -1;
+            foreach (var comp in _components.Values)
+                if (comp is IItemRarityProvider provider)
+                    return provider.GetRarity();
+            return -1;
+        }
+
         #region Components
 
         public T GetItemComponent<T>() where T : ItemComponent
