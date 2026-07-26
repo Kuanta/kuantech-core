@@ -1,5 +1,4 @@
 using System;
-using UnityEngine.Serialization;
 
 namespace Kuantech.Rpg
 {
@@ -22,6 +21,15 @@ namespace Kuantech.Rpg
         public float GetValue(int level, float scale=1f)
         {
             return StatModifier.GetStatModifierValue(BaseValue, LevelToValueFactor, level, scale);
+        }
+
+        /// <summary>
+        /// Formats a computed value for display: as a percentage when <see cref="IsPercentage"/> is set
+        /// (0.05 -> "5%"), otherwise as a plain number (5 -> "5"). Trailing zeros are trimmed.
+        /// </summary>
+        public string FormatValue(float value)
+        {
+            return IsPercentage ? $"{value * 100f:0.##}%" : $"{value:0.##}";
         }
     }
 

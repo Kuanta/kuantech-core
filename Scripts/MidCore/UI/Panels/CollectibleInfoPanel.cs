@@ -89,7 +89,7 @@ namespace Kuantech.Midcore.UI
                 {
                     AttributeDefinition definition = statsSetter.GetAttributeDefinition(indicator.AttributeAsset);
                     if(definition == null) continue;
-                    indicator.SetAttribute(definition, collectableLevel);
+                    //indicator.SetAttribute(definition, collectableLevel);
                 }
             }
         }

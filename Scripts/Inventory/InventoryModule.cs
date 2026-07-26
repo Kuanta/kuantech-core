@@ -1,6 +1,7 @@
 using System;
 using Kuantech.Core;
 using Kuantech.Networking;
+using UnityEngine;
 
 #if NETWORKING_FISHNET
 using FishNet.Connection;

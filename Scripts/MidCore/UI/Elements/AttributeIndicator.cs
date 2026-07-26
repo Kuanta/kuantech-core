@@ -11,29 +11,21 @@ namespace Kuantech.Midcore.UI
         public AttributeAsset AttributeAsset;
         
         [SerializeField] private Image Icon;
+        [SerializeField] private TMP_Text AttributeName;
         [SerializeField] private TMP_Text ValueText;
         [SerializeField] private TMP_Text BonusValueText;
         [Tooltip("If set to true, bonus will be shown (value from levels) will be shown here")]
         [SerializeField] private bool ShowBonusSeperately = false;
 
-        public void SetAttribute(AttributeDefinition attributeDefinition, int level)
+        public void SetAttribute(AttributeAsset attributeAsset)
         {
-            Icon.sprite = attributeDefinition.AttributeAsset.GetIcon();
-            float baseValue = attributeDefinition.BaseValue;
-            float bonusValue = attributeDefinition.ValuePerLevel * level;
-            ValueText.text = ShowBonusSeperately ? baseValue.Stringfy() : (baseValue + bonusValue).Stringfy();
-            if (BonusValueText != null)
-            {
-                if (bonusValue > 0)
-                {
-                    BonusValueText.gameObject.SetActive(true);
-                    BonusValueText.text = $"+{bonusValue.Stringfy()}";
-                }
-                else
-                {
-                    BonusValueText.gameObject.SetActive(false);
-                }
-            }
+           if(Icon != null) Icon.sprite = attributeAsset.GetIcon();
+           if(AttributeName != null) AttributeName.text = attributeAsset.GetName();
+        }
+
+        public void SetValue(float value)
+        {
+            ValueText.text = value.Stringfy();
         }
     }
 }

@@ -28,7 +28,8 @@ namespace Kuantech.Midcore
             if (ModifierData.Stat == null) return string.Empty;
             // Rank 0 shows the base value; higher ranks show the per-rank step, matching the old GetName.
             float value = rank == 0 ? ModifierData.BaseValue : ModifierData.LevelToValueFactor;
-            return $"+{value}";
+            // Percentage modifiers read as "+5%" instead of the raw "+0.05".
+            return $"+{ModifierData.FormatValue(value)}";
         }
     }
 }
