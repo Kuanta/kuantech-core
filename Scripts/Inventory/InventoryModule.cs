@@ -66,16 +66,18 @@ namespace Kuantech.Inventory
             {
                 eq.OnItemSlotted -= HandleItemSlotted;
                 eq.OnItemUnslotted -= HandleItemUnslotted;
+                // Remove equipped item visuals from this actor WITHOUT changing the loadout. Detaching an
+                // inventory from an actor must never unequip its items — equipped state is persistent
+                // inventory data, and firing equip/unequip here re-enters SetInventory (infinite loop).
                 foreach (var slot in eq.slotTable.Values)
-                    HandleItemUnslotted(slot.item);
-                eq.UnequipAll();
+                    RemoveItemVisual(slot.item);
             }
 
             _inventory.OnItemAdded -= HandleItemAdded;
             _inventory.OnItemRemoved -= HandleItemRemoved;
             _inventory.OnItemEquipped -= HandleItemEquipped;
             _inventory.OnItemUnequipped -= HandleItemUnequipped;
-            _inventory.Detach();
+            _inventory.Detach(); // removes each equipped item's actor-side effects (stat modifiers)
             _inventory = null;
         }
 
@@ -137,6 +139,17 @@ namespace Kuantech.Inventory
         private void HandleItemUnslotted(Item item)
         {
             if (item == null) return;
+            RemoveItemVisual(item);
+            // If still marked equipped, this was a displacement — clean up item state
+            if (item.IsEquipped())
+                _inventory?.UnequipItem(item);
+        }
+
+        // Removes an item's equipped visual from this actor's visual (or despawns a loose visual). Visual-only
+        // — it does NOT touch the item's equipped state, so it is safe to run while detaching an inventory.
+        private void RemoveItemVisual(Item item)
+        {
+            if (item == null) return;
             ActorVisual actorVisual = Actor.VisualHandler != null ? Actor.VisualHandler.GetActorVisual() : null;
             if (actorVisual != null)
                 actorVisual.UnslotItem(item);
@@ -145,9 +158,6 @@ namespace Kuantech.Inventory
                 item.ItemVisual.Despawn();
                 item.ItemVisual = null;
             }
-            // If still marked equipped, this was a displacement — clean up item state
-            if (item.IsEquipped())
-                _inventory?.UnequipItem(item);
         }
 
         // ── Public API (delegates to inventory, respects server authority) ─────
