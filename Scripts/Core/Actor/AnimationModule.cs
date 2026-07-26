@@ -99,7 +99,7 @@ namespace Kuantech.Core
             {
                 IsGroundedFlag = _movementModule.IsGrounded();
                 AirTime = _movementModule.GetAirTime();
-                Animator.SetBool(Crouching, _movementModule.Crouching); //todo: temp fix. Implement transitions
+                //Animator.SetBool(Crouching, _movementModule.Crouching); //todo: temp fix. Implement transitions
             }
             if (Actor.MotionVectorsHandler != null)
             {
@@ -119,11 +119,11 @@ namespace Kuantech.Core
             base.ResetModule();
             if (Animator != null)
             {
-                Animator.SetFloat(Forward, 0);
-                Animator.SetFloat(Sideways, 0);
-                Animator.SetBool(Death, false);
-                Animator.SetFloat(IsGrounded, 1f);
-                Animator.SetFloat(AirTimeHash, 0f);
+                // Animator.SetFloat(Forward, 0);
+                // Animator.SetFloat(Sideways, 0);
+                // Animator.SetBool(Death, false);
+                // Animator.SetFloat(IsGrounded, 1f);
+                // Animator.SetFloat(AirTimeHash, 0f);
                 Animator.Rebind();
             }
             _targetMovementParameters = Vector2.zero;
@@ -184,8 +184,8 @@ namespace Kuantech.Core
                 Animator.SetFloat(Sideways, _movementParameters.x);
                 Animator.SetFloat(Forward, _movementParameters.y);
             }
-            Animator.SetFloat(IsGrounded, IsGroundedFlag ? 1f : 0f);
-            Animator.SetFloat(AirTimeHash, AirTime);
+            // Animator.SetFloat(IsGrounded, IsGroundedFlag ? 1f : 0f);
+            // Animator.SetFloat(AirTimeHash, AirTime);
         }
 
         public void SetMovementParametersFromMovementDirection(Vector3 direction, bool forced = false)
