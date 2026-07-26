@@ -1,14 +1,15 @@
-﻿using Kuantech.TowerDefense;
+﻿using Kuantech.Core.Data;
+using Kuantech.TowerDefense;
 
 namespace Kuantech.Core.Database
 {
-    public class SpawnablesBalancer : Balancer
+    public class SpawnablesBalancer : DatabaseBalancer
     {
         public SpawnablesCollection Collection;
         public string SpawnWeightColumnName = "SpawnWeight";
         public string MinDifficultyColumnName = "MinDifficulty";
         public string MaxDifficultyColumnName = "MaxDifficulty";
-        public override void Balance(KtDatabase db, string tableName)
+        protected override void BalanceFromDb(KtDatabase db, string tableName)
         {
             DataTable dt = db.GetDataTable(tableName);
             if (dt == null) return;

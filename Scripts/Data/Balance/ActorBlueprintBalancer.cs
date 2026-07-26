@@ -1,11 +1,12 @@
 ﻿using System.Collections.Generic;
+using Kuantech.Core.Data;
 
 namespace Kuantech.Core.Database
 {
-    public class ActorBlueprintBalancer : Balancer
+    public class ActorBlueprintBalancer : DatabaseBalancer
     {
         public List<ActorBlueprint> Blueprints = new List<ActorBlueprint>();
-        public override void Balance(KtDatabase db, string tableName)
+        protected override void BalanceFromDb(KtDatabase db, string tableName)
         {
             DataTable dt = db.GetDataTable(tableName);
             if (dt == null) return;

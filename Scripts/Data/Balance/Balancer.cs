@@ -6,6 +6,6 @@ namespace Kuantech.Core.Database
 
     public abstract class Balancer
     {
-        public abstract void Balance(KtDatabase db, string tableName);
+        public abstract void Balance();
     }
 }
