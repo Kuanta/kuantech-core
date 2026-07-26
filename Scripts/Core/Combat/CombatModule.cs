@@ -552,7 +552,8 @@ namespace Kuantech.Core
 
         private bool ExecuteDamageActor(Actor actor)
         {
-            if (actor == null || !actor.IsAlive()) return false;
+            //Check if beating a dead actor or beating itself.
+            if (actor == null || !actor.IsAlive() || actor == Actor) return false;
             AttackPattern pattern = GetCurrentAttackPattern();
 
             HitInfo hitInfo = new HitInfo()
