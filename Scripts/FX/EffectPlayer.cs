@@ -42,6 +42,22 @@ namespace Kuantech.Core.FX
                 Effect.Play(settings);
                 return Effect;
             }
+
+            // If the caster already carries this effect on its body (matched by id in its EffectsModule),
+            // reuse that one instead of spawning a fresh copy from the library — so the effect plays on the
+            // actor and follows it. Mirrors what the tag path does for socketed EffectPlayerComponents.
+            if (settings.Caster != null)
+            {
+                EffectsModule effectsModule = settings.Caster.GetModule<EffectsModule>();
+                Effect onActorEffect = effectsModule != null ? effectsModule.GetExistingEffect(GetEffectId()) : null;
+                if (onActorEffect != null)
+                {
+                    settings.DespawnAfterPlay = false; // bound to the actor — don't despawn
+                    onActorEffect.Play(settings);
+                    return onActorEffect;
+                }
+            }
+
             if(EffectPrefab != null)
             {
                 settings.DespawnAfterPlay = true; //Initialized prefabs should be despawned. They won't be despawned if they are bound to effects library so have no fear
