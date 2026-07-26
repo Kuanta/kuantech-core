@@ -300,6 +300,12 @@ namespace Kuantech.Core
             Animator.SetTrigger(hash);
         }
 
+        public void SetBoolean(int hash, bool value)
+        {
+            if(Animator == null) return;
+            Animator.SetBool(hash, value);
+        }
+
         // ─── Animation data / montage ─────────────────────────────────────────────
 
         public void PlayAnimationData(AnimationData animationData, float animationDuration = -1)
