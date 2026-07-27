@@ -64,6 +64,14 @@ namespace Kuantech.Core.FX
         private Coroutine _fireRoutine;
         private bool _isFiring;
 
+        [NonSerialized] private float _speedMultiplier = 1f;
+
+        /// <summary>Scales pitch (and fire rate) so the sound keeps in sync when the effect is sped up.</summary>
+        public void SetSpeedMultiplier(float speed)
+        {
+            _speedMultiplier = speed > 0f ? speed : 1f;
+        }
+
         public void Play()
         {
             if (_fadeOutRoutine != null)
@@ -119,6 +127,7 @@ namespace Kuantech.Core.FX
                 pitch += comboCount * PitchAdjustmentPerPlay;
             }
 
+            pitch *= _speedMultiplier;
             pitch = Mathf.Clamp(pitch, MinPitch, MaxPitch);
             AudioSource.pitch = pitch;
             AudioSource.Play();
@@ -146,12 +155,13 @@ namespace Kuantech.Core.FX
                         pitch += comboCount * PitchAdjustmentPerPlay;
                     }
 
+                    pitch *= _speedMultiplier;
                     pitch = Mathf.Clamp(pitch, MinPitch, MaxPitch);
                     AudioSource.pitch = pitch;
                     AudioSource.PlayOneShot(AudioSource.clip);
                 }
 
-                yield return new WaitForSeconds(FireRate);
+                yield return new WaitForSeconds(_speedMultiplier > 0f ? FireRate / _speedMultiplier : FireRate);
             }
 
             _fireRoutine = null;

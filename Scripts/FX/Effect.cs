@@ -13,6 +13,8 @@ namespace Kuantech.Core.FX
         public string EffectId;
         public float Duration;
         public float Delay = 0f;
+        [Tooltip("The effect's own base playback speed. Combined with EffectPlaySettings.EffectSpeedMultiplier (e.g. attack speed).")]
+        public float SpeedMultiplier = 1f;
         public float DespawnDelay; //Give a bit of time for fade outs
 
         [Header("Visual Effect")]
@@ -79,7 +81,7 @@ namespace Kuantech.Core.FX
 
         public bool IsPlaying()
         {
-            if ((Time.time - _lastPlayedTime > Duration && Duration > 0))
+            if ((Time.time - _lastPlayedTime > GetDuration() && GetDuration() > 0))
             {
                 IsFxPlaying = false;
             }
@@ -137,19 +139,45 @@ namespace Kuantech.Core.FX
                 StopCoroutine(_stopRoutine);
             }
 
-            // Zamanlamaya göre otomatik durdurma/pool
-            if (settings.DespawnAfterPlay && Duration > 0)
+            float duration = GetDuration();
+            if (settings.DespawnAfterPlay && duration > 0)
             {
-                _stopRoutine = PoolRoutine(Duration);
+                _stopRoutine = PoolRoutine(duration);
                 StartCoroutine(_stopRoutine);
             }
-            else if (Duration > 0)
+            else if (duration > 0)
             {
                 _stopRoutine = StopRoutine();
                 StartCoroutine(_stopRoutine);
             }
         }
         
+        #region Timings
+
+        /// <summary>
+        /// Combined playback speed: the effect's own <see cref="SpeedMultiplier"/> times the play settings'
+        /// EffectSpeedMultiplier (e.g. attack speed). Each factor is guarded to a sane minimum so a 0/unset
+        /// value never freezes the effect or divides by zero.
+        /// </summary>
+        public float GetSpeedMultiplier()
+        {
+            float own = SpeedMultiplier > 0f ? SpeedMultiplier : 1f;
+            float play = EffectPlaySettings.EffectSpeedMultiplier > 0f ? EffectPlaySettings.EffectSpeedMultiplier : 1f;
+            return own * play;
+        }
+
+        // Faster playback → shorter delay/duration. Sentinels (<= 0, e.g. looping) are left untouched.
+        public float GetDelay()
+        {
+            return Delay > 0f ? Delay / GetSpeedMultiplier() : Delay;
+        }
+
+        public float GetDuration()
+        {
+            return Duration > 0f ? Duration / GetSpeedMultiplier() : Duration;
+        }
+
+        #endregion
         
         #region Utility Play Overloads
 
@@ -192,13 +220,13 @@ namespace Kuantech.Core.FX
 
         private IEnumerator PlayRoutine(EffectPlaySettings playSettings)
         {
-            yield return new WaitForSeconds(Delay);
+            yield return new WaitForSeconds(GetDelay());
             PlayEffects(playSettings);
         }
 
         private IEnumerator StopRoutine()
         {
-            yield return new WaitForSeconds(Duration);
+            yield return new WaitForSeconds(GetDuration());
             Stop();
         }
 
@@ -212,6 +240,8 @@ namespace Kuantech.Core.FX
                 Sfx.OnDeqeued = OnSoundDequeued;
             }
 
+            float speed = GetSpeedMultiplier();
+
             //Sound
             if (!EffectsLibrary.CanPlayEffect(EffectId, playSettings.EffectCooldown)) return;
             if(!EffectsLibrary.PlayAudio(AudioTag))
@@ -219,16 +249,18 @@ namespace Kuantech.Core.FX
                 if (Sfx != null)
                 {
                     Sfx.ComboFromEffect = playSettings.ComboIndex;
+                    Sfx.SetSpeedMultiplier(speed); // pitch (and fire rate) scale with playback speed
                     Sfx.PlayThroughAudioLibrary();
                 }
             }
-            
+
             //Visual Effect
-            if (Vfx != null) Vfx.Play(playSettings);
-            
+            if (Vfx != null) Vfx.Play(playSettings, speed);
+
             //Animation
             if (Animator != null)
             {
+                Animator.speed = speed;
                 AnimationData.SetParameters(Animator);
             }
             
@@ -363,7 +395,7 @@ namespace Kuantech.Core.FX
         public void OnSoundDequeued()
         {
             Sfx.Enqueued = false;
-            StartCoroutine(PoolRoutine(Duration));
+            StartCoroutine(PoolRoutine(GetDuration()));
         }
     }
 }

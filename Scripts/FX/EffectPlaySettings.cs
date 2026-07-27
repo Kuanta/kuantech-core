@@ -11,6 +11,7 @@ namespace Kuantech.Core.FX
         public Actor Caster; //If effect is casted by an actor, this is the caster
         
         public float Duration;
+        public float EffectSpeedMultiplier;
         public float EffectCooldown;
         public bool DespawnAfterPlay;
         
@@ -30,6 +31,8 @@ namespace Kuantech.Core.FX
         
         //End position. For beam like effects where an end position is needed
         public WorldPoint PlayEndPoint;
+
+        //Timing
         
         public static EffectPlaySettings GetDefaultSettings()
         {
@@ -37,6 +40,7 @@ namespace Kuantech.Core.FX
             {
                 Duration = -1,
                 EffectCooldown = -1,
+                EffectSpeedMultiplier = 1,
                 DespawnAfterPlay = false,
                 SetPosition = false,
                 SetRotation = false,

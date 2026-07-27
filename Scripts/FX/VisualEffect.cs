@@ -14,9 +14,16 @@ namespace Kuantech.Core.FX
         [SerializeField] private bool PlayWithEffectsManager;
         [SerializeField] private List<ParticleSystem> ParticleSystemsToColor;
 
-        public void Play(EffectPlaySettings settings)
+        public void Play(EffectPlaySettings settings, float speed = 1f)
         {
-            if(VFXGraph != null) VFXGraph.Play();
+            if (speed <= 0f) speed = 1f;
+            ApplySimulationSpeed(speed);
+
+            if(VFXGraph != null)
+            {
+                VFXGraph.playRate = speed;
+                VFXGraph.Play();
+            }
             //todo: This can be done better
             if(Emit)
             {
@@ -28,13 +35,32 @@ namespace Kuantech.Core.FX
                     foreach (var childEmitter in ChildEmitters)
                     {
                         childEmitter.Emit(emitParams, EmitCount);
-                    } 
+                    }
                 }
-                ParticleEffect.Emit(emitParams, EmitCount);
+                if(ParticleEffect != null) ParticleEffect.Emit(emitParams, EmitCount);
                 return;
             }
             if(ParticleEffect !=null) ParticleEffect.Play();
-      
+
+        }
+
+        // Scales particle playback so the VFX stays in sync when the effect is sped up (e.g. by attack speed).
+        private void ApplySimulationSpeed(float speed)
+        {
+            if (ParticleEffect != null)
+            {
+                var main = ParticleEffect.main;
+                main.simulationSpeed = speed;
+            }
+            if (ChildEmitters != null)
+            {
+                foreach (var child in ChildEmitters)
+                {
+                    if (child == null) continue;
+                    var childMain = child.main;
+                    childMain.simulationSpeed = speed;
+                }
+            }
         }
 
       
