@@ -2,6 +2,7 @@
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.SceneManagement;
 
 namespace Kuantech.Core
 {
@@ -39,6 +40,14 @@ namespace Kuantech.Core
 
             if (gameObj == null) return null;
             gameObj.transform.SetParent(null);
+            // The pool parent lives in the DontDestroyOnLoad scene, so a just-activated pooled object would
+            // otherwise stay there and survive scene changes. Move it into the active scene so an unload
+            // reclaims it if it is never returned. (Inactive pooled objects stay under the pool parent, and
+            // the pool only tracks those — so a scene-unload destroy of an active object leaves no dangling
+            // queue entry.)
+            Scene activeScene = SceneManager.GetActiveScene();
+            if (gameObj.scene != activeScene && activeScene.IsValid())
+                SceneManager.MoveGameObjectToScene(gameObj, activeScene);
             return gameObj;
         }
         public static void PoolObject(GameObject objectToPool, float delay=0)
