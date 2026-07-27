@@ -21,7 +21,13 @@ namespace Kuantech.Core
         [SerializeField] private GameObject CritIndicator;
         [SerializeField] private float CritScale = 1.2f;
 
-        [Header("Offset")] 
+        [Header("Placement")]
+        [Tooltip("Rotate to face the camera on spawn so the number is readable. Baked once — fine for a fixed/iso camera.")]
+        [SerializeField] private bool FaceCamera = true;
+        [Tooltip("Lifts the text above the hit actor (world units).")]
+        [SerializeField] private float HeightOffset = 1.5f;
+
+        [Header("Offset")]
         [SerializeField] private Vector3 RandomOffsetMin = new Vector3(-0.1f, -0.1f, 0f);
         [SerializeField] private Vector3 RandomOffsetMax = new Vector3(0.1f, 0.1f, 0f);
         private IEnumerator _routine;
@@ -65,9 +71,19 @@ namespace Kuantech.Core
                 Text.color = CritColor;
             }
 
-            //Add random offset 
-            transform.position += new Vector3(Random.Range(RandomOffsetMin.x, RandomOffsetMax.x),
-                Random.Range(RandomOffsetMin.y, RandomOffsetMax.y), Random.Range(RandomOffsetMin.z, RandomOffsetMax.z));
+            //Lift above the actor + a little random scatter so stacked hits don't overlap perfectly.
+            transform.position += Vector3.up * HeightOffset + new Vector3(
+                Random.Range(RandomOffsetMin.x, RandomOffsetMax.x),
+                Random.Range(RandomOffsetMin.y, RandomOffsetMax.y),
+                Random.Range(RandomOffsetMin.z, RandomOffsetMax.z));
+
+            //Face the camera so the number is readable. Baked once here (cheap); fine for a fixed/iso camera.
+            if (FaceCamera)
+            {
+                UnityEngine.Camera cam = CameraManager.GetCamera();
+                if (cam != null) transform.rotation = cam.transform.rotation;
+            }
+
             StartCoroutine(_routine);
         }
 
