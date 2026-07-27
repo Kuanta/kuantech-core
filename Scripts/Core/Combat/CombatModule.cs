@@ -1003,6 +1003,7 @@ namespace Kuantech.Core
             playSettings.SetRotation = GetCurrentAttackPattern().SetAttackFxRotation;
             playSettings.Caster = Actor;
             playSettings.ComboIndex = GetCurrentComboIndex();
+            playSettings.EffectSpeedMultiplier = GetAttackSpeedMultiplier(); // effect scales with attack speed
             attackEffect.PlayEffect(playSettings);
         }
         
