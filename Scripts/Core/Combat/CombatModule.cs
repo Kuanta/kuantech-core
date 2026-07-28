@@ -1020,19 +1020,33 @@ namespace Kuantech.Core
             return _currentCastData;
         }
         
-        public Vector3 GetAttackDirection()
+        public Vector3 GetAttackDirection(bool prioritizeCastDirection = false)
         {
             Actor target = GetCurrentTarget();
+            Vector3 direction = Vector3.zero;
             if (target != null)
             {
-                Vector3 direction = target.transform.position - GetActionCastData().StartPosition;
-                return direction.normalized;
+                direction = target.transform.position - GetActionCastData().StartPosition;
+                if(!prioritizeCastDirection)
+                {
+                    return direction.normalized;
+                }
             }
+
             ActionCastData castData =  GetActionCastData();
             if (castData.Direction.sqrMagnitude > 0.01f)
             {
                 return castData.Direction;
             }
+
+            if(direction.sqrMagnitude > 0.01f) return direction; //If direciton is not zero...
+
+            // No explicit direction or target (e.g. a free-aim melee): use the actor's CURRENT facing so the
+            // attack points where the avatar is looking at IMPLEMENTATION time. Turning mid-swing then aims the
+            // hit where you end up, instead of a direction frozen at the press. (Swap to
+            // MotionVectorsHandler.GetTargetVector() if you'd rather it lead toward the raw aim ahead of the turn.)
+            Vector3 facing = Actor.transform.forward;
+            if (facing.sqrMagnitude > 0.01f) return facing.normalized;
 
             return (castData.TargetPosition - GetAttackPosition()).normalized;
         }

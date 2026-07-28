@@ -61,6 +61,9 @@ namespace Kuantech.Core
         protected Dictionary<Type, List<ActorModule>> Modules = new Dictionary<Type, List<ActorModule>>();
         public Dictionary<string, ActorModule> ModulesById = new Dictionary<string, ActorModule>();
         
+        [Header("Default Slots")]
+        public string HitPointSlotName;
+
         //Common module references
         public ActorVisualHandler VisualHandler;
         
@@ -549,9 +552,9 @@ namespace Kuantech.Core
                 Radius = ActorRadius,
             };
             ActorSlotsHandler actorSlotsHandler = GetModule<ActorSlotsHandler>();
-            if (actorSlotsHandler == null) return hitPoint;
+            if (actorSlotsHandler == null || HitPointSlotName == null || HitPointSlotName == "") return hitPoint;
             
-            Transform hitPointSlot =  actorSlotsHandler.GetSlot("HitPoint");
+            Transform hitPointSlot =  actorSlotsHandler.GetSlot(HitPointSlotName);
             if (hitPointSlot != null) //Hit point is not null, return it instead
 
             {

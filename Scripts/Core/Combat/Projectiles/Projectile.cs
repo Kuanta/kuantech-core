@@ -25,6 +25,14 @@ namespace Kuantech.Core
         public float Range = 10f;
         public float RotationSlerpFactor = 1000f;
 
+        [Header("Homing")]
+        [Range(0f, 1f)]
+        [Tooltip("How strongly the projectile curves toward its target (when one is set). 1 = full homing " +
+                 "(instant tracking, the old behaviour), 0 = ignore the target and fly straight, 0.1-0.2 = a " +
+                 "gentle nudge the player can still dodge.")]
+        public float TargetFollowFactor = 1f;
+        public float MaxTurnDegPerSecond = 120f;
+
         [Header("Arc")] 
         public float InitialRiseHeight;
         public float Gravity = 10f;
@@ -118,10 +126,19 @@ namespace Kuantech.Core
         // Desired flight direction (FULL 3D, normalized)
         protected Vector3 GetFlightDirection()
         {
-            if (Target != null)
+            if (Target != null && TargetFollowFactor > 0f)
             {
                 Vector3 diff = (GetTargetPosition() - transform.position);
-                if (diff.sqrMagnitude > 1e-8f) return diff.normalized;
+                if (diff.sqrMagnitude > 1e-8f)
+                {
+                    Vector3 desired = diff.normalized;
+                    if (TargetFollowFactor >= 1f) return desired; // full homing (instant tracking)
+
+                    // Partial homing: bend the current heading toward the target a little each frame, capped so
+                    // it curves instead of snapping. dt scaling keeps the turn frame-rate independent.
+                    float maxRadians = TargetFollowFactor * MaxTurnDegPerSecond * Mathf.Deg2Rad * Time.deltaTime;
+                    return Vector3.RotateTowards(_direction.normalized, desired, maxRadians, 0f).normalized;
+                }
             }
             return _direction.normalized; // fallback to current heading
         }
@@ -230,15 +247,14 @@ namespace Kuantech.Core
             // Target setup
             Target = target;
 
-            // Lifetime
-            if (Target != null)
+            // Lifetime: a fully-homing projectile chases until MaxLifetime; a straight OR partially-homing one
+            // (it flies mostly forward) despawns by range like an arrow.
+            if (Target != null && TargetFollowFactor >= 1f)
             {
-                // Homing: keep alive until MaxLifetime
                 _lifeTime = MaxLifetime;
             }
             else
             {
-                // Straight: based on range / speed
                 _lifeTime = Range / Mathf.Max(0.0001f, CurrentSpeed);
             }
 
@@ -246,6 +262,7 @@ namespace Kuantech.Core
             ToggleCollider(true);
             if (Visual != null) Visual.SetActive(true);
             if (TrailRenderer != null) TrailRenderer.Clear();
+            ResetParticles(); // wipe leftover particles from the previous flight (runs after the teleport above)
         }
 
 
@@ -361,6 +378,27 @@ namespace Kuantech.Core
             ToggleCollider(false);
             if (Visual != null) Visual.SetActive(false);
             PoolManager.PoolObject(gameObject, DespawnDelay);
+        }
+
+        private ParticleSystem[] _particleSystems;
+
+        protected virtual void Awake()
+        {
+            // Cache child trails/emitters so pooled reuse can wipe leftover particles cheaply.
+            _particleSystems = GetComponentsInChildren<ParticleSystem>(true);
+        }
+
+        // Clears particles left over from the previous flight so a pooled projectile doesn't show a streak
+        // from its old path (emission-over-distance connecting the old despawn point to the new spawn point).
+        private void ResetParticles()
+        {
+            if (_particleSystems == null) return;
+            foreach (var ps in _particleSystems)
+            {
+                if (ps == null) continue;
+                ps.Clear(true);
+                ps.Play(true);
+            }
         }
 
         public void Reset()
