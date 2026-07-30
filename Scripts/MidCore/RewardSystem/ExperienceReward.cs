@@ -6,19 +6,14 @@ namespace Kuantech.Midcore
     [Serializable]
     public class ExperienceReward : Reward
     {
-        public ProgressableDataAsset ExperienceAsset;
-        public float ExperienceAmount;
+        public int ExperienceAmount;
         
         public override void EarnReward()
         {
-            ProgressionManager.AddRankValue(ExperienceAsset, ExperienceAmount);
+            ProgressionManager pm = ProgressionManager.GetContext<ProgressionManager>();
+            pm.AddExperience(ExperienceAmount);
         }
         
-        public override MetadataAsset GetMetadataAsset()
-        {
-            return ExperienceAsset;
-        }
-
         public override int GetAmount()
         {
             return (int) ExperienceAmount;
