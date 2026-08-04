@@ -54,6 +54,7 @@ namespace Kuantech.Rpg
                 DamageAmount = damage,
                 DamageType = DamageType,
                 IsCritical = cr,
+                ShowDamageText = true,
             };
         }
     }

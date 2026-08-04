@@ -14,6 +14,7 @@ namespace Kuantech.Core
         public DamageType DamageType; //Type of damge
         public float DamageAmount; //Amount of damage
         public bool IsCritical; //If is critical, useful for UI
+        public bool ShowDamageText;
 
         public float GetDamage()
         {
