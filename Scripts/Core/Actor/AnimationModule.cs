@@ -15,6 +15,16 @@ namespace Kuantech.Core
         public Animator Animator;
         public AnimationMontagePlayer MontagePlayer;
 
+        /// <summary>
+        /// Where parameter writes go when the actor has no Animator — a GPU-baked crowd agent, for example.
+        /// Set by whatever provides the alternative animation system; null for ordinary actors, in which case
+        /// this module behaves exactly as it always has. Callers never need to know which one is in use.
+        /// </summary>
+        [NonSerialized] public IAnimationDriver Driver;
+
+        /// <summary>True when there is anything to animate at all, by either route.</summary>
+        public bool HasAnimationTarget => Animator != null || Driver != null;
+
         [Header("Settings")]
         [Tooltip("Send movement as a single magnitude float instead of Forward/Sideways")]
         public bool UseOneDimensionalMovement;
@@ -93,7 +103,7 @@ namespace Kuantech.Core
 
         public override void ModuleUpdate()
         {
-            if (GameManager.Instance.GameIsPaused || Animator == null || Actor == null) return;
+            if (GameManager.Instance.GameIsPaused || !HasAnimationTarget || Actor == null) return;
 
             if(_movementModule != null)
             {
@@ -128,6 +138,34 @@ namespace Kuantech.Core
             }
             _targetMovementParameters = Vector2.zero;
             _movementParametersScale = Vector2.one;
+        }
+
+        // ─── Parameter writes ─────────────────────────────────────────────────────
+        // Every parameter write goes through these four so the Animator and the driver stay interchangeable.
+        // The Animator wins when both exist; a driver is a substitute, not an addition.
+
+        private void WriteFloat(int hash, float value)
+        {
+            if (Animator != null) Animator.SetFloat(hash, value);
+            else Driver?.SetFloat(hash, value);
+        }
+
+        private void WriteBool(int hash, bool value)
+        {
+            if (Animator != null) Animator.SetBool(hash, value);
+            else Driver?.SetBool(hash, value);
+        }
+
+        private void WriteTrigger(int hash)
+        {
+            if (Animator != null) Animator.SetTrigger(hash);
+            else Driver?.SetTrigger(hash);
+        }
+
+        private void WriteInteger(int hash, int value)
+        {
+            if (Animator != null) Animator.SetInteger(hash, value);
+            else Driver?.SetInteger(hash, value);
         }
 
         // ─── Animator reference ───────────────────────────────────────────────────
@@ -178,11 +216,11 @@ namespace Kuantech.Core
         private void SetMovementParameters()
         {
             if (UseOneDimensionalMovement)
-                Animator.SetFloat(Movement, _movementParameters.magnitude);
+                WriteFloat(Movement, _movementParameters.magnitude);
             else
             {
-                Animator.SetFloat(Sideways, _movementParameters.x);
-                Animator.SetFloat(Forward, _movementParameters.y);
+                WriteFloat(Sideways, _movementParameters.x);
+                WriteFloat(Forward, _movementParameters.y);
             }
             // Animator.SetFloat(IsGrounded, IsGroundedFlag ? 1f : 0f);
             // Animator.SetFloat(AirTimeHash, AirTime);
@@ -210,110 +248,113 @@ namespace Kuantech.Core
 
         public void ToggleCrouching(bool toggle)
         {
-            if (Animator == null) return;
-            Animator.SetBool(Crouching, toggle);
+            if (!HasAnimationTarget) return;
+            WriteBool(Crouching, toggle);
         }
 
         // Movement event callbacks — subscribed in OnModulesInitialized
         public void OnJump(object sender, EventArgs args)
         {
-            if (Animator == null) return;
-            Animator.SetTrigger(Jump);
+            if (!HasAnimationTarget) return;
+            WriteTrigger(Jump);
         }
 
         public void OnLand(object sender, EventArgs args)
         {
-            if (Animator == null) return;
-            Animator.SetTrigger(Land);
+            if (!HasAnimationTarget) return;
+            WriteTrigger(Land);
         }
 
         private void OnDash(object sender, Vector3 direction)
         {
-            if (Animator == null) return;
-            Animator.SetTrigger(Dash);
+            if (!HasAnimationTarget) return;
+            WriteTrigger(Dash);
         }
 
         private void OnDashEnd(object sender, EventArgs args)
         {
-            if (Animator == null) return;
+            if (!HasAnimationTarget) return;
         }
 
         private void OnCrouchStarted(object sender, EventArgs args)
         {
-            if (Animator == null) return;
-            Animator.SetBool(Crouching, true);
+            if (!HasAnimationTarget) return;
+            WriteBool(Crouching, true);
         }
 
         private void OnCrouchEnded(object sender, EventArgs args)
         {
-            if (Animator == null) return;
-            Animator.SetBool(Crouching, false);
+            if (!HasAnimationTarget) return;
+            WriteBool(Crouching, false);
         }
         // ─── Combat ───────────────────────────────────────────────────────────────
 
         public void LightAttackTrigger(int handIndex = 0, int attackIndex = 0)
         {
-            if (Animator == null) return;
-            Animator.SetTrigger(Attack);
-            Animator.SetBool(Hold, false);
-            Animator.SetInteger(HandIndex, handIndex);
-            Animator.SetInteger(AttackIndex, attackIndex);
+            if (!HasAnimationTarget) return;
+            WriteTrigger(Attack);
+            WriteBool(Hold, false);
+            WriteInteger(HandIndex, handIndex);
+            WriteInteger(AttackIndex, attackIndex);
         }
 
         public void AlternativeAttackTrigger(int handIndex = 0, int attackIndex = 0)
         {
-            if (Animator == null) return;
-            Animator.SetTrigger(AlternativeAttack);
-            Animator.SetBool(Hold, false);
-            Animator.SetInteger(HandIndex, handIndex);
-            Animator.SetInteger(AttackIndex, attackIndex);
+            if (!HasAnimationTarget) return;
+            WriteTrigger(AlternativeAttack);
+            WriteBool(Hold, false);
+            WriteInteger(HandIndex, handIndex);
+            WriteInteger(AttackIndex, attackIndex);
         }
 
         public void SetRelease()
         {
-            if (Animator == null) return;
-            Animator.SetBool(Hold, false);
+            if (!HasAnimationTarget) return;
+            WriteBool(Hold, false);
         }
 
         public void ToggleAiming(bool toggle)
         {
-            if (Animator == null) return;
-            Animator.SetBool(Aiming, toggle);
+            if (!HasAnimationTarget) return;
+            WriteBool(Aiming, toggle);
         }
 
         public void SkillCast(int castIndex = 0)
         {
-            if (Animator == null) return;
-            Animator.SetInteger(CastIndex, castIndex);
-            Animator.SetTrigger(Cast);
+            if (!HasAnimationTarget) return;
+            WriteInteger(CastIndex, castIndex);
+            WriteTrigger(Cast);
         }
 
         public void SetAnimationTime(float animationTime)
         {
-            if (Animator == null) return;
-            Animator.SetFloat(TargetTime, animationTime);
+            if (!HasAnimationTarget) return;
+            WriteFloat(TargetTime, animationTime);
         }
 
         public void SetTrigger(int hash)
         {
-            if (Animator == null) return;
-            Animator.SetTrigger(hash);
+            if (!HasAnimationTarget) return;
+            WriteTrigger(hash);
         }
 
         public void SetBoolean(int hash, bool value)
         {
-            if(Animator == null) return;
-            Animator.SetBool(hash, value);
+            if (!HasAnimationTarget) return;
+            WriteBool(hash, value);
         }
 
         // ─── Animation data / montage ─────────────────────────────────────────────
 
         public void PlayAnimationData(AnimationData animationData, float animationDuration = -1)
         {
-            if (Animator == null) return;
-            animationData.SetParameters(Animator);
+            if (!HasAnimationTarget) return;
+
+            if (Animator != null) animationData.SetParameters(Animator);
+            else animationData.SetParameters(Driver);
+
             if (animationDuration > 0)
-                Animator.SetFloat(TargetTime, animationDuration);
+                WriteFloat(TargetTime, animationDuration);
             if (animationData.AttackMontage != null)
                 PlayAnimationMontage(animationData.AttackMontage, animationDuration);
         }
@@ -330,11 +371,11 @@ namespace Kuantech.Core
         public override void OnActorStateChanged(ActorState oldState, ActorState newState)
         {
             base.OnActorStateChanged(oldState, newState);
-            if (Animator == null) return;
+            if (!HasAnimationTarget) return;
             if (newState == ActorState.Dead)
-                Animator.SetBool(Death, true);
+                WriteBool(Death, true);
             else if (newState == ActorState.Spawned)
-                Animator.SetBool(Death, false);
+                WriteBool(Death, false);
         }
 
         public void OnDamageReceive(HitInfo hitInfo)

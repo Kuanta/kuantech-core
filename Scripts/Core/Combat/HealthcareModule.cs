@@ -413,10 +413,12 @@ namespace Kuantech.Core.Combat
                     reducedDamage *= reductionFormula.GetDamageMultiplier(armor);
                 }
             }
-
+            
             DamageInfo reducedDamageInfo = new DamageInfo()
             {
                 DamageType = damageInfo.DamageType,
+                IsCritical = damageInfo.IsCritical,
+                ShowDamageText = damageInfo.ShowDamageText,
             };
             reducedDamageInfo.SetDamage(reducedDamage);
             return reducedDamageInfo;

@@ -32,10 +32,10 @@ namespace Kuantech.ArcadeIdle
         [NonSerialized] public VenueInteractable TargetInteractable;
         [NonSerialized] public ResourceInventory TargetInventory;
 
-        protected override void Update()
+        public override void ManagedUpdate()
         {
             if (!Initialized) return;
-            base.Update();
+            base.ManagedUpdate();
 
             //Check if actor has reached
             if (!StartedInteracting && AssignedSlot != null)

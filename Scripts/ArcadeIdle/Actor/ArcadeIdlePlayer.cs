@@ -20,9 +20,9 @@ namespace Kuantech.ArcadeIdle
             }
         }
 
-        protected override void Update()
+        public override void ManagedUpdate()
         {
-            base.Update();
+            base.ManagedUpdate();
             Vector2 localDirection = InputHandler.GetLocalInput();
             MovementModule.SetMovement(localDirection);
         }

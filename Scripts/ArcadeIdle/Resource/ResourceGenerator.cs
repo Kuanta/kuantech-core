@@ -55,9 +55,9 @@ namespace Kuantech.ArcadeIdle
             SetCurrentRecipe(0); //todo: This can be built upon for generators with multiple recipes
         }
 
-        protected override void Update()
+        public override void ManagedUpdate()
         {
-            base.Update();
+            base.ManagedUpdate();
             if(HaltGeneration) return; //For debuggng
             if(_generating)
             {

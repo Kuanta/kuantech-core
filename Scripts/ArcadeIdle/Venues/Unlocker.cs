@@ -69,7 +69,7 @@ namespace Kuantech.ArcadeIdle
             ProgressBar.SetFill(progress);
             RemainingCurrencyText.text = GetRemainingAmount(CurrencyIds[0]).Stringfy();
         }
-        protected override void Update()
+        public override void ManagedUpdate()
         {
             if(!Initialized || _filled) return;
 

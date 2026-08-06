@@ -39,7 +39,7 @@ namespace Kuantech.Midcore
         {
             base.Cleanup();
             if(Player == null) return;
-            Destroy(Player.gameObject);
+            Player.Despawn();
         }
     }
 }

@@ -28,6 +28,13 @@ namespace Kuantech.Inventory
         private readonly List<StatModifierData> _modifierDatas;
         private readonly List<StatModifier> _applied = new();
 
+        /// <summary>
+        /// The actor <see cref="_applied"/> was handed to. Tracked because an inventory is persistent and
+        /// outlives the actors it visits, so "already applied" on its own says nothing about whether it is
+        /// applied to the actor being asked about now.
+        /// </summary>
+        private Actor _appliedTo;
+
         public StatAdderItemComponent(List<StatModifierData> modifierDatas)
         {
             _modifierDatas = modifierDatas;
@@ -59,7 +66,18 @@ namespace Kuantech.Inventory
 
         private void Apply(Actor actor)
         {
-            if (actor == null || _modifierDatas.IsNullOrEmpty() || _applied.Count > 0) return;
+            if (actor == null || _modifierDatas.IsNullOrEmpty()) return;
+
+            // Already on this exact actor — applying again would stack a second copy of every modifier.
+            if (_applied.Count > 0 && ReferenceEquals(_appliedTo, actor)) return;
+
+            // Applied, but to somebody else. This is the normal state after an actor goes away without a
+            // clean detach: Actor.Despawn defers its Cleanup to a coroutine, so a scene change destroys the
+            // menu preview character before that ever runs, and nothing clears the bookkeeping. Treating
+            // "already applied" as a reason to skip would then leave every later actor without its item
+            // stats, so drop the stale modifiers instead and apply to the actor actually being asked about.
+            if (_applied.Count > 0) Remove(_appliedTo);
+
             StatsModule stats = actor.GetModule<StatsModule>();
             if (stats == null) return;
 
@@ -73,16 +91,22 @@ namespace Kuantech.Inventory
                 stats.AddModifier(modifier);
                 _applied.Add(modifier);
             }
+            _appliedTo = actor;
         }
 
         private void Remove(Actor actor)
         {
             if (_applied.Count == 0) return;
+
+            // The actor may already be destroyed — this runs precisely when one went away. The null check
+            // covers Unity's destroyed-object null, and the bookkeeping is cleared either way, which is the
+            // part that matters: modifiers on a dead actor need no removal, but the record of them does.
             StatsModule stats = actor != null ? actor.GetModule<StatsModule>() : null;
             if (stats != null)
                 foreach (var modifier in _applied)
                     stats.RemoveModifier(modifier);
             _applied.Clear();
+            _appliedTo = null;
         }
 
         /// <summary>

@@ -61,5 +61,40 @@ namespace Kuantech.Core
                 animator.SetFloat(AnimationTimeParameterName, AnimationTime);
             }
         }
+
+        /// <summary>
+        /// Same writes, aimed at an <see cref="IAnimationDriver"/> instead of an Animator, for actors that
+        /// have no Animator to write to. Names are hashed here because the driver interface takes hashes —
+        /// the callers of the Animator overload already had them, this one does not.
+        /// </summary>
+        public void SetParameters(IAnimationDriver driver)
+        {
+            if (driver == null) return;
+
+            if (!string.IsNullOrEmpty(FloatParameterName))
+            {
+                driver.SetFloat(Animator.StringToHash(FloatParameterName), FloatParameterValue);
+            }
+
+            if (!string.IsNullOrEmpty(BoolParemeterName))
+            {
+                driver.SetBool(Animator.StringToHash(BoolParemeterName), BoolParameterValue);
+            }
+
+            if (!string.IsNullOrEmpty(TriggerParameterName))
+            {
+                driver.SetTrigger(Animator.StringToHash(TriggerParameterName));
+            }
+
+            if (!string.IsNullOrEmpty(IntegerParameterName))
+            {
+                driver.SetInteger(Animator.StringToHash(IntegerParameterName), IntegerParameterValue);
+            }
+
+            if (!string.IsNullOrEmpty(AnimationTimeParameterName))
+            {
+                driver.SetFloat(Animator.StringToHash(AnimationTimeParameterName), AnimationTime);
+            }
+        }
     }
 }

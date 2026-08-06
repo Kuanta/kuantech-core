@@ -220,6 +220,12 @@ namespace Kuantech.Inventory
 
         public void ClearInventory() => _inventory?.Clear();
 
+        public override void Cleanup()
+        {
+            base.Cleanup();
+            DetachInventory();
+        }
+
         // ── Queries ───────────────────────────────────────────────────────────
 
         public Item GetItemAtInventoryId(int id) => _inventory?.GetItemAtSlot(id);

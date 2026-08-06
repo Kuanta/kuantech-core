@@ -157,6 +157,9 @@ namespace Kuantech.Core
             }
             ResetActor();
             ChangeActorState(ActorState.Spawned);
+
+            //Register to ActorManager
+            ActorManager.RegisterActor(this);
         }
 
         public virtual void PostInitialize()
@@ -167,7 +170,7 @@ namespace Kuantech.Core
             }
         }
         
-        protected virtual void FixedUpdate()
+        public virtual void ManagedFixedUpdate()
         {
             if (!Initialized) return;
             foreach (var module in ActorModulesList)
@@ -175,8 +178,16 @@ namespace Kuantech.Core
                 module.ModuleFixedUpdate();
             }
         }
-        
-        protected virtual void Update()
+        // protected virtual void FixedUpdate()
+        // {
+        //     if (!Initialized) return;
+        //     foreach (var module in ActorModulesList)
+        //     {
+        //         module.ModuleFixedUpdate();
+        //     }
+        // }
+
+        public virtual void ManagedUpdate()
         {
             if (!Initialized) return;
             foreach (var module in ActorModulesList)
@@ -184,8 +195,15 @@ namespace Kuantech.Core
                 module.ModuleUpdate();
             }
         }
-        
-        protected virtual void LateUpdate()
+        // protected virtual void Update()
+        // {
+        //     if (!Initialized) return;
+        //     foreach (var module in ActorModulesList)
+        //     {
+        //         module.ModuleUpdate();
+        //     }
+        // }
+        public virtual void ManagedLateUpdate()
         {
             if (!Initialized) return;
             foreach (var module in ActorModulesList)
@@ -193,6 +211,15 @@ namespace Kuantech.Core
                 module.ModuleLateUpdate();
             }
         }
+
+        // protected virtual void LateUpdate()
+        // {
+        //     if (!Initialized) return;
+        //     foreach (var module in ActorModulesList)
+        //     {
+        //         module.ModuleLateUpdate();
+        //     }
+        // }
         
         public virtual void ResetActor()
         {
@@ -206,6 +233,10 @@ namespace Kuantech.Core
 
         public virtual void Cleanup()
         {
+            // Symmetric with Spawn's RegisterActor. Cleanup is the single despawn chokepoint (both the local
+            // and network paths call it), so the actor leaves the managed-update loop exactly once here.
+            ActorManager.UnregisterActor(this);
+
             foreach (var module in ActorModulesList)
             {
                 module.Cleanup();
