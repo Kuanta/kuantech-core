@@ -1,8 +1,9 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Kuantech.Utils;
+using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -170,12 +171,48 @@ namespace Kuantech.Core
             }
         }
         
+        /// <summary>
+        /// Profiler markers per module type, created once and shared by every actor.
+        ///
+        /// ActorManager calls the Managed*Update methods directly rather than through Unity messages, which
+        /// is the point — but it means Unity gives them no markers, and every module's cost collapses into
+        /// ActorManager's self time. A profile can then say the actors are expensive without ever saying
+        /// which module is. These markers compile out entirely when profiling is off.
+        /// </summary>
+        // Markers resolved once per actor into arrays that line up with ActorModulesList, rather than looked
+        // up per call. The lookup used to be a dictionary keyed by type and phase, which ran thousands of
+        // times a frame — and because it sat outside the marker it landed in the caller's self time, hiding
+        // the very breakdown the markers exist to produce.
+        private ProfilerMarker[] _updateMarkers;
+        private ProfilerMarker[] _fixedUpdateMarkers;
+        private ProfilerMarker[] _lateUpdateMarkers;
+
+        private ProfilerMarker[] BuildMarkers(string phase)
+        {
+            var markers = new ProfilerMarker[ActorModulesList.Count];
+            for (int i = 0; i < markers.Length; i++)
+                markers[i] = new ProfilerMarker($"{ActorModulesList[i].GetType().Name}.{phase}");
+            return markers;
+        }
+
+        private ProfilerMarker[] EnsureMarkers(ref ProfilerMarker[] markers, string phase)
+        {
+            if (markers == null || markers.Length != ActorModulesList.Count) markers = BuildMarkers(phase);
+            return markers;
+        }
+
         public virtual void ManagedFixedUpdate()
         {
             if (!Initialized) return;
-            foreach (var module in ActorModulesList)
+#if ENABLE_PROFILER
+            ProfilerMarker[] markers = EnsureMarkers(ref _fixedUpdateMarkers, "ModuleFixedUpdate");
+#endif
+            for (int i = 0; i < ActorModulesList.Count; i++)
             {
-                module.ModuleFixedUpdate();
+#if ENABLE_PROFILER
+                using (markers[i].Auto())
+#endif
+                ActorModulesList[i].ModuleFixedUpdate();
             }
         }
         // protected virtual void FixedUpdate()
@@ -190,9 +227,15 @@ namespace Kuantech.Core
         public virtual void ManagedUpdate()
         {
             if (!Initialized) return;
-            foreach (var module in ActorModulesList)
+#if ENABLE_PROFILER
+            ProfilerMarker[] markers = EnsureMarkers(ref _updateMarkers, "ModuleUpdate");
+#endif
+            for (int i = 0; i < ActorModulesList.Count; i++)
             {
-                module.ModuleUpdate();
+#if ENABLE_PROFILER
+                using (markers[i].Auto())
+#endif
+                ActorModulesList[i].ModuleUpdate();
             }
         }
         // protected virtual void Update()
@@ -206,9 +249,15 @@ namespace Kuantech.Core
         public virtual void ManagedLateUpdate()
         {
             if (!Initialized) return;
-            foreach (var module in ActorModulesList)
+#if ENABLE_PROFILER
+            ProfilerMarker[] markers = EnsureMarkers(ref _lateUpdateMarkers, "ModuleLateUpdate");
+#endif
+            for (int i = 0; i < ActorModulesList.Count; i++)
             {
-                module.ModuleLateUpdate();
+#if ENABLE_PROFILER
+                using (markers[i].Auto())
+#endif
+                ActorModulesList[i].ModuleLateUpdate();
             }
         }
 

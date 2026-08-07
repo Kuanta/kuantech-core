@@ -11,6 +11,9 @@ namespace Kuantech.Core
         private Dictionary<GameObject, Queue<GameObject>> _pool;
         private Dictionary<GameObject, int> _poolSizeLevels; // Not actual sizes, but the size levels
         private readonly int _size;
+
+        /// <summary>Instances created when a sub pool runs dry. Small enough for one frame to absorb.</summary>
+        private const int GrowthStep = 8;
         /// <summary>
         /// 
         /// </summary>
@@ -134,8 +137,13 @@ namespace Kuantech.Core
         }
         
         /// <summary>
-        /// Extends a sub pool using the Fibonacci series. A level counter for each subpool is stored. Each time the pool
-        /// is empty, the level is incremented by 1 for that pool and 'Fibonacci(level)' objects are generated.
+        /// Grows a sub pool by a fixed step when it runs dry.
+        ///
+        /// This used to grow along the Fibonacci series, which is exactly the wrong shape here: the growth
+        /// step keeps rising, so the longer a pool survives the more objects a single miss instantiates, and
+        /// it always happens inside a gameplay frame. A profile caught one such miss creating 233 objects at
+        /// once. A fixed step bounds the worst case to something a frame can absorb; anything more than that
+        /// should be handled by raising the step, not by a growing stall in the middle of the fight.
         /// </summary>
         /// <param name="key">Key of the subpool</param>
         private void ExtendSubPool(GameObject key)
@@ -146,10 +154,14 @@ namespace Kuantech.Core
                 Debug.LogError($"{key} key doesn't exist in size levels");
             }
             _poolSizeLevels[key]++;
-            int objectsToCreate = GetSizeFromLevel(_poolSizeLevels[key]);
-            
-            // Create the prefabs but don't exceed the max limit
-            for (int i = _pool[key].Count; i < objectsToCreate && i < _size; i++)
+            Grow(key, GrowthStep);
+        }
+
+        // Never exceeds the per-sub-pool maximum.
+        private void Grow(GameObject key, int count)
+        {
+            int target = Mathf.Min(_pool[key].Count + count, _size);
+            for (int i = _pool[key].Count; i < target; i++)
             {
                 GameObject instanced = CreateNew(key, false);
                 PoolObject(instanced);
@@ -173,15 +185,6 @@ namespace Kuantech.Core
         }
         
         /// <summary>
-        /// Returns the corresponding fibonacci number
-        /// </summary>
-        /// <param name="level">Index of the fibonacci serie</param>
-        /// <returns></returns>
-        private int GetSizeFromLevel(int level)
-        {
-            level = Mathf.Max(0, level);
-            return Mathf.Min(Helpers.FibonacciNumber(level), _size);
-        }
         
     }
 }

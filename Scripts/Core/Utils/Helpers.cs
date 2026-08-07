@@ -244,7 +244,22 @@ namespace Kuantech.Utils
             return int.TryParse(text, out var parsed) ? parsed : defaultVal;
         }
 
-        public static bool IsNullOrEmpty<T>(this IEnumerable<T> enumerable) => enumerable == null || !enumerable.Any();
+        /// <summary>
+        /// True when the sequence is null or has no elements.
+        ///
+        /// The ICollection fast path is not a micro-optimisation. This used to be `!enumerable.Any()`, and
+        /// LINQ reaches the elements through the IEnumerable interface — which boxes the struct enumerator
+        /// that List, Queue, Dictionary and arrays all use, one heap allocation per call. Called once per
+        /// actor per frame from a couple of modules, that alone accounted for hundreds of allocations and
+        /// tens of KB every frame with a horde on screen. Every real caller is an ICollection, so the count
+        /// is right there and no enumeration is needed at all.
+        /// </summary>
+        public static bool IsNullOrEmpty<T>(this IEnumerable<T> enumerable)
+        {
+            if (enumerable == null) return true;
+            if (enumerable is ICollection<T> collection) return collection.Count == 0;
+            return !enumerable.Any();
+        }
 
         public static bool IsValidIndex<T>(this List<T> list, int index)
         {
