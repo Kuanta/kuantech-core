@@ -58,7 +58,7 @@ namespace DTT.Utils.EditorUtilities
                 return;
 
             // Cache an AnimatedFoldout for each separate editor instance its foldout.
-            string key = headerName + editor.GetInstanceID().ToString();
+            string key = headerName + editor.GetEntityId().ToString();
             if (!_animatedFoldouts.ContainsKey(key))
                 _animatedFoldouts.Add(key, new AnimatedFoldout(editor));
 
@@ -81,7 +81,7 @@ namespace DTT.Utils.EditorUtilities
                 return false;
 
             // Cache an AnimatedFoldout for each separate editor instance its foldout.
-            string key = headerName + editor.GetInstanceID().ToString();
+            string key = headerName + editor.GetEntityId().ToString();
             if (!_animatedToggleFoldouts.ContainsKey(key))
                 _animatedToggleFoldouts.Add(key, new AnimatedToggleFoldout(editor));
 
@@ -102,7 +102,7 @@ namespace DTT.Utils.EditorUtilities
                 return;
 
             // Cache an AnimatedFoldout for each separate editor instance its foldout.
-            string key = headerName + window.GetInstanceID().ToString();
+            string key = headerName + window.GetEntityId().ToString();
             if (!_animatedFoldouts.ContainsKey(key))
                 _animatedFoldouts.Add(key, new AnimatedFoldout(window));
 
@@ -125,7 +125,7 @@ namespace DTT.Utils.EditorUtilities
                 return false;
 
             // Cache an AnimatedFoldout for each separate editor instance its foldout.
-            string key = headerName + window.GetInstanceID().ToString();
+            string key = headerName + window.GetEntityId().ToString();
             if (!_animatedToggleFoldouts.ContainsKey(key))
                 _animatedToggleFoldouts.Add(key, new AnimatedToggleFoldout(window));
 

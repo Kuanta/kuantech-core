@@ -26,10 +26,11 @@
 // The whole system only touches the vertex stage, so nothing about a graph's lighting or surface work
 // is affected. In any graph that should render crowd agents:
 //
-//   1. Add two blackboard properties and set their Reference names exactly:
-//        Texture2D  ->  _CrowdAnimationTexture
+//   1. Add three blackboard properties and set their Reference names exactly:
+//        Texture2D  ->  _CrowdAnimationTexture   (the baked bone matrices, a static asset)
+//        Texture2D  ->  _CrowdAgentTexture       (per-agent state, rewritten every frame)
 //        Float      ->  _CrowdBoneCount
-//      CrowdRenderer writes both through a MaterialPropertyBlock, so their default values do not matter.
+//      CrowdRenderer writes all three through a MaterialPropertyBlock, so their defaults do not matter.
 //   2. Add a Custom Function node, Type = File, Source = this file.
 //        Name = CrowdSkin4   (mesh baked with 4 bone influences)
 //             or CrowdSkin2  (mesh baked with 2 — half the texture reads, use it on mobile)
@@ -38,10 +39,11 @@
 //      variants exist here.
 //   3. Give it these inputs, in this order — the order is the function signature:
 //        AnimationTexture (Texture2D), BoneCount (Float), PositionOS (Vector3),
-//        NormalOS (Vector3), TangentOS (Vector3), BoneIndices (Vector4), BoneWeights (Vector4)
+//        NormalOS (Vector3), TangentOS (Vector3), BoneIndices (Vector4), BoneWeights (Vector4),
+//        AgentTexture (Texture2D)
 //      and these outputs:
 //        OutPositionOS (Vector3), OutNormalOS (Vector3), OutTangentOS (Vector3)
-//   4. Feed it: the two properties, Position/Normal Vector/Tangent Vector all set to Object space,
+//   4. Feed it: the three properties, Position/Normal Vector/Tangent Vector all set to Object space,
 //      a UV node on channel UV2 -> BoneIndices, a UV node on channel UV3 -> BoneWeights.
 //      Wire the outputs into the VertexDescription Position / Normal / Tangent blocks.
 //   5. Turn on "Enable GPU Instancing" on the material made from this graph (Material inspector,
@@ -51,20 +53,19 @@
 // keeps working exactly as before.
 // -----------------------------------------------------------------------------------------------
 
-// Per-agent state, written by CrowdRenderer. Must stay byte-identical to AgentGpuData on the C# side.
-struct CrowdAgentData
-{
-    float frame0;
-    float frame1;
-    float weight;
-    float padding;
-    float4 effect;
-};
+// Per-agent state, rewritten by CrowdRenderer every frame into a small texture: two texels per agent,
+// one row per agent, indexed straight by the instance id.
+//
+//     (0, agent) = frame0, frame1, weight, unused
+//     (1, agent) = effect
+//
+// A StructuredBuffer is the natural fit for this and was the original design. It cannot be used: SSBOs
+// require OpenGL ES 3.1, and on an ES 3.0 device the shader does not load at all, so every agent goes
+// invisible with no error to point at. Texture reads work on every target. Keep it that way.
+#define CROWD_AGENT_TEXELS 2
 
-StructuredBuffer<CrowdAgentData> _CrowdAgentData;
-
-// The buffer is indexed by the instance id of the current draw. CrowdRenderer gives every draw call
-// its own buffer, so index zero is always the first agent of that call and no offset is needed.
+// CrowdRenderer gives every draw call its own texture, so row zero is always the first agent of that
+// call and no offset is needed.
 //
 // The guard has to test the macro's VALUE, not whether it is defined: UnityInstancing.hlsl always
 // defines UNITY_ANY_INSTANCING_ENABLED, as 1 or as 0, so defined() is true either way. unity_InstanceID
@@ -79,18 +80,18 @@ uint CrowdGetInstanceIndex()
 #endif
 }
 
-void CrowdGetAgentState(out int frame0, out int frame1, out float weight)
+void CrowdGetAgentState(Texture2D agentTexture, out int frame0, out int frame1, out float weight)
 {
 #if defined(SHADERGRAPH_PREVIEW)
-    // The graph preview has no buffer bound; show the bind pose rather than reading garbage.
+    // The graph preview has nothing bound; show the bind pose rather than reading garbage.
     frame0 = 0;
     frame1 = 0;
     weight = 0.0;
 #else
-    CrowdAgentData agent = _CrowdAgentData[CrowdGetInstanceIndex()];
-    frame0 = (int)agent.frame0;
-    frame1 = (int)agent.frame1;
-    weight = agent.weight;
+    float4 state = agentTexture.Load(int3(0, CrowdGetInstanceIndex(), 0));
+    frame0 = (int)state.x;
+    frame1 = (int)state.y;
+    weight = state.z;
 #endif
 }
 
@@ -101,26 +102,30 @@ void CrowdGetAgentState(out int frame0, out int frame1, out float weight)
 //
 // Wiring it into a Shader Graph:
 //   1. Add a second Custom Function node, Type = File, Source = this file, Name = CrowdGetAgentEffect.
-//      It takes no inputs and has one output, Effect (Vector4).
-//   2. Put it wherever the value is needed, including the FRAGMENT stage — no custom interpolator is
-//      required. URP's generated passes call UNITY_TRANSFER_INSTANCE_ID in BuildVaryings and
-//      UNITY_SETUP_INSTANCE_ID at the top of frag, before BuildSurfaceDescription runs, so the instance
-//      id is live there too. Reading in the fragment stage costs one buffer fetch per pixel instead of
-//      per vertex; move it to the vertex stage behind a custom interpolator only if that ever shows up
-//      in a profile.
+//      One input, AgentTexture (Texture2D), fed from the _CrowdAgentTexture property; one output,
+//      Effect (Vector4).
+//   2. Read it in the FRAGMENT stage, directly. URP's generated passes call UNITY_TRANSFER_INSTANCE_ID
+//      in BuildVaryings and UNITY_SETUP_INSTANCE_ID at the top of frag, before BuildSurfaceDescription
+//      runs, so the instance id is live there.
+//
+//      Do NOT route it through a Custom Interpolator instead. Carrying the value from the vertex stage
+//      that way looks cheaper — one buffer fetch per vertex rather than per pixel — and it compiles and
+//      runs on desktop, but the varyings a custom interpolator generates collide in some URP passes on
+//      GLES and the shader fails to build for mobile with a duplicate-declaration error. The per-pixel
+//      fetch is the price of a shader that compiles everywhere.
 //   3. Interpret the four floats however the shader likes; CrowdInstance.EffectData is the other end.
 //
 // CrowdFlashShaderEffect, the one effect shipped with this system, packs them as:
 //      Effect.x    flash amount, 0 to 1
-//      Effect.yzw  flash colour, HDR — the buffer is float, so values above 1 come through intact
+//      Effect.yzw  flash colour, HDR — the texture is float, so values above 1 come through intact
 // which the fragment stage consumes as  lerp(BaseColor, Effect.yzw, Effect.x).
 // -----------------------------------------------------------------------------------------------
-void CrowdGetAgentEffect_float(out float4 Effect)
+void CrowdGetAgentEffect_float(UnityTexture2D AgentTexture, out float4 Effect)
 {
 #if defined(SHADERGRAPH_PREVIEW)
     Effect = 0.0;
 #else
-    Effect = _CrowdAgentData[CrowdGetInstanceIndex()].effect;
+    Effect = AgentTexture.tex.Load(int3(1, CrowdGetInstanceIndex(), 0));
 #endif
 }
 
@@ -164,7 +169,7 @@ void CrowdApplySkin(float3x4 skin, float3 positionOS, float3 normalOS, float3 ta
 
 void CrowdSkin4_float(UnityTexture2D AnimationTexture, float BoneCount,
                       float3 PositionOS, float3 NormalOS, float3 TangentOS,
-                      float4 BoneIndices, float4 BoneWeights,
+                      float4 BoneIndices, float4 BoneWeights, UnityTexture2D AgentTexture,
                       out float3 OutPositionOS, out float3 OutNormalOS, out float3 OutTangentOS)
 {
 #if defined(SHADERGRAPH_PREVIEW)
@@ -174,7 +179,7 @@ void CrowdSkin4_float(UnityTexture2D AnimationTexture, float BoneCount,
 #else
     int frame0, frame1;
     float weight;
-    CrowdGetAgentState(frame0, frame1, weight);
+    CrowdGetAgentState(AgentTexture.tex, frame0, frame1, weight);
 
     int lastBone = max((int)BoneCount - 1, 0);
     float3x4 skin = (float3x4)0.0;
@@ -192,7 +197,7 @@ void CrowdSkin4_float(UnityTexture2D AnimationTexture, float BoneCount,
 
 void CrowdSkin2_float(UnityTexture2D AnimationTexture, float BoneCount,
                       float3 PositionOS, float3 NormalOS, float3 TangentOS,
-                      float4 BoneIndices, float4 BoneWeights,
+                      float4 BoneIndices, float4 BoneWeights, UnityTexture2D AgentTexture,
                       out float3 OutPositionOS, out float3 OutNormalOS, out float3 OutTangentOS)
 {
 #if defined(SHADERGRAPH_PREVIEW)
@@ -202,7 +207,7 @@ void CrowdSkin2_float(UnityTexture2D AnimationTexture, float BoneCount,
 #else
     int frame0, frame1;
     float weight;
-    CrowdGetAgentState(frame0, frame1, weight);
+    CrowdGetAgentState(AgentTexture.tex, frame0, frame1, weight);
 
     int lastBone = max((int)BoneCount - 1, 0);
     float3x4 skin = (float3x4)0.0;

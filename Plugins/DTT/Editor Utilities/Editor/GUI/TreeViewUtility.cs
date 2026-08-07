@@ -52,7 +52,7 @@ namespace DTT.Utils.EditorUtilities
         /// <summary>
         /// A default root tree view item.
         /// </summary>
-        public static TreeViewItem DefaultRoot => new TreeViewItem
+        public static TreeViewItem<int> DefaultRoot => new TreeViewItem<int>
         {
             id = DEFAULT_ROOT_ID, 
             depth = DEFAULT_ROOT_DEPTH, 
@@ -62,7 +62,7 @@ namespace DTT.Utils.EditorUtilities
         /// <summary>
         /// An empty tree view item.
         /// </summary>
-        public static TreeViewItem EmptyItem => new TreeViewItem
+        public static TreeViewItem<int> EmptyItem => new TreeViewItem<int>
         {
             id = EMPTY_ID, 
             depth = EMPTY_DEPTH, 
@@ -95,8 +95,8 @@ namespace DTT.Utils.EditorUtilities
         /// </summary>
         /// <param name="treeViewItem">The tree view item to get the corresponding unity object for.</param>
         /// <returns>The unity object for the tree view item</returns>
-        public static Object ToUnityObject(this TreeViewItem treeViewItem)
-            => EditorUtility.InstanceIDToObject(treeViewItem.id);
+        public static Object ToUnityObject(this TreeViewItem<int> treeViewItem)
+            => EditorUtility.EntityIdToObject(treeViewItem.id);
         
         /// <summary>
         /// Returns the unity object for a tree view item assuming the instance id has
@@ -105,20 +105,20 @@ namespace DTT.Utils.EditorUtilities
         /// <typeparam name="T">The type of unity object.</typeparam>
         /// <param name="treeViewItem">The tree view item to get the corresponding unity object for.</param>
         /// <returns>The unity object for the tree view item</returns>
-        public static T ToUnityObject<T>(this TreeViewItem treeViewItem) where T : Object
-            => (T)EditorUtility.InstanceIDToObject(treeViewItem.id);
+        public static T ToUnityObject<T>(this TreeViewItem<int> treeViewItem) where T : Object
+            => (T)EditorUtility.EntityIdToObject(treeViewItem.id);
         
         /// <summary>
         /// Converts a tree of tree view items to a list.
         /// </summary>
         /// <param name="rootItem">The root tree view item.</param>
         /// <param name="result">The resulting list.</param>
-        public static void TreeToList(TreeViewItem rootItem, IList<TreeViewItem> result)
+        public static void TreeToList(TreeViewItem<int> rootItem, IList<TreeViewItem<int>> result)
         {
             result.Clear();
 
             // Create a stack of tree view items and add top level items to it.
-            Stack<TreeViewItem> stack = new Stack<TreeViewItem>();
+            Stack<TreeViewItem<int>> stack = new Stack<TreeViewItem<int>>();
             for (int i = rootItem.children.Count - 1; i >= 0; i--)
                 stack.Push(rootItem.children[i]);
 
@@ -126,7 +126,7 @@ namespace DTT.Utils.EditorUtilities
             // If an item has children push them onto the stack.
             while (stack.Count > 0)
             {
-                TreeViewItem current = stack.Pop();
+                TreeViewItem<int> current = stack.Pop();
                 result.Add(current);
 
                 if (current.hasChildren && current.children[0] != null)

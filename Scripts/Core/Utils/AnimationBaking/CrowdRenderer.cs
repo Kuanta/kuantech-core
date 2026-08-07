@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -62,6 +61,11 @@ namespace Kuantech.Core.Utils
         [SerializeField] private int DrawnAgents;
         [Tooltip("Read-only: how many instanced draw calls that took.")]
         [SerializeField] private int DrawCalls;
+        [Tooltip("Seconds between stat log lines. 0 disables. Needs a CrowdRenderer placed in the scene — " +
+                 "the auto-created one cannot be configured, and on a device the log is the only way to see these.")]
+        [SerializeField] private float StatsLogInterval;
+
+        private float _statsLogTimer;
 
         private static CrowdRenderer _instance;
 
@@ -156,6 +160,33 @@ namespace Kuantech.Core.Utils
                 batch.Tick(deltaTime);
                 batch.Draw(ShadowCasting, ReceiveShadows, RenderLayer, ref DrawnAgents, ref DrawCalls);
             }
+
+            LogStats(deltaTime);
+        }
+
+        /// <summary>
+        /// Periodic counters, because on a device there is no inspector to read. Registered against drawn is
+        /// the distinction that matters: agents that registered but never drew mean a culling or bounds
+        /// problem, while nothing registering at all points back at the prefabs.
+        /// </summary>
+        private void LogStats(float deltaTime)
+        {
+            if (StatsLogInterval <= 0f) return;
+
+            _statsLogTimer += deltaTime;
+            if (_statsLogTimer < StatsLogInterval) return;
+            _statsLogTimer = 0f;
+
+            int registered = 0;
+            foreach (Batch batch in _batches) registered += batch.Count;
+
+            Debug.Log($"[{nameof(CrowdRenderer)}] batches={_batches.Count} registered={registered} " +
+                      $"drawn={DrawnAgents} drawCalls={DrawCalls}");
+
+            // What the build actually holds, and where the first agent is being placed. Between them these
+            // separate "the data did not survive the build" from "the data is fine but the shader is not
+            // putting it on screen" — the two cases a drawn-but-invisible crowd cannot tell apart.
+            foreach (Batch batch in _batches) batch.LogDescription();
         }
 
         private Batch GetOrCreateBatch(CrowdAnimationSet set)
@@ -169,18 +200,12 @@ namespace Kuantech.Core.Utils
         }
 
         /// <summary>
-        /// Per-agent data as the shader sees it. The layout has to match the CrowdAgentData struct in
-        /// CrowdSkinning.hlsl exactly — 32 bytes, two float4s, which also keeps the buffer stride aligned.
+        /// Texels of agent state per agent in the data texture. Must match CROWD_AGENT_TEXELS in
+        /// CrowdSkinning.hlsl, along with what each one holds:
+        ///     (0, agent) = frame0, frame1, weight, unused
+        ///     (1, agent) = effect
         /// </summary>
-        [StructLayout(LayoutKind.Sequential)]
-        private struct AgentGpuData
-        {
-            public float Frame0;
-            public float Frame1;
-            public float Weight;
-            public float Padding;
-            public Vector4 Effect;
-        }
+        private const int TexelsPerAgent = 2;
 
         /// <summary>
         /// All agents sharing one animation set. Owns the CPU-side arrays and the GPU buffers, split into
@@ -189,13 +214,37 @@ namespace Kuantech.Core.Utils
         /// </summary>
         private sealed class Batch
         {
-            private const int GpuDataStride = 32; // sizeof(AgentGpuData)
-
             private readonly CrowdAnimationSet _set;
             private readonly List<CrowdInstance> _instances = new List<CrowdInstance>();
             private readonly List<Chunk> _chunks = new List<Chunk>();
 
             public Batch(CrowdAnimationSet set) => _set = set;
+
+            /// <summary>Agents registered to this batch, drawn or not.</summary>
+            public int Count => _instances.Count;
+
+            /// <summary>
+            /// Dumps the set and the first agent's placement alongside every stats line. Repeating rather
+            /// than logging once is deliberate: a device's logcat is a ring buffer, and a single line printed
+            /// when the level loaded is gone by the time anyone reads it.
+            /// </summary>
+            public void LogDescription()
+            {
+                if (_set == null) return;
+
+                string first = "none";
+                for (int i = 0; i < _instances.Count; i++)
+                {
+                    CrowdInstance instance = _instances[i];
+                    if (instance.Transform == null) continue;
+                    first = $"pos={instance.Transform.position} scale={instance.Transform.lossyScale} " +
+                            $"frames={instance.Animator.Frame0}/{instance.Animator.Frame1} w={instance.Animator.Weight:0.00}";
+                    break;
+                }
+
+                Debug.Log($"[{nameof(CrowdRenderer)}] set '{_set.name}': {_set.DescribeRuntimeState()}");
+                Debug.Log($"[{nameof(CrowdRenderer)}] first agent: {first}");
+            }
 
             public void Add(CrowdInstance instance)
             {
@@ -236,13 +285,7 @@ namespace Kuantech.Core.Utils
                     if (!instance.Visible || instance.Transform == null) continue;
 
                     chunk.Matrices[written] = instance.Transform.localToWorldMatrix;
-                    chunk.Data[written] = new AgentGpuData
-                    {
-                        Frame0 = instance.Animator.Frame0,
-                        Frame1 = instance.Animator.Frame1,
-                        Weight = instance.Animator.Weight,
-                        Effect = instance.EffectData,
-                    };
+                    chunk.SetAgent(written, instance.Animator, instance.EffectData);
                     chunk.Encapsulate(instance.Transform.position, written == 0);
                     written++;
 
@@ -275,23 +318,49 @@ namespace Kuantech.Core.Utils
                 return _chunks[index];
             }
 
-            /// <summary>One instanced draw call worth of agents, with the buffers that back it.</summary>
+            /// <summary>
+            /// One instanced draw call worth of agents, with the storage that backs it.
+            ///
+            /// The per-agent state travels in a small texture rather than a StructuredBuffer. A buffer is the
+            /// natural fit and was the original design, but it needs OpenGL ES 3.1 — on an ES 3.0 device the
+            /// shader will not load at all and every agent silently disappears. The texture is two texels
+            /// wide and one row per agent, so the shader indexes it straight by instance id.
+            /// </summary>
             private sealed class Chunk
             {
                 public readonly Matrix4x4[] Matrices = new Matrix4x4[MaxInstancesPerDraw];
-                public readonly AgentGpuData[] Data = new AgentGpuData[MaxInstancesPerDraw];
 
-                private readonly GraphicsBuffer _dataBuffer;
+                private readonly Color[] _pixels = new Color[MaxInstancesPerDraw * TexelsPerAgent];
+                private readonly Texture2D _dataTexture;
                 private readonly MaterialPropertyBlock _propertyBlock;
                 private Bounds _bounds;
 
                 public Chunk(CrowdAnimationSet set)
                 {
-                    _dataBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, MaxInstancesPerDraw, GpuDataStride);
-                    _propertyBlock = new MaterialPropertyBlock();
+                    // Full floats: frame indices run past what a half represents exactly once a set has a few
+                    // thousand frames, and the effect slot carries HDR colour. 2 x 1023 x 16 bytes is 32 KB.
+                    _dataTexture = new Texture2D(TexelsPerAgent, MaxInstancesPerDraw, TextureFormat.RGBAFloat, false, true)
+                    {
+                        name = "CrowdAgentData",
+                        filterMode = FilterMode.Point,
+                        wrapMode = TextureWrapMode.Clamp,
+                        anisoLevel = 0,
+                    };
 
+                    _propertyBlock = new MaterialPropertyBlock();
                     set.ApplyStaticProperties(_propertyBlock);
-                    _propertyBlock.SetBuffer(CrowdAnimationSet.AgentDataId, _dataBuffer);
+                    _propertyBlock.SetTexture(CrowdAnimationSet.AgentTextureId, _dataTexture);
+                }
+
+                /// <summary>
+                /// Writes one agent's row. The two texels and their contents have to match CROWD_AGENT_TEXELS
+                /// and the reads in CrowdSkinning.hlsl.
+                /// </summary>
+                public void SetAgent(int index, CrowdAnimator animator, Vector4 effect)
+                {
+                    int texel = index * TexelsPerAgent;
+                    _pixels[texel + 0] = new Color(animator.Frame0, animator.Frame1, animator.Weight, 0f);
+                    _pixels[texel + 1] = new Color(effect.x, effect.y, effect.z, effect.w);
                 }
 
                 /// <summary>
@@ -306,7 +375,10 @@ namespace Kuantech.Core.Utils
 
                 public void Submit(CrowdAnimationSet set, int count, ShadowCastingMode shadowCasting, bool receiveShadows, int layer)
                 {
-                    _dataBuffer.SetData(Data, 0, 0, count);
+                    // Uploads the whole texture rather than the used rows: 32 KB a frame, against the
+                    // bookkeeping a partial upload would need to stay correct as the agent count moves.
+                    _dataTexture.SetPixels(_pixels);
+                    _dataTexture.Apply(false, false);
 
                     Bounds worldBounds = _bounds;
                     worldBounds.Expand(set.LocalBounds.size);
@@ -323,7 +395,10 @@ namespace Kuantech.Core.Utils
                     Graphics.RenderMeshInstanced(renderParams, set.Mesh, 0, Matrices, count);
                 }
 
-                public void Dispose() => _dataBuffer?.Dispose();
+                public void Dispose()
+                {
+                    if (_dataTexture != null) Object.Destroy(_dataTexture);
+                }
             }
         }
     }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Kuantech.Core.Utils
 {
@@ -72,7 +73,13 @@ namespace Kuantech.Core.Utils
         // agree on the names without repeating string literals.
         public static readonly int AnimationTextureId = Shader.PropertyToID("_CrowdAnimationTexture");
         public static readonly int BoneCountId = Shader.PropertyToID("_CrowdBoneCount");
-        public static readonly int AgentDataId = Shader.PropertyToID("_CrowdAgentData");
+
+        /// <summary>
+        /// Per-agent state for the current draw call. A texture rather than a StructuredBuffer because SSBOs
+        /// need OpenGL ES 3.1, and ES 3.0 devices are still inside the target range — on those the shader
+        /// simply fails to load and every agent goes invisible. Texture reads work everywhere.
+        /// </summary>
+        public static readonly int AgentTextureId = Shader.PropertyToID("_CrowdAgentTexture");
 
         private Dictionary<int, CrowdAnimationClip> _clipsByHash;
 
@@ -94,6 +101,32 @@ namespace Kuantech.Core.Utils
         /// Pushes the set's static data onto a property block. The per-agent data is written separately by
         /// the renderer; this is only the part that is the same for every instance of the set.
         /// </summary>
+        /// <summary>
+        /// What this set actually amounts to at runtime, for logging on a device. Asset references, mesh
+        /// vertex channels and texture formats can all survive the editor and then differ in a player, and a
+        /// crowd that draws but stays invisible looks exactly the same whichever of them went missing — so
+        /// the only way to tell them apart is to have the build say what it is holding.
+        /// </summary>
+        public string DescribeRuntimeState()
+        {
+            string mesh = Mesh == null
+                ? "NULL"
+                : $"{Mesh.vertexCount}v uv2={Mesh.HasVertexAttribute(VertexAttribute.TexCoord2)} " +
+                  $"uv3={Mesh.HasVertexAttribute(VertexAttribute.TexCoord3)}";
+
+            string texture = AnimationTexture == null
+                ? "NULL"
+                : $"{AnimationTexture.width}x{AnimationTexture.height} {AnimationTexture.format} " +
+                  $"filter={AnimationTexture.filterMode}";
+
+            string material = Material == null
+                ? "NULL"
+                : $"{(Material.shader != null ? Material.shader.name : "NO SHADER")} instancing={Material.enableInstancing}";
+
+            return $"mesh[{mesh}] animTex[{texture}] material[{material}] " +
+                   $"bones={BoneCount} influences={BoneInfluences} clips={Clips.Count}";
+        }
+
         public void ApplyStaticProperties(MaterialPropertyBlock block)
         {
             block.SetTexture(AnimationTextureId, AnimationTexture);

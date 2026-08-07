@@ -1,5 +1,6 @@
 using System;
 using Kuantech.Core;
+using UnityEngine;
 
 namespace Kuantech.Puzzle
 {
@@ -19,9 +20,9 @@ namespace Kuantech.Puzzle
             
         }
 
-        public int GetUniqueId()
+        public EntityId GetUniqueId()
         {
-            return GetInstanceID();
+            return gameObject.GetEntityId();
         }
 
         public void DirtyState()
