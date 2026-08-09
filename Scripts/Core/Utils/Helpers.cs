@@ -258,6 +258,11 @@ namespace Kuantech.Utils
         {
             if (enumerable == null) return true;
             if (enumerable is ICollection<T> collection) return collection.Count == 0;
+            // Queue and Stack expose a count but do NOT implement ICollection<T> — only the read-only
+            // interface — so without this second check they fall through to LINQ and box an enumerator on
+            // every call. StatusEffectHandler asks about two queues per actor per frame; that alone was a
+            // couple of hundred allocations a frame with a horde on screen and nothing happening.
+            if (enumerable is IReadOnlyCollection<T> readOnlyCollection) return readOnlyCollection.Count == 0;
             return !enumerable.Any();
         }
 

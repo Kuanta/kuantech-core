@@ -45,7 +45,7 @@ namespace Kuantech.Core
             else
             {
                 var next = Quaternion.RotateTowards(
-                    Rigidbody.rotation, _targetRot, rotateSpeedDegPerSec * Time.fixedDeltaTime);
+                    Rigidbody.rotation, _targetRot, rotateSpeedDegPerSec * deltaTime);
                 Rigidbody.MoveRotation(next);
             }
         }

@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Kuantech.Utils;
 using Unity.Profiling;
 using UnityEngine;
@@ -163,6 +164,8 @@ namespace Kuantech.Core
                 break;
             }
 
+            BuildPhaseLists();
+
             if(actorSerializableData != null)
             {
                 LoadActorState(actorSerializableData);
@@ -219,36 +222,76 @@ namespace Kuantech.Core
         // up per call. The lookup used to be a dictionary keyed by type and phase, which ran thousands of
         // times a frame — and because it sat outside the marker it landed in the caller's self time, hiding
         // the very breakdown the markers exist to produce.
-        private ProfilerMarker[] _updateMarkers;
-        private ProfilerMarker[] _fixedUpdateMarkers;
-        private ProfilerMarker[] _lateUpdateMarkers;
+        // Modules split by the phases they actually implement, plus the markers that line up with them.
+        // Most modules override none of the three: ActorVisualHandler, ActorSlotsHandler, EffectsModule and
+        // a dozen others were being called ~330 times a frame each only to run an empty base method. Working
+        // out who implements what once, at initialisation, removes both those calls and any per-frame test
+        // for them — the loops simply never see a module that has nothing to do.
+        private ActorModule[] _updateModules, _fixedUpdateModules, _lateUpdateModules;
+        private ProfilerMarker[] _updateMarkers, _fixedUpdateMarkers, _lateUpdateMarkers;
 
-        private ProfilerMarker[] BuildMarkers(string phase)
+        // Reflection is per module TYPE, not per instance: the first goblin pays for it and the other 109,
+        // plus every one recycled from the pool afterwards, read the cached answer.
+        private static readonly Dictionary<Type, bool[]> _implementedPhases = new Dictionary<Type, bool[]>();
+
+        private static readonly string[] PhaseNames = { "ModuleUpdate", "ModuleFixedUpdate", "ModuleLateUpdate" };
+
+        private static bool[] GetImplementedPhases(Type moduleType)
         {
-            var markers = new ProfilerMarker[ActorModulesList.Count];
-            for (int i = 0; i < markers.Length; i++)
-                markers[i] = new ProfilerMarker($"{ActorModulesList[i].GetType().Name}.{phase}");
-            return markers;
+            if (_implementedPhases.TryGetValue(moduleType, out bool[] phases)) return phases;
+
+            phases = new bool[PhaseNames.Length];
+            for (int i = 0; i < PhaseNames.Length; i++)
+            {
+                MethodInfo method = moduleType.GetMethod(PhaseNames[i],
+                    BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy);
+                phases[i] = method != null && method.DeclaringType != typeof(ActorModule);
+            }
+            _implementedPhases[moduleType] = phases;
+            return phases;
         }
 
-        private ProfilerMarker[] EnsureMarkers(ref ProfilerMarker[] markers, string phase)
+        private void BuildPhaseLists()
         {
-            if (markers == null || markers.Length != ActorModulesList.Count) markers = BuildMarkers(phase);
+            var update = new List<ActorModule>();
+            var fixedUpdate = new List<ActorModule>();
+            var lateUpdate = new List<ActorModule>();
+
+            foreach (ActorModule module in ActorModulesList)
+            {
+                if (module == null) continue;
+                bool[] phases = GetImplementedPhases(module.GetType());
+                if (phases[0]) update.Add(module);
+                if (phases[1]) fixedUpdate.Add(module);
+                if (phases[2]) lateUpdate.Add(module);
+            }
+
+            _updateModules = update.ToArray();
+            _fixedUpdateModules = fixedUpdate.ToArray();
+            _lateUpdateModules = lateUpdate.ToArray();
+
+            _updateMarkers = BuildMarkers(_updateModules, PhaseNames[0]);
+            _fixedUpdateMarkers = BuildMarkers(_fixedUpdateModules, PhaseNames[1]);
+            _lateUpdateMarkers = BuildMarkers(_lateUpdateModules, PhaseNames[2]);
+        }
+
+        private static ProfilerMarker[] BuildMarkers(ActorModule[] modules, string phase)
+        {
+            var markers = new ProfilerMarker[modules.Length];
+            for (int i = 0; i < markers.Length; i++)
+                markers[i] = new ProfilerMarker($"{modules[i].GetType().Name}.{phase}");
             return markers;
         }
 
         public virtual void ManagedFixedUpdate()
         {
-            if (!Initialized) return;
-#if ENABLE_PROFILER
-            ProfilerMarker[] markers = EnsureMarkers(ref _fixedUpdateMarkers, "ModuleFixedUpdate");
-#endif
-            for (int i = 0; i < ActorModulesList.Count; i++)
+            if (!Initialized || _fixedUpdateModules == null) return;
+            for (int i = 0; i < _fixedUpdateModules.Length; i++)
             {
 #if ENABLE_PROFILER
-                using (markers[i].Auto())
+                using (_fixedUpdateMarkers[i].Auto())
 #endif
-                ActorModulesList[i].ModuleFixedUpdate();
+                _fixedUpdateModules[i].ModuleFixedUpdate();
             }
         }
 
@@ -270,7 +313,7 @@ namespace Kuantech.Core
         {
             _deltaTime = Time.time - _lastUpdateTime;
             _lastUpdateTime = Time.time;
-            if (!Initialized) return;
+            if (!Initialized || _updateModules == null) return;
 
             // Re-decide the rate for the next period, here rather than in ShouldUpdate: this runs only on the
             // frames the actor is actually updated, so a distant enemy ticking at 5 Hz is asked five times a
@@ -281,30 +324,25 @@ namespace Kuantech.Core
                 UpdateInterval = Mathf.Lerp(MinUpdateInterval, MaxUpdateInterval,
                     Mathf.Clamp01(_updateRateProvider.GetUpdateIntervalFactor()));
             }
-#if ENABLE_PROFILER
-            ProfilerMarker[] markers = EnsureMarkers(ref _updateMarkers, "ModuleUpdate");
-#endif
-            for (int i = 0; i < ActorModulesList.Count; i++)
+
+            for (int i = 0; i < _updateModules.Length; i++)
             {
 #if ENABLE_PROFILER
-                using (markers[i].Auto())
+                using (_updateMarkers[i].Auto())
 #endif
-                ActorModulesList[i].ModuleUpdate(_deltaTime);
+                _updateModules[i].ModuleUpdate(_deltaTime);
             }
         }
 
         public virtual void ManagedLateUpdate()
         {
-            if (!Initialized) return;
-#if ENABLE_PROFILER
-            ProfilerMarker[] markers = EnsureMarkers(ref _lateUpdateMarkers, "ModuleLateUpdate");
-#endif
-            for (int i = 0; i < ActorModulesList.Count; i++)
+            if (!Initialized || _lateUpdateModules == null) return;
+            for (int i = 0; i < _lateUpdateModules.Length; i++)
             {
 #if ENABLE_PROFILER
-                using (markers[i].Auto())
+                using (_lateUpdateMarkers[i].Auto())
 #endif
-                ActorModulesList[i].ModuleLateUpdate(_deltaTime);
+                _lateUpdateModules[i].ModuleLateUpdate(_deltaTime);
             }
         }
 
