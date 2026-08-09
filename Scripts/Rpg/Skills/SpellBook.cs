@@ -123,22 +123,22 @@ namespace Kuantech.Rpg.Skills
                 passive.Activate();
         }
 
-        public override void ModuleUpdate()
+        public override void ModuleUpdate(float deltaTime)
         {
-            base.ModuleUpdate();
+            base.ModuleUpdate(deltaTime);
             if (!Actor.IsAlive()) return;
 
             for (int i = _activeSkills.Count - 1; i >= 0; i--)
             {
                 Skill skill = _activeSkills[i];
                 if (skill.IsCasting())
-                    skill.UpdateSkill(Time.deltaTime);
+                    skill.UpdateSkill(deltaTime);
                 else
                     _activeSkills.RemoveAt(i);
             }
 
             foreach (var passive in _passiveSkills.Values)
-                passive.Update(Time.deltaTime);
+                passive.Update(deltaTime);
         }
 
         #region Slot

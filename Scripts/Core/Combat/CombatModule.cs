@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Kuantech.Core.Combat;
 using Kuantech.Core.FX;
@@ -207,7 +207,7 @@ namespace Kuantech.Core
             if(_lockModule != null) _lockModule.OnLocked += OnLockHandler;
         }
 
-        public override void ModuleUpdate()
+        public override void ModuleUpdate(float deltaTime)
         {
             if (!IsAttacking()) return;
             float elapsedTime = Time.time - _attackStartTime;

@@ -1,4 +1,4 @@
-using Kuantech.Core;
+﻿using Kuantech.Core;
 using Kuantech.Rpg;
 using UnityEngine;
 
@@ -24,9 +24,9 @@ namespace Kuantech.Rpg
             _statsModule = Actor.GetModule<StatsModule>();
         }
 
-        public override void ModuleUpdate()
+        public override void ModuleUpdate(float deltaTime)
         {
-            _checkTimer += Time.deltaTime;
+            _checkTimer += deltaTime;
             if (_checkTimer < _checkInterval) return;
             _checkTimer = 0f;
             PullNearbyDrops();

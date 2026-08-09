@@ -33,8 +33,11 @@ namespace Kuantech.ArcadeIdle
         {
         }
 
-        private void FixedUpdate()
+        // Was a Unity FixedUpdate message. Routed through the managed loop for the same reason; fixed
+        // steps are not thinned out, so the rate this runs at is unchanged.
+        public override void ModuleFixedUpdate()
         {
+            base.ModuleFixedUpdate();
             if (!Initialized || _statModule == null) return;
             _rigidbody.linearVelocity = _currentMovementVector * _statModule.GetAttributeValue(movementSpeedAttributeAsset.GetId());
             if(_currentMovementVector != Vector3.zero)
@@ -44,11 +47,15 @@ namespace Kuantech.ArcadeIdle
             }
         }
 
-        private void Update()
+        // Was a Unity Update message. Every ActorModule that keeps one is ticked by the engine for
+        // every instance every frame, which is both the per-component overhead ActorManager exists to
+        // remove and a way out of the update rate the actor asked for.
+        public override void ModuleUpdate(float deltaTime)
         {
+            base.ModuleUpdate(deltaTime);
             if(!Initialized || _statModule == null) return;
             _currentMovementVector =
-                Vector3.Lerp(_currentMovementVector, _movementVector, Time.deltaTime * MoveVectorLerpFactor);
+                Vector3.Lerp(_currentMovementVector, _movementVector, deltaTime * MoveVectorLerpFactor);
             if (_arcadeIdleAnimator != null) _arcadeIdleAnimator.SetSpeed(_currentMovementVector.magnitude * _statModule.GetAttributeValue(movementSpeedAttributeAsset.GetId()));
         }
 

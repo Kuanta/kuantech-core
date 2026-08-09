@@ -1,4 +1,4 @@
-using Kuantech.Core;
+﻿using Kuantech.Core;
 using Kuantech.Utils;
 using UnityEngine;
 
@@ -14,8 +14,12 @@ namespace Kuantech.ArcadeIdle
         
         private float _lastInteractedTime;
 
-        private void Update()
-        {   
+        // Was a Unity Update message. Every ActorModule that keeps one is ticked by the engine for
+        // every instance every frame, which is both the per-component overhead ActorManager exists to
+        // remove and a way out of the update rate the actor asked for.
+        public override void ModuleUpdate(float deltaTime)
+        {
+            base.ModuleUpdate(deltaTime);   
             if(!Initialized) return;
 
             if(ActorTriggerZone.EnteredActors.IsNullOrEmpty()) return;

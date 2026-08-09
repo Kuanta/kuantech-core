@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -98,7 +98,7 @@ namespace Kuantech.Core.Utils
             OnActorVisualSet(visualHandler.CurrentActorVisual);
         }
 
-        public override void ModuleUpdate()
+        public override void ModuleUpdate(float deltaTime)
         {
             // Read the animator through the renderer every frame rather than caching it: the visual is
             // activated after OnActorVisualSet fires, so the agent does not exist yet at hook-up time.

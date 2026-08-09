@@ -76,9 +76,9 @@ namespace Kuantech.Core
             if(_lockModule != null) _lockModule.OnLocked += OnLockHandler;
         }
         
-        public override void ModuleUpdate()
+        public override void ModuleUpdate(float deltaTime)
         {
-            base.ModuleUpdate();
+            base.ModuleUpdate(deltaTime);
             if (!Actor.IsAlive()) return;
             HandleJumpLogic();
 

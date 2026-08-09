@@ -37,7 +37,7 @@ namespace Kuantech.Core
         }
 
         private float _lastEnsureTime;
-        public override void ModuleUpdate()
+        public override void ModuleUpdate(float deltaTime)
         {
             if (!Actor.IsAlive()) return;
 
@@ -47,7 +47,7 @@ namespace Kuantech.Core
             {
                 DisableAgent();
                 if (KnockbackRigidbody == null)
-                    Actor.transform.position += Actor.MotionVectorsHandler.ForceMoveVector * Time.deltaTime;
+                    Actor.transform.position += Actor.MotionVectorsHandler.ForceMoveVector * deltaTime;
                 return;
             }
 

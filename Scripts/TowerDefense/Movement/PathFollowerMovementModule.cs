@@ -23,9 +23,9 @@ namespace Kuantech.TowerDefense
             PathFollower.SetPath(path);
         }
         
-        public override void ModuleUpdate()
+        public override void ModuleUpdate(float deltaTime)
         {
-            base.ModuleUpdate();
+            base.ModuleUpdate(deltaTime);
 
             if (PathFollower == null || PathFollower.IsMoving())
             {

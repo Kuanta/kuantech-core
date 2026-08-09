@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Kuantech.Utils;
 using UnityEngine;
 
@@ -87,9 +87,9 @@ namespace Kuantech.Core
             TargetedByActors.Remove(targeter);
         }
 
-        public override void ModuleUpdate()
+        public override void ModuleUpdate(float deltaTime)
         {
-            base.ModuleUpdate();
+            base.ModuleUpdate(deltaTime);
             if (DebugSlots && Actor.IsAlive() && SlotAllocator != null)
                 SlotAllocator.VisualizeSlots();
         }

@@ -58,7 +58,7 @@ namespace Kuantech.Core.Combat
                 ObserversOnRemoveEffect_Rpc(effect.GetId());
         }
 
-        public override void ModuleUpdate()
+        public override void ModuleUpdate(float deltaTime)
         {
             AddQueuedEffects();
             foreach (var effect in Effects)

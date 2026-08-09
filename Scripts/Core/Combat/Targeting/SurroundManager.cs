@@ -184,9 +184,9 @@ namespace Kuantech.Core
             ClearDebugPoints();
         }
 
-        public override void ModuleUpdate()
+        public override void ModuleUpdate(float deltaTime)
         {
-            base.ModuleUpdate();
+            base.ModuleUpdate(deltaTime);
             if (DebugSlots && Actor.IsAlive() && SlotAllocator != null)
             {
                 SlotAllocator.VisualizeSlots();

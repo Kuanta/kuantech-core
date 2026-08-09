@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Kuantech.Utils;
 using UnityEngine;
 using UnityEngine.Events;
@@ -101,7 +101,7 @@ namespace Kuantech.Core
             }
         }
 
-        public override void ModuleUpdate()
+        public override void ModuleUpdate(float deltaTime)
         {
             if (GameManager.Instance.GameIsPaused || !HasAnimationTarget || Actor == null) return;
 
@@ -119,7 +119,7 @@ namespace Kuantech.Core
             _movementParameters = Vector2.Lerp(
                 _movementParameters,
                 _targetMovementParameters * _movementParametersScale,
-                Time.deltaTime * LerpFactor);
+                deltaTime * LerpFactor);
 
             SetMovementParameters();
         }

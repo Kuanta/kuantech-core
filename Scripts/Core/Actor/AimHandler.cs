@@ -27,7 +27,7 @@ namespace Kuantech.Core
             _lockModule = Actor.GetModule<LockModule>();    
         }
 
-        public override void ModuleLateUpdate()
+        public override void ModuleLateUpdate(float deltaTime)
         {
             if (!Actor.IsAlive()) return;
             if(!RotateOnClient && !Actor.IsServer) return;
@@ -40,7 +40,7 @@ namespace Kuantech.Core
             _targetRot = DirectionToRotation(transform, _targetAimVector);
             if(Rigidbody == null || Rigidbody.isKinematic)
             {
-                t.rotation = Quaternion.RotateTowards(t.rotation, _targetRot, rotateSpeedDegPerSec * Time.deltaTime);
+                t.rotation = Quaternion.RotateTowards(t.rotation, _targetRot, rotateSpeedDegPerSec * deltaTime);
             }
             else
             {

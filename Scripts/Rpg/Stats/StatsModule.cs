@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kuantech.Core;
@@ -132,10 +132,10 @@ namespace Kuantech.Rpg
             }
         }
 
-        public override void ModuleUpdate()
+        public override void ModuleUpdate(float deltaTime)
         {
-            base.ModuleUpdate();
-            ResourceManager.TickResources(Time.deltaTime);
+            base.ModuleUpdate(deltaTime);
+            //ResourceManager.TickResources(deltaTime);
         }
         
         #region Level & Experience
@@ -554,9 +554,14 @@ namespace Kuantech.Rpg
             DirtiedStats.Enqueue(type);
         }
 
-        private void LateUpdate()
+        // Was a Unity LateUpdate message, which meant every StatsModule was ticked by the engine every frame
+        // regardless of what ActorManager decided — the exact per-component overhead the managed loop exists
+        // to remove, paid once per actor per frame. As a module callback it goes through the same schedule as
+        // everything else, and the queue it drains is empty on the frames nothing dirtied a stat anyway.
+        public override void ModuleLateUpdate(float deltaTime)
         {
-            UpdateStatModifiers(); 
+            base.ModuleLateUpdate(deltaTime);
+            UpdateStatModifiers();
         }
 
         /// <summary>

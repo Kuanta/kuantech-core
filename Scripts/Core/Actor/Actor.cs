@@ -43,6 +43,27 @@ namespace Kuantech.Core
             public Actor DeadActor;
         }
  
+        [Header("Update")]
+        /// <summary>
+        /// Minimum seconds between managed updates. 0 means every frame — the right value for the player and
+        /// anything input touches. A crowd actor can afford far less, and that is the only thing that scales
+        /// with enemy count: the frame is not one expensive module, it is a hundred actors each costing a
+        /// little. Gameplay code is free to write this at runtime (an enemy raising its own rate as it closes
+        /// on the player), which is why the policy lives here and not in ActorManager.
+        ///
+        /// Skipping does not freeze anyone: the delta handed to modules is measured from the last actual
+        /// update, so an actor ticking at 10 Hz still moves, regenerates and cools down at the correct rate.
+        /// </summary>
+        [Tooltip("Minimum seconds between managed updates. 0 = every frame.")]
+        public float UpdateInterval;
+
+        [Tooltip("With an IUpdateRateProvider module present, UpdateInterval is driven between these two. " +
+                 "Leave Max at 0 to keep UpdateInterval fixed.")]
+        public float MinUpdateInterval;
+        public float MaxUpdateInterval;
+
+        private IUpdateRateProvider _updateRateProvider;
+
         [Header("Identifier")]
         public string Id;
         public string ActorVisualId;
@@ -134,6 +155,14 @@ namespace Kuantech.Core
 
             VisualHandler = GetModule<ActorVisualHandler>();
 
+            // First module with an opinion on how often this actor needs updating wins; the rest stay silent.
+            foreach (ActorModule module in ActorModulesList)
+            {
+                if (module is not IUpdateRateProvider provider) continue;
+                _updateRateProvider = provider;
+                break;
+            }
+
             if(actorSerializableData != null)
             {
                 LoadActorState(actorSerializableData);
@@ -158,6 +187,13 @@ namespace Kuantech.Core
             }
             ResetActor();
             ChangeActorState(ActorState.Spawned);
+
+            // Start the clock here, not at zero. The delta handed to modules is measured from this stamp, so
+            // a fresh (or recycled) actor would otherwise take its whole lifetime as its first frame's delta.
+            // The random backdate spreads a batch of enemies spawned on the same frame across the interval —
+            // without it they would all come due on the same frames forever, which moves the spike rather
+            // than removing it.
+            _lastUpdateTime = Time.time - UnityEngine.Random.Range(0f, UpdateInterval);
 
             //Register to ActorManager
             ActorManager.RegisterActor(this);
@@ -215,18 +251,36 @@ namespace Kuantech.Core
                 ActorModulesList[i].ModuleFixedUpdate();
             }
         }
-        // protected virtual void FixedUpdate()
-        // {
-        //     if (!Initialized) return;
-        //     foreach (var module in ActorModulesList)
-        //     {
-        //         module.ModuleFixedUpdate();
-        //     }
-        // }
+
+        private float _lastUpdateTime;
+        private float _deltaTime;
+
+        /// <summary>
+        /// Whether enough time has passed for this actor's managed update. ActorManager asks; the actor
+        /// answers from its own <see cref="UpdateInterval"/>, so the scheduling policy stays with the thing
+        /// it describes and the manager never needs to know what kind of actor this is.
+        /// </summary>
+        public bool ShouldUpdate()
+        {
+            if (UpdateInterval <= 0f) return true;
+            return Time.time - _lastUpdateTime >= UpdateInterval;
+        }
 
         public virtual void ManagedUpdate()
         {
+            _deltaTime = Time.time - _lastUpdateTime;
+            _lastUpdateTime = Time.time;
             if (!Initialized) return;
+
+            // Re-decide the rate for the next period, here rather than in ShouldUpdate: this runs only on the
+            // frames the actor is actually updated, so a distant enemy ticking at 5 Hz is asked five times a
+            // second instead of sixty. The cost is up to one period of staleness, which is the same order as
+            // the interval it is choosing.
+            if (MaxUpdateInterval > 0f && _updateRateProvider != null)
+            {
+                UpdateInterval = Mathf.Lerp(MinUpdateInterval, MaxUpdateInterval,
+                    Mathf.Clamp01(_updateRateProvider.GetUpdateIntervalFactor()));
+            }
 #if ENABLE_PROFILER
             ProfilerMarker[] markers = EnsureMarkers(ref _updateMarkers, "ModuleUpdate");
 #endif
@@ -235,17 +289,10 @@ namespace Kuantech.Core
 #if ENABLE_PROFILER
                 using (markers[i].Auto())
 #endif
-                ActorModulesList[i].ModuleUpdate();
+                ActorModulesList[i].ModuleUpdate(_deltaTime);
             }
         }
-        // protected virtual void Update()
-        // {
-        //     if (!Initialized) return;
-        //     foreach (var module in ActorModulesList)
-        //     {
-        //         module.ModuleUpdate();
-        //     }
-        // }
+
         public virtual void ManagedLateUpdate()
         {
             if (!Initialized) return;
@@ -257,19 +304,10 @@ namespace Kuantech.Core
 #if ENABLE_PROFILER
                 using (markers[i].Auto())
 #endif
-                ActorModulesList[i].ModuleLateUpdate();
+                ActorModulesList[i].ModuleLateUpdate(_deltaTime);
             }
         }
 
-        // protected virtual void LateUpdate()
-        // {
-        //     if (!Initialized) return;
-        //     foreach (var module in ActorModulesList)
-        //     {
-        //         module.ModuleLateUpdate();
-        //     }
-        // }
-        
         public virtual void ResetActor()
         {
             foreach (var module in ActorModulesList)

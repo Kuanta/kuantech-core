@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Kuantech.Core
 {
@@ -54,7 +54,7 @@ namespace Kuantech.Core
             _knockbackTimer = hitInfo.KnockbackDuration;
         }
 
-        private void HandleMovement()
+        private void HandleMovement(float deltaTime)
         {
             if (GameManager.IsGamePaused() || !Actor.IsAlive() || _movementModule == null)
             {
@@ -65,23 +65,23 @@ namespace Kuantech.Core
             {
                 // Knockback active: self-propulsion is off. Coast on the impulse-laden velocity while
                 // it decays exponentially — a sharp hit that eases out instead of a linear shove.
-                _knockbackTimer -= Time.deltaTime;
-                _velocity *= Mathf.Exp(-KnockbackDamping * Time.deltaTime);
+                _knockbackTimer -= deltaTime;
+                _velocity *= Mathf.Exp(-KnockbackDamping * deltaTime);
             }
             else
             {
                 // Normal locomotion: frame-rate independent smoothing toward the desired velocity.
                 Vector3 desiredVelocity = _movementModule.GetMovementVector() * _movementModule.GetSpeed();
-                float t = 1f - Mathf.Exp(-Acceleration * Time.deltaTime);
+                float t = 1f - Mathf.Exp(-Acceleration * deltaTime);
                 _velocity = Vector3.Lerp(_velocity, desiredVelocity, t);
             }
 
-            Actor.transform.position += _velocity * Time.deltaTime;
+            Actor.transform.position += _velocity * deltaTime;
         }
 
-        public override void ModuleUpdate()
+        public override void ModuleUpdate(float deltaTime)
         {
-            HandleMovement();
+            HandleMovement(deltaTime);
         }
     }
 }

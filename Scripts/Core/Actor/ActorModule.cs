@@ -15,6 +15,21 @@ namespace Kuantech.Core
 
     }
 
+    /// <summary>
+    /// Implemented by a module that knows how urgently its actor needs updating — typically because it
+    /// already tracks the thing that decides it, like a horde enemy's distance to the player.
+    ///
+    /// The module supplies a normalised factor; the actor owns the mapping to actual seconds, so the rates
+    /// stay tunable per prefab in the inspector and this stays a statement about need rather than timing.
+    /// The actor only asks while it is being updated anyway, so a distant, rarely-ticked actor does not pay
+    /// to be asked on the frames it is skipping.
+    /// </summary>
+    public interface IUpdateRateProvider
+    {
+        /// <summary>0 = update as often as possible, 1 = update as rarely as this actor allows.</summary>
+        float GetUpdateIntervalFactor();
+    }
+
 #if NETWORKING_FISHNET
     public abstract class ActorModule : NetworkBehaviour
 #else
@@ -75,12 +90,12 @@ namespace Kuantech.Core
         {
             
         }
-        public virtual void ModuleUpdate()
+        public virtual void ModuleUpdate(float deltaTime)
         {
             
         }
 
-        public virtual void ModuleLateUpdate()
+        public virtual void ModuleLateUpdate(float deltaTime)
         {
             
         }
