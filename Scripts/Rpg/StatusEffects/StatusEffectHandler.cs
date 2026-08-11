@@ -23,6 +23,9 @@ namespace Kuantech.Core.Combat
         private Dictionary<string, List<StatusEffect>> _statusEffectsMap =
             new Dictionary<string, List<StatusEffect>>();
         private List<StatusEffect> Effects = new List<StatusEffect>();
+        // Scratch list for ClearStatusEffects, reused so ending effects costs no allocation. Death clears
+        // effects, and in a horde fight that runs many times a second.
+        private readonly List<StatusEffect> _clearBuffer = new List<StatusEffect>();
         
         /// <summary>
         /// Adds a status effect
@@ -48,10 +51,15 @@ namespace Kuantech.Core.Combat
         /// <param name="effect"></param>
         public void RemoveStatusEffect(StatusEffect effect)
         {
-            if (!Effects.Contains(effect))
-            {
-                Debug.LogError("Effect not in list");
-            }
+            if (effect == null) return;
+            // Already on its way out — queueing it twice would run OnRemove twice (stopping FX that a newly
+            // applied effect of the same kind had just started).
+            if (effect.ToBeRemoved) return;
+            // Not ours, or already gone. This is a normal race rather than a fault: an effect can expire on
+            // the same frame its target dies, and death clears the list first. It used to log an error here,
+            // which on mobile meant capturing a stack trace every frame a burn finished off an enemy.
+            if (!Effects.Contains(effect)) return;
+
             effect.ToBeRemoved = true;
             EffectsToRemove.Enqueue(effect);
             if (IsServerInitialized)
@@ -61,9 +69,17 @@ namespace Kuantech.Core.Combat
         public override void ModuleUpdate(float deltaTime)
         {
             AddQueuedEffects();
-            foreach (var effect in Effects)
+
+            // Indexed, not foreach: a tick can end up mutating this list from underneath us. A damage-over-
+            // time tick that kills its target puts the actor into Dead, and the death handler clears every
+            // effect — so by the time OnTick returns, the collection we are walking may be empty. Re-reading
+            // Count each step turns that into "stop ticking", which is exactly the right answer for a corpse,
+            // instead of an InvalidOperationException thrown every frame something burns to death.
+            for (int i = 0; i < Effects.Count; i++)
             {
-                if(effect.ToBeRemoved) continue;
+                StatusEffect effect = Effects[i];
+                if (effect == null || effect.ToBeRemoved) continue;
+
                 if (effect.IsExpired())
                 {
                     RemoveStatusEffect(effect);
@@ -76,6 +92,7 @@ namespace Kuantech.Core.Combat
                     effect.LastTickTime = Time.time;
                 }
             }
+
             RemoveQueuedEffects();
         }
         
@@ -84,16 +101,13 @@ namespace Kuantech.Core.Combat
         /// </summary>
         private void AddQueuedEffects()
         {
-            if(EffectsToAdd.IsNullOrEmpty()) return;
-            StatusEffect effect = EffectsToAdd.Dequeue();
-            while (effect != null)
+            // Drains whatever is queued, including anything OnAdd queues in turn (an effect that applies a
+            // second one), so a chained application lands this frame rather than the next.
+            while (EffectsToAdd.Count > 0)
             {
-                if (_AddEffect(effect))
-                {
-                    effect.OnAdd(Actor);
-                }
-                if (EffectsToAdd.IsNullOrEmpty()) break;
-                effect = EffectsToAdd.Dequeue();
+                StatusEffect effect = EffectsToAdd.Dequeue();
+                if (effect == null) continue;
+                if (_AddEffect(effect)) effect.OnAdd(Actor);
             }
         }
 
@@ -130,24 +144,25 @@ namespace Kuantech.Core.Combat
         /// </summary>
         private void RemoveQueuedEffects()
         {
-            if(EffectsToRemove.IsNullOrEmpty()) return;
-            StatusEffect effect = EffectsToRemove.Dequeue();
-            while (effect != null)
+            while (EffectsToRemove.Count > 0)
             {
+                StatusEffect effect = EffectsToRemove.Dequeue();
+                if (effect == null) continue;
                 _RemoveEffect(effect);
-                if (EffectsToRemove.IsNullOrEmpty()) break;
-                effect = EffectsToRemove.Dequeue();
             }
         }
 
         private void _RemoveEffect(StatusEffect effect)
         {
-            Effects.Remove(effect);
+            // Only end an effect this handler was actually still tracking. A clear (death, reset) ends every
+            // effect itself, so anything left over in the queue must not have OnRemove run on it a second
+            // time — that would stop FX belonging to a freshly applied effect of the same kind.
+            bool wasTracked = Effects.Remove(effect);
             if (_statusEffectsMap.ContainsKey(effect.GetId()))
             {
                 _statusEffectsMap[effect.GetId()].Remove(effect);
             }
-            effect.OnRemove();
+            if (wasTracked) effect.OnRemove();
         }
 
         /// <summary>
@@ -156,15 +171,27 @@ namespace Kuantech.Core.Combat
         /// </summary>
         public void ClearStatusEffects()
         {
-            foreach(var effect in Effects)
-            {
-                effect.OnRemove();
-            }
+            // Empty the live collections BEFORE ending anything. OnRemove runs arbitrary effect code (stopping
+            // FX, and in principle touching this handler again), and the common caller is death — reached from
+            // inside the tick loop. Clearing first means whatever OnRemove does, it sees a handler that already
+            // holds nothing, so nothing can be ticked, removed or reported twice.
+            _clearBuffer.Clear();
+            _clearBuffer.AddRange(Effects);
+
             // Actually forget them — otherwise Update keeps ticking these effects on a reset actor.
             Effects.Clear();
             _statusEffectsMap?.Clear();
             EffectsToAdd.Clear();
             EffectsToRemove.Clear();
+
+            for (int i = 0; i < _clearBuffer.Count; i++)
+            {
+                StatusEffect effect = _clearBuffer[i];
+                if (effect == null) continue;
+                effect.ToBeRemoved = true;
+                effect.OnRemove();
+            }
+            _clearBuffer.Clear();
         }
 
         public override void OnActorStateChanged(ActorState oldState, ActorState newState)
