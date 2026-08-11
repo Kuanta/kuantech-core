@@ -115,6 +115,26 @@ namespace Kuantech.Core
             if (context == null || context.KtCamera == null) return UnityEngine.Camera.main;
             return context.KtCamera.Camera;
         }
+
+        /// <summary>
+        /// True when <paramref name="worldPosition"/> falls within the current camera's frustum, expanded by
+        /// <paramref name="margin"/> viewport units on every edge (0 = exact screen edge; e.g. 0.25 treats a
+        /// quarter-screen band just outside the visible area as still "in view"). A single view-projection
+        /// transform — cheap enough to call per-actor, per-frame, with no allocations.
+        /// </summary>
+        public static bool IsInViewport(Vector3 worldPosition, float margin = 0f)
+        {
+            UnityEngine.Camera camera = GetCamera();
+            if (camera == null) return false;
+
+            Vector3 viewportPoint = camera.WorldToViewportPoint(worldPosition);
+            if (viewportPoint.z <= 0f) return false; // behind the camera
+
+            float min = -margin;
+            float max = 1f + margin;
+            return viewportPoint.x >= min && viewportPoint.x <= max
+                && viewportPoint.y >= min && viewportPoint.y <= max;
+        }
     }
 }
 
