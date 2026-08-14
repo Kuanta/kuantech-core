@@ -105,6 +105,11 @@ namespace Kuantech.Rpg.Skills
             if (ParentSkill.ParentSpellBook == null) return null;
             return ParentSkill.ParentSpellBook.Actor;
         }
+
+        public SkillBehaviourConfigData GetConfigData()
+        {
+            return BehaviourData.ConfigData;
+        }
         
         #region Lifecycle
 

@@ -75,8 +75,12 @@ namespace Kuantech.Rpg
         /// </summary>
         public void LevelUp()
         {
-            TotalValue = GetTotalRequiredForLevel(CurrentLevel + 1);
+            int oldLevel = CurrentLevel;
+            int newLevel = CurrentLevel + 1;
+            TotalValue = GetTotalRequiredForLevel(newLevel);
+            OnLevelUp?.Invoke(this, (oldLevel, newLevel));
         }
+        
         public void Reset()
         {
            TotalValue = 0f;

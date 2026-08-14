@@ -20,13 +20,30 @@ namespace Kuantech.Rpg
         [Tooltip("For description building. Same type skills use, so a value can live in either place.")]
         public List<SkillVariableData> PerkVariables;
         public int MaxRank = 5;
+        [Tooltip("Relative weight for the level-up perk pool's weighted draw. Lives here (not per-pool-" +
+                 "entry) so a perk's odds are authored once and stay the same wherever it's offered from " +
+                 "(common pool, weapon pool, utility belt).")]
+        public float PerkAppearChance = 1f;
+
+        [Header("Perk Dependencies")]
+        [Tooltip("Perk required to get this perk")]
+        public PerkAsset DependentPerk; 
+        [Tooltip("Perks that depends on this")]
+        public List<PerkAsset> SubPerks; //Perks that depend on this
 
         /// <summary>
-        /// Finds a variable by id: the perk's own list first, then whatever the config can resolve (a
-        /// skill-granting perk forwards to the granted skill, so those numbers are never duplicated here).
+        /// Finds a variable by id: <paramref name="externalOverride"/> first (if it matches), then the
+        /// perk's own list, then whatever the config can resolve (a skill-granting perk forwards to the
+        /// granted skill, so those numbers are never duplicated here).
+        ///
+        /// The override lets a caller substitute one variable's numbers without writing into this shared
+        /// asset — e.g. a utility item rescaling its modifier perk by its own (gem-bought) rank. Pass null
+        /// for the plain, asset-only lookup.
         /// </summary>
-        public SkillVariableData GetPerkVariable(string variableId)
+        public SkillVariableData GetPerkVariable(string variableId, SkillVariableData externalOverride = null)
         {
+            if (externalOverride != null && externalOverride.VariableId == variableId) return externalOverride;
+
             SkillVariableData own = PerkVariables != null ? PerkVariables.Find(v => v.VariableId == variableId) : null;
             if (own != null) return own;
 
@@ -50,7 +67,9 @@ namespace Kuantech.Rpg
         /// instead of keeping a second copy of them here.
         /// </summary>
         /// <param name="rank">Rank to show values for — usually the rank the player would end up at.</param>
-        public string BuildDescription(int rank)
+        /// <param name="variableOverride">See <see cref="GetPerkVariable"/> — substitutes one variable's
+        /// numbers (e.g. a utility item's gem-rank-scaled values) without touching this asset.</param>
+        public string BuildDescription(int rank, SkillVariableData variableOverride = null)
         {
             string descriptionTemplate = GetDescription();
             var rx = new Regex(@"\{([A-Za-z_][A-Za-z0-9_]*)\s*(?::([^}]+))?\}", RegexOptions.Compiled);
@@ -59,7 +78,7 @@ namespace Kuantech.Rpg
                 string varName = m.Groups[1].Value;
                 string fmt     = m.Groups[2].Success ? m.Groups[2].Value : null;
 
-                SkillVariableData variable = GetPerkVariable(varName);
+                SkillVariableData variable = GetPerkVariable(varName, variableOverride);
                 if (variable == null) return "";
 
                 float value = variable.GetDisplayValue(rank);
