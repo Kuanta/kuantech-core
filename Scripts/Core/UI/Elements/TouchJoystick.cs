@@ -65,6 +65,16 @@ namespace Kuantech.Core.UI
         public UnityAction OnReleased;
         public UnityAction<Vector2> OnDirectionChanged;
 
+        /// <summary>Updates the initial rest position of the joystick background.</summary>
+        public void UpdateHomePosition(Vector2 newHome)
+        {
+            _backgroundHome = newHome;
+            if (!IsPressed && Background != null)
+            {
+                Background.anchoredPosition = newHome;
+            }
+        }
+
         private Vector2 _backgroundHome;
         private CanvasGroup _canvasGroup;
 
