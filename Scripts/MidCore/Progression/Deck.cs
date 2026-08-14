@@ -107,6 +107,24 @@ namespace Kuantech.Midcore
             return false;
         }
 
+        /// <summary>
+        /// Equips directly into <paramref name="index"/>, bumping whatever was there instead of falling
+        /// back to "first empty slot" like <see cref="EquipCollectible"/> — needed for drag-drop onto a
+        /// specific slot, where landing anywhere else would visually contradict where the player dropped it.
+        /// </summary>
+        public bool EquipCollectibleAtIndex(CollectableAsset collectible, int index)
+        {
+            if (!CurrentDeck.IsValidIndex(index)) return false;
+
+            if (CurrentDeck[index] != null && !CurrentDeck[index].Id.IsNullOrEmpty())
+            {
+                _equippedCollectiblesById.Remove(CurrentDeck[index].Id);
+            }
+            CurrentDeck[index] = new ProgressibleData(collectible);
+            _equippedCollectiblesById[collectible.GetId()] = collectible;
+            return true;
+        }
+
         public bool UnequipCollectible(CollectableAsset collectible)
         {
             if (!_equippedCollectiblesById.ContainsKey(collectible.GetId()))

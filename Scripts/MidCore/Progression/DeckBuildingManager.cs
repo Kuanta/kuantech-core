@@ -155,6 +155,28 @@ namespace Kuantech.Midcore
             return false;
         }
 
+        /// <summary>
+        /// Equips into a specific slot (see Deck.EquipCollectibleAtIndex) rather than the first empty one —
+        /// use this for drag-drop onto a particular slot.
+        /// </summary>
+        public static bool EquipCollectibleAtIndex(CollectableAsset collectible, int slotIndex)
+        {
+            if (collectible == null || IsEquipped(collectible)) return false;
+            var ctx = DeckBuildingManager.GetContext<DeckBuildingManager>();
+            if (ctx == null) return false;
+
+            Deck deck = ctx.GetDeck(collectible.DeckIndex);
+            if (deck == null) return false;
+            if (deck.EquipCollectibleAtIndex(collectible, slotIndex))
+            {
+                ctx.SaveState();
+                ctx.OnDeckChanged?.Invoke(ctx, deck.DeckIndex);
+                return true;
+            }
+
+            return false;
+        }
+
         public static void ReplaceCollectible(CollectableAsset oldAsset, CollectableAsset newAsset)
         {
             if (UnequipCollectible(oldAsset))

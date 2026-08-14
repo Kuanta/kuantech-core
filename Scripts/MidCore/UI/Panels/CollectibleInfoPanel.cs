@@ -6,6 +6,7 @@ using Kuantech.Rpg;
 using Kuantech.Utils;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Kuantech.Midcore.UI
@@ -18,6 +19,7 @@ namespace Kuantech.Midcore.UI
         [SerializeField] private Image Icon;
         [SerializeField] private CollectableRankIndicator CollectibleLevelIndicator;
         [SerializeField] private UpgradeButton UpgradeButton;
+        [SerializeField] private Button EquipButton;
         [SerializeField] private Button UnequipButton;
         
         public List<AttributeIndicator> AttributeIndicators;
@@ -25,12 +27,50 @@ namespace Kuantech.Midcore.UI
         
         [NonSerialized] public CollectableAsset CurrentDataAsset;
         [NonSerialized] public DeckSelectionMenu ParentDeckSelectionMenu;
-        
+
+        // True for the one frame the panel opens on, so the same tap/click that opened it doesn't also
+        // land on this frame's outside-tap check in LateUpdate and instantly close it again.
+        private bool _suppressClose;
+
+        public override void Open()
+        {
+            base.Open();
+            _suppressClose = true;
+        }
+
+        // Closes on a tap/click that lands outside the panel — same pattern as PlayerInventoryPanel's
+        // item-details close-on-outside-tap.
+        private void LateUpdate()
+        {
+            if (_suppressClose) { _suppressClose = false; return; }
+            if (!IsVisible()) return;
+            if (!Input.GetMouseButtonUp(0)) return;
+
+            var pointerData = new PointerEventData(EventSystem.current) { position = Input.mousePosition };
+            var results = new List<RaycastResult>();
+            EventSystem.current.RaycastAll(pointerData, results);
+
+            foreach (var hit in results)
+            {
+                if (hit.gameObject.transform.IsChildOf(transform)) return; // tap landed on the panel itself
+            }
+
+            Close();
+        }
+
         public override void Initialize()
         {
             if (Initialized) return;
             base.Initialize();
             if(UpgradeButton != null) UpgradeButton.OnUpgradePurchased += OnUpgradePurchased;
+            if(EquipButton != null)
+            {
+                EquipButton.onClick.AddListener(() =>
+                {
+                    DeckBuildingManager.EquipCollectible(CurrentDataAsset);
+                    Close();
+                });
+            }
             if(UnequipButton != null)
             {
                 UnequipButton.onClick.AddListener(() =>
@@ -62,7 +102,9 @@ namespace Kuantech.Midcore.UI
             }
             
             bool isEquipped = DeckBuildingManager.IsEquipped(dataAsset);
-             if(UnequipButton != null) UnequipButton.gameObject.SetActive(isEquipped);
+            bool isUnlocked = ProgressionManager.IsProgressibleUnlocked(dataAsset);
+            if(UnequipButton != null) UnequipButton.gameObject.SetActive(isEquipped);
+            if(EquipButton != null) EquipButton.gameObject.SetActive(isUnlocked && !isEquipped);
         }
 
         public virtual void UpdateStats(CollectableAsset collectableAsset)

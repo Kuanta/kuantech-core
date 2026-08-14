@@ -231,6 +231,15 @@ namespace Kuantech.Midcore
             return ctx.ProgressiblesHandler.GetProgressibleData(asset);
         }
 
+        public static int GetProgressibleRank(ProgressableDataAsset asset)
+        {
+            var ctx = GetContext<ProgressionManager>();
+            if (ctx == null) return -1;
+            ProgressibleData data = GetProgressibleData(asset);
+            if(data == null) return -1;
+            return data.GetRankValue();
+        }
+
         public static ProgressableDependencyEntry GetProgressableDependencyEntry(ProgressableDataAsset asset, int rankToUnlock)
         {
             var ctx = GetContext<ProgressionManager>();
