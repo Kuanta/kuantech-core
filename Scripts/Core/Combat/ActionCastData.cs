@@ -14,6 +14,15 @@ namespace Kuantech.Core
         public Actor Target; //Targeted actor
         public bool OverrideRotation = true;
 
+        /// <summary>
+        /// Optional: re-evaluated every tick by a channeled behaviour (see SkillBehaviour.GetLiveDirection)
+        /// to aim at whatever "the current target" means to whoever built this cast data — a player's live
+        /// closest-enemy, a cursor position, anything. Lets each caster (AutoCastModule, manual test-cast,
+        /// ...) define that meaning itself, without ActionCastData/SkillBehaviour knowing about any of them.
+        /// Leave null to fall back to the frozen Target/TargetPosition, same as before this existed.
+        /// </summary>
+        public Func<Vector3> LiveAimPointProvider;
+
         public Vector3 GetCastPoint()
         {
             if (Target != null) return Target.transform.position;

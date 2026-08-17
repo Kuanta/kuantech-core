@@ -94,6 +94,11 @@ namespace Kuantech.Rpg.Skills
         private bool _movementLocked;
         private bool _rotationLocked;
         public HashSet<Effect> PlayedEffects = new HashSet<Effect>();
+
+        // Effects played with FxDirectionMode.LiveTarget — re-oriented every tick (see
+        // UpdateLiveDirectionEffects) so they keep facing wherever GetLiveDirection() currently points,
+        // instead of freezing at whatever it was the instant the effect spawned.
+        private readonly List<Effect> _liveDirectionEffects = new List<Effect>();
         
         /// <summary>
         /// Returns the parent actor
@@ -122,6 +127,7 @@ namespace Kuantech.Rpg.Skills
         public virtual void StartBehaviour(ActionCastData skillCastData)
         {
             PlayedEffects.Clear();
+            _liveDirectionEffects.Clear();
             CurrentSkillCastData = skillCastData;
             _castStartTime = Time.time;
             _isCompleted = false;
@@ -227,6 +233,13 @@ namespace Kuantech.Rpg.Skills
                         FxPlayData.DirectionMode.LiveTarget    => GetLiveDirection(),
                         _                                        => GetLiveDirection(),
                     };
+
+                    // LiveTarget isn't a one-time aim — keep it tracking every tick for as long as the
+                    // effect is alive, same as the damage/hit logic already does.
+                    if (fx.FxDirectionMode == FxPlayData.DirectionMode.LiveTarget)
+                    {
+                        _liveDirectionEffects.Add(effect);
+                    }
                 }
                 if (effect != null && fx.StopOnBehaviourEnd)
                 {
@@ -294,7 +307,7 @@ namespace Kuantech.Rpg.Skills
             {
                 //Common
                 BehaviourImplementation();
-                
+
                 if(isServer || !isNetworked)
                 {
                     BehaviourServerImplementation();
@@ -304,6 +317,15 @@ namespace Kuantech.Rpg.Skills
                     BehaviourClientImplementation();
                 }
                 _implemented = true;
+            }
+
+            // Runs every frame once the cast has resolved, for as long as the behaviour stays active — for
+            // a channeled effect (a flamethrower cone, a beam) that needs to act repeatedly across Duration
+            // rather than once at CastTime like BehaviourImplementation. Empty by default: every existing
+            // one-shot behaviour is unaffected.
+            if (_implemented)
+            {
+                OnBehaviourUpdate(elapsedTime);
             }
 
             if (duration >= 0 && elapsedTime >= duration)
@@ -320,11 +342,38 @@ namespace Kuantech.Rpg.Skills
                     PlayBehaviourEffects();
                     _playedEffect = true;
                 }
+                UpdateLiveDirectionEffects();
+            }
+        }
+
+        /// <summary>
+        /// Re-aims every effect played with FxDirectionMode.LiveTarget at the current GetLiveDirection(),
+        /// every frame. A no-op until PlayBehaviourEffects has actually spawned one.
+        /// </summary>
+        private void UpdateLiveDirectionEffects()
+        {
+            if (_liveDirectionEffects.Count == 0) return;
+
+            Vector3 liveDirection = GetLiveDirection();
+            for (int i = _liveDirectionEffects.Count - 1; i >= 0; i--)
+            {
+                Effect effect = _liveDirectionEffects[i];
+                if (effect == null) { _liveDirectionEffects.RemoveAt(i); continue; }
+                effect.transform.forward = liveDirection;
             }
         }
 
      
         protected virtual void BehaviourImplementation()
+        {
+        }
+
+        /// <summary>
+        /// Called every frame from CastTime until the behaviour completes — the hook for a channeled effect
+        /// that needs to do something repeatedly (e.g. tick damage on an interval it tracks itself) rather
+        /// than once. <paramref name="elapsedTime"/> is time since StartBehaviour, same clock as GetDuration.
+        /// </summary>
+        protected virtual void OnBehaviourUpdate(float elapsedTime)
         {
         }
 
@@ -565,20 +614,41 @@ namespace Kuantech.Rpg.Skills
         }
 
         /// <summary>
-        /// Recalculates direction from live start position toward the frozen target/aim point.
-        /// Falls back to the frozen direction if no target or target position is set.
+        /// Recalculates direction from the live start position toward the current aim point. Prefers
+        /// CurrentSkillCastData.LiveAimPointProvider when the caster supplied one (re-evaluated every call,
+        /// so it can retarget entirely — not just follow the original target moving); otherwise follows the
+        /// frozen Target's live position, then the frozen TargetPosition, then the frozen Direction.
         /// </summary>
         protected Vector3 GetLiveDirection()
         {
             Vector3 liveStart = GetLiveStartPosition();
-            if (CurrentSkillCastData.Target != null)
+
+            if (CurrentSkillCastData.LiveAimPointProvider != null)
             {
-                Vector3 toTarget = CurrentSkillCastData.Target.transform.position - liveStart;
-                if (toTarget.sqrMagnitude > 0.001f) return toTarget.normalized;
+                Vector3 dir = FlattenToDirection(CurrentSkillCastData.LiveAimPointProvider() - liveStart);
+                if (dir != Vector3.zero) return dir;
             }
-            Vector3 toPoint = CurrentSkillCastData.TargetPosition - liveStart;
-            if (toPoint.sqrMagnitude > 0.001f) return toPoint.normalized;
+            else if (CurrentSkillCastData.Target != null)
+            {
+                Vector3 dir = FlattenToDirection(CurrentSkillCastData.Target.transform.position - liveStart);
+                if (dir != Vector3.zero) return dir;
+            }
+
+            Vector3 toPointDir = FlattenToDirection(CurrentSkillCastData.TargetPosition - liveStart);
+            if (toPointDir != Vector3.zero) return toPointDir;
             return CurrentSkillCastData.Direction; // frozen fallback
+        }
+
+        /// <summary>
+        /// Zeroes Y before normalizing — every other direction calc in this project is horizontal-only (the
+        /// caster's cast point sits above the ground, so an un-flattened vector to a ground-level target
+        /// tilts downward and can push it clean out of an arc/cone check). Returns Vector3.zero if the
+        /// flattened vector is too short to have a meaningful direction.
+        /// </summary>
+        private static Vector3 FlattenToDirection(Vector3 toTarget)
+        {
+            toTarget.y = 0f;
+            return toTarget.sqrMagnitude > 0.001f ? toTarget.normalized : Vector3.zero;
         }
 
         #endregion
