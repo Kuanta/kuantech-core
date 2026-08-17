@@ -24,6 +24,7 @@ namespace Kuantech.Core
         public float Speed = 10f;
         public float Range = 10f;
         public float RotationSlerpFactor = 1000f;
+        public bool ShowCombatText = true;
 
         [Header("Homing")]
         [Range(0f, 1f)]
@@ -564,6 +565,7 @@ namespace Kuantech.Core
 
             if (target != null)
             {
+                Damage.ShowDamageText = ShowCombatText;
                 target.OnHit(new HitInfo()
                 {
                     DamageInfo = Damage,
