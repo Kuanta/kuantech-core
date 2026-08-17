@@ -7,6 +7,7 @@ using Kuantech.Utils;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 namespace Kuantech.Midcore.UI
@@ -44,9 +45,9 @@ namespace Kuantech.Midcore.UI
         {
             if (_suppressClose) { _suppressClose = false; return; }
             if (!IsVisible()) return;
-            if (!Input.GetMouseButtonUp(0)) return;
+            if (!WasPointerReleasedThisFrame(out Vector2 pointerPosition)) return;
 
-            var pointerData = new PointerEventData(EventSystem.current) { position = Input.mousePosition };
+            var pointerData = new PointerEventData(EventSystem.current) { position = pointerPosition };
             var results = new List<RaycastResult>();
             EventSystem.current.RaycastAll(pointerData, results);
 
@@ -54,8 +55,26 @@ namespace Kuantech.Midcore.UI
             {
                 if (hit.gameObject.transform.IsChildOf(transform)) return; // tap landed on the panel itself
             }
-
+        
             Close();
+        }
+
+        // New Input System (this project runs with legacy UnityEngine.Input disabled, so that class throws
+        // at runtime): checks the mouse and the primary touch, so this works on both desktop and mobile.
+        private static bool WasPointerReleasedThisFrame(out Vector2 position)
+        {
+            if (Mouse.current != null && Mouse.current.leftButton.wasReleasedThisFrame)
+            {
+                position = Mouse.current.position.ReadValue();
+                return true;
+            }
+            if (Touchscreen.current != null && Touchscreen.current.primaryTouch.press.wasReleasedThisFrame)
+            {
+                position = Touchscreen.current.primaryTouch.position.ReadValue();
+                return true;
+            }
+            position = Vector2.zero;
+            return false;
         }
 
         public override void Initialize()
