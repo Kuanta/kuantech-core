@@ -383,14 +383,27 @@ namespace Kuantech.Core
             if (_despawnCoroutine != null)
                 StopCoroutine(_despawnCoroutine);
 
-            _despawnCoroutine = _DespawnRoutine(delay);
-            StartCoroutine(_despawnCoroutine);
+            if(delay <= 0f)
+            {
+                _Despawn();
+            }
+            else
+            {
+                _despawnCoroutine = _DespawnRoutine(delay);
+                StartCoroutine(_despawnCoroutine);
+            }
         }
 
         private IEnumerator _despawnCoroutine;
         private IEnumerator _DespawnRoutine(float delay)
         {
             yield return new WaitForSeconds(delay);
+            _Despawn();
+            _despawnCoroutine = null;
+        }
+
+        private void _Despawn()
+        {
 #if NETWORKING_FISHNET
             if (IsClientInitialized && !IsServerInitialized)
             {
@@ -407,7 +420,6 @@ namespace Kuantech.Core
             }
 #endif
             ExecuteLocalDespawn();
-            _despawnCoroutine = null;
         }
 
         private void ExecuteLocalDespawn()
