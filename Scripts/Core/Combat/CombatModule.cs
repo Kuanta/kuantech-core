@@ -401,55 +401,55 @@ namespace Kuantech.Core
         private void ArcAttack()
         {
             AttackPattern currPattern = GetCurrentAttackPattern();
-            List<Actor> actors = CombatUtilities.GetActorsInArc3D(
+            List<IHittable> hittables = CombatUtilities.GetHittablesInArc3D(
                 GetAttackPosition(), GetAttackDirection().normalized,
                 GetAttackRange(), currPattern.Angle.GetValue(_statModule),
-                Targets, GetEnemyFactions());
-            DamageActors(actors);
+                Targets);
+            DamageActors(hittables);
         }
 
         private void ArcAttack2D()
         {
             AttackPattern currPattern = GetCurrentAttackPattern();
-            List<Actor> actors = CombatUtilities.GetActorsInArc2D(
+            List<IHittable> hittables = CombatUtilities.GetHittablesInArc2D(
                 GetAttackPosition(), GetAttackDirection().normalized,
                 GetAttackRange(), currPattern.Angle.GetValue(_statModule),
-                Targets, GetEnemyFactions());
-            DamageActors(actors);
+                Targets);
+            DamageActors(hittables);
         }
 
         private void LinearAttack()
         {
             AttackPattern currPattern = GetCurrentAttackPattern();
-            List<Actor> actors = CombatUtilities.GetActorsInBox(
+            List<IHittable> hittables = CombatUtilities.GetHittablesInBox(
                 GetAttackPosition(), GetAttackDirection().normalized,
                 currPattern.Width.GetValue(_statModule), GetAttackRange(),
-                Targets, GetEnemyFactions());
-            DamageActors(actors);
+                Targets);
+            DamageActors(hittables);
         }
 
         private void LinearAttack2D()
         {
             AttackPattern currPattern = GetCurrentAttackPattern();
-            List<Actor> actors = CombatUtilities.GetActorsInBox2D(
+            List<IHittable> hittables = CombatUtilities.GetHittablesInBox2D(
                 GetAttackPosition(), GetAttackDirection().normalized,
                 currPattern.Width.GetValue(_statModule), GetAttackRange(),
-                Targets, GetEnemyFactions());
-            DamageActors(actors);
+                Targets);
+            DamageActors(hittables);
         }
 
         private void CircleAttack()
         {
-            List<Actor> actors = CombatUtilities.GetActorsInSphere(
-                GetAttackPosition(), GetAttackRange(), Targets, GetEnemyFactions());
-            DamageActors(actors);
+            List<IHittable> hittables = CombatUtilities.GetHittablesInSphere(
+                GetAttackPosition(), GetAttackRange(), Targets);
+            DamageActors(hittables);
         }
 
         private void CircleAttack2D()
         {
-            List<Actor> actors = CombatUtilities.GetActorsInCircle2D(
-                GetAttackPosition(), GetAttackRange(), Targets, GetEnemyFactions());
-            DamageActors(actors);
+            List<IHittable> hittables = CombatUtilities.GetHittablesInCircle2D(
+                GetAttackPosition(), GetAttackRange(), Targets);
+            DamageActors(hittables);
         }
         
         /// <summary>
@@ -458,8 +458,7 @@ namespace Kuantech.Core
         public void TargetAttack()
         {
             Actor currentTarget = GetCurrentTarget();
-            if (currentTarget == null ||
-                !currentTarget.IsAlive()) return;
+            if (currentTarget == null) return;
 
             if (!IsInAttackRange(currentTarget.GetHitPoint(Actor)))
             {
@@ -475,8 +474,8 @@ namespace Kuantech.Core
             Vector3 direction = GetAttackDirection();
             AttackPattern attackPattern = GetCurrentAttackPattern();
             
-            List<Actor> actors = CombatUtilities.GetActorsInRaycast2D(startPoint, direction, GetAttackRange(), Targets, GetEnemyFactions());
-            DamageActors(actors);
+            List<IHittable> hittables = CombatUtilities.GetHittablesInRaycast2D(startPoint, direction, GetAttackRange(), Targets);
+            DamageActors(hittables);
         }
         
         public void RangedProjectileAttack()
@@ -518,13 +517,13 @@ namespace Kuantech.Core
             }
         }
         
-        private void DamageActors(List<Actor> actors)
+        private void DamageActors(List<IHittable> hittables)
         {
             if(!IsServerInitialized) return; //Only server can
             List<Actor> hurtActors = new List<Actor>();
-            foreach(var actor in actors)
+            foreach(var hittable in hittables)
             {
-                if(ExecuteDamageActor(actor))
+                if(ExecuteDamageHittable(hittable) && hittable is Actor actor)
                 {
                     hurtActors.Add(actor);
                 }
@@ -544,16 +543,21 @@ namespace Kuantech.Core
         private void DamageActor(Actor actor)
         {
             if (!IsServerInitialized) return;
-            bool hit = ExecuteDamageActor(actor);
+            bool hit = ExecuteDamageHittable(actor);
 #if NETWORKING_FISHNET
             if (hit && IsSpawned) ObserverDamageActor_Rpc(actor.GetComponent<NetworkObject>());
 #endif
         }
 
-        private bool ExecuteDamageActor(Actor actor)
+        /// <summary>
+        /// Self-exclusion (never hit your own attacker) and CanBeHit() (is this even eligible right now —
+        /// a destroyed prop, say) are the only checks left here. Alive/dead and faction are Actor.OnHit's
+        /// job now (see HealthcareModule.OnHit and Actor.OnHit), so a basic attack reaches a corpse or a
+        /// destructible exactly the way it reaches a live enemy — nothing here needs to know the difference.
+        /// </summary>
+        private bool ExecuteDamageHittable(IHittable hittable)
         {
-            //Check if beating a dead actor or beating itself.
-            if (actor == null || !actor.IsAlive() || actor == Actor) return false;
+            if (hittable == null || !hittable.CanBeHit() || ReferenceEquals(hittable, Actor)) return false;
             AttackPattern pattern = GetCurrentAttackPattern();
 
             HitInfo hitInfo = new HitInfo()
@@ -565,39 +569,44 @@ namespace Kuantech.Core
                 KnockbackForce = pattern.Knockback.GetValue(_statModule),
                 KnockbackDuration = pattern.KnockbackTime.GetValue(_statModule)
             };
-            if (IsServerInitialized)
+
+            // Status effects and the hit VFX are Actor-specific extras on top of plain damage — a
+            // destructible has neither a StatusEffectHandler nor a meaningful hit point to aim the effect at.
+            if (hittable is Actor actor)
             {
-                
-                //Apply status effects
-                List<StatusEffectAsset> statusEffectDatas = GetCurrentAttackPattern().StatusEffectsToApply;
-                if (!statusEffectDatas.IsNullOrEmpty())
+                if (IsServerInitialized)
                 {
-                    StatusEffectHandler seh = actor.GetModule<StatusEffectHandler>();
-                    if (seh != null)
+                    //Apply status effects
+                    List<StatusEffectAsset> statusEffectDatas = GetCurrentAttackPattern().StatusEffectsToApply;
+                    if (!statusEffectDatas.IsNullOrEmpty())
                     {
-                        foreach (var statusEffectData in statusEffectDatas)
+                        StatusEffectHandler seh = actor.GetModule<StatusEffectHandler>();
+                        if (seh != null)
                         {
-                            StatusEffect statusEffect = statusEffectData.CreateStatusEffect();
-                            seh.AddStatusEffect(statusEffect);
+                            foreach (var statusEffectData in statusEffectDatas)
+                            {
+                                StatusEffect statusEffect = statusEffectData.CreateStatusEffect();
+                                seh.AddStatusEffect(statusEffect);
+                            }
                         }
                     }
                 }
-            }
-            if(IsClientInitialized)
-            {
-                //Play hit effect
-                EffectPlayer hitEffect = GetCurrentAttackPattern().HitEffect;
-                if (hitEffect != null)
+                if (IsClientInitialized)
                 {
-                    Vector3 targetHitPoint = actor.GetHitPoint(Actor).GetTargetPosition();
-                    Vector3 attackerPosition = Actor.transform.position;
-                    attackerPosition.y = targetHitPoint.y;
-                    hitEffect.PlayEffectAtPosition(actor.GetHitPoint(Actor).GetTargetPositionTowardsTarget(attackerPosition), Quaternion.LookRotation(GetAttackDirection()));
+                    //Play hit effect
+                    EffectPlayer hitEffect = GetCurrentAttackPattern().HitEffect;
+                    if (hitEffect != null)
+                    {
+                        Vector3 targetHitPoint = actor.GetHitPoint(Actor).GetTargetPosition();
+                        Vector3 attackerPosition = Actor.transform.position;
+                        attackerPosition.y = targetHitPoint.y;
+                        hitEffect.PlayEffectAtPosition(actor.GetHitPoint(Actor).GetTargetPositionTowardsTarget(attackerPosition), Quaternion.LookRotation(GetAttackDirection()));
+                    }
                 }
             }
-       
-            actor.OnHit(hitInfo);
-            DamagedActorEvent?.Invoke(actor);
+
+            hittable.OnHit(hitInfo);
+            if (hittable is Actor hitActor) DamagedActorEvent?.Invoke(hitActor);
             return true;
         }
         
@@ -822,11 +831,7 @@ namespace Kuantech.Core
 
             return _currentComboIndex;
         }
-        public HashSet<int> GetEnemyFactions()
-        {
-            return Actor.FactionHandler.GetEnemyFactions().ToHashSet();
-        }
-        
+
         /// <summary>
         /// Checks if attack pattern is melee
         /// </summary>

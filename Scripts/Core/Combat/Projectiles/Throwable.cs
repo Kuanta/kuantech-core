@@ -38,6 +38,12 @@ namespace Kuantech.Core
         [Tooltip("Safety net: go off anyway if it somehow never lands (thrown off the map, etc).")]
         public float MaxLifetime = 6f;
 
+        [Header("Fuse (optional)")]
+        [Tooltip("If > 0, this doesn't go off the moment it lands (or exhausts its bounces) — it waits this " +
+                 "many seconds after settling, then detonates. A dynamite-style timed charge instead of a " +
+                 "grenade. 0 = detonate immediately on landing, the original behaviour.")]
+        public float FuseDelay = 0f;
+
         [Header("Impact")]
         public float ImpactRadius = 3f;
         public LayerMask Targets;
@@ -50,6 +56,9 @@ namespace Kuantech.Core
         public GameObject Visual;
         public EffectPlayer ThrowEffect;
         public EffectPlayer BounceEffect;
+        [Tooltip("Plays once, the moment the fuse starts (i.e. the instant it lands) — a spark, a blinking " +
+                 "light, a landing thud. Ignored when FuseDelay is 0, since ImpactEffect covers that case.")]
+        public EffectPlayer FuseStartEffect;
         public EffectPlayer ImpactEffect;
 
         [Header("Pooling")]
@@ -68,6 +77,8 @@ namespace Kuantech.Core
         private float _age;
         private bool _flying;
         private bool _impacted;
+        private bool _fused;
+        private float _fuseElapsed;
 
         /// <summary>
         /// Throws this at a world point. The arc is solved so it arrives there after <see cref="FlightTime"/>
@@ -99,6 +110,8 @@ namespace Kuantech.Core
             _bounceCount = 0;
             _age = 0f;
             _impacted = false;
+            _fused = false;
+            _fuseElapsed = 0f;
             _flying = true;
 
             transform.position = startPosition;
@@ -108,6 +121,13 @@ namespace Kuantech.Core
 
         protected virtual void Update()
         {
+            if (_fused)
+            {
+                _fuseElapsed += Time.deltaTime;
+                if (_fuseElapsed >= FuseDelay) Impact();
+                return;
+            }
+
             if (!_flying) return;
 
             float dt = Time.deltaTime;
@@ -123,13 +143,38 @@ namespace Kuantech.Core
                 if (BounceEffect != null) BounceEffect.PlayEffectAtPosition(transform.position, Quaternion.identity);
                 if (_bounceCount > BouncesBeforeImpact)
                 {
-                    Impact();
+                    StartFuseOrImpact();
                     return;
                 }
             }
 
-            // Came to rest without spending its bounces (soft ground tuning), or never landed at all.
-            if (_motion.Settled || _age >= MaxLifetime) Impact();
+            // Exceeding MaxLifetime always detonates immediately regardless of fuse — the safety net is
+            // "go off anyway", not "start a fresh countdown that might never fire either".
+            if (_age >= MaxLifetime)
+            {
+                Impact();
+                return;
+            }
+
+            // Came to rest without spending its bounces (soft ground tuning).
+            if (_motion.Settled) StartFuseOrImpact();
+        }
+
+        // Landing triggers either an immediate detonation (FuseDelay == 0, the original behaviour) or a
+        // timed wait — a dynamite-style charge sitting lit on the ground before it goes off.
+        private void StartFuseOrImpact()
+        {
+            if (FuseDelay > 0f)
+            {
+                _flying = false;
+                _fused = true;
+                _fuseElapsed = 0f;
+                if (FuseStartEffect != null) FuseStartEffect.PlayEffectAtPosition(transform.position, Quaternion.identity);
+            }
+            else
+            {
+                Impact();
+            }
         }
 
         #region Impact
@@ -142,6 +187,7 @@ namespace Kuantech.Core
             if (_impacted) return;
             _impacted = true;
             _flying = false;
+            _fused = false;
 
             Vector3 origin = transform.position;
             if (ImpactEffect != null) ImpactEffect.PlayEffectAtPosition(origin, Quaternion.identity);
@@ -153,8 +199,10 @@ namespace Kuantech.Core
             Despawn();
         }
 
-        // Own overlap instead of CombatUtilities.HitActorsInSphere: a blast needs a per-target hit direction
+        // Own overlap instead of CombatUtilities.HitInSphere: a blast needs a per-target hit direction
         // (radially outward) so knockback throws bodies away from the centre rather than all the same way.
+        // Still Actor-only (not IHittable) and still does its own alive/faction filtering below — not yet
+        // moved onto the new CombatUtilities/Actor.OnHit split.
         private void HitEnemiesInRadius(Vector3 origin)
         {
             int count = UnityEngine.Physics.OverlapSphereNonAlloc(origin, ImpactRadius, OverlapBuffer, Targets);
@@ -220,6 +268,8 @@ namespace Kuantech.Core
         {
             _flying = false;
             _impacted = false;
+            _fused = false;
+            _fuseElapsed = 0f;
             OnImpactEvent = null;
             ThrownBy = null;
         }

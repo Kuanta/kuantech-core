@@ -63,7 +63,6 @@ namespace Kuantech.Core
         public Actor CastBy;
         public Item ShotFrom = null;
         public LayerMask Targets;
-        public HashSet<int> FactionFilter;
 
         [Header("Visuals & Colliders")]
         public GameObject Visual;
@@ -211,12 +210,6 @@ namespace Kuantech.Core
         #region Shoot
         public virtual void Shoot(Actor castBy, Item shotFrom, Vector3 shootPosition, Vector3 shootDirection, Transform target = null, float relativeSpeed = 0.0f)
         {
-            // Set faction enemies
-            if (castBy != null)
-                FactionFilter = castBy.FactionHandler.GetEnemyFactions().ToHashSet();
-            else
-                FactionFilter = new HashSet<int>();
-            
             _currentBasePosition = shootPosition;
             _targetOffset = Vector3.zero;
 
@@ -539,7 +532,7 @@ namespace Kuantech.Core
                     KnockbackForce = Knockback,
                 };
                 hitInfo2D.AdditionalDamages = AdditionalSplashDamages;
-                CombatUtilities.HitActorsInCircle2D(origin, SplashRadius, Targets, hitInfo2D, FactionFilter);
+                CombatUtilities.HitInCircle2D(origin, SplashRadius, Targets, hitInfo2D);
             }
             else
             {
@@ -552,7 +545,7 @@ namespace Kuantech.Core
                     KnockbackForce = Knockback,
                 };
                 hitInfo.AdditionalDamages = AdditionalSplashDamages;
-                CombatUtilities.HitActorsInSphere(origin, SplashRadius, Targets, hitInfo, FactionFilter);
+                CombatUtilities.HitInSphere(origin, SplashRadius, Targets, hitInfo);
             }
         }
         protected virtual void Impact(GameObject impacted)

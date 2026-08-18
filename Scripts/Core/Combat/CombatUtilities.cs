@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Numerics;
 using Kuantech.Utils;
 using UnityEngine;
@@ -22,100 +22,82 @@ namespace Kuantech.Core.Combat
         #endregion
 
         #region Cast Overlap attacks
- /// <summary>
-        /// Gets actors in 2d circle
+
+        // Every query below only knows two things: the physics layer to search, and whether the candidate
+        // itself says it's willing to be hit right now (IHittable.CanBeHit()). It has no concept of alive/
+        // dead or faction — a dead Actor's CanBeHit() is still true (see Actor.cs), so a corpse is exactly as
+        // findable as a live enemy. Whether a hit actually DOES anything (damage, faction relevance, an
+        // already-dead actor's health not moving) is decided downstream: Actor.OnHit for faction, and
+        // HealthcareModule for whether the actor is alive enough to take damage.
+
+        /// <summary>
+        /// Gets hittables in 2d circle
         /// </summary>
-        /// <param name="position"></param>
-        /// <param name="radius"></param>
-        /// <param name="layerMask"></param>
-        /// <param name="factionFilter">Faction ids to filter Out</param>
-        /// <returns></returns>
-        public static List<Actor> GetActorsInCircle2D(Vector3 position, float radius, LayerMask layerMask, HashSet<int> factionFilter = null)
+        public static List<IHittable> GetHittablesInCircle2D(Vector3 position, float radius, LayerMask layerMask)
         {
             Collider2D[] hits = UnityEngine.Physics2D.OverlapCircleAll(position, radius, layerMask);
-            List<Actor> actors = new();
+            List<IHittable> hittables = new();
 
             foreach (var hit in hits)
             {
-                Actor actor = hit.GetComponentInParent<Actor>();
-                if (actor == null) continue;
-                if(factionFilter != null && !factionFilter.Contains(actor.GetFactionId())) continue;
-                actors.Add(actor);
+                IHittable hittable = hit.GetComponentInParent<IHittable>();
+                if (hittable == null || !hittable.CanBeHit()) continue;
+                hittables.Add(hittable);
             }
 
-            return actors;
+            return hittables;
         }
 
-         public static List<Actor> GetActorsInSphere(Vector3 position, float radius, LayerMask layerMask,
-             HashSet<int> factionFilter = null)
-         {
-             Collider[] hits = UnityEngine.Physics.OverlapSphere(position, radius, layerMask);
-             List<Actor> actors = new List<Actor>();
-             foreach (var hit in hits)
-             {
-                 Actor actor = hit.GetComponentInParent<Actor>();
-                 if (actor == null) continue;
-                 if(factionFilter != null && !factionFilter.Contains(actor.GetFactionId())) continue;
-                 actors.Add(actor);
-             }
+        public static List<IHittable> GetHittablesInSphere(Vector3 position, float radius, LayerMask layerMask)
+        {
+            Collider[] hits = UnityEngine.Physics.OverlapSphere(position, radius, layerMask);
+            List<IHittable> hittables = new List<IHittable>();
+            foreach (var hit in hits)
+            {
+                IHittable hittable = hit.GetComponentInParent<IHittable>();
+                if (hittable == null || !hittable.CanBeHit()) continue;
+                hittables.Add(hittable);
+            }
 
-             return actors;
-             
-         }
-        
-         /// <summary>
-         /// Returns actors in a linear box
-         /// </summary>
-         /// <param name="startPosition"></param>
-         /// <param name="direction"></param>
-         /// <param name="width"></param>
-         /// <param name="range"></param>
-         /// <param name="layerMask"></param>
-         /// <param name="factionFilter"></param>
-         /// <param name="boxHeight"></param>
-         /// <returns></returns>
-         public static List<Actor> GetActorsInBox(Vector3 startPosition, Vector3 direction, float width, float range, LayerMask layerMask,
-             HashSet<int> factionFilter = null, float boxHeight = 2f)
-         {
-             List<Actor> actors = new List<Actor>();
-             Vector3 center = startPosition + direction.normalized * range * 0.5f;
-             Vector3 halfSizes = new Vector3(width * 0.5f, boxHeight * 0.5f, range * 0.5f);
-             Quaternion rotation = Quaternion.LookRotation(direction, Vector3.up);
-             Collider[] hits = UnityEngine.Physics.OverlapBox(center, halfSizes, rotation, layerMask);
-             foreach (var hit in hits)
-             {
-                 Actor actor = hit.GetComponentInParent<Actor>();
-                 if (actor == null) continue;
-                 if(factionFilter != null && !factionFilter.Contains(actor.GetFactionId())) continue;
-                 actors.Add(actor);
-             }
+            return hittables;
+        }
 
-             return actors;
-         }
-        
         /// <summary>
-        /// Gets actors in a 2d arc
+        /// Returns hittables in a linear box
         /// </summary>
-        /// <param name="center"></param>
-        /// <param name="direction"></param>
-        /// <param name="range"></param>
-        /// <param name="angle"></param>
-        /// <param name="layerMask"></param>
+        public static List<IHittable> GetHittablesInBox(Vector3 startPosition, Vector3 direction, float width, float range, LayerMask layerMask,
+            float boxHeight = 2f)
+        {
+            List<IHittable> hittables = new List<IHittable>();
+            Vector3 center = startPosition + direction.normalized * range * 0.5f;
+            Vector3 halfSizes = new Vector3(width * 0.5f, boxHeight * 0.5f, range * 0.5f);
+            Quaternion rotation = Quaternion.LookRotation(direction, Vector3.up);
+            Collider[] hits = UnityEngine.Physics.OverlapBox(center, halfSizes, rotation, layerMask);
+            foreach (var hit in hits)
+            {
+                IHittable hittable = hit.GetComponentInParent<IHittable>();
+                if (hittable == null || !hittable.CanBeHit()) continue;
+                hittables.Add(hittable);
+            }
+
+            return hittables;
+        }
+
+        /// <summary>
+        /// Gets hittables in a 2d arc
+        /// </summary>
         /// <param name="backOffset">Back offset to consider actors that are very close to center</param>
-        /// <param name="factionFilter"></param>
-        /// <returns></returns>
-        public static List<Actor> GetActorsInArc2D(
+        public static List<IHittable> GetHittablesInArc2D(
             Vector2 center,
             Vector2 direction,
             float range,
             float angle,
             LayerMask layerMask,
-            HashSet<int> factionFilter = null,
-            float backOffset = 0.5f, 
+            float backOffset = 0.5f,
             float forwardGuard = 0f,
             bool useClosestPoint = true)
         {
-            var detected = new List<Actor>();
+            var detected = new List<IHittable>();
 
             // Yönü normalize et, boşsa default ver
             var dir = direction.sqrMagnitude < 1e-6f ? Vector2.right : direction.normalized;
@@ -132,13 +114,12 @@ namespace Kuantech.Core.Combat
 
             foreach (var col in results)
             {
-                if (!col || !col.TryGetComponent(out Actor actor)) continue;
-                if (!actor.IsAlive()) continue;
-                int f = actor.GetFactionId();
-                if (factionFilter != null && !factionFilter.IsNullOrEmpty() && !factionFilter.Contains(f)) continue;
+                if (!col) continue;
+                IHittable hittable = col.GetComponentInParent<IHittable>();
+                if (hittable == null || !hittable.CanBeHit()) continue;
 
                 // Test noktası: collider'ın merkezi yerine en yakın nokta daha güvenilir
-                Vector2 p = useClosestPoint ? col.ClosestPoint(center) : (Vector2)actor.GetActorLocation();
+                Vector2 p = useClosestPoint ? col.ClosestPoint(center) : (Vector2)col.transform.position;
 
                 // "Önde mi?" koruması (orijinal merkez referansıyla)
                 float proj = Vector2.Dot(p - center, dir);
@@ -150,25 +131,24 @@ namespace Kuantech.Core.Combat
 
                 float dot = Vector2.Dot(dir, v.normalized); // cos(theta)
                 if (dot >= cosHalf)
-                    detected.Add(actor);
+                    detected.Add(hittable);
             }
 
             return detected;
         }
 
-        public static List<Actor> GetActorsInArc3D(
+        public static List<IHittable> GetHittablesInArc3D(
             Vector3 center,
             Vector3 direction,
             float range,
             float angle,
             LayerMask layerMask,
-            HashSet<int> factionFilter = null,
             float backOffset = 0.5f,
             float forwardGuard = 0f,
             bool useClosestPoint = true,
             int maxActorCount = 128)
         {
-            var detected = new List<Actor>();
+            var detected = new List<IHittable>();
 
             var dir = direction.sqrMagnitude < 1e-6f ? Vector3.right : direction.normalized;
 
@@ -185,13 +165,12 @@ namespace Kuantech.Core.Combat
             {
                 foreach (var col in results)
                 {
-                    if (!col || !col.TryGetComponent(out Actor actor)) continue;
-                    if (!actor.IsAlive()) continue;
-                    int f = actor.GetFactionId();
-                    if (factionFilter != null && !factionFilter.IsNullOrEmpty() && !factionFilter.Contains(f)) continue;
+                    if (!col) continue;
+                    IHittable hittable = col.GetComponentInParent<IHittable>();
+                    if (hittable == null || !hittable.CanBeHit()) continue;
 
                     // Test point
-                    Vector3 p = useClosestPoint ? col.ClosestPoint(center) : (Vector3)actor.GetActorLocation();
+                    Vector3 p = useClosestPoint ? col.ClosestPoint(center) : col.transform.position;
 
                     float proj = Vector3.Dot(p - center, dir);
                     if (proj < forwardGuard) continue;
@@ -202,142 +181,123 @@ namespace Kuantech.Core.Combat
 
                     float dot = Vector3.Dot(dir, v.normalized); // cos(theta)
                     if (dot >= cosHalf)
-                        detected.Add(actor);
+                        detected.Add(hittable);
                 }
             }
             return detected;
         }
-        
-        public static void HitActorsInSphere(Vector3 center, float radius, LayerMask layerMask, HitInfo hitInfo,
-            HashSet<int> factionFilter = null, UnityAction<Actor> damageHandler = null)
+
+        // Excludes hitInfo.Hitter from the results — the one thing left for this layer to enforce itself
+        // (a query cannot know about factions any more, but "don't hit your own caster" needs no faction
+        // lookup, just an identity check against who's swinging).
+        private static bool IsSelfHit(IHittable hittable, GameObject hitter)
+        {
+            if (hitter == null) return false;
+            if (hittable is Component component) return component.gameObject == hitter;
+            return false;
+        }
+
+        public static void HitInSphere(Vector3 center, float radius, LayerMask layerMask, HitInfo hitInfo,
+            UnityAction<IHittable> damageHandler = null)
         {
             Collider[] results = UnityEngine.Physics.OverlapSphere(center, radius, layerMask.value);
             foreach (var result in results)
             {
-                if(result == null) continue;
-                if(!result.TryGetComponent(out Actor actor)) continue;
-                if(!actor.IsAlive()) continue;
-                int actorFaction = actor.GetFactionId();
-                if(factionFilter != null && !factionFilter.IsNullOrEmpty() && !factionFilter.Contains(actorFaction)) continue;
-                actor.OnHit(hitInfo);
-                if (damageHandler != null)
+                if (result == null) continue;
+                IHittable hittable = result.GetComponentInParent<IHittable>();
+                if (hittable == null || !hittable.CanBeHit()) continue;
+                if (IsSelfHit(hittable, hitInfo.Hitter)) continue;
+
+                hittable.OnHit(hitInfo);
+                damageHandler?.Invoke(hittable);
+            }
+        }
+
+        public static void HitInCircle2D(Vector3 center, float range,
+            LayerMask layerMask, HitInfo hitInfo, UnityAction<IHittable> damageHandler = null)
+        {
+            Collider2D[] results = Physics2D.OverlapCircleAll(center, range, layerMask.value);
+            foreach (var result in results)
+            {
+                if (result == null) continue;
+                IHittable hittable = result.GetComponentInParent<IHittable>();
+                if (hittable == null || !hittable.CanBeHit()) continue;
+                if (IsSelfHit(hittable, hitInfo.Hitter)) continue;
+
+                hittable.OnHit(hitInfo);
+                damageHandler?.Invoke(hittable);
+            }
+        }
+
+        public static void HitInArc2D(Vector3 center, Vector3 direction, float range, float angle,
+            LayerMask layerMask, HitInfo hitInfo, UnityAction<IHittable> damageHandler = null)
+        {
+            Collider2D[] results = Physics2D.OverlapCircleAll(center, range, layerMask.value);
+            foreach (var result in results)
+            {
+                if (result == null) continue;
+                IHittable hittable = result.GetComponentInParent<IHittable>();
+                if (hittable == null || !hittable.CanBeHit()) continue;
+                if (IsSelfHit(hittable, hitInfo.Hitter)) continue;
+
+                //Check angle
+                Vector3 toTarget = result.transform.position - center;
+                float angleTo = Vector2.Angle(direction, toTarget);
+                if (angleTo <= angle * 0.5f)
                 {
-                    damageHandler(actor);
+                    hittable.OnHit(hitInfo);
+                    damageHandler?.Invoke(hittable);
                 }
             }
         }
 
-        public static void HitActorsInCircle2D(Vector3 center, float range,
-            LayerMask layerMask, HitInfo hitInfo, HashSet<int> factionFilter = null, UnityAction<Actor> damageHandler = null)
-        {
-            Collider2D[] results = Physics2D.OverlapCircleAll(center, range, layerMask.value);
-            foreach (var result in results)
-            {
-                if(result == null) continue;
-                if(!result.TryGetComponent(out Actor actor)) continue;
-                if(!actor.IsAlive()) continue;
-                int actorFaction = actor.GetFactionId();
-                if(factionFilter != null && !factionFilter.IsNullOrEmpty() && !factionFilter.Contains(actorFaction)) continue;
-                actor.OnHit(hitInfo);
-                if (damageHandler != null)
-                {
-                    damageHandler(actor);
-                }
-            }
-        }
-        public static void HitActorsInArc2D(Vector3 center, Vector3 direction, float range, float angle,
-            LayerMask layerMask, HitInfo hitInfo, HashSet<int> factionFilter = null, UnityAction<Actor> damageHandler = null)
-        {
-            Collider2D[] results = Physics2D.OverlapCircleAll(center, range, layerMask.value);
-            foreach (var result in results)
-            {
-                if(result == null) continue;
-                if(!result.TryGetComponent(out Actor actor)) continue;
-                if(!actor.IsAlive()) continue;
-                int actorFaction = actor.GetFactionId();
-                if(factionFilter != null && !factionFilter.IsNullOrEmpty() && !factionFilter.Contains(actorFaction)) continue;
-                
-                //Check angle
-                Vector3 toTarget = actor.transform.position - center;
-                float angleTo = Vector2.Angle(direction, toTarget);
-                if (angleTo <= angle * 0.5f)
-                {
-                    actor.OnHit(hitInfo);
-                    if (damageHandler != null)
-                    {
-                        damageHandler(actor);
-                    }
-                }
-            }
-        }
-        
-        public static void HitActorsInArc3D(Vector3 center,
+        public static void HitInArc3D(Vector3 center,
             Vector3 direction,
             float range,
             float angle,
             LayerMask layerMask,
             HitInfo hitInfo,
-            HashSet<int> factionFilter = null,
-            UnityAction<Actor> damageHandler = null,
+            UnityAction<IHittable> damageHandler = null,
             float backOffset = 0.5f,
             float forwardGuard = 0f,
             bool useClosestPoint = true,
             int maxActorCount = 128)
         {
-            var actors = GetActorsInArc3D(center, direction, range, angle, layerMask, factionFilter, backOffset, forwardGuard, useClosestPoint, maxActorCount);  
-            foreach(var actor in actors)
+            var hittables = GetHittablesInArc3D(center, direction, range, angle, layerMask, backOffset, forwardGuard, useClosestPoint, maxActorCount);
+            foreach (var hittable in hittables)
             {
-                if(actor == null || !actor.IsAlive()) continue;
-                int actorFaction = actor.GetFactionId();
-                if (factionFilter != null && !factionFilter.IsNullOrEmpty() && !factionFilter.Contains(actorFaction)) continue;
-                actor.OnHit(hitInfo);
-                if (damageHandler != null)
-                {
-                    damageHandler(actor);
-                }
+                if (hittable == null || !hittable.CanBeHit()) continue;
+                if (IsSelfHit(hittable, hitInfo.Hitter)) continue;
+
+                hittable.OnHit(hitInfo);
+                damageHandler?.Invoke(hittable);
             }
         }
-        
+
         /// <summary>
-        /// Damages actors in a box
+        /// Hits hittables in a box
         /// </summary>
-        /// <param name="startPosition"></param>
-        /// <param name="direction"></param>
-        /// <param name="width"></param>
-        /// <param name="length"></param>
-        /// <param name="layerMask"></param>
-        /// <param name="hitInfo"></param>
-        /// <param name="factionFilter">Factions to damage</param>
-        /// <param name="damageHandler"></param>
-        public static void HitActorsInBox2D(Vector3 startPosition, Vector3 direction, float width, float length, LayerMask layerMask,
-            HitInfo hitInfo, HashSet<int> factionFilter = null, UnityAction<Actor> damageHandler = null)
+        public static void HitInBox2D(Vector3 startPosition, Vector3 direction, float width, float length, LayerMask layerMask,
+            HitInfo hitInfo, UnityAction<IHittable> damageHandler = null)
         {
-            List<Actor> actors = GetActorsInBox2D(startPosition, direction, width, length, layerMask, factionFilter);
-            foreach (var actor in actors)
+            List<IHittable> hittables = GetHittablesInBox2D(startPosition, direction, width, length, layerMask);
+            foreach (var hittable in hittables)
             {
-                if (actor == null || !actor.IsAlive()) continue;
-                if (factionFilter != null && !factionFilter.IsNullOrEmpty() && !factionFilter.Contains(actor.GetFactionId())) continue;
-                
-                actor.OnHit(hitInfo);
-                // You can do something with hitInfo here if needed (like filling in contact point, etc.)
-                damageHandler?.Invoke(actor);
+                if (hittable == null || !hittable.CanBeHit()) continue;
+                if (IsSelfHit(hittable, hitInfo.Hitter)) continue;
+
+                hittable.OnHit(hitInfo);
+                damageHandler?.Invoke(hittable);
             }
         }
-        
+
         /// <summary>
-        /// Gets actors in a 2d box
+        /// Gets hittables in a 2d box
         /// </summary>
-        /// <param name="startPosition"></param>
-        /// <param name="direction"></param>
-        /// <param name="width"></param>
-        /// <param name="length"></param>
-        /// <param name="layerMask"></param>
-        /// <param name="factionFilter">Factions to get</param>
-        /// <returns></returns>
-        public static List<Actor> GetActorsInBox2D(Vector3 startPosition, Vector3 direction, float width, float length,
-            LayerMask layerMask, HashSet<int> factionFilter = null)
+        public static List<IHittable> GetHittablesInBox2D(Vector3 startPosition, Vector3 direction, float width, float length,
+            LayerMask layerMask)
         {
-            List<Actor> actors = new List<Actor>();
+            List<IHittable> hittables = new List<IHittable>();
             direction.z = 0;
             direction.Normalize();
             Vector3 boxCenter = startPosition + direction * length * 0.5f;
@@ -349,58 +309,53 @@ namespace Kuantech.Core.Combat
 
             // Perform the box overlap
             Collider2D[] hits = Physics2D.OverlapBoxAll(boxCenter, boxSize, angle, layerMask);
-            if (hits.IsNullOrEmpty()) return actors;
+            if (hits.IsNullOrEmpty()) return hittables;
             foreach (var hit in hits)
             {
                 if (hit == null) continue;
-                if (!hit.TryGetComponent(out Actor actor)) continue;
-                if (!actor.IsAlive()) continue;
-                if (factionFilter != null && !factionFilter.IsNullOrEmpty() && !factionFilter.Contains(actor.GetFactionId())) continue;
-                
-                actors.Add(actor);
+                IHittable hittable = hit.GetComponentInParent<IHittable>();
+                if (hittable == null || !hittable.CanBeHit()) continue;
+
+                hittables.Add(hittable);
             }
 
-            return actors;
+            return hittables;
         }
-        
-        public static List<Actor> GetActorsInRaycast2D(Vector3 startPosition, Vector3 direction, float range,
-            LayerMask layerMask, HashSet<int> factionFilter = null,
-            UnityAction<Actor> damageHandler = null)
+
+        public static List<IHittable> GetHittablesInRaycast2D(Vector3 startPosition, Vector3 direction, float range,
+            LayerMask layerMask)
         {
-            List<Actor> actors = new List<Actor>();
+            List<IHittable> hittables = new List<IHittable>();
             RaycastHit2D[] hits = Physics2D.RaycastAll(startPosition, direction, range, layerMask);
 
             foreach (var hit in hits)
             {
                 if (hit.collider == null) continue;
-                if (!hit.collider.TryGetComponent(out Actor actor)) continue;
-                if (!actor.IsAlive()) continue;
-                if (factionFilter != null && !factionFilter.IsNullOrEmpty() && !factionFilter.Contains(actor.GetFactionId())) continue;
-                actors.Add(actor);
+                IHittable hittable = hit.collider.GetComponentInParent<IHittable>();
+                if (hittable == null || !hittable.CanBeHit()) continue;
+                hittables.Add(hittable);
             }
 
-            return actors;
+            return hittables;
         }
-        public static void HitActorsInRaycast2D(Vector3 startPosition, Vector3 direction, float range,
-            LayerMask layerMask, HitInfo hitInfo, HashSet<int> factionFilter = null,
-            UnityAction<Actor> damageHandler = null)
+        public static void HitInRaycast2D(Vector3 startPosition, Vector3 direction, float range,
+            LayerMask layerMask, HitInfo hitInfo, UnityAction<IHittable> damageHandler = null)
         {
-
             RaycastHit2D[] hits = Physics2D.RaycastAll(startPosition, direction, range, layerMask);
 
             foreach (var hit in hits)
             {
                 if (hit.collider == null) continue;
-                if (!hit.collider.TryGetComponent(out Actor actor)) continue;
-                if (!actor.IsAlive()) continue;
-                if (factionFilter != null && !factionFilter.IsNullOrEmpty() && !factionFilter.Contains(actor.GetFactionId())) continue;
+                IHittable hittable = hit.collider.GetComponentInParent<IHittable>();
+                if (hittable == null || !hittable.CanBeHit()) continue;
+                if (IsSelfHit(hittable, hitInfo.Hitter)) continue;
 
-                actor.OnHit(hitInfo);
-                damageHandler?.Invoke(actor);
+                hittable.OnHit(hitInfo);
+                damageHandler?.Invoke(hittable);
             }
         }
         #endregion
-       
+
         #region Attack Timing
 
         public static float GetAttackDuration(float attackSpeed, float baseAttackTime, float minAttackTime,

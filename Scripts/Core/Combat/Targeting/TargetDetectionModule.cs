@@ -25,23 +25,25 @@ namespace Kuantech.Core.Combat
         /// </summary>
         public void DetectTargets()
         {
-            List<Actor> actors;
+            List<IHittable> hittables;
             if (Is2D)
             {
-                actors = CombatUtilities.GetActorsInCircle2D(transform.position, DetectionRadius, TargetLayerMask);
+                hittables = CombatUtilities.GetHittablesInCircle2D(transform.position, DetectionRadius, TargetLayerMask);
 
             }
             else
             {
-                actors = CombatUtilities.GetActorsInSphere(transform.position, DetectionRadius, TargetLayerMask);
+                hittables = CombatUtilities.GetHittablesInSphere(transform.position, DetectionRadius, TargetLayerMask);
             }
-            
+
             DetectedAllies = new List<Actor>();
             DetectedEnemies = new List<Actor>();
-            foreach (var actor in actors)
+            foreach (var hittable in hittables)
             {
-                if(actor == Actor || !actor.IsAlive()) continue;
-                if (actor.IsAlly(Actor) && actor != Actor) 
+                // This module tracks living Actor combatants only — a destructible prop or a corpse (still
+                // technically hittable) is neither an ally nor an enemy to react to here.
+                if (hittable is not Actor actor || actor == Actor || !actor.IsAlive()) continue;
+                if (actor.IsAlly(Actor))
                 {
                     //Is ally and not self
                     DetectedAllies.Add(actor);

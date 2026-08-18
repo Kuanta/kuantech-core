@@ -722,6 +722,13 @@ namespace Kuantech.Core
 
         public void OnHit(HitInfo hitInfo)
         {
+            // Faction relevance lives here now, not in whatever physics query found this actor —
+            // CombatUtilities only knows about layers and CanBeHit(); the actor itself decides whether the
+            // hitter (from HitInfo.Hitter) is actually its enemy. No hitter, or a hitter with no Actor
+            // (e.g. an environmental damage source), means there's nothing to filter — the hit proceeds.
+            if (hitInfo.Hitter != null && hitInfo.Hitter.TryGetComponent(out Actor hitter) && !hitter.IsEnemy(this))
+                return;
+
             OnHitEvent?.Invoke(hitInfo);
         }
         

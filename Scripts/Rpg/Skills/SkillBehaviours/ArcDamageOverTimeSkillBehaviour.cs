@@ -49,7 +49,7 @@ namespace Kuantech.Rpg.Skills
     public class ArcDamageOverTimeSkillBehaviour : SkillBehaviour
     {
         // Reused across ticks so a channel with many enemies in range doesn't allocate a fresh list per tick.
-        private readonly List<Actor> _hitBuffer = new List<Actor>();
+        private readonly List<IHittable> _hitBuffer = new List<IHittable>();
         private float _nextTickTime;
 
         protected override void OnBehaviourStarted()
@@ -80,25 +80,29 @@ namespace Kuantech.Rpg.Skills
             if (range <= 0f || damage <= 0f) return;
 
             _hitBuffer.Clear();
-            _hitBuffer.AddRange(CombatUtilities.GetActorsInArc3D(origin, direction, range, config.ArcAngle, config.TargetLayerMask));
+            _hitBuffer.AddRange(CombatUtilities.GetHittablesInArc3D(origin, direction, range, config.ArcAngle, config.TargetLayerMask));
+
+            HitInfo hitInfo = new HitInfo
+            {
+                Hitter = caster.gameObject,
+                DamageInfo = new DamageInfo { DamageType = config.DamageType, DamageAmount = damage },
+                // A continuous cone does not shove targets around every tick — only a one-shot impact would.
+                HitDirection = direction,
+            };
 
             foreach (var target in _hitBuffer)
             {
-                if (target == null || target == caster || !target.IsAlive()) continue;
-                if (!caster.IsEnemy(target)) continue;
+                if (target == null || ReferenceEquals(target, caster)) continue;
 
-                target.OnHit(new HitInfo
-                {
-                    Hitter = caster.gameObject,
-                    DamageInfo = new DamageInfo { DamageType = config.DamageType, DamageAmount = damage },
-                    // A continuous cone does not shove targets around every tick — only a one-shot impact would.
-                    HitDirection = direction,
-                });
+                target.OnHit(hitInfo);
 
-                ApplyStatusEffect(config, caster, target);
+                // The status effect is this skill's own extra payload beyond plain damage — only makes sense
+                // on an Actor with a StatusEffectHandler (a destructible crate has neither), and only on an
+                // actual enemy (Actor.OnHit already rejected a non-enemy hit above, but that gives us no
+                // signal back — so re-check here for this side effect specifically).
+                if (target is Actor actorTarget && caster.IsEnemy(actorTarget))
+                    ApplyStatusEffect(config, caster, actorTarget);
             }
-
-         
         }
 
         private void ApplyStatusEffect(ArcDamageOverTimeSkillBehaviourConfig config, Actor caster, Actor target)

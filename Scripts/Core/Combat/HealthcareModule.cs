@@ -121,6 +121,11 @@ namespace Kuantech.Core.Combat
             if (IsServerInitialized)
             {
                 if (IsInvulnerable()) return;
+                // A hit landing on an already-dead body (e.g. a follow-up basic attack yeeting a corpse) must
+                // not re-run death: DamageResource below already no-ops for a dead actor (health stays at 0),
+                // but without this the health<=0 check below would still be true and re-fire KillActor/
+                // Despawn every single time the corpse gets hit again.
+                bool wasAlive = Actor.IsAlive();
                 float previousHealth = GetCurrentHealth();
 
                 DamageResource(hitInfo.DamageInfo);
@@ -137,8 +142,9 @@ namespace Kuantech.Core.Combat
                     if (IsSpawned) ObserversHitAnim_Rpc(hitInfo);
                 }
 
-                // Death check AFTER damage is applied
-                if (GetCurrentHealth() <= 0.0f)
+                // Death check AFTER damage is applied — only for a hit that actually killed something still
+                // alive going in.
+                if (wasAlive && GetCurrentHealth() <= 0.0f)
                 {
                     Actor.KillActor(hitInfo.Hitter);
                     if (Healthbar != null) Healthbar.ToggleVisual(false);
