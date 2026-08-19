@@ -21,7 +21,7 @@ namespace Kuantech.Core.FX
         [SerializeField] private Transform StartPoint;
         [SerializeField] private Transform EndPoint;
         
-        private void Update()
+        private void LateUpdate()
         {
             if (!(LineRenderers.IsNullOrEmpty() || StartPoint == null || EndPoint == null))
             {
