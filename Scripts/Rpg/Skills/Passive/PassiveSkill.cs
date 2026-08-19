@@ -86,6 +86,14 @@ namespace Kuantech.Rpg.Skills
             return defaultValue;
         }
 
+        /// <summary>Mirrors <see cref="Skill.GetSkillVariable"/> — lets a granting perk repoint a variable's
+        /// backing data (e.g. to its own PerkVariables), the same override trick SkillAdderPerk uses.</summary>
+        public PassiveSkillVariable GetPassiveSkillVariable(string variableId)
+        {
+            _variables.TryGetValue(variableId, out var v);
+            return v;
+        }
+
         public string GetId() => DataAsset?.SkillId ?? string.Empty;
     }
 }
