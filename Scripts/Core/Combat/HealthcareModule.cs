@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using FishNet.Object;
 using Kuantech.Core.FX;
@@ -49,6 +50,14 @@ namespace Kuantech.Core.Combat
         /// </summary>
         public UnityAction<DamageInfo, HitInfo> OnDamageReceivedEvent;
         
+        /// <summary>
+        /// Runs in subscription order on every hit's main DamageInfo before it reaches DamageResource,
+        /// each subscriber free to return a modified copy — e.g. a shield eating the damage out of an
+        /// absorb pool. Unlike OnDamageReceivedEvent (read-only, fires after the hit is already applied),
+        /// this is what actually determines how much damage lands.
+        /// </summary>
+        public event Func<DamageInfo, HitInfo, DamageInfo> DamageInterceptor;
+
         //Invulnerability
         public LockVariable InvulnerabilityLock = new();
         public bool IsInvulnerable()              => InvulnerabilityLock.IsLocked();
@@ -128,10 +137,10 @@ namespace Kuantech.Core.Combat
                 bool wasAlive = Actor.IsAlive();
                 float previousHealth = GetCurrentHealth();
 
-                DamageResource(hitInfo.DamageInfo);
+                DamageResource(ApplyDamageInterceptors(hitInfo.DamageInfo, hitInfo));
                 if (hitInfo.AdditionalDamages != null)
                     foreach (var damageInfo in hitInfo.AdditionalDamages)
-                        DamageResource(damageInfo);
+                        DamageResource(ApplyDamageInterceptors(damageInfo, hitInfo));
 
                 // Hit anim threshold — computed server-side where damage is authoritative
                 float receivedDmg = previousHealth - GetCurrentHealth();
@@ -163,6 +172,14 @@ namespace Kuantech.Core.Combat
                     foreach (var additionalDamage in hitInfo.AdditionalDamages)
                         OnDamageReceivedEvent.Invoke(additionalDamage, hitInfo);
             }
+        }
+
+        private DamageInfo ApplyDamageInterceptors(DamageInfo damageInfo, HitInfo hitInfo)
+        {
+            if (DamageInterceptor == null) return damageInfo;
+            foreach (Func<DamageInfo, HitInfo, DamageInfo> interceptor in DamageInterceptor.GetInvocationList())
+                damageInfo = interceptor(damageInfo, hitInfo);
+            return damageInfo;
         }
 
         #region Resource Manipulation
@@ -419,7 +436,7 @@ namespace Kuantech.Core.Combat
                     reducedDamage *= reductionFormula.GetDamageMultiplier(armor);
                 }
             }
-            
+
             DamageInfo reducedDamageInfo = new DamageInfo()
             {
                 DamageType = damageInfo.DamageType,
