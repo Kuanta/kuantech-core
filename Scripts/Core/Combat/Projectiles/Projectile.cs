@@ -77,6 +77,9 @@ namespace Kuantech.Core
 
         [Header("Pooling")]
         public bool DestroyOnImpact = true;
+        [Tooltip("Only consulted when DestroyOnImpact is false. How many more enemies the projectile can " +
+                 "hit after this one before it despawns; decremented on every hit. -1 = infinite pierce.")]
+        public int PierceCount = -1;
         public float DespawnDelay = 0f;
 
         // Events
@@ -233,6 +236,7 @@ namespace Kuantech.Core
             ShotFrom = shotFrom;
             ImpactOverride = null;
             DestroyOnImpact = true;
+            PierceCount = -1;
             CurrentSpeed = Speed + relativeSpeed;
 
             if (StartEffect != null) StartEffect.PlayEffectAtPosition(transform.position, Quaternion.identity);
@@ -510,7 +514,14 @@ namespace Kuantech.Core
             if (DestroyOnImpact)
             {
                 Despawn();
+                return;
             }
+
+            // Piercing projectile: PierceCount governs how many more hits it survives. -1 (the Shoot()
+            // default) means infinite pierce, same as the old DestroyOnImpact=false behaviour.
+            if (PierceCount < 0) return;
+            PierceCount--;
+            if (PierceCount < 0) Despawn();
         }
         
         /// <summary>

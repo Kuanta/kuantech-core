@@ -84,6 +84,14 @@ namespace Kuantech.Inventory
             return result;
         }
 
+        public List<Item> GetEquippedItems()
+        {
+            var result = new List<Item>();
+            foreach (var item in Items)
+                if (item != null && item.IsEquipped()) result.Add(item);
+            return result;
+        }
+
         public List<T> GetItemComponents<T>() where T : ItemComponent
         {
             var result = new List<T>();
