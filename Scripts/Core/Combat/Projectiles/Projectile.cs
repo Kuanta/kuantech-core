@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Net.Mail;
 using Kuantech.Core.Combat;
 using Kuantech.Core.FX;
 using Kuantech.Inventory;
 using Kuantech.Utils;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -78,11 +76,19 @@ namespace Kuantech.Core
         public EffectPlayer ImpactEffect;
 
         [Header("Pooling")]
-        public bool DestroyOnImpact = true;
-        [Tooltip("Only consulted when DestroyOnImpact is false. How many more enemies the projectile can " +
-                 "hit after this one before it despawns; decremented on every hit. -1 = infinite pierce.")]
-        public int PierceCount = -1;
+        //public bool DestroyOnImpact = true;
+        [Tooltip("Only consulted when DestroyOnImpact is false. This prefab's own baseline pierce count -- " +
+                 "how many enemies beyond the first it hits before despawning. -1 = infinite pierce. Reset " +
+                 "onto CurrentPiercingCount on every Shoot(), same reasoning as DestroyOnImpact -- pooled " +
+                 "reuse must not carry over whatever the previous shot's perks set.")]
+        
+
         public float DespawnDelay = 0f;
+        [Header("Piercing")]
+        public int DefaultPiercingCount = 0;
+        [NonSerialized] private int _currentPiercingCount;
+        public int CurrentPiercingCount => _currentPiercingCount;
+        public bool UnlimitedPiercing;
 
         // Events
         public UnityAction<Projectile> ShotEvent;
@@ -238,8 +244,8 @@ namespace Kuantech.Core
             CastBy = castBy;
             ShotFrom = shotFrom;
             ImpactOverride = null;
-            DestroyOnImpact = true;
-            PierceCount = -1;
+            //DestroyOnImpact = true;
+            _currentPiercingCount = DefaultPiercingCount;
             CurrentSpeed = Speed + relativeSpeed;
 
             if (StartEffect != null) StartEffect.PlayEffectAtPosition(transform.position, Quaternion.identity);
@@ -496,6 +502,8 @@ namespace Kuantech.Core
             if (CastBy != null && triggeredObject.transform.IsChildOf(CastBy.transform)) return;
             if (_useArc && !_reachedPeak && RequireReachPeakForImpact) return; //Wait for peak
 
+            _currentPiercingCount--;
+
             Actor targetActor = triggeredObject.GetComponent<Actor>();
             if (targetActor != null && (!targetActor.IsAlive()))
             {
@@ -530,17 +538,29 @@ namespace Kuantech.Core
 
         protected virtual void CheckDespawn()
         {
-            if (DestroyOnImpact)
+            if (UnlimitedPiercing)
             {
-                Despawn();
                 return;
             }
 
-            // Piercing projectile: PierceCount governs how many more hits it survives. -1 (the Shoot()
-            // default) means infinite pierce, same as the old DestroyOnImpact=false behaviour.
-            if (PierceCount < 0) return;
-            PierceCount--;
-            if (PierceCount < 0) Despawn();
+            if (_currentPiercingCount < 0) Despawn();
+        }
+
+        /// <summary>Sets the pierce count outright -- for a perk that computes one absolute number (e.g.
+        /// from a skill variable) rather than adding to whatever the projectile already had.</summary>
+        public void SetPiercing(int value)
+        {
+            _currentPiercingCount = value;
+        }
+
+        /// <summary>Adds to the current pierce count -- for a perk that grants a bonus on top of whatever
+        /// the projectile already has (its own DefaultPiercingCount, or another perk's contribution).
+        /// A no-op if already infinite (negative), since adding a finite amount to infinity is meaningless
+        /// and would otherwise numerically turn it finite again.</summary>
+        public void AddPiercing(int amount)
+        {
+            if (_currentPiercingCount < 0) return;
+            _currentPiercingCount += amount;
         }
         
         /// <summary>
@@ -580,7 +600,7 @@ namespace Kuantech.Core
         }
         protected virtual void Impact(GameObject impacted)
         {
-            if (DestroyOnImpact && Despawned) return;
+            if (Despawned) return;
             if (IsVisualOnly) return;
 
             IHittable target = impacted.GetComponent<IHittable>();
