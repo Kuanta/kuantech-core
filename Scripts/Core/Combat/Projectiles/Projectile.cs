@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net.Mail;
 using Kuantech.Core.Combat;
 using Kuantech.Core.FX;
 using Kuantech.Inventory;
+using Kuantech.Utils;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
@@ -86,7 +88,8 @@ namespace Kuantech.Core
         public UnityAction<Projectile> ShotEvent;
         public UnityAction<Projectile> LifetimeEndEvent;
         public EventHandler<GameObject> OnImpactEvent;
-        public UnityAction<Actor> OnActorHitEvent;
+        public UnityAction<IHittable> OnActorHitEvent;
+        public UnityAction<Projectile> OnDespawnEvent;
 
         // Runtime state
         protected bool Despawned = false;
@@ -110,7 +113,7 @@ namespace Kuantech.Core
         public ImpactOverrideDelegate ImpactOverride;
 
         // Attachments
-        public List<GameObject> Attachments = new List<GameObject>();
+        private Dictionary<Type, ProjectileAttachment> Attachments = new Dictionary<Type,ProjectileAttachment>();
 
         #region Helpers
         // Horizontal component (plane perpendicular to WorldUp)
@@ -362,9 +365,16 @@ namespace Kuantech.Core
         {
             if (Despawned) return;
 
+            //If non-zero radius, explode
+            if (SplashRadius > 0f)
+            {
+                Explode();
+            }
+
             Despawned = true;
             _age = 0f;
 
+            OnDespawnEvent?.Invoke(this);
             ClearAttachments();
 
             if (DespawnDelay <= 0f)
@@ -412,30 +422,46 @@ namespace Kuantech.Core
 
         #region Attachments
 
-        public void AddAttachment(GameObject component)
+        public ProjectileAttachment AddAttachment<T>() where T : ProjectileAttachment
         {
-            Attachments.Add(component);
-            component.transform.SetParent(transform);
-            component.transform.localPosition = Vector3.zero;
-            component.transform.localRotation = Quaternion.identity;
+            if (Attachments == null) Attachments = new Dictionary<Type, ProjectileAttachment>();
+            T attachment = gameObject.AddComponent<T>();
+            Attachments[typeof(T)] = attachment;
+            attachment.OnAttached(this);
+            return attachment;
         }
 
-        public void AddEffect(int effectType)
+        public void RemoveAttachment<T>() where T : ProjectileAttachment
         {
-            Effect effect = EffectsLibrary.GetContext<EffectsLibrary>().PlayEffect(effectType, Vector3.zero, Quaternion.identity);
-            AddAttachment(effect.gameObject);
-            effect.transform.localPosition = Vector3.zero;
-            effect.transform.localRotation = Quaternion.identity;
+            if(Attachments == null 
+            || Attachments.Count <= 0 
+            || !Attachments.ContainsKey(typeof(T))) return;
+            T attachment = (T)(Attachments[typeof(T)]);
+            if(attachment != null)
+            {
+                attachment.OnDetached();
+            }
+            Attachments.Remove(typeof(T));
         }
-
         private void ClearAttachments()
         {
-            for (int i = 0; i < Attachments.Count; i++)
+            if(Attachments.IsNullOrEmpty()) return;
+            List<Type> keysToRemove = new List<Type>();
+            foreach(var pair in Attachments)
             {
-                PoolManager.PoolObject(Attachments[i]);
+                if(pair.Value.DestroyOnDespawn)
+                {
+                    pair.Value.OnDetached();
+                    Destroy(pair.Value);
+                    keysToRemove.Add(pair.Key);
+                }
             }
-            Attachments.Clear();
+            foreach(var typeToRemove in keysToRemove)
+            {
+                Attachments.Remove(typeToRemove);
+            }
         }
+        
 
         #endregion
 
@@ -497,15 +523,8 @@ namespace Kuantech.Core
                 return;
             }
             
-            //If non-zero radius, explode
-            if (SplashRadius > 0f)
-            {
-                Explode();
-            }
-            
             //Impact hit target
             Impact(triggeredObject);
-
             CheckDespawn();
         }
 
@@ -564,7 +583,7 @@ namespace Kuantech.Core
             if (DestroyOnImpact && Despawned) return;
             if (IsVisualOnly) return;
 
-            Actor target = impacted.GetComponent<Actor>();
+            IHittable target = impacted.GetComponent<IHittable>();
             GameObject hitter = CastBy != null ? CastBy.gameObject : null;
 
             if (target != null)
