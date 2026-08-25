@@ -84,11 +84,11 @@ namespace Kuantech.Core
         /// </summary>
         /// <param name="slotType"></param>
         /// <returns></returns>
-        public bool HasSlotFor(EquipmentSlotType slotType)
+        public bool HasSlotFor(string slotName)
         {
             ActorSlotsHandler slotsHandler = ParentActor.GetModule<ActorSlotsHandler>();
             if (slotsHandler == null) return false;
-            var slot = slotsHandler.GetSlot(slotType.SlotName);
+            var slot = slotsHandler.GetSlot(slotName);
             return slot != null;
         }
 
@@ -117,12 +117,14 @@ namespace Kuantech.Core
         }
         
         /// <summary>
-        /// Slots a visual to the given slot. Hides default visual parts declared on the visual.
+        /// Equips Item Visual
         /// </summary>
-        public ItemVisual SlotItem(EquipmentSlotType slot, Item itemToSlot)
+        public ItemVisual EquipItemVisual(Item itemToSlot)
         {
+            string templateId = itemToSlot.GetTemplateId();
+            if(templateId == null || templateId.Length <= 0) return null;
+
             // In-place visuals live on the model — no socket needed, check before HasSlotFor
-            string templateId = itemToSlot.Data.ItemTemplateId;
             ItemVisual visual = FindInPlaceVisual(templateId);
             if (visual != null)
             {
@@ -134,8 +136,18 @@ namespace Kuantech.Core
                 return visual;
             }
 
+            //Get template prefab
+            ItemTemplate itemTemplate = ItemsLibrary.GetItemTemplatePrefab(templateId);
+            if(itemTemplate == null) return null;
+            ItemVisual itemVisualPrefab = itemTemplate.ItemVisualPrefab;
+            if(itemVisualPrefab == null)
+            {
+                return null;
+            }
+      
+            string slotName = itemVisualPrefab.VisualSlot.SlotName;
             // Spawned visuals require a socket
-            if (!HasSlotFor(slot)) return null;
+            if (!HasSlotFor(slotName)) return null;
 
             visual = itemToSlot.SpawnItemVisual();
             if (visual == null) return null;
@@ -148,7 +160,7 @@ namespace Kuantech.Core
             }
             else
             {
-                Transform socket = GetObjectSlot(slot.SlotName);
+                Transform socket = GetObjectSlot(slotName);
                 if (socket == null) { visual.Despawn(); return null; }
                 visual.gameObject.AttachToParent(socket);
             }

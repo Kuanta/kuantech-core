@@ -94,6 +94,11 @@ namespace Kuantech.Inventory
             return 1f;
         }
 
+        public string GetTemplateId()
+        {
+            return Data.ItemTemplateId;
+        }
+
         /// <summary>
         /// The item's rarity index. Returns the first component that provides one
         /// (<see cref="IItemRarityProvider"/>), or -1 when none does — so rarity is opt-in per item and Core
@@ -347,11 +352,14 @@ namespace Kuantech.Inventory
 
         #region Visuals
 
+        public ItemTemplate GetItemTemplate(string itemVisualId) => ItemsLibrary.GetItemTemplatePrefab(itemVisualId);
         public ItemVisual SpawnItemVisual() => SpawnItemVisual(Data.ItemTemplateId);
 
         public static ItemVisual SpawnItemVisual(string itemVisualId)
         {
-            ItemVisual prefab = AssetCollection.GetPrefabByType<ItemVisual>(itemVisualId);
+            //ItemVisual prefab = AssetCollection.GetPrefabByType<ItemVisual>(itemVisualId);
+            ItemTemplate template = ItemsLibrary.GetItemTemplatePrefab(itemVisualId);
+            ItemVisual prefab = template.ItemVisualPrefab;
             if (prefab == null) return null;
             return PoolManager.GetObjectFromPool(prefab.gameObject).GetComponent<ItemVisual>();
         }

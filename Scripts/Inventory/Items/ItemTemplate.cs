@@ -6,7 +6,7 @@ namespace Kuantech.Inventory
     public class ItemTemplate : ScriptableObject
     {
         public string TemplateId;
-        public GameObject ItemVisualPrefab;
+        public ItemVisual ItemVisualPrefab;
         public GameObject ItemDropPrefab;
         public Sprite ItemIcon;
     }

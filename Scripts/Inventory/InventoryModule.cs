@@ -123,8 +123,15 @@ namespace Kuantech.Inventory
             foreach (var slot in _inventory.Equipment.slotTable.Values)
             {
                 Item item = slot.item;
-                if (item == null || item.ItemVisual != null) continue;
-                item.ItemVisual = visual.SlotItem(slot.SlotType, item);
+                if (item == null) continue;
+
+                // item.ItemVisual is shared state on the (possibly persistent, cross-actor) Item, not scoped
+                // to this actor -- if it still points at a visual parented under a DIFFERENT actor (e.g. the
+                // character-preview actor never got a clean detach before this one attached the same
+                // inventory), that reference is stale for us specifically. Treat it as absent and re-slot.
+                if (item.ItemVisual != null && item.ItemVisual.transform.IsChildOf(visual.transform)) continue;
+
+                item.ItemVisual = visual.EquipItemVisual(item);
             }
         }
 
@@ -133,7 +140,7 @@ namespace Kuantech.Inventory
             if (Actor.VisualHandler == null) return;
             ActorVisual visual = Actor.VisualHandler.GetActorVisual();
             if (visual != null)
-                item.ItemVisual = visual.SlotItem(slotType, item);
+                item.ItemVisual = visual.EquipItemVisual(item);
         }
 
         private void HandleItemUnslotted(Item item)

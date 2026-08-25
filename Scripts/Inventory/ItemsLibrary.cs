@@ -42,7 +42,7 @@ namespace Kuantech.Inventory
             return data;
         }
 
-        public static ItemTemplate GetItemTemplate(string templateId)
+        public static ItemTemplate GetItemTemplatePrefab(string templateId)
         {
             var ctx = GetContext<ItemsLibrary>();
             if (ctx == null || ctx._templateMap == null) return null;

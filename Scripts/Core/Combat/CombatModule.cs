@@ -169,6 +169,7 @@ namespace Kuantech.Core
         public UnityAction<CombatModule> AlignedEvent;       // fires once when rotational alignment is achieved
         public UnityAction<CombatModule> AttackedEvent;      // Deals damage here
         public UnityAction<CombatModule> AttackCompletedEvent;
+        public UnityAction<Projectile> OnShotProjectileEvent; 
         public UnityAction<Actor> DamagedActorEvent;
 
 
@@ -502,7 +503,12 @@ namespace Kuantech.Core
                 projectile.KnockbackTime = pattern.KnockbackTime.GetValue(_statModule);
             }
             projectile.Range = GetAttackRange();
-            projectile.OnActorHitEvent = DamagedActorEvent;
+            // OnActorHitEvent now takes any IHittable (Projectile.cs widened it) but DamagedActorEvent is
+            // Actor-specific -- only forward the hit through when it actually was one.
+            projectile.OnActorHitEvent = hittable =>
+            {
+                if (hittable is Actor actor) DamagedActorEvent?.Invoke(actor);
+            };
 
             //Is it targeted?
             if (currentTarget != null && pattern.AttackType == AttackTypes.TargetProjectile)
@@ -515,6 +521,8 @@ namespace Kuantech.Core
             {
                 projectile.Shoot(Actor, null, GetAttackPosition(), GetAttackDirection(), null);
             }
+
+            OnShotProjectileEvent?.Invoke(projectile);
         }
         
         private void DamageActors(List<IHittable> hittables)
@@ -1039,7 +1047,7 @@ namespace Kuantech.Core
             }
 
             ActionCastData castData =  GetActionCastData();
-            if (castData.Direction.sqrMagnitude > 0.01f)
+            if (castData.Direction.sqrMagnitude > 0.01f && prioritizeCastDirection)
             {
                 return castData.Direction;
             }

@@ -16,6 +16,12 @@ namespace Kuantech.Core.FX
         public Effect Effect;
         public Effect EffectPrefab;
 
+        public void CopyFrom(EffectPlayer other)
+        {
+            EffectTag = other.EffectTag;
+            EffectId = other.EffectId;
+            EffectPrefab = other.EffectPrefab;
+        }
         public string GetEffectId()
         {
             if (EffectPrefab != null)
