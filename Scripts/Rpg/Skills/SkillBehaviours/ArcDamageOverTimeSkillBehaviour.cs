@@ -5,6 +5,17 @@ using UnityEngine;
 
 namespace Kuantech.Rpg.Skills
 {
+    /// <summary>
+    /// Implemented by an FX component sitting on a channeled cone's spawned Effect that wants to know how
+    /// many arcs are currently active (e.g. to clone itself into a ring around the live-tracked main
+    /// instance). A Core-owned contract rather than ArcDamageOverTimeSkillBehaviour referencing a concrete
+    /// HordeBonkers FX script type directly — Core must not depend on game-specific code.
+    /// </summary>
+    public interface IArcCountConfigurable
+    {
+        void Configure(int count);
+    }
+
     public class ArcDamageOverTimeSkillBehaviourConfig : SkillBehaviourConfigData
     {
         [Header("Arc")]
@@ -21,6 +32,10 @@ namespace Kuantech.Rpg.Skills
         [Header("Variable Keys")]
         public string RangeKey = "Range";
         public string DamageKey = "Damage";
+        [Tooltip("Skill variable holding how many cones to fire, evenly spread around a full circle starting " +
+                 "at the live direction (e.g. 2 -> the second cone sits 180 degrees behind the first). Leave " +
+                 "blank or at 1 for the original single-cone behaviour.")]
+        public string ArcCountKey;
 
         [Header("Status Effect (optional)")]
         [Tooltip("Applied to every actor a tick hits — e.g. Burn for a flamethrower, Freeze for a cryo " +
@@ -68,17 +83,62 @@ namespace Kuantech.Rpg.Skills
             DoTick(config);
         }
 
+        /// <summary>
+        /// Right after the main FX is spawned (base call), tells any IArcCountConfigurable on it how many
+        /// arcs are active this cast, so a multi-arc modifier's extra cones get their own visual ring instead
+        /// of only ever showing the original single cone.
+        /// </summary>
+        protected override void PlayBehaviourEffects()
+        {
+            base.PlayBehaviourEffects();
+            if (BehaviourData.ConfigData is not ArcDamageOverTimeSkillBehaviourConfig config) return;
+
+            int arcCount = GetArcCount(config);
+            foreach (var effect in PlayedEffects)
+            {
+                if (effect == null) continue;
+                IArcCountConfigurable configurable = effect.GetComponent<IArcCountConfigurable>();
+                configurable?.Configure(arcCount);
+            }
+        }
+
+        // ArcCountKey is optional (documented as "leave blank for single-cone") -- Skill.GetSkillVariable
+        // looks the key up in a Dictionary and throws on a null key, so this must short-circuit before ever
+        // calling GetSkillVariableValue with one, the same guard SkillThrowable.ReadSkillValue uses.
+        private int GetArcCount(ArcDamageOverTimeSkillBehaviourConfig config)
+        {
+            return string.IsNullOrEmpty(config.ArcCountKey)
+                ? 1
+                : Mathf.Max(1, Mathf.RoundToInt(ParentSkill.GetSkillVariableValue(config.ArcCountKey, 1f)));
+        }
+
         private void DoTick(ArcDamageOverTimeSkillBehaviourConfig config)
         {
             Actor caster = GetParentActor();
             if (caster == null) return;
 
             Vector3 origin = GetLiveStartPosition();
-            Vector3 direction = GetLiveDirection();
+            Vector3 baseDirection = GetLiveDirection();
             float range = ParentSkill.GetSkillVariableValue(config.RangeKey);
             float damage = ParentSkill.GetSkillVariableValue(config.DamageKey);
             if (range <= 0f || damage <= 0f) return;
 
+            int arcCount = GetArcCount(config);
+
+            for (int i = 0; i < arcCount; i++)
+            {
+                // i == 0 is always exactly baseDirection (the live-aimed cone) -- only additional cones rotate
+                // away from it, evenly around the full circle (count 2 -> 180 degrees apart, 3 -> 120, ...).
+                Vector3 direction = i == 0
+                    ? baseDirection
+                    : Quaternion.AngleAxis(i * (360f / arcCount), Vector3.up) * baseDirection;
+                DoTickForDirection(config, caster, origin, direction, range, damage);
+            }
+        }
+
+        private void DoTickForDirection(ArcDamageOverTimeSkillBehaviourConfig config, Actor caster,
+            Vector3 origin, Vector3 direction, float range, float damage)
+        {
             _hitBuffer.Clear();
             _hitBuffer.AddRange(CombatUtilities.GetHittablesInArc3D(origin, direction, range, config.ArcAngle, config.TargetLayerMask));
 

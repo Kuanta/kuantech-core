@@ -18,6 +18,10 @@ namespace Kuantech.Rpg.Skills
         [NonSerialized] public ActionCastData CurrentSkillCastData;
         [NonSerialized] public int CurrentSkilLBehaviourIndex;
         [NonSerialized] public SkillBehaviour CurrentSkillBehaviour;
+        // Per-actor-instance override, set by a modifier perk (e.g. a "throw at a random nearby enemy
+        // instead of the nearest" perk) — never write SkillDataAsset.TargetPriorityBehaviour directly, that
+        // field lives on the shared asset and a per-actor change would leak to every other actor using it.
+        [NonSerialized] public TargetPriorityBehaviour TargetPriorityBehaviourOverride;
         private bool _isCasting;
         private float _lastCastTime;
         
@@ -142,6 +146,11 @@ namespace Kuantech.Rpg.Skills
         public float GetRange()
         {
             return SkillDataAsset.SkillRange;
+        }
+
+        public TargetPriorityBehaviour GetTargetPriorityBehaviour()
+        {
+            return TargetPriorityBehaviourOverride != null ? TargetPriorityBehaviourOverride : SkillDataAsset.TargetPriorityBehaviour;
         }
 
         public float GetLastCastTime()
