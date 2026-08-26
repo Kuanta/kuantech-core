@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using FishNet.Object;
-using FishNet.Object.Synchronizing;
+#if NETWORKING_NGO
+using Unity.Netcode;
+#endif
 using Kuantech.Core.Utils;
 using Kuantech.Rpg;
 using UnityEngine;
@@ -149,7 +150,11 @@ namespace Kuantech.Core
 
         #region Jump
 
-        private readonly SyncVar<bool> _syncedJumping = new();
+#if NETWORKING_NGO
+        private readonly NetworkVariable<bool> _syncedJumping = new NetworkVariable<bool>();
+#else
+        private readonly OfflineNetworkVariable<bool> _syncedJumping = new OfflineNetworkVariable<bool>();
+#endif
 
         private void HandleJumpLogic()
         {
@@ -164,8 +169,8 @@ namespace Kuantech.Core
                 _isGrounded = grounded;
             }
 
-            // Server/owner detect landing and propagate via SyncVar
-            if (Jumping && Time.time - _jumpTime > 0.5f && _isGrounded && (IsOwner || IsServerInitialized))
+            // Server/owner detect landing and propagate via NetworkVariable
+            if (Jumping && Time.time - _jumpTime > 0.5f && _isGrounded && (IsOwner || IsServer))
                 Land();
         }
 
@@ -184,16 +189,18 @@ namespace Kuantech.Core
         {
             if (Jumping || !IsGrounded() || IsJumpLocked()) return;
             if (JumpHandler == null) { Debug.LogWarning("Jump handler is null"); return; }
-            if (IsServerInitialized) { ExecuteJump(); _syncedJumping.Value = true; }
-            else if (IsOwner)        { ExecuteJump(); ServerRpc_Jump(); }
+            if (IsServer) { ExecuteJump(); _syncedJumping.Value = true; }
+            else if (IsOwner)        { ExecuteJump(); ServerRpc_Jump_Rpc(); }
         }
 
-        [ServerRpc]
-        private void ServerRpc_Jump() { ExecuteJump(); _syncedJumping.Value = true; }
+#if NETWORKING_NGO
+        [Rpc(SendTo.Server)]
+#endif
+        private void ServerRpc_Jump_Rpc() { ExecuteJump(); _syncedJumping.Value = true; }
 
-        private void OnSyncedJumpingChanged(bool _, bool next, bool asServer)
+        private void OnSyncedJumpingChanged(bool _, bool next)
         {
-            if (asServer || IsOwner) return;
+            if (IsServer || IsOwner) return;
             // Observer: update state and fire events for animation — no physics
             if (next)
             {
@@ -219,7 +226,7 @@ namespace Kuantech.Core
         private void Land()
         {
             ExecuteLand();
-            if (IsServerInitialized) _syncedJumping.Value = false;
+            if (IsServer) _syncedJumping.Value = false;
         }
 
         private void ExecuteLand()
@@ -292,51 +299,68 @@ namespace Kuantech.Core
 
         #region Crouch
 
-        private readonly SyncVar<bool> _syncedCrouching = new();
+#if NETWORKING_NGO
+        private readonly NetworkVariable<bool> _syncedCrouching = new NetworkVariable<bool>();
+#else
+        private readonly OfflineNetworkVariable<bool> _syncedCrouching = new OfflineNetworkVariable<bool>();
+#endif
 
-        public override void OnStartNetwork()
+#if NETWORKING_NGO
+        public override void OnNetworkSpawn()
         {
-            base.OnStartNetwork();
-            _syncedCrouching.OnChange += OnSyncedCrouchingChanged;
-            _syncedJumping.OnChange += OnSyncedJumpingChanged;
+            base.OnNetworkSpawn();
+            _syncedCrouching.OnValueChanged += OnSyncedCrouchingChanged;
+            _syncedJumping.OnValueChanged += OnSyncedJumpingChanged;
         }
 
-        public override void OnStopNetwork()
+        public override void OnNetworkDespawn()
         {
-            base.OnStopNetwork();
-            _syncedCrouching.OnChange -= OnSyncedCrouchingChanged;
-            _syncedJumping.OnChange -= OnSyncedJumpingChanged;
+            base.OnNetworkDespawn();
+            _syncedCrouching.OnValueChanged -= OnSyncedCrouchingChanged;
+            _syncedJumping.OnValueChanged -= OnSyncedJumpingChanged;
         }
+#else
+        public override void Initialize()
+        {
+            base.Initialize();
+            _syncedCrouching.OnValueChanged += OnSyncedCrouchingChanged;
+            _syncedJumping.OnValueChanged += OnSyncedJumpingChanged;
+        }
+#endif
 
         public void Crouch()
         {
-            if (IsServerInitialized) { ExecuteCrouch(); _syncedCrouching.Value = true; }
-            else if (IsOwner)        { ExecuteCrouch(); ServerRpc_Crouch(); }
+            if (IsServer) { ExecuteCrouch(); _syncedCrouching.Value = true; }
+            else if (IsOwner)        { ExecuteCrouch(); ServerRpc_Crouch_Rpc(); }
         }
 
         public void Standup()
         {
-            if (IsServerInitialized) { ExecuteStandup(); _syncedCrouching.Value = false; }
-            else if (IsOwner)        { ExecuteStandup(); ServerRpc_Standup(); }
+            if (IsServer) { ExecuteStandup(); _syncedCrouching.Value = false; }
+            else if (IsOwner)        { ExecuteStandup(); ServerRpc_Standup_Rpc(); }
         }
 
-        [ServerRpc]
-        private void ServerRpc_Crouch()
+#if NETWORKING_NGO
+        [Rpc(SendTo.Server)]
+#endif
+        private void ServerRpc_Crouch_Rpc()
         {
             ExecuteCrouch();
             _syncedCrouching.Value = true;
         }
 
-        [ServerRpc]
-        private void ServerRpc_Standup()
+#if NETWORKING_NGO
+        [Rpc(SendTo.Server)]
+#endif
+        private void ServerRpc_Standup_Rpc()
         {
             ExecuteStandup();
             _syncedCrouching.Value = false;
         }
 
-        private void OnSyncedCrouchingChanged(bool _, bool next, bool asServer)
+        private void OnSyncedCrouchingChanged(bool _, bool next)
         {
-            if (asServer || IsOwner) return;
+            if (IsServer || IsOwner) return;
             if (next) ExecuteCrouch(); else ExecuteStandup();
         }
 
@@ -362,37 +386,37 @@ namespace Kuantech.Core
 
         public void Dash(Vector3 direction)
         {
-            if (IsServerInitialized)
+            if (IsServer)
             {
                 ExecuteDash(direction);
-                if (IsSpawned) ObserversRpc_Dash(direction);
+                if (IsSpawned) ObserversRpc_Dash_Rpc(direction);
             }
             else if (IsOwner)
             {
                 ExecuteDash(direction);
-                ServerRpc_Dash(direction);
+                ServerRpc_Dash_Rpc(direction);
             }
         }
 
-        [ServerRpc]
-        private void ServerRpc_Dash(Vector3 direction)
+#if NETWORKING_NGO
+        [Rpc(SendTo.Server)]
+#endif
+        private void ServerRpc_Dash_Rpc(Vector3 direction)
         {
             ExecuteDash(direction); // physics only — no OnDashEvent
-            ObserversRpc_Dash(direction);
+            ObserversRpc_Dash_Rpc(direction);
         }
 
-#if NETWORKING_FISHNET
-        // Fires on all observers (incl. listen-server host when not owner). Owner already fired locally.
-        [ObserversRpc(ExcludeOwner = true)]
-        private void ObserversRpc_Dash(Vector3 direction) { 
-            ExecuteDash(direction);
-        },
-#else
-        private void ObserversRpc_Dash(Vector3 direction)
+        // Fires on all observers except the owner (incl. listen-server host when not owner). Owner already
+        // fired locally.
+#if NETWORKING_NGO
+        [Rpc(SendTo.NotOwner)]
+#endif
+        private void ObserversRpc_Dash_Rpc(Vector3 direction)
         {
             ExecuteDash(direction);
         }
-#endif
+
         private Coroutine _dashRoutine;
         private void ExecuteDash(Vector3 direction)
         {
@@ -507,7 +531,7 @@ namespace Kuantech.Core
             
             //Reset jump
             Jumping = false;
-            if (IsServerInitialized) _syncedJumping.Value = false;
+            if (IsServer) _syncedJumping.Value = false;
             _lastGroundedTime = Time.time;
             _crouching = false;
             if (CrouchHandler != null)

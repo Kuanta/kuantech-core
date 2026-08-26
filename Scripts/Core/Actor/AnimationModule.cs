@@ -211,6 +211,12 @@ namespace Kuantech.Core
                 localMovement *= _movementModule.GetNormalizedSpeed();
 
             _targetMovementParameters = new Vector2(localMovement.x, localMovement.z);
+
+            Debug.Log($"[AnimationModule] {Actor.name} IsOwner={IsOwner} IsServer={IsServer} " +
+                      $"rawMovement={Actor.MotionVectorsHandler.GetMovementVector()} " +
+                      $"rawTarget={Actor.MotionVectorsHandler.GetTargetVector()} " +
+                      $"speed={(_movementModule != null ? _movementModule.GetNormalizedSpeed() : -1f)} " +
+                      $"localMovement={localMovement}");
         }
 
         private void SetMovementParameters()

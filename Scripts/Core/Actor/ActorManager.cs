@@ -63,6 +63,16 @@ namespace Kuantech.Core
             ctx._updatedThisFrame.Remove(actor);
         }
 
+        /// <summary>
+        /// All currently-registered actors. Used by KtNetworkManager to push full state to a client that
+        /// just connected, since NGO has no automatic per-object "new observer" hook the way FishNet did.
+        /// </summary>
+        public static IReadOnlyCollection<Actor> GetAllActors()
+        {
+            var ctx = GetContext<ActorManager>();
+            return ctx == null ? System.Array.Empty<Actor>() : ctx._actors;
+        }
+
         private void FixedUpdate()
         {
             if (!Initialized) return;

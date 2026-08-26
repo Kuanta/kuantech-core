@@ -1,5 +1,6 @@
-using FishNet.Object;
-using FishNet.Object.Synchronizing;
+#if NETWORKING_NGO
+using Unity.Netcode;
+#endif
 using UnityEngine;
 
 namespace Kuantech.Core
@@ -12,9 +13,15 @@ namespace Kuantech.Core
     /// </summary>
     public class MotionVectorSyncer : ActorModule
     {
-        private readonly SyncVar<Vector3> _syncedMovement = new();
-        private readonly SyncVar<Vector3> _syncedTargetVector = new();
-        private readonly SyncVar<float> _syncedSpeedMultiplier = new();
+#if NETWORKING_NGO
+        private readonly NetworkVariable<Vector3> _syncedMovement = new NetworkVariable<Vector3>();
+        private readonly NetworkVariable<Vector3> _syncedTargetVector = new NetworkVariable<Vector3>();
+        private readonly NetworkVariable<float> _syncedSpeedMultiplier = new NetworkVariable<float>();
+#else
+        private readonly OfflineNetworkVariable<Vector3> _syncedMovement = new OfflineNetworkVariable<Vector3>();
+        private readonly OfflineNetworkVariable<Vector3> _syncedTargetVector = new OfflineNetworkVariable<Vector3>();
+        private readonly OfflineNetworkVariable<float> _syncedSpeedMultiplier = new OfflineNetworkVariable<float>();
+#endif
 
         public override void Initialize()
         {
@@ -22,33 +29,40 @@ namespace Kuantech.Core
             Actor.MotionVectorsHandler.OnMovementVectorChanged += NotifyMovementVectorChanged;
             Actor.MotionVectorsHandler.OnTargetVectorChanged += NotifyTargetVectorChanged;
             Actor.MotionVectorsHandler.OnMovementMultiplierChanged += NotifySpeedMultiplierChanged;
+#if !NETWORKING_NGO
+            _syncedMovement.OnValueChanged += OnMovementChanged;
+            _syncedTargetVector.OnValueChanged += OnTargetVectorChanged;
+            _syncedSpeedMultiplier.OnValueChanged += OnSpeedMultiplierChanged;
+#endif
         }
 
-        public override void OnStartNetwork()
+#if NETWORKING_NGO
+        public override void OnNetworkSpawn()
         {
-            base.OnStartNetwork();
-            _syncedMovement.OnChange += OnMovementChanged;
-            _syncedTargetVector.OnChange += OnTargetVectorChanged;
-            _syncedSpeedMultiplier.OnChange += OnSpeedMultiplierChanged;
+            base.OnNetworkSpawn();
+            _syncedMovement.OnValueChanged += OnMovementChanged;
+            _syncedTargetVector.OnValueChanged += OnTargetVectorChanged;
+            _syncedSpeedMultiplier.OnValueChanged += OnSpeedMultiplierChanged;
         }
 
-        public override void OnStopNetwork()
+        public override void OnNetworkDespawn()
         {
-            base.OnStopNetwork();
-            _syncedMovement.OnChange -= OnMovementChanged;
-            _syncedTargetVector.OnChange -= OnTargetVectorChanged;
-            _syncedSpeedMultiplier.OnChange -= OnSpeedMultiplierChanged;
+            base.OnNetworkDespawn();
+            _syncedMovement.OnValueChanged -= OnMovementChanged;
+            _syncedTargetVector.OnValueChanged -= OnTargetVectorChanged;
+            _syncedSpeedMultiplier.OnValueChanged -= OnSpeedMultiplierChanged;
         }
+#endif
 
         /// <summary>
         /// Called by MotionVectorsHandler when MovementVector is set.
         /// </summary>
         public void NotifyMovementVectorChanged(Vector3 movement)
         {
-            if (IsServerInitialized)
+            if (IsServer)
                 _syncedMovement.Value = movement;
             else if (IsOwner)
-                ServerRpc_SetMovement(movement);
+                ServerRpc_SetMovement_Rpc(movement);
         }
 
         /// <summary>
@@ -56,56 +70,63 @@ namespace Kuantech.Core
         /// </summary>
         public void NotifyTargetVectorChanged(Vector3 targetVector)
         {
-            if (IsServerInitialized)
+            if (IsServer)
                 _syncedTargetVector.Value = targetVector;
             else if (IsOwner)
-                ServerRpc_SetTargetVector(targetVector);
+                ServerRpc_SetTargetVector_Rpc(targetVector);
         }
 
         public void NotifySpeedMultiplierChanged(float speedMultiplier)
         {
-            if (IsServerInitialized)
+            if (IsServer)
                 _syncedSpeedMultiplier.Value = speedMultiplier;
             else if (IsOwner)
-                ServerRpc_SetSpeedMultiplier(speedMultiplier);
+                ServerRpc_SetSpeedMultiplier_Rpc(speedMultiplier);
         }
 
-        [ServerRpc]
-        private void ServerRpc_SetMovement(Vector3 movement)
+#if NETWORKING_NGO
+        [Rpc(SendTo.Server)]
+#endif
+        private void ServerRpc_SetMovement_Rpc(Vector3 movement)
         {
             _syncedMovement.Value = movement;
             Actor.MotionVectorsHandler.MovementVector = movement;
         }
 
-        [ServerRpc]
-        private void ServerRpc_SetTargetVector(Vector3 targetVector)
+#if NETWORKING_NGO
+        [Rpc(SendTo.Server)]
+#endif
+        private void ServerRpc_SetTargetVector_Rpc(Vector3 targetVector)
         {
             _syncedTargetVector.Value = targetVector;
             Actor.MotionVectorsHandler.TargetVector = targetVector;
         }
 
-        [ServerRpc]
-        private void ServerRpc_SetSpeedMultiplier(float speedMultiplier)
+#if NETWORKING_NGO
+        [Rpc(SendTo.Server)]
+#endif
+        private void ServerRpc_SetSpeedMultiplier_Rpc(float speedMultiplier)
         {
             _syncedSpeedMultiplier.Value = speedMultiplier;
             Actor.MotionVectorsHandler.MovementMultiplier = speedMultiplier;
         }
 
-        private void OnMovementChanged(Vector3 _, Vector3 next, bool asServer)
+        private void OnMovementChanged(Vector3 _, Vector3 next)
         {
-            if (!asServer && !IsOwner)
+            Debug.Log($"[MotionVectorSyncer] {name} OnMovementChanged({next}) IsServer={IsServer} IsOwner={IsOwner}");
+            if (!IsServer && !IsOwner)
                 Actor.MotionVectorsHandler.MovementVector = next;
         }
 
-        private void OnTargetVectorChanged(Vector3 _, Vector3 next, bool asServer)
+        private void OnTargetVectorChanged(Vector3 _, Vector3 next)
         {
-            if (!asServer && !IsOwner)
+            if (!IsServer && !IsOwner)
                 Actor.MotionVectorsHandler.TargetVector = next;
         }
 
-        private void OnSpeedMultiplierChanged(float _, float next, bool asServer)
+        private void OnSpeedMultiplierChanged(float _, float next)
         {
-            if(!asServer && !IsOwner)
+            if (!IsServer && !IsOwner)
             {
                 Actor.MotionVectorsHandler.MovementMultiplier = next;
             }

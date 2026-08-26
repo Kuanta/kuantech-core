@@ -8,9 +8,8 @@ using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.Events;
 
-#if NETWORKING_FISHNET
-    using FishNet.Connection;
-    using FishNet.Object;
+#if NETWORKING_NGO
+    using Unity.Netcode;
 #endif
 
 namespace Kuantech.Core
@@ -23,7 +22,7 @@ namespace Kuantech.Core
         Despawned,
     }
 
-#if NETWORKING_FISHNET
+#if NETWORKING_NGO
 
     public class Actor : NetworkBehaviour, IHittable, ISpawnable
 #else
@@ -31,7 +30,7 @@ namespace Kuantech.Core
 #endif
     {
 
-        #if !NETWORKING_FISHNET
+        #if !NETWORKING_NGO
         public bool IsOwner => true;
         public bool IsServer => true;
         public bool IsClient => true;
@@ -376,7 +375,7 @@ namespace Kuantech.Core
         }
         
         /// <summary>
-        /// Despawns the actor. On server: tells all clients via FishNet. Standalone: returns to pool directly.
+        /// Despawns the actor. On server: tells all clients via NGO. Standalone: returns to pool directly.
         /// </summary>
         public virtual void Despawn(float delay=0f)
         {
@@ -404,19 +403,19 @@ namespace Kuantech.Core
 
         private void _Despawn()
         {
-#if NETWORKING_FISHNET
-            if (IsClientInitialized && !IsServerInitialized)
+#if NETWORKING_NGO
+            if (IsClient && !IsServer)
             {
-                // Pure client: FishNet will call OnStopClient when server despawns — do nothing here
+                // Pure client: NGO calls OnNetworkDespawn when the server despawns this object — nothing to do here.
                 _despawnCoroutine = null;
-                yield break;
+                return;
             }
-            if (IsServerInitialized && IsSpawned)
+            if (IsServer && IsSpawned)
             {
-                // Server: FishNet notifies all clients; cleanup happens in OnStopServer/OnStopClient
+                // Server: NetworkObject.Despawn() notifies all clients; cleanup happens in OnNetworkDespawn.
                 NetworkObject.Despawn();
                 _despawnCoroutine = null;
-                yield break;
+                return;
             }
 #endif
             ExecuteLocalDespawn();
@@ -433,7 +432,7 @@ namespace Kuantech.Core
             //PoolManager.PoolObject(gameObject);
         }
 
-        // Called from FishNet callbacks — cleanup only, no pooling (FishNet owns the lifecycle)
+        // Called from NGO callbacks — cleanup only, no pooling (NGO owns the lifecycle)
         private void ExecuteNetworkDespawn()
         {
             // Notify despawn before Cleanup wipes the event delegates (see ExecuteLocalDespawn).
@@ -442,18 +441,12 @@ namespace Kuantech.Core
             if (VisualHandler != null) VisualHandler.ClearCurrentVisual();
         }
 
-#if NETWORKING_FISHNET
-        public override void OnStopServer()
+#if NETWORKING_NGO
+        public override void OnNetworkDespawn()
         {
-            base.OnStopServer();
-            ExecuteNetworkDespawn();
-        }
-
-        public override void OnStopClient()
-        {
-            base.OnStopClient();
+            base.OnNetworkDespawn();
             if (_isLocalPlayer) OnStopLocalPlayer();
-            if (!IsServerInitialized) ExecuteNetworkDespawn();
+            ExecuteNetworkDespawn();
         }
 #endif
         #endregion
@@ -489,21 +482,19 @@ namespace Kuantech.Core
         /// <param name="state"></param>
         public void ChangeActorState(ActorState state)
         {
-#if NETWORKING_FISHNET
-            if (!IsServerInitialized) return;
-            ActorState oldState = CurrentActorState;
+#if NETWORKING_NGO
+            if (!IsServer) return;
             ExecuteChangeActorState(state);
-            if (IsSpawned) ObserversChangeActorState_Rpc(oldState, state);
+            if (IsSpawned) ObserversChangeActorState_Rpc(state);
 #else
             ExecuteChangeActorState(state);
 #endif
         }
 
-#if NETWORKING_FISHNET
-        [ObserversRpc]
-        private void ObserversChangeActorState_Rpc(ActorState oldState, ActorState state)
+#if NETWORKING_NGO
+        [Rpc(SendTo.NotServer)]
+        private void ObserversChangeActorState_Rpc(ActorState state)
         {
-            if (IsServerInitialized) return;
             ExecuteChangeActorState(state);
         }
 #endif
@@ -867,29 +858,45 @@ namespace Kuantech.Core
 
         #region Networking
 
-#if NETWORKING_FISHNET
+#if NETWORKING_NGO
         private bool _isLocalPlayer;
 
-        public override void OnStartNetwork()
+        public override void OnNetworkSpawn()
         {
-            base.OnStartNetwork();
+            base.OnNetworkSpawn();
             Initialize();
             Spawn();
-            TryHandleLocalPlayerChange(null);
+            if (IsOwner) OnStartLocalPlayer();
         }
 
-        public override void OnSpawnServer(NetworkConnection connection)
+        public override void OnGainedOwnership()
         {
-            base.OnSpawnServer(connection);
+            base.OnGainedOwnership();
+            if (!_isLocalPlayer) OnStartLocalPlayer();
+        }
+
+        public override void OnLostOwnership()
+        {
+            base.OnLostOwnership();
+            if (_isLocalPlayer) OnStopLocalPlayer();
+        }
+
+        /// <summary>
+        /// Pushes a full state snapshot to one client. NGO has no per-object "new observer" callback like
+        /// FishNet's OnSpawnServer — KtNetworkManager calls this for every live actor when a client connects.
+        /// </summary>
+        public void PushStateTo(ulong clientId)
+        {
+            if (!IsServer || !IsSpawned) return;
             ActorSerializableData state = GetActorState();
             int moduleCount = state.ModuleStates?.Count ?? 0;
-            Debug.Log($"[Actor] OnSpawnServer → {name} syncing {moduleCount} module(s) to client {connection.ClientId}. Modules: [{string.Join(", ", state.ModuleStates?.Keys ?? Enumerable.Empty<string>())}]");
+            Debug.Log($"[Actor] PushStateTo → {name} syncing {moduleCount} module(s) to client {clientId}. Modules: [{string.Join(", ", state.ModuleStates?.Keys ?? Enumerable.Empty<string>())}]");
             byte[] bytes = SaveUtility.SerializePoco(state);
-            TargetSyncActorState_Rpc(connection, bytes);
+            TargetSyncActorState_Rpc(bytes, RpcTarget.Single(clientId, RpcTargetUse.Temp));
         }
 
-        [TargetRpc]
-        private void TargetSyncActorState_Rpc(NetworkConnection conn, byte[] bytes)
+        [Rpc(SendTo.SpecifiedInParams)]
+        private void TargetSyncActorState_Rpc(byte[] bytes, RpcParams rpcParams = default)
         {
             ActorSerializableData state = SaveUtility.DeserializePoco<ActorSerializableData>(bytes);
             int moduleCount = state?.ModuleStates?.Count ?? 0;
@@ -902,40 +909,17 @@ namespace Kuantech.Core
         /// <summary>
         /// Server calls this after spawn to set the visual on all peers (including host).
         /// </summary>
-        [ObserversRpc(RunLocally = true)]
+        [Rpc(SendTo.Everyone)]
         public void SetVisualRpc(string visualId)
         {
             ApplyVisual(visualId);
         }
 
-        public override void OnStartClient()
+        private void OnStartLocalPlayer()
         {
-            base.OnStartClient();
-            TryHandleLocalPlayerChange(null);
+            _isLocalPlayer = true;
+            StartLocalPlayer();
         }
-
-        public override void OnOwnershipClient(NetworkConnection prevOwner)
-        {
-            base.OnOwnershipClient(prevOwner);
-            TryHandleLocalPlayerChange(prevOwner);
-        }
-
-        private void TryHandleLocalPlayerChange(NetworkConnection prevOwner)
-        {
-            if (!IsClientInitialized || NetworkManager == null) return;
-            if (!Owner.IsValid)
-            {
-                if (_isLocalPlayer) OnStopLocalPlayer();
-                return;
-            }
-            bool nowLocalPlayer = Owner == NetworkManager.ClientManager.Connection;
-            if (nowLocalPlayer == _isLocalPlayer) return;
-            _isLocalPlayer = nowLocalPlayer;
-            if (nowLocalPlayer) OnStartLocalPlayer();
-            else OnStopLocalPlayer();
-        }
-
-        private void OnStartLocalPlayer() => StartLocalPlayer();
 
         private void OnStopLocalPlayer()
         {
@@ -946,8 +930,8 @@ namespace Kuantech.Core
 
         public bool IsOnlyClient()
         {
-#if NETWORKING_FISHNET
-            return IsClientOnlyInitialized;
+#if NETWORKING_NGO
+            return IsClient && !IsServer;
 #else
             return false;
 #endif
@@ -955,7 +939,7 @@ namespace Kuantech.Core
 
         public bool IsLocalPlayer()
         {
-#if NETWORKING_FISHNET
+#if NETWORKING_NGO
             return IsOwner;
 #else
             return true;

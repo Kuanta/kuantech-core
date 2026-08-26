@@ -36,6 +36,9 @@ namespace Kuantech.Core
             Rigidbody.constraints |= RigidbodyConstraints.FreezeRotation;
             _movementModule = Actor.GetModule<MovementModule>();
             Actor.OnActorWarped += OnActorWarped;
+#if !NETWORKING_NGO
+            Rigidbody.isKinematic = !Actor.IsOwner;
+#endif
         }
     
         public override void ModuleFixedUpdate()
@@ -175,17 +178,22 @@ namespace Kuantech.Core
 
         #region NETWORKING
 
-        public override void OnStartNetwork()
+#if NETWORKING_NGO
+        public override void OnNetworkSpawn()
         {
-            base.OnStartNetwork();
-            bool isOwner = Actor.IsOwner;
-            Rigidbody.isKinematic = !isOwner;
+            base.OnNetworkSpawn();
+            Rigidbody.isKinematic = !Actor.IsOwner;
         }
 
-#if NETWORKING_FISHNET
-        public override void OnOwnershipClient(FishNet.Connection.NetworkConnection prevOwner)
+        public override void OnGainedOwnership()
         {
-            base.OnOwnershipClient(prevOwner);
+            base.OnGainedOwnership();
+            Rigidbody.isKinematic = !IsOwner;
+        }
+
+        public override void OnLostOwnership()
+        {
+            base.OnLostOwnership();
             Rigidbody.isKinematic = !IsOwner;
         }
 #endif

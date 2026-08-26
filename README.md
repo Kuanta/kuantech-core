@@ -166,29 +166,31 @@ void OnActorStateChanged(ActorState old, ActorState new)
 ActorModuleSerializableData CreateModuleState()    // calls InstantiateState() internally
 void LoadState(ActorModuleSerializableData data)
 
-// Networking (FishNet)
+// Networking (Unity Netcode for GameObjects — NGO)
 void OnLocalPlayerStart()             // this actor is now the local player
 void OnLocalPlayerStop()
 void OnNetworkSynced()                // late-join state sync received from server
 
 // Networking helpers (from NetworkBehaviour)
-bool IsServerInitialized
-bool IsClientInitialized
+bool IsServer
+bool IsClient
 bool IsOwner
 bool IsSpawned
-bool IsDedicatedServer   // IsServerInitialized && !IsClientInitialized
+bool IsDedicatedServer   // IsServer && !IsClient
 ```
 
 ---
 
-## Networking (FishNet)
+## Networking (Unity Netcode for GameObjects — NGO)
+
+Migrated from FishNet after Unity 6.5 broke FishNet's compile (see git history for the migration). `StatsModule`, `SpellBook`, `CombatModule`, `InventoryModule`, `StatusEffectHandler` and the two custom serializers (`RpgSerializer`, `ActionCastDataSerializer`) are still FishNet-shaped internally but sit behind a guard that's never defined, so they compile as inert offline stubs — not yet ported to NGO.
 
 ### Authority Model
 
 - **Server-authoritative:** All state changes execute on server first.
-- **ObserversRpc** — replicate public data (health bars, actor state, animations) to all clients.
-- **TargetRpc** — replicate private data (attributes, modifiers) to owner only.
-- **TargetSyncActorState_Rpc** — full state sync to new observer on connect.
+- **`[Rpc(SendTo.NotServer)]`** — replicate public data (health bars, actor state, animations) to all clients except the host.
+- **`[Rpc(SendTo.Owner)]`** — replicate private data (attributes, modifiers) to owner only.
+- **`[Rpc(SendTo.SpecifiedInParams)]`** — full state sync to one specific client (e.g. a new connection).
 
 ### Standard RPC Pattern
 
@@ -196,43 +198,45 @@ bool IsDedicatedServer   // IsServerInitialized && !IsClientInitialized
 // On a module method that changes state:
 public void DamageResource(DamageInfo info)
 {
-    if (!IsServerInitialized) return;        // server only
+    if (!IsServer) return;                   // server only
     ExecuteDamageResource(info);             // local execution
     if (IsSpawned)
         ObserverSyncResource_Rpc(asset, newValue);
 }
 
-[ObserversRpc]
+[Rpc(SendTo.NotServer)]
 private void ObserverSyncResource_Rpc(ResourceAsset asset, float value)
 {
-    if (IsServerInitialized) return;         // skip on listen server (already ran above)
+    // No self-skip guard needed — SendTo.NotServer never invokes this on the host in the first place.
     ExecuteSetResourceValue(asset, value);
 }
 ```
 
-### FishNet Callback Order (Scene Objects)
+### NGO Callback Order (Scene Objects)
 
 | Callback | Fires on | When |
 | --- | --- | --- |
-| `OnStartNetwork()` | All peers | Network initializes — fires for late-joining clients too |
-| `OnStartServer()` | Server | Server-side init |
-| `OnStartClient()` | Client | Client-side init |
-| `OnSpawnServer(conn)` | Server | Every time a NEW observer is added |
-| `OnStopServer()` | Server | Object removed from server |
-| `OnStopClient()` | Client | Object removed from client |
+| `OnNetworkSpawn()` | All peers | Network initializes — fires for late-joining clients too |
+| `OnGainedOwnership()` | The new owner | Ownership assigned (including initial spawn, if owned) |
+| `OnLostOwnership()` | The previous owner | Ownership taken away |
+| `OnNetworkDespawn()` | All peers that had it spawned | Object removed from the network |
 
-`Actor.OnStartNetwork` → `Initialize()` + `Spawn()`
+`Actor.OnNetworkSpawn` → `Initialize()` + `Spawn()` (+ `StartLocalPlayer()` if owner)
 
 ### Late-Join State Sync
 
+NGO has no per-object "new observer" callback like FishNet's `OnSpawnServer` — a newly-connected client doesn't automatically get pushed anything beyond `NetworkVariable` values. `KtNetworkManager` fills the gap:
+
 ```
 New client connects
-  → OnSpawnServer(connection) fires on server for each visible actor
-  → GetActorState() snapshots all modules in ModulesById
-  → SaveUtility.SerializePoco() → JSON bytes (TypeNameHandling.Auto handles polymorphism)
-  → TargetSyncActorState_Rpc(connection, bytes)
-  → Client: DeserializePoco → LoadActorState → OnStateLoaded fires
-  → foreach module: OnNetworkSynced()
+  → NetworkManager.OnClientConnectedCallback fires (server only)
+  → KtNetworkManager iterates ActorManager.GetAllActors()
+  → each Actor.PushStateTo(clientId)
+      → GetActorState() snapshots all modules in ModulesById
+      → SaveUtility.SerializePoco() → JSON bytes (TypeNameHandling.Auto handles polymorphism)
+      → TargetSyncActorState_Rpc(bytes, RpcTarget.Single(clientId, RpcTargetUse.Temp))
+      → Client: DeserializePoco → LoadActorState → OnStateLoaded fires
+      → foreach module: OnNetworkSynced()
 ```
 
 **Requirement:** Module must have `ModuleId` set in inspector to be included in state sync.
@@ -242,9 +246,8 @@ New client connects
 ```
 Server: Despawn(delay)
   → NetworkObject.Despawn()
-  → OnStopServer → ExecuteNetworkDespawn() [Cleanup + state change, no pooling]
-  → OnStopClient on clients → ExecuteNetworkDespawn()
-  → FishNet manages object lifecycle (destroy/deactivate)
+  → OnNetworkDespawn() on every peer → ExecuteNetworkDespawn() [Cleanup + state change, no pooling]
+  → NGO manages object lifecycle (destroy/deactivate)
 
 Standalone (no NetworkObject):
   → _DespawnRoutine → ExecuteLocalDespawn() → PoolManager.PoolObject()
@@ -344,15 +347,15 @@ Dictionary<string, float> ResourceValues; // key = ResourceAsset.Id
 ### HealthcareModule
 
 - Links resources (health, mana, etc.) to `Fillbar` UI components
-- `DamageResource(DamageInfo)` — server-authoritative, syncs value via `ObserversRpc`
+- `DamageResource(DamageInfo)` — server-authoritative, syncs value via `[Rpc(SendTo.NotServer)]`
 - `HealResource(ResourceAsset, float)` — server-authoritative
-- Hit animations synced via `ObserversRpc` (server decides threshold)
+- Hit animations — **not yet networked**: `ObserversHitAnim_Rpc` runs local-only until `RpgSerializer` is ported (see below), since `HitInfo` isn't network-serializable yet
 - `OnNetworkSynced()` — refreshes all bars after late-join sync
 - Subscribes to `Actor.OnStateLoaded` — refreshes bars after any `LoadActorState` call
 
 ### RpgSerializer
 
-FishNet custom serializer for RPG types. Handles:
+**Not yet migrated to NGO.** Still a FishNet custom serializer for RPG types, compiled out (inert) since the project no longer defines the FishNet guard symbol. Needs porting to `INetworkSerializable` on each type before `StatsModule`, `SpellBook`, `CombatModule`, and `HealthcareModule`'s hit-animation RPC can go back over the network. Currently handles:
 
 - `ResourceAsset` ↔ `string Id` (via `RpgManager.GetResourceAssetById`)
 - `DamageType` ↔ `string Id`
@@ -397,7 +400,7 @@ PoolManager.GetContext<PoolManager>().PoolObject(gameObject);
 // Typically done via Level/Spawner systems
 ```
 
-**Rule:** Never call `PoolManager.PoolObject` from FishNet `OnStopServer`/`OnStopClient`. FishNet owns networked object lifecycle. Only use PoolManager in standalone (non-networked) despawn path.
+**Rule:** Never call `PoolManager.PoolObject` from NGO's `OnNetworkDespawn`. NGO owns networked object lifecycle. Only use PoolManager in standalone (non-networked) despawn path.
 
 ---
 
@@ -438,7 +441,7 @@ GameStateManager.GetContext<GameStateManager>()
 
 | Package | License | Commercial Use |
 | --- | --- | --- |
-| FishNet | Asset Store (free) | ✅ |
+| Netcode for GameObjects | Unity Package | ✅ (Unity license) |
 | Newtonsoft.Json | MIT | ✅ |
 | UniTask | MIT | ✅ |
 | Cinemachine | Unity Package | ✅ (Unity license) |

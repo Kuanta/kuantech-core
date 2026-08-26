@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using FishNet.Object;
+#if NETWORKING_NGO
+using Unity.Netcode;
+#endif
 using Kuantech.Core.FX;
 using Kuantech.Core.Utils;
 using Kuantech.Rpg;
@@ -94,11 +96,13 @@ namespace Kuantech.Core.Combat
             }
         }
 
-        public override void OnStartClient()
+#if NETWORKING_NGO
+        public override void OnNetworkSpawn()
         {
-            base.OnStartClient();
+            base.OnNetworkSpawn();
             SetupResourceBars(); //Re-update?
         }
+#endif
 
         public override void ResetModule()
         {
@@ -127,7 +131,7 @@ namespace Kuantech.Core.Combat
 
         private void OnHit(HitInfo hitInfo)
         {
-            if (IsServerInitialized)
+            if (IsServer)
             {
                 if (IsInvulnerable()) return;
                 // A hit landing on an already-dead body (e.g. a follow-up basic attack yeeting a corpse) must
@@ -189,7 +193,7 @@ namespace Kuantech.Core.Combat
         /// <param name="damageInfo"></param>
         public void DamageResource(DamageInfo damageInfo)
         {
-            if (!Actor.IsAlive() || !IsServerInitialized) return;
+            if (!Actor.IsAlive() || !IsServer) return;
             ResourceAsset resourceAsset = GetAffectedResource(damageInfo);
             // A damage type with no affected resource carries no damage at all — it is a pure signal
             // travelling with the hit (yeet power, stagger, ...) that reactions read via
@@ -210,7 +214,7 @@ namespace Kuantech.Core.Combat
             {
                 OnHealthChanged?.Invoke(this);
 
-                if (IsClientInitialized && ShowDamageText)
+                if (IsClient && ShowDamageText)
                 {
                     CombatManager.ShowDamageText(Actor, reducedDamage); 
                 }
@@ -227,7 +231,7 @@ namespace Kuantech.Core.Combat
         /// <param name="resource"></param>
         public void RefreshResource(ResourceAsset resource)
         {
-            if (!IsServerInitialized) return;
+            if (!IsServer) return;
             ExecuteRefreshResource(resource);
             if (IsSpawned) ObserversRefreshResource_Rpc(resource.Id);
         }
@@ -246,7 +250,7 @@ namespace Kuantech.Core.Combat
         /// <param name="amount"></param>
         public void RemoveResource(ResourceAsset resourceAsset, float amount)
         {
-            if (!IsServerInitialized || !Actor.IsAlive()) return;
+            if (!IsServer || !Actor.IsAlive()) return;
             ExecuteRemoveResource(resourceAsset, amount);
             if (IsSpawned) ObserverSyncResource_Rpc(resourceAsset.Id, GetCurrentResource(resourceAsset));
         }
@@ -266,7 +270,7 @@ namespace Kuantech.Core.Combat
         /// <param name="heal"></param>
         public void ReceiveResource(ResourceAsset resourceAsset, float amount, bool isFriendly)
         {
-            if (!IsServerInitialized || !Actor.IsAlive()) return;
+            if (!IsServer || !Actor.IsAlive()) return;
             ExecuteReceiveResource(resourceAsset, amount);
             if (IsSpawned) ObserverSyncResource_Rpc(resourceAsset.Id, GetCurrentResource(resourceAsset));
         }
@@ -292,7 +296,7 @@ namespace Kuantech.Core.Combat
 
         public void ReceiveHeal(float healAmount)
         {
-            if (!IsServerInitialized || !Actor.IsAlive()) return;
+            if (!IsServer || !Actor.IsAlive()) return;
             ExecuteReceiveHeal(healAmount);
             if (IsSpawned) ObserverSyncResource_Rpc(HealthResourceAsset.Id, GetCurrentHealth());
         }
@@ -305,7 +309,7 @@ namespace Kuantech.Core.Combat
 
         public void Refresh()
         {
-            if (!IsServerInitialized) return;
+            if (!IsServer) return;
             ExecuteRefresh();
             if (IsSpawned) ObserversRefresh_Rpc();
         }
@@ -340,7 +344,7 @@ namespace Kuantech.Core.Combat
         /// <param name="value"></param>
         public void SetResourceValue(ResourceAsset resourceAsset, float value)
         {
-            if (!IsServerInitialized) return;
+            if (!IsServer) return;
             ExecuteSetResourceValue(resourceAsset, value);
             if (IsSpawned) ObserverSyncResource_Rpc(resourceAsset.Id, value);
         }
@@ -495,37 +499,40 @@ namespace Kuantech.Core.Combat
         #region Networking
 
         // Refresh to max — deterministic, safe to re-run on clients
-        [ObserversRpc]
+#if NETWORKING_NGO
+        [Rpc(SendTo.NotServer)]
+#endif
         private void ObserversRefreshResource_Rpc(string resourceId)
         {
-            if (IsServerInitialized) return;
             ResourceAsset resourceAsset = RpgManager.GetResourceAssetById(resourceId);
             if (resourceAsset == null) return;
             ExecuteRefreshResource(resourceAsset);
         }
 
-        [ObserversRpc]
+#if NETWORKING_NGO
+        [Rpc(SendTo.NotServer)]
+#endif
         private void ObserversRefresh_Rpc()
         {
-            if (IsServerInitialized) return;
             ExecuteRefresh();
         }
 
         // Authoritative value sync — server sends final value, clients just apply it
-        [ObserversRpc]
+#if NETWORKING_NGO
+        [Rpc(SendTo.NotServer)]
+#endif
         private void ObserverSyncResource_Rpc(string resourceId, float resourceValue)
         {
-            if (IsServerInitialized) return;
             ResourceAsset resourceAsset = RpgManager.GetResourceAssetById(resourceId);
             if(resourceAsset == null) return;
             ExecuteSetResourceValue(resourceAsset, resourceValue);
         }
 
-        // Hit animation — server decides when threshold is crossed, all clients play it
-        [ObserversRpc]
+        // Hit animation — server decides when threshold is crossed, all clients play it.
+        // NOT yet a real [Rpc]: HitInfo isn't network-serializable until RpgSerializer is ported to
+        // INetworkSerializable (Phase B). Until then this only runs locally on whichever peer calls it.
         private void ObserversHitAnim_Rpc(HitInfo hitInfo)
         {
-            if (IsServerInitialized) return;
             if (_animationModule != null) _animationModule.OnDamageReceive(hitInfo);
         }
 

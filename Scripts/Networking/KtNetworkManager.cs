@@ -1,57 +1,52 @@
-﻿
-
 using Cysharp.Threading.Tasks;
 using Kuantech.Core;
 using UnityEngine;
 
 namespace Kuantech.Networking
 {
-#if NETWORKING_FISHNET
-    using Cysharp.Threading.Tasks;
-    using FishNet.Managing;
-    using FishNet.Transporting;
-    using Kuantech.Core;
-    using UnityEngine;
+#if NETWORKING_NGO
+    using Unity.Netcode;
 #endif
     public class KtNetworkManager : SubManager
     {
-        #if NETWORKING_FISHNET
-        [SerializeField] private NetworkManager NetworkManager;
-        #endif
-        
         public override async UniTask Initialize(GameManager gameManager)
         {
-#if NETWORKING_FISHNET
             await base.Initialize(gameManager);
-            if (NetworkManager == null)
-            {
-                NetworkManager = gameManager.GetComponent<NetworkManager>();
-            }
-            
-            //Server Manager
-            
-            //ClientManager
-            NetworkManager.ClientManager.OnClientConnectionState += ClientManager_OnClientConnectionState;
+#if NETWORKING_NGO
+            if (NetworkManager.Singleton != null)
+                NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
 #endif
         }
 
-#if NETWORKING_FISHNET
-        #region Client Events
-        private void ClientManager_OnClientConnectionState(ClientConnectionStateArgs args)
+        public override void Cleanup()
         {
-            
+            base.Cleanup();
+#if NETWORKING_NGO
+            if (NetworkManager.Singleton != null)
+                NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
+#endif
         }
-        #endregion
+
+#if NETWORKING_NGO
+        /// <summary>
+        /// NGO has no per-object "new observer" callback like FishNet's OnSpawnServer — every already-spawned
+        /// actor stays silent by default when a new client connects. Push each one's full state explicitly,
+        /// server-side only.
+        /// </summary>
+        private void OnClientConnected(ulong clientId)
+        {
+            if (!NetworkManager.Singleton.IsServer) return;
+            foreach (Actor actor in ActorManager.GetAllActors())
+                actor.PushStateTo(clientId);
+        }
 #endif
 
         #region Checks
 
         public static bool HasAuthority()
         {
-#if NETWORKING_FISHNET
-            var ctx = GetContext<KtNetworkManager>();
-            if (ctx == null) return false;
-            return ctx.NetworkManager.IsServerStarted;
+#if NETWORKING_NGO
+            return NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer;
 #else
             return true; //Single player
 #endif
@@ -63,10 +58,9 @@ namespace Kuantech.Networking
         /// </summary>
         public static bool IsNetworked()
         {
-#if NETWORKING_FISHNET
-            var ctx = GetContext<KtNetworkManager>();
-            if (ctx == null) return false;
-            return ctx.NetworkManager.IsServerStarted || ctx.NetworkManager.IsClientStarted;
+#if NETWORKING_NGO
+            return NetworkManager.Singleton != null &&
+                   (NetworkManager.Singleton.IsServer || NetworkManager.Singleton.IsClient);
 #else
             return false;
 #endif
@@ -78,10 +72,8 @@ namespace Kuantech.Networking
         /// </summary>
         public static bool IsClient()
         {
-#if NETWORKING_FISHNET
-            var ctx = GetContext<KtNetworkManager>();
-            if (ctx == null) return false;
-            return ctx.NetworkManager.IsClientStarted;
+#if NETWORKING_NGO
+            return NetworkManager.Singleton != null && NetworkManager.Singleton.IsClient;
 #else
             return true; // single-player: local player is always "the client"
 #endif

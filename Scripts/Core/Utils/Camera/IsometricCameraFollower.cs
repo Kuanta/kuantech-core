@@ -5,6 +5,11 @@ namespace Kuantech.Core.Utils
 {
     public class IsometricCameraFollower : MonoBehaviour
     {
+        // Scene has exactly one active follow camera per client — modules that need to bind
+        // an anchor (e.g. PlayerInputHandler.OnLocalPlayerStart) look it up here rather than
+        // needing a scene reference wired into a player prefab.
+        public static IsometricCameraFollower Instance { get; private set; }
+
         public KtCamera Camera;
         public Transform Anchor;
         public Vector3 AnchorOffset = Vector3.zero;
@@ -32,7 +37,13 @@ namespace Kuantech.Core.Utils
 
         private void Awake()
         {
+            Instance = this;
             _currentYaw = _targetYaw;
+        }
+
+        private void OnDestroy()
+        {
+            if (Instance == this) Instance = null;
         }
 
         private void LateUpdate()
