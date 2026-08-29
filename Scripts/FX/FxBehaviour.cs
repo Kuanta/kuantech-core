@@ -36,5 +36,15 @@ namespace Kuantech.Core.FX
         {
             
         }
+
+        public virtual void OnAttachedToActor(Actor actor)
+        {
+            
+        }
+
+        public virtual void OnDetachedFromActor()
+        {
+            
+        }
     }
 }

@@ -7,21 +7,11 @@ using UnityEngine;
 namespace Kuantech.Core.FX
 {
     
-    [Serializable]
-    public struct TaggedEffect
-    {
-        [KTTag("EffectTags")] public int Tag;
-        public Effect Effect;
-    }
-
     public class EffectsLibrary : SubManager
     {
         public AudioLibrary AudioLibrary;
         [Tooltip("Effects that will be created dynamically")]
         public List<Effect> EffectsPrefabs;
-        [Tooltip("Effects accessible by integer tag (used by EffectPlayer.EffectTag)")]
-        public List<TaggedEffect> TaggedEffects;
-        public Dictionary<int, Effect> _effectsByTag;
         public Dictionary<string, Effect> _effectsById;
 
         [Tooltip("Parent for existing effects")]
@@ -43,11 +33,6 @@ namespace Kuantech.Core.FX
             {
                _effectsById[entry.EffectId] = entry;
             }
-
-            _effectsByTag = new Dictionary<int, Effect>();
-            if (TaggedEffects != null)
-                foreach (var entry in TaggedEffects)
-                    if (entry.Effect != null) _effectsByTag[entry.Tag] = entry.Effect;
 
             //Existing effects
             if(ExistingEffectsParent == null)
@@ -89,28 +74,6 @@ namespace Kuantech.Core.FX
             return effect;
         }
 
-        public static Effect PlayEffectByTag(int effectTag, EffectPlaySettings settings)
-        {
-            EffectsLibrary context = GetContext<EffectsLibrary>();
-            if(context == null) return null;
-            Effect effect = null;
-            if (settings.Caster != null)
-            {
-                EffectsModule em = settings.Caster.GetModule<EffectsModule>();
-                if (em != null)
-                {
-                    EffectPlayerComponent effectPlayerComponent = em.GetEffectPlayerByTag(effectTag);
-                    if(effectPlayerComponent != null)
-                    {
-                        return effectPlayerComponent.PlayEffect(settings);
-                    }
-                }
-            }
-            effect = context.GetEffectByTag(effectTag);
-            if(effect == null) return null;
-            effect.Play(settings);
-            return effect;
-        }
         public static Effect PlayEffectPrefab(Effect effectPrefab, EffectPlaySettings settings)
         {
             EffectsLibrary context = GetContext<EffectsLibrary>();
@@ -154,64 +117,6 @@ namespace Kuantech.Core.FX
             effect.SpawnedFromPool = true;
             return effect;
         }
-        public Effect GetEffectByTag(int effectTag)
-        {
-            if (_effectsByTag == null || !_effectsByTag.ContainsKey(effectTag)) return null;
-            GameObject obj = EffectsPool.GetObject(_effectsByTag[effectTag].gameObject);
-            Effect effect =  obj.GetComponent<Effect>();
-            if (effect == null) return null;
-            effect.SpawnedFromPool = true;
-            return effect;
-        }
-        
-        public Effect PlayEffect(int effectType, Transform parent, float effectCooldown)
-        {
-            Effect effect = GetEffectByTag(effectType);
-            if (effect == null) return null;
-            effect.Play(parent, Vector3.zero, Quaternion.identity, effectCooldown);
-            return effect;
-        }
-        
-        public Effect PlayEffect(int effectType, Transform parent, Vector3 localPosition, Quaternion localRotation, float effectCooldown)
-        {
-            Effect effect = GetEffectByTag(effectType);
-            if (effect == null) return null;
-            effect.Play(parent, localPosition, localRotation, effectCooldown);
-            return effect;
-        }
-
-        public Effect PlayEffect(int effectType, Vector3 localPosition, Quaternion localRotation, float effectCooldown = -1)
-        {
-            Effect effect = GetEffectByTag(effectType);
-            if (effect == null) return null;
-            effect.Play(localPosition, localRotation, effectCooldown);
-            return effect;
-        }
-        
-        public Effect PlayTimedEffect(int effectType, Transform parent, float duration = -1, float effectCooldown = -1)
-        {
-            Effect effect = GetEffectByTag(effectType);
-            if (effect == null) return null;
-            effect.PlayTimed(duration >= 0 ? duration : effect.Duration, parent, Vector3.zero, Quaternion.identity, effectCooldown);
-            return effect;
-        }
-        
-        public Effect PlayTimedEffect(int effectType, Transform parent, Vector3 localPosition, Quaternion localRotation, float duration = -1, float effectCooldown = -1)
-        {
-            Effect effect = GetEffectByTag(effectType);
-            if (effect == null) return null;
-            effect.PlayTimed(duration >= 0 ? duration : effect.Duration, parent, localPosition, localRotation, effectCooldown);
-            return effect;
-        }
-
-        public Effect PlayTimedEffect(int effectType, Vector3 position, Quaternion rotation, float duration = -1, float effectCooldown = -1)
-        {
-            Effect effect = GetEffectByTag(effectType);
-            if (effect == null) return null;
-            effect.PlayTimed(duration >= 0 ? duration : effect.Duration, position, rotation, effectCooldown);
-            return effect;
-        }
-
         public static bool CanPlayEffect(string effectId, float effectCooldown = -1)
         {
             EffectsLibrary context = EffectsLibrary.GetContext<EffectsLibrary>();

@@ -37,7 +37,7 @@ namespace Kuantech.Core.FX
         [NonSerialized] public ShaderEffect PlayedShaderEffect;
         
         [Header("Effect Behaviours")]
-        [SerializeField] private List<FxBehaviour> _effectBehaviours = new List<FxBehaviour>();
+        [SerializeField] protected List<FxBehaviour> EffectBehaviours = new List<FxBehaviour>();
 
         //If an effect is under the protection of effects library, it can't be destroyed with timed calls
         [NonSerialized] public bool SpawnedFromPool = false; //This is used to determine if the effect was spawned from the pool or not. 
@@ -100,7 +100,7 @@ namespace Kuantech.Core.FX
         public void Update()
         {
             if (!IsPlaying()) return;
-            foreach (var behaviour in _effectBehaviours)
+            foreach (var behaviour in EffectBehaviours)
             {
                 behaviour.UpdateFx();
             }
@@ -288,9 +288,9 @@ namespace Kuantech.Core.FX
                 }
             }
 
-            if (!_effectBehaviours.IsNullOrEmpty())
+            if (!EffectBehaviours.IsNullOrEmpty())
             {
-                foreach (var behaviour in _effectBehaviours)
+                foreach (var behaviour in EffectBehaviours)
                 {
                     behaviour.StartFxBehaviour(this);
                 }
@@ -316,9 +316,9 @@ namespace Kuantech.Core.FX
             }
             
             // Behaviours
-            if (!_effectBehaviours.IsNullOrEmpty())
+            if (!EffectBehaviours.IsNullOrEmpty())
             {
-                foreach (var behaviour in _effectBehaviours)
+                foreach (var behaviour in EffectBehaviours)
                 {
                     behaviour.OnFxEnded();
                 }

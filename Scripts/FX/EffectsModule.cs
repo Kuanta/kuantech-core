@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kuantech.Core.Combat;
@@ -17,7 +17,7 @@ namespace Kuantech.Core.FX
         public struct Param
         {
             public enum ParamType { Float, Int, Color }
-            
+
             public string Property;          // Shader property name (e.g., "_Cutoff", "_TintColor")
             public ParamType Type;
             public float FloatValue;         // Used when Type == Float
@@ -32,7 +32,9 @@ namespace Kuantech.Core.FX
         #endregion
 
         [Header("Pre-defined Effects")]
-        public Effect DamageReceiveEffect;
+        [Tooltip("Looked up via PlayExistingEffectById -- swap the Effect on the actor's own asset or a " +
+                 "prefab/PlayerHitFx sitting on the equipped ActorVisual without this field caring which.")]
+        public string DamageReceiveEffectId;
         public Effect HealEffect;
         public Effect JumpEffect;
         public Effect DodgeEffect;
@@ -40,13 +42,18 @@ namespace Kuantech.Core.FX
         public EffectPlayer AttackEffect;
         private Effect _impact;
 
-        [Header("Existing Effects")]
+        // Static registry: effects/players authored directly on the actor's own prefab (not the swappable
+        // ActorVisual) -- registered once at Initialize and never re-scanned.
+        [Header("Static Effects (on the actor itself, not the visual)")]
         public List<Effect> ExistingEffects;
-        private Dictionary<string, Effect> _effectsById;
-        
-        [Header("Existing Effect Players")]
         public List<EffectPlayerComponent> ExistingEffectPlayerComponents;
-        private Dictionary<int, EffectPlayerComponent> _effectPlayerComponentsByTag;
+
+        // Unified registries: populated by RegisterEffect/RegisterEffectPlayer, regardless of whether the
+        // source is a static actor-level effect or one that came in with the currently-equipped ActorVisual
+        // (see OnActorVisualSet/OnActorVisualRemoved below). Callers (PlayExistingEffectById/ByTag) don't
+        // need to know or care which.
+        private Dictionary<string, Effect> _effectsById;
+        private Dictionary<string, EffectPlayerComponent> _effectPlayersById;
 
         [Header("Shader Effects")]
         public List<ShaderEffect> ExistingShaderEffects;
@@ -61,31 +68,22 @@ namespace Kuantech.Core.FX
         {
             base.Initialize();
             Actor.OnHitEvent += OnReceiveDamage;
+
             _effectsById = new Dictionary<string, Effect>();
-            foreach(var effect in ExistingEffects)
-            {
-                string effectId = effect.EffectId;
-                if (!effectId.IsNullOrEmpty())
-                {
-                    _effectsById.Add(effectId, effect);
-                }
-                else
-                {
-                    Debug.LogWarning(
-                        "Effect in effects module has no EffectId or EffectPrefab set. This effect will not be playable." +
-                        " Please set an EffectId or EffectPrefab to the effect player.");
-                }
-            }
-            
-            SetEffectPlayers();
-            
+            _effectPlayersById = new Dictionary<string, EffectPlayerComponent>();
+
+            foreach (var effect in ExistingEffects)
+                RegisterEffect(effect);
+            foreach (var player in ExistingEffectPlayerComponents)
+                RegisterEffectPlayer(player);
+
             //Set shader effects
             foreach (var shaderEffect in ExistingShaderEffects)
             {
                 if(shaderEffect == null) continue;
                 AddShaderEffect(shaderEffect);
             }
-            
+
             _combatModule = Actor.GetModule<CombatModule>();
             _healthcareModule = Actor.GetModule<HealthcareModule>();
             if(_combatModule != null)
@@ -100,15 +98,6 @@ namespace Kuantech.Core.FX
             }
         }
 
-        private void SetEffectPlayers()
-        {
-            _effectPlayerComponentsByTag = new Dictionary<int, EffectPlayerComponent>();
-            ExistingEffectPlayerComponents = Actor.transform.GetComponentsInChildren<EffectPlayerComponent>().ToList();
-            foreach (var effectPlayerComponent in ExistingEffectPlayerComponents)
-            {
-                _effectPlayerComponentsByTag[effectPlayerComponent.EffectPlayer.EffectTag] = effectPlayerComponent;
-            }
-        }
         public override void OnModulesInitialized()
         {
             base.OnModulesInitialized();
@@ -116,7 +105,11 @@ namespace Kuantech.Core.FX
             ActorVisual actorVisual = Actor.VisualHandler.GetActorVisual();
             if (actorVisual != null)
             {
-                UpdateShaderEffectRenderers(actorVisual.gameObject);
+                // ActorVisualHandler.Initialize() already fired OnActorVisualSet once for a visual baked
+                // directly into the prefab (CurrentActorVisual set before this module ever subscribed) --
+                // that firing was missed, so run the same registration/detection logic on it now rather than
+                // only doing the narrower "detect renderers" half this used to do.
+                OnActorVisualSet(actorVisual);
             }
             else
             {
@@ -124,6 +117,7 @@ namespace Kuantech.Core.FX
             }
 
             Actor.VisualHandler.OnActorVisualSet += OnActorVisualSet;
+            Actor.VisualHandler.OnActorVisualRemoved += OnActorVisualRemoved;
         }
 
         #region Event Handlers
@@ -144,7 +138,7 @@ namespace Kuantech.Core.FX
             _attackEffect = null;
         }
         #endregion
-        
+
         public override void OnActorStateChanged(ActorState oldState, ActorState newState)
         {
             base.OnActorStateChanged(oldState, newState);
@@ -153,20 +147,44 @@ namespace Kuantech.Core.FX
                 OnDeath();
             }
         }
-        
+
+        /// <summary>
+        /// The visual is fully parented under the actor by the time this fires (ActorVisualHandler.
+        /// SetActorVisual attaches first, then invokes) -- unlike relying on the visual's own children's
+        /// OnEnable, which fires too early (while still parented under the pool, pre-attach) to find this
+        /// module via GetComponentInParent. Registers every Effect/EffectPlayerComponent the visual brought
+        /// with it, so a swapped-in weapon/character model's FX (e.g. a muzzle flash, PlayerHitFx with its
+        /// own Animator wiring) become findable the same way as anything statically on the actor.
+        /// </summary>
         public void OnActorVisualSet(ActorVisual actorVisual)
         {
-            SetEffectPlayers();
-            UpdateShaderEffectRenderers(actorVisual.gameObject);
-            ActorVisualEffectsModule actorVisualEffectsModule = actorVisual.GetModule<ActorVisualEffectsModule>();
-            if (actorVisualEffectsModule == null) return;
-            foreach (var effectComp in actorVisualEffectsModule.EffectPlayersComponents)
-            {
-                _effectPlayerComponentsByTag[effectComp.EffectPlayer.EffectTag] = effectComp;
-            }
             ApplyDefaults(actorVisual);
+
+            foreach (var effect in actorVisual.GetComponentsInChildren<Effect>(true))
+                RegisterEffect(effect);
+            foreach (var player in actorVisual.GetComponentsInChildren<EffectPlayerComponent>(true))
+                RegisterEffectPlayer(player);
+            // A ShaderEffect sitting on the visual (e.g. a hit-flash effect) has to be in ShaderEffects
+            // BEFORE UpdateShaderEffectRenderers runs below, or its own MaterialInstances never gets
+            // populated -- DetectAllRenderers is only ever called from that sweep, never on registration.
+            foreach (var shaderEffect in actorVisual.GetComponentsInChildren<ShaderEffect>(true))
+                AddShaderEffect(shaderEffect);
+
+            UpdateShaderEffectRenderers(actorVisual.gameObject);
         }
 
+        /// <summary>Mirrors OnActorVisualSet -- unregisters everything the outgoing visual registered, before
+        /// it's pooled. Fired by ActorVisualHandler.ClearCurrentVisual before the visual is actually pooled,
+        /// so its hierarchy is still intact to scan.</summary>
+        public void OnActorVisualRemoved(ActorVisual actorVisual)
+        {
+            foreach (var effect in actorVisual.GetComponentsInChildren<Effect>(true))
+                UnregisterEffect(effect);
+            foreach (var player in actorVisual.GetComponentsInChildren<EffectPlayerComponent>(true))
+                UnregisterEffectPlayer(player);
+            foreach (var shaderEffect in actorVisual.GetComponentsInChildren<ShaderEffect>(true))
+                RemoveShaderEffect(shaderEffect);
+        }
 
         private EffectPlaySettings GetEffectPlaySettings()
         {
@@ -180,10 +198,7 @@ namespace Kuantech.Core.FX
         }
         private void OnReceiveDamage(HitInfo hitInfo)
         {
-            if (DamageReceiveEffect != null)
-            {
-                DamageReceiveEffect.Play(GetEffectPlaySettings());
-            }
+            PlayExistingEffectById(DamageReceiveEffectId, GetEffectPlaySettings());
         }
 
         private void OnHealReceived(float heal)
@@ -207,7 +222,7 @@ namespace Kuantech.Core.FX
                 JumpEffect.Play();
             }
         }
-        
+
         private void OnDeath()
         {
             if (DeathEffect != null)
@@ -220,14 +235,13 @@ namespace Kuantech.Core.FX
         {
             base.ResetModule();
             if(DeathEffect != null) DeathEffect.Stop();
-            if(DamageReceiveEffect != null) DamageReceiveEffect.Stop();
-            
+            GetExistingEffect(DamageReceiveEffectId)?.Stop();
+
             //Clear active effects
             ClearActiveEffects();
-            
+
             //Clear Shader parameters
-            
-            
+
         }
 
         public override void Cleanup()
@@ -236,6 +250,46 @@ namespace Kuantech.Core.FX
             ClearActiveEffects();
         }
 
+        #region Registration
+        // Keyed by whatever id/tag the component carries. Later registrations for the same key win (e.g. an
+        // equipped visual's PlayerHitFx overriding a static fallback with the same id) -- the same
+        // last-write-wins behaviour the old ActorVisual rebuild already had.
+        public void RegisterEffect(Effect effect)
+        {
+            if (effect == null || string.IsNullOrEmpty(effect.EffectId)) return;
+            _effectsById[effect.EffectId] = effect;
+        }
+
+        public void UnregisterEffect(Effect effect)
+        {
+            if (effect == null || string.IsNullOrEmpty(effect.EffectId)) return;
+            if (_effectsById.TryGetValue(effect.EffectId, out var current) && current == effect)
+                _effectsById.Remove(effect.EffectId);
+        }
+
+        public void RegisterEffectPlayer(EffectPlayerComponent player)
+        {
+            if (player == null || player.EffectPlayer == null) return;
+
+            // GetEffectId(), not the raw EffectId field -- it falls back to EffectPrefab.EffectId / Effect.EffectId
+            // when EffectId itself is left blank (e.g. a player that just references an Effect/EffectPrefab
+            // directly instead of duplicating its id as a string).
+            string id = player.EffectPlayer.GetEffectId();
+            if (!string.IsNullOrEmpty(id))
+                _effectPlayersById[id] = player;
+        }
+
+        public void UnregisterEffectPlayer(EffectPlayerComponent player)
+        {
+            if (player == null || player.EffectPlayer == null) return;
+
+            string id = player.EffectPlayer.GetEffectId();
+            if (!string.IsNullOrEmpty(id) &&
+                _effectPlayersById.TryGetValue(id, out var currentById) && currentById == player)
+                _effectPlayersById.Remove(id);
+        }
+        #endregion
+
         #region Fx Players
         public Effect GetExistingEffect(string effectId)
         {
@@ -243,21 +297,32 @@ namespace Kuantech.Core.FX
             if (_effectsById.ContainsKey(effectId)) return _effectsById[effectId];
             return null;
         }
-        
-        /// <summary>
-        /// Returns an effect player by tag
-        /// </summary>
-        /// <param name="tag"></param>
-        /// <returns></returns>
-        public EffectPlayerComponent GetEffectPlayerByTag(int tag)
+
+        public EffectPlayerComponent GetEffectPlayerById(string id)
         {
-            if(_effectPlayerComponentsByTag.TryGetValue(tag, out var value)) return value;
+            if(_effectPlayersById.TryGetValue(id, out var value)) return value;
             return null;
         }
 
-        public void PlayEffectByTag(int tag, EffectPlaySettings settings)
+        /// <summary>
+        /// The generalized entry point for "play whatever's registered under this id" -- doesn't care whether
+        /// it's a standalone Effect (its own Animator/VFX/SFX bundle, e.g. PlayerHitFx) or an EffectPlayerComponent
+        /// socket (e.g. a weapon's muzzle point). Effect takes priority since it's the more specific instance;
+        /// EffectPlayerComponent is the generic fallback.
+        /// </summary>
+        public Effect PlayExistingEffectById(string id, EffectPlaySettings? settings = null)
         {
-            GetEffectPlayerByTag(tag)?.PlayEffect(settings);
+            if (string.IsNullOrEmpty(id)) return null;
+            EffectPlaySettings resolvedSettings = settings ?? EffectPlaySettings.GetDefaultSettings();
+
+            Effect existing = GetExistingEffect(id);
+            if (existing != null)
+            {
+                existing.Play(resolvedSettings);
+                return existing;
+            }
+
+            return GetEffectPlayerById(id)?.PlayEffect(resolvedSettings);
         }
         #endregion
 
@@ -268,7 +333,7 @@ namespace Kuantech.Core.FX
             if (_shaderEffectsById.ContainsKey(effectId)) return _shaderEffectsById[effectId];
             return null;
         }
-        
+
         public void PlayShaderEffect(string shaderEffect)
         {
             ShaderEffect effect = GetShaderEffect(shaderEffect);
@@ -278,28 +343,35 @@ namespace Kuantech.Core.FX
 
         public void StopShaderEffect()
         {
-                
+
         }
-        
+
         /// <summary>
         /// Adds a shader effect
         /// </summary>
         /// <param name="shaderEffect"></param>
         public void AddShaderEffect(ShaderEffect shaderEffect)
         {
+            if (shaderEffect == null) return;
+            // Indexer, not .Add -- OnModulesInitialized can register the same pre-existing visual's shader
+            // effects once itself and then again via the OnActorVisualSet subscription in edge cases; .Add
+            // would throw on the second registration of the same id.
             if (!string.IsNullOrEmpty(shaderEffect.EffectId))
             {
-                _shaderEffectsById.Add(shaderEffect.EffectId, shaderEffect);
+                _shaderEffectsById[shaderEffect.EffectId] = shaderEffect;
             }
-            shaderEffect.transform.SetParent(transform);
+            // No reparenting -- a ShaderEffect can live on the actor itself (ExistingShaderEffects) or on the
+            // swappable ActorVisual (e.g. FlashSpriteShaderEffect), and needs to stay wherever it already is
+            // for the latter case (pooled/destroyed with the visual, not orphaned onto the actor root).
             ShaderEffects.Add(shaderEffect);
         }
 
         public void RemoveShaderEffect(ShaderEffect shaderEffect)
         {
-            if (!string.IsNullOrEmpty(shaderEffect.EffectId) && _effectsById.ContainsKey(shaderEffect.EffectId))
+            if (shaderEffect == null) return;
+            if (!string.IsNullOrEmpty(shaderEffect.EffectId) && _shaderEffectsById.ContainsKey(shaderEffect.EffectId))
             {
-                _effectsById.Remove(shaderEffect.EffectId);
+                _shaderEffectsById.Remove(shaderEffect.EffectId);
             }
 
             ShaderEffects.Remove(shaderEffect);
@@ -316,7 +388,7 @@ namespace Kuantech.Core.FX
         #endregion
 
         #region Runtime Attached Effects
-        
+
         /// <summary>
         /// Plays an effect on the actor
         /// </summary>
@@ -324,14 +396,14 @@ namespace Kuantech.Core.FX
         public Effect PlayEffectOnActor(EffectPlayer effectPlayer, Vector3 localPos, Quaternion effectRotation)
         {
             EffectPlaySettings playSettings = EffectPlaySettings.GetPlayAtObjectSettings(Actor.transform, localPos, effectRotation);
-            
+
             //Does the effect is already on the actor?
             Effect existingEffect = GetExistingEffect(effectPlayer.GetEffectId());
             if (existingEffect != null)
             {
                 return PlayExistignEffect(existingEffect.EffectId);
             }
-            
+
             //Effect isnt in the existing effects
             Effect effect = effectPlayer.PlayEffect(playSettings);
             if (effect == null) return null;
@@ -351,7 +423,7 @@ namespace Kuantech.Core.FX
             existingEffect.Play();
             return existingEffect;
         }
-        
+
         /// <summary>
         /// Adds an active effect
         /// </summary>
@@ -362,7 +434,7 @@ namespace Kuantech.Core.FX
             effect.OwnerEffectModule = this;
             ActiveEffects.Add(effect);
         }
-        
+
         /// <summary>
         /// Stops an active effect
         /// </summary>
@@ -392,14 +464,14 @@ namespace Kuantech.Core.FX
             }
         }
         #endregion
-        
+
         /// <summary>
         /// Applies default values to all configured properties.
         /// </summary>
         public void ApplyDefaults(ActorVisual visual)
         {
             var renderers = visual != null ? visual.GetComponentsInChildren<Renderer>() : GetComponentsInChildren<Renderer>();
-            
+
 
             if (Defaults == null || Defaults.Count == 0 || renderers.IsNullOrEmpty())
                 return;
@@ -413,7 +485,7 @@ namespace Kuantech.Core.FX
 
             }
         }
-        
+
         private void ApplyParamsToMaterial(Material mat)
         {
             if (mat == null) return;
@@ -424,7 +496,7 @@ namespace Kuantech.Core.FX
                 if (!mat.HasProperty(p.Property)) continue;
                 switch (p.Type)
                 {
-                        
+
                     case Param.ParamType.Float:
                         mat.SetFloat(p.Property, p.FloatValue);
                         break;
