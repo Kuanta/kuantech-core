@@ -10,15 +10,12 @@ namespace Kuantech.Core.FX
     [Serializable]
     public class EffectPlayer
     {
-        [KTTag("EffectTags")]
-        public int EffectTag;
         public string EffectId;
         public Effect Effect;
         public Effect EffectPrefab;
 
         public void CopyFrom(EffectPlayer other)
         {
-            EffectTag = other.EffectTag;
             EffectId = other.EffectId;
             EffectPrefab = other.EffectPrefab;
         }
@@ -73,7 +70,10 @@ namespace Kuantech.Core.FX
             {
                 return EffectsLibrary.PlayEffect(EffectId, settings);
             }
-            return EffectsLibrary.PlayEffectByTag(EffectTag, settings);
+            // Nothing configured (Effect/EffectPrefab/EffectId all unset) -- no-op rather than falling back
+            // to a tag, which used to default to 0 and silently collide with whatever happened to be
+            // registered under tag 0 elsewhere. See EffectsModule.AttackEffect for the bug this caused.
+            return null;
         }
         public Effect PlayEffectAtPosition(Vector3 position, Quaternion rotation)
         {

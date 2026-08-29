@@ -37,10 +37,9 @@ namespace Kuantech.Inventory
     [Serializable]
     public class Item
     {
-        public Inventory ParentInventory;
         public ItemData Data;
-
         private ItemStateData _stateData;
+        [NonSerialized] public Inventory ParentInventory;
         [NonSerialized] public ItemVisual ItemVisual;
 
         private Dictionary<Type, ItemComponent> _components;
