@@ -1,4 +1,5 @@
 ﻿using System;
+using Kuantech.Core;
 using Kuantech.Core.Camera;
 using Kuantech.Core.Controller;
 using UnityEngine;
@@ -7,6 +8,10 @@ namespace Kuantech.Core.Utils
 {
     public class OrbitCameraFollower : MonoBehaviour
     {
+        // Scene has exactly one active follow camera per client — PlayerInputHandler.OnLocalPlayerStart
+        // looks it up here to bind Anchor, the same way IsometricCameraFollower does.
+        public static OrbitCameraFollower Instance { get; private set; }
+
         public KtCamera Camera;
         public Transform Anchor;
         public Vector3 AnchorOffset = Vector3.zero;
@@ -51,6 +56,17 @@ namespace Kuantech.Core.Utils
         private float _radiusVel;
         private Vector3 _positionVel;
 
+        private void Awake()
+        {
+            Instance = this;
+            if (Camera == null) Camera = CameraManager.GetKtCamera();
+        }
+
+        private void OnDestroy()
+        {
+            if (Instance == this) Instance = null;
+        }
+
         private void LateUpdate()
         {
             if (Anchor == null) return;
@@ -87,12 +103,18 @@ namespace Kuantech.Core.Utils
             Transform traansformToUpdate = GetTransformToUpdatePosition();
             Vector3 targetPosition = GetTargetPosition();
 
-            traansformToUpdate.rotation = GetTargetRotation();
-            
-            // Position
+            // Position first, using and writing the SAME transform (traansformToUpdate — usually Camera.transform,
+            // a different GameObject than this script's own). Reading from `transform.position` here while
+            // writing to `traansformToUpdate.position` meant SmoothDamp's "current" input never matched where
+            // the camera actually was — its velocity state kept chasing a moving target from a frozen start
+            // every frame, which is what produced the wobble.
             Vector3 pos = Vector3.SmoothDamp(
-                transform.position, targetPosition, ref _positionVel, PositionSmoothTime, MaxFollowSpeed, Time.deltaTime);
+                traansformToUpdate.position, targetPosition, ref _positionVel, PositionSmoothTime, MaxFollowSpeed, dt);
             traansformToUpdate.position = pos;
+
+            // Rotation from the position the camera actually ends up at this frame, not the still-lagging-behind
+            // ideal target position — keeps the look-at consistent with where the camera visually is.
+            traansformToUpdate.rotation = GetTargetRotation();
         }
 
         private Transform GetTransformToUpdatePosition()
@@ -149,8 +171,8 @@ namespace Kuantech.Core.Utils
             Transform anchor = GetAnchor();
             if (!anchor) return transform.rotation;
 
-            Vector3 targetPos = GetTargetPosition();
-            Vector3 toAnchor  = (anchor.position + GetAnchorOffset()) - targetPos;
+            Vector3 currentPos = GetTransformToUpdatePosition().position;
+            Vector3 toAnchor  = (anchor.position + GetAnchorOffset()) - currentPos;
             if (toAnchor.sqrMagnitude < 1e-8f) return transform.rotation;
 
             return Quaternion.LookRotation(toAnchor.normalized, Vector3.up);

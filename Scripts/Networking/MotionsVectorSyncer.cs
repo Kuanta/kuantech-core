@@ -113,7 +113,6 @@ namespace Kuantech.Core
 
         private void OnMovementChanged(Vector3 _, Vector3 next)
         {
-            Debug.Log($"[MotionVectorSyncer] {name} OnMovementChanged({next}) IsServer={IsServer} IsOwner={IsOwner}");
             if (!IsServer && !IsOwner)
                 Actor.MotionVectorsHandler.MovementVector = next;
         }

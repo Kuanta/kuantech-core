@@ -1,6 +1,8 @@
 ﻿using System;
 using DG.Tweening;
 using UnityEngine;
+using Kuantech.Core.Camera;
+using Kuantech.Core.Controller;
 using Kuantech.Utils;
 using Unity.VisualScripting;
 using UnityEngine.Events;
@@ -33,48 +35,51 @@ namespace Kuantech.Core
     
     public class ThirdPersonCameraFollower : MonoBehaviour
     {
+        // Scene has exactly one active follow camera per client — PlayerInputHandler.OnLocalPlayerStart
+        // looks it up here to bind Target, the same way IsometricCameraFollower does for Anchor.
+        public static ThirdPersonCameraFollower Instance { get; private set; }
+
+        [Tooltip("The camera this follower drives. Falls back to CameraManager.GetKtCamera() if left unset, " +
+                 "so movement-relative input and cursor aiming (which resolve the camera the same way) always " +
+                 "agree on which camera is actually being moved.")]
+        [SerializeField] private KtCamera Camera;
+
         public CameraParameters CameraParameters;
         public bool Following = true;
         [SerializeField] public Transform Target;
         [SerializeField] public float FollowDistance = 5.0f;
-        [SerializeField] public float horizontalSensitivity = 1.0f;
-        [SerializeField] public float verticalSensitivity = 1.0f;
         [SerializeField] public float Speed = 10.0f;
 
-        [Header("Lerp Factors")] 
+        [Header("Lerp Factors")]
         [SerializeField] private float PositionLerpFactor = 1f;
         [SerializeField] private float RotationSlerpFactor = 1f;
         [SerializeField] private float ZoomLerpFactor = 10f;
-        
+
         protected Vector3 TargetPosition;
         protected Quaternion TargetRotation;
 
-        private float _yawAccel = 0f;
-        private float _pitchAccel = 0f;
-        private float _yawSpeed = 0f;
-        private float _pitchSpeed = 0f;
-
-        private float _deltaX = 0f;
-        private float _deltaY = 0f;
-
         private float _zoomFactorTarget = 1f;
         private float _currentZoomFactor = 1f;
-        
+
         //Transitioning
         private bool Transitioning => _positionTransition || _rotationTransition;
         private bool _positionTransition;
         private bool _rotationTransition;
         private UnityAction _transitionComplete;
-        
-        public void SetDeltaX(float deltaX)
+
+        protected virtual void Awake()
         {
-            _deltaX = deltaX;
+            Instance = this;
+            if (Camera == null) Camera = CameraManager.GetKtCamera();
         }
 
-        public void SetDeltaY(float deltaY)
+        protected virtual void OnDestroy()
         {
-            _deltaY = deltaY;
+            if (Instance == this) Instance = null;
         }
+
+        private Transform GetTransformToUpdate() => Camera ? Camera.transform : transform;
+
         protected virtual void Update()
         {
             if (Transitioning)
@@ -84,30 +89,24 @@ namespace Kuantech.Core
             float zoomedFollow = FollowDistance * _currentZoomFactor;
 
             _currentZoomFactor = Mathf.Lerp(_currentZoomFactor, _zoomFactorTarget, Time.deltaTime * ZoomLerpFactor);
-            
-            _yawAccel = horizontalSensitivity * _deltaX;
-            _pitchAccel = verticalSensitivity * _deltaY;
-            
-            float yawSpeed = _yawSpeed + Time.deltaTime * _yawAccel;
-            float pitchSpeed = _pitchSpeed + Time.deltaTime * _pitchAccel;
 
-            CameraParameters.Spherical.Yaw -= _yawSpeed * Time.deltaTime + _yawAccel * Time.deltaTime * Time.deltaTime * 0.5f;  
-            CameraParameters.Spherical.Pitch += _pitchSpeed * Time.deltaTime + _pitchAccel * Time.deltaTime * Time.deltaTime * 0.5f;
-
-            _yawSpeed = yawSpeed;
-            _pitchSpeed = pitchSpeed;
-
-            CameraParameters.Spherical.Pitch = Mathf.Clamp(CameraParameters.Spherical.Pitch, -Mathf.Deg2Rad*179.9f, Mathf.Deg2Rad*179.9f);
+            // Yaw/Pitch come from PlayerController — it's already the single source of truth for look
+            // direction (mouse input feeds it via AddYaw/AddPitch, ControllerManager.Tick smooths it every
+            // frame with SmoothDampAngle). The camera just reads the result instead of keeping its own copy.
+            PlayerController controller = ControllerManager.GetCurrentController();
+            if (controller != null)
+            {
+                CameraParameters.Spherical.Yaw = controller.Yaw * Mathf.Deg2Rad;
+                CameraParameters.Spherical.Pitch = controller.Pitch * Mathf.Deg2Rad;
+            }
             CameraParameters.Spherical.Radius = zoomedFollow;
 
-            _yawSpeed *= 0.9f;
-            _pitchSpeed *= 0.9f;
-            
             Vector3 desiredPos = GetDesiredPosition();
             Quaternion desiredRotation = GetDesiredRotation(Target, desiredPos);
-            
-            transform.position = Vector3.Lerp(transform.position, desiredPos, PositionLerpFactor);
-            transform.rotation = Quaternion.Slerp(transform.rotation, desiredRotation, RotationSlerpFactor);
+
+            Transform t = GetTransformToUpdate();
+            t.position = Vector3.Lerp(t.position, desiredPos, PositionLerpFactor);
+            t.rotation = Quaternion.Slerp(t.rotation, desiredRotation, RotationSlerpFactor);
         }
         
         /// <summary>
@@ -244,8 +243,9 @@ namespace Kuantech.Core
             TargetPosition = GetDesiredPositionForObject(target);
             TargetRotation = GetDesiredRotation(target, TargetPosition);
 
-            transform.position = TargetPosition;
-            transform.rotation = TargetRotation;
+            Transform t = GetTransformToUpdate();
+            t.position = TargetPosition;
+            t.rotation = TargetRotation;
             if(setTarget) Target = target;
         }
 

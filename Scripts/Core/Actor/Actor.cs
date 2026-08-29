@@ -188,7 +188,13 @@ namespace Kuantech.Core
                 Initialize();
             }
             ResetActor();
-            ChangeActorState(ActorState.Spawned);
+            // Not ChangeActorState(): that gates on IsServer and RPC-broadcasts to observers, which races
+            // OnNetworkSpawn on peers that haven't fully replicated this object yet (the RPC can arrive
+            // before the object exists there) — leaving CurrentActorState stuck at Inactive forever on that
+            // peer, which makes ActorManager.IsUpdatable() permanently skip it (no ModuleUpdate ever again).
+            // Every peer's own Spawn() activating its own local instance directly is safe: this only decides
+            // "is my local copy ready to tick," not shared game truth, so it needs no server authority.
+            ExecuteChangeActorState(ActorState.Spawned);
 
             // Start the clock here, not at zero. The delta handed to modules is measured from this stamp, so
             // a fresh (or recycled) actor would otherwise take its whole lifetime as its first frame's delta.
