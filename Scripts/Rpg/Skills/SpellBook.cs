@@ -83,6 +83,13 @@ namespace Kuantech.Rpg.Skills
         // Fired on the local client when a skill cast ends (for rotation hold, UI, etc.)
         public UnityAction<Skill> SkillCastEndedEvent;
 
+        // Fired whenever a skill becomes/stops being active in _skills -- covers a plain AddSkill/RemoveSkill
+        // AND a rank-up/rank-down swap within a family (RefreshBestSkillForFamily removes the old rank's Skill
+        // and adds a new one). Lets UI (e.g. GameHUD's cooldown indicators) and other listeners react without
+        // the code that grants/revokes skills (perks) needing to know about them directly.
+        public event Action<Skill> OnSkillAdded;
+        public event Action<Skill> OnSkillRemoved;
+
         private Dictionary<string, Skill> _skills = new Dictionary<string, Skill>();
         private List<Skill> _activeSkills = new();
         private Dictionary<string, List<SkillDataAsset>> _skillSourcesByFamily = new();
@@ -173,13 +180,21 @@ namespace Kuantech.Rpg.Skills
             if (HasSkill(skillAsset)) return null;
             Skill skill = new Skill();
             skill.Initialize(this, skillAsset);
-            _skills[skillAsset.SkillId] = skill;
+            _skills[skillAsset.GetId()] = skill;
+            OnSkillAdded?.Invoke(skill);
             return skill;
         }
 
         public void RemoveSkill(SkillDataAsset skillAsset)
         {
-            if (skillAsset != null) _skills.Remove(skillAsset.SkillId);
+            if (skillAsset != null) RemoveSkillById(skillAsset.GetId());
+        }
+
+        private void RemoveSkillById(string id)
+        {
+            if (!_skills.TryGetValue(id, out Skill skill)) return;
+            _skills.Remove(id);
+            OnSkillRemoved?.Invoke(skill);
         }
 
         public bool HasSkill(SkillDataAsset skilLDataAsset)
@@ -212,8 +227,10 @@ namespace Kuantech.Rpg.Skills
             RefreshBestSkillForFamily(family);
         }
 
-        private static string GetFamilyId(SkillDataAsset asset)
-            => !string.IsNullOrEmpty(asset.BaseSkillId) ? asset.BaseSkillId : asset.SkillId;
+        // Public so listeners keying UI off a skill (e.g. GameHUD's cooldown indicators) can group rank
+        // variants under the same key that RefreshBestSkillForFamily uses internally.
+        public static string GetFamilyId(SkillDataAsset asset)
+            => !string.IsNullOrEmpty(asset.BaseSkillId) ? asset.BaseSkillId : asset.GetId();
 
         private void RefreshBestSkillForFamily(string family)
         {
@@ -232,7 +249,7 @@ namespace Kuantech.Rpg.Skills
 
             if (sources.Count == 0)
             {
-                if (currentActiveId != null) _skills.Remove(currentActiveId);
+                if (currentActiveId != null) RemoveSkillById(currentActiveId);
                 return;
             }
 
@@ -241,10 +258,14 @@ namespace Kuantech.Rpg.Skills
             foreach (var s in sources)
                 if (best == null || s.Rank > best.Rank) best = s;
 
-            if (currentActiveId == best.SkillId) return; // already correct
+            if (currentActiveId == best.GetId()) return; // already correct
 
-            if (currentActiveId != null) _skills.Remove(currentActiveId);
-            if (!_skills.ContainsKey(best.SkillId)) AddSkill(best);
+            // Add the replacement BEFORE removing the old rank -- a rank-up listener keying UI off the family
+            // id (e.g. GameHUD's cooldown indicators) sees OnSkillAdded first and can rebind its existing
+            // entry, then sees OnSkillRemoved for the old skill and can tell (by identity) that its slot was
+            // already claimed by the replacement rather than tearing it back down.
+            if (!_skills.ContainsKey(best.GetId())) AddSkill(best);
+            if (currentActiveId != null) RemoveSkillById(currentActiveId);
         }
         #endregion
 
@@ -362,7 +383,7 @@ namespace Kuantech.Rpg.Skills
 
         public Skill GetSkillByDataAsset(SkillDataAsset skillDataAsset)
         {
-            return GetSkillById(skillDataAsset.SkillId);
+            return GetSkillById(skillDataAsset.GetId());
         }
 
         public Skill GetSkillById(string skillId)

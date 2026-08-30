@@ -1,11 +1,12 @@
 ﻿using System.Collections.Generic;
 using Kuantech.Core;
+using Microsoft.Unity.VisualStudio.Editor;
 using UnityEngine;
 
 namespace Kuantech.Rpg.Skills
 {
     [CreateAssetMenu(fileName = "SkillDataAsset", menuName = "Kuantech/Rpg/Skills/SkillDataAsset")]
-    public class SkillDataAsset : ScriptableObject
+    public class SkillDataAsset : MetadataAsset
     {
         public enum SkillCastTypes
         {
@@ -15,9 +16,7 @@ namespace Kuantech.Rpg.Skills
             Directional,
             ToPoint,
         }
-        
-        [Header("Skill Info")]
-        public string SkillId;
+
         [Tooltip("Leave empty for skills that have no rank variants.")]
         public string BaseSkillId;
         public int Rank = 0;

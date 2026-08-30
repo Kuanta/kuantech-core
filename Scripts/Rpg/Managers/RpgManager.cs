@@ -37,8 +37,8 @@ namespace Kuantech.Rpg.Managers
             {
                 foreach (var dataAsset in SkillDataAssets)
                 {
-                    if(dataAsset.SkillId.IsNullOrEmpty()) continue;
-                    _skillsById[dataAsset.SkillId] = dataAsset;
+                    if(dataAsset.GetId().IsNullOrEmpty()) continue;
+                    _skillsById[dataAsset.GetId()] = dataAsset;
                 }                
             }
 
