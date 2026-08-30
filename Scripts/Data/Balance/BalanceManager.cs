@@ -8,8 +8,6 @@ namespace Kuantech.Core.Database
 {
     public class BalanceManager : SubManager
     {
-        [SerializeField] private KtDatabaseManager DatabaseManager;
-        
         [SerializeReference]
         public List<Balancer> Balancers = new List<Balancer>();
 
