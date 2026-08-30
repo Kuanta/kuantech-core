@@ -26,6 +26,14 @@ namespace Kuantech.Inventory
         public event Action<Item> OnItemRemoved;
         public event Action<Item, EquipmentSlotType> OnItemEquipped;
         public event Action<Item> OnItemUnequipped;
+        // Fires when an Inventory is bound/unbound wholesale (SetInventory/DetachInventory) -- distinct from
+        // OnItemEquipped, which only fires for items that go through Inventory.EquipItem. Items already
+        // sitting in Equipment.slotTable when the inventory is attached (e.g. restored from saved state via
+        // RestoreEquipmentState, which calls Equipment.EquipItem directly) never raise OnItemEquipped, so a
+        // listener that needs to know about every currently-equipped item (e.g. EffectsModule registering
+        // weapon FX sockets) must react to this instead and walk GetEquippedItems() itself.
+        public event Action<Inventory> OnInventoryAttached;
+        public event Action<Inventory> OnInventoryDetached;
 
         // ── Inventory attachment ───────────────────────────────────────────────
 
@@ -55,11 +63,17 @@ namespace Kuantech.Inventory
             _inventory.OnItemUnequipped += HandleItemUnequipped;
             _inventory.AttachToActor(Actor);
             RefreshEquippedVisuals();
+
+            OnInventoryAttached?.Invoke(_inventory);
         }
 
         public void DetachInventory()
         {
             if (_inventory == null) return;
+
+            // Fire before anything is unhooked/despawned below -- listeners (EffectsModule) need to walk
+            // GetEquippedItems() and their still-valid ItemVisual references to unregister per-item state.
+            OnInventoryDetached?.Invoke(_inventory);
 
             var eq = _inventory.Equipment;
             if (eq != null)
