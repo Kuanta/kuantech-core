@@ -11,6 +11,11 @@ namespace Kuantech.Core
         [SerializeField] private Transform Anchor;
         [Tooltip("For multiplayer, if rotation is synced turn this off")]
         [SerializeField] private bool RotateOnClient = true;
+        [Tooltip("Snaps straight to the target rotation instead of RotateTowards-ing at rotateSpeedDegPerSec. " +
+                 "First-person needs this: the camera isn't a child of the actor the way it would be in Unreal, " +
+                 "so the body has to match the camera's yaw exactly, every frame, with zero catch-up lag — " +
+                 "PlayerModule toggles this when switching view modes.")]
+        public bool InstantRotation = false;
         private Vector3 _targetAimVector;
         Quaternion _targetRot = Quaternion.identity;
 
@@ -40,12 +45,15 @@ namespace Kuantech.Core
             _targetRot = DirectionToRotation(transform, _targetAimVector);
             if(Rigidbody == null || Rigidbody.isKinematic)
             {
-                t.rotation = Quaternion.RotateTowards(t.rotation, _targetRot, rotateSpeedDegPerSec * deltaTime);
+                t.rotation = InstantRotation
+                    ? _targetRot
+                    : Quaternion.RotateTowards(t.rotation, _targetRot, rotateSpeedDegPerSec * deltaTime);
             }
             else
             {
-                var next = Quaternion.RotateTowards(
-                    Rigidbody.rotation, _targetRot, rotateSpeedDegPerSec * deltaTime);
+                var next = InstantRotation
+                    ? _targetRot
+                    : Quaternion.RotateTowards(Rigidbody.rotation, _targetRot, rotateSpeedDegPerSec * deltaTime);
                 Rigidbody.MoveRotation(next);
             }
         }

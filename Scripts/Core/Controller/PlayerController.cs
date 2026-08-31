@@ -17,9 +17,22 @@ namespace Kuantech.Core.Controller
 
         public Vector3 ControllerAim;
         
+        [Header("Mouse")]
+        [Tooltip("Degrees of rotation per raw input unit (e.g. one pixel of mouse delta). This is the ONLY " +
+                 "place mouse-look sensitivity is tuned — callers pass raw, unscaled input to AddMouseLook " +
+                 "instead of keeping their own sensitivity field, so there's no risk of two different " +
+                 "numbers fighting each other in two different files.")]
+        public float MouseSensitivity = 0.08f;
+
         [Header("Yaw - Pitch")]
-        public float YawSmoothTime   = 0.08f;
-        public float PitchSmoothTime = 0.08f;
+        // Smoothing changes how fast the camera catches up to where input pointed it — it does NOT reduce
+        // how far a given input moves it (that's MouseSensitivity's job; more smoothing on an oversized
+        // input just delays the same oversized rotation, it doesn't shrink it). 0.04s is a middle ground:
+        // tight enough that first-person doesn't feel laggy, soft enough to filter raw mouse-sensor micro-
+        // jitter into something "creamy" instead of glassy-instant. If third-person wants more weight than
+        // this, give it that via Cinemachine's own Aim/Body damping rather than raising this shared value.
+        public float YawSmoothTime   = 0.04f;
+        public float PitchSmoothTime = 0.04f;
         public float PitchMin = -89f;
         public float PitchMax =  89f;
         public float Yaw   => _currentYaw;
@@ -73,6 +86,18 @@ namespace Kuantech.Core.Controller
         public void AddPitch(float deltaPitchDeg)
         {
             _targetPitch = Mathf.Clamp(_targetPitch + deltaPitchDeg, PitchMin, PitchMax);
+        }
+
+        /// <summary>
+        /// Feed raw, unscaled look input here (e.g. Mouse.current.delta.ReadValue() straight off the
+        /// device) — MouseSensitivity is applied internally. Callers should not multiply by their own
+        /// sensitivity constant first; that's exactly the "two numbers fighting in two files" this method
+        /// exists to avoid.
+        /// </summary>
+        public void AddMouseLook(Vector2 rawDelta, bool invertX = false, bool invertY = true)
+        {
+            AddYaw(rawDelta.x * MouseSensitivity * (invertX ? -1f : 1f));
+            AddPitch(rawDelta.y * MouseSensitivity * (invertY ? -1f : 1f));
         }
 
         public void SetYawImmediate(float yawDeg)
