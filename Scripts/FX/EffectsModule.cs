@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kuantech.Core.Combat;
+using Kuantech.Inventory;
 using Kuantech.Utils;
 using UnityEngine;
 
@@ -63,6 +64,7 @@ namespace Kuantech.Core.FX
 
         private HealthcareModule _healthcareModule;
         private CombatModule _combatModule;
+        private InventoryModule _inventoryModule;
 
         public override void Initialize()
         {
@@ -82,19 +84,6 @@ namespace Kuantech.Core.FX
             {
                 if(shaderEffect == null) continue;
                 AddShaderEffect(shaderEffect);
-            }
-
-            _combatModule = Actor.GetModule<CombatModule>();
-            _healthcareModule = Actor.GetModule<HealthcareModule>();
-            if(_combatModule != null)
-            {
-                _combatModule.AttackStartedEvent += AttackStartedEvent;
-                _combatModule.AttackCompletedEvent += AttackEndedEvent;
-            }
-
-            if (_healthcareModule != null)
-            {
-                _healthcareModule.OnHealReceived += OnHealReceived;
             }
         }
 
@@ -118,6 +107,34 @@ namespace Kuantech.Core.FX
 
             Actor.VisualHandler.OnActorVisualSet += OnActorVisualSet;
             Actor.VisualHandler.OnActorVisualRemoved += OnActorVisualRemoved;
+
+            _combatModule = Actor.GetModule<CombatModule>();
+            _healthcareModule = Actor.GetModule<HealthcareModule>();
+            _inventoryModule = Actor.GetModule<InventoryModule>();
+
+            if (_combatModule != null)
+            {
+                _combatModule.AttackStartedEvent += AttackStartedEvent;
+                _combatModule.AttackCompletedEvent += AttackEndedEvent;
+            }
+
+            if (_healthcareModule != null)
+            {
+                _healthcareModule.OnHealReceived += OnHealReceived;
+            }
+
+            if(_inventoryModule != null)
+            {
+                _inventoryModule.OnItemEquipped += OnItemEquipped;
+                _inventoryModule.OnItemUnequipped += OnItemUnequipped;
+                _inventoryModule.OnInventoryAttached += OnInventoryAttached;
+                _inventoryModule.OnInventoryDetached += OnInventoryDetached;
+
+                // SetInventory can run before this module subscribes (same ordering gotcha as
+                // ActorVisualHandler.OnActorVisualSet) -- if an inventory is already bound, catch up now.
+                if (_inventoryModule.Inventory != null)
+                    RegisterEquippedItemEffects(_inventoryModule.Inventory);
+            }
         }
 
         #region Event Handlers
@@ -136,6 +153,51 @@ namespace Kuantech.Core.FX
                 _attackEffect.Stop();
             }
             _attackEffect = null;
+        }
+
+        private void OnItemEquipped(Item item, EquipmentSlotType slot)
+        {
+            ItemVisual visual = item.ItemVisual;
+            if (visual == null || visual.Effects == null) return;
+            foreach (var effect in visual.Effects)
+                RegisterEffect(effect);
+        }
+
+        private void OnItemUnequipped(Item item)
+        {
+            ItemVisual visual = item.ItemVisual;
+            if (visual == null || visual.Effects == null) return;
+            foreach (var effect in visual.Effects)
+                UnregisterEffect(effect);
+        }
+
+        // OnItemEquipped/OnItemUnequipped only fire for items that go through Inventory.EquipItem/UnequipItem.
+        // An item already sitting in Equipment.slotTable when the inventory attaches (e.g. restored from saved
+        // state, which calls Equipment.EquipItem directly) never raises those -- so a fresh inventory bind is
+        // handled separately here by sweeping every currently-equipped item.
+        private void OnInventoryAttached(Kuantech.Inventory.Inventory inventory) => RegisterEquippedItemEffects(inventory);
+        private void OnInventoryDetached(Kuantech.Inventory.Inventory inventory) => UnregisterEquippedItemEffects(inventory);
+
+        private void RegisterEquippedItemEffects(Kuantech.Inventory.Inventory inventory)
+        {
+            if (inventory == null) return;
+            foreach (var item in inventory.GetEquippedItems())
+            {
+                if (item.ItemVisual == null || item.ItemVisual.Effects == null) continue;
+                foreach (var effect in item.ItemVisual.Effects)
+                    RegisterEffect(effect);
+            }
+        }
+
+        private void UnregisterEquippedItemEffects(Kuantech.Inventory.Inventory inventory)
+        {
+            if (inventory == null) return;
+            foreach (var item in inventory.GetEquippedItems())
+            {
+                if (item.ItemVisual == null || item.ItemVisual.Effects == null) continue;
+                foreach (var effect in item.ItemVisual.Effects)
+                    UnregisterEffect(effect);
+            }
         }
         #endregion
 
@@ -240,8 +302,41 @@ namespace Kuantech.Core.FX
             //Clear active effects
             ClearActiveEffects();
 
-            //Clear Shader parameters
+            // Rebuild every registry from scratch rather than trusting incremental Register/Unregister calls to
+            // have stayed perfectly in sync -- a pooled actor going through Despawn/Spawn can miss an unequip
+            // event (see the despawn-cleanup gotcha with deferred Cleanup coroutines), which would otherwise
+            // leave a stale EffectPlayerComponent/Effect reference (pointing at a since-pooled item visual)
+            // sitting in the dictionaries for the actor's next life.
+            RebuildRegistries();
+        }
 
+        /// <summary>
+        /// Clears and re-populates _effectsById/_effectPlayersById/_shaderEffectsById from ground truth: the
+        /// actor's own static effects, whatever ActorVisual is currently attached, and whatever items are
+        /// currently equipped. Safe to call any time -- Register* is idempotent (indexer assignment).
+        /// </summary>
+        private void RebuildRegistries()
+        {
+            _effectsById.Clear();
+            _effectPlayersById.Clear();
+            _shaderEffectsById.Clear();
+            ShaderEffects.Clear();
+
+            foreach (var effect in ExistingEffects)
+                RegisterEffect(effect);
+            foreach (var player in ExistingEffectPlayerComponents)
+                RegisterEffectPlayer(player);
+            foreach (var shaderEffect in ExistingShaderEffects)
+            {
+                if (shaderEffect == null) continue;
+                AddShaderEffect(shaderEffect);
+            }
+
+            ActorVisual actorVisual = Actor.VisualHandler != null ? Actor.VisualHandler.GetActorVisual() : null;
+            if (actorVisual != null)
+                OnActorVisualSet(actorVisual);
+
+            RegisterEquippedItemEffects(_inventoryModule?.Inventory);
         }
 
         public override void Cleanup()
@@ -275,8 +370,12 @@ namespace Kuantech.Core.FX
             // when EffectId itself is left blank (e.g. a player that just references an Effect/EffectPrefab
             // directly instead of duplicating its id as a string).
             string id = player.EffectPlayer.GetEffectId();
-            if (!string.IsNullOrEmpty(id))
-                _effectPlayersById[id] = player;
+            if (string.IsNullOrEmpty(id)) return;
+
+            if (_effectPlayersById.TryGetValue(id, out var existing) && existing != player)
+                Debug.LogWarning($"[EffectsModule] Duplicate EffectPlayerComponent id '{id}' on {Actor?.name} -- overwriting.");
+
+            _effectPlayersById[id] = player;
         }
 
         public void UnregisterEffectPlayer(EffectPlayerComponent player)
@@ -318,6 +417,7 @@ namespace Kuantech.Core.FX
             Effect existing = GetExistingEffect(id);
             if (existing != null)
             {
+                resolvedSettings.DespawnAfterPlay = false; // bound to the actor/item -- don't despawn
                 existing.Play(resolvedSettings);
                 return existing;
             }

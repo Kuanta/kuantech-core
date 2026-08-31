@@ -48,17 +48,14 @@ namespace Kuantech.Core.FX
 
             // If the caster already carries this effect on its body (matched by id in its EffectsModule),
             // reuse that one instead of spawning a fresh copy from the library — so the effect plays on the
-            // actor and follows it. Mirrors what the tag path does for socketed EffectPlayerComponents.
+            // actor/equipped item and follows it. Goes through PlayExistingEffectById so this checks BOTH
+            // registries (a direct Effect, e.g. a weapon's own muzzle FX registered via ItemVisual.Effects, and
+            // an EffectPlayerComponent socket) rather than only the Effect one.
             if (settings.Caster != null)
             {
                 EffectsModule effectsModule = settings.Caster.GetModule<EffectsModule>();
-                Effect onActorEffect = effectsModule != null ? effectsModule.GetExistingEffect(GetEffectId()) : null;
-                if (onActorEffect != null)
-                {
-                    settings.DespawnAfterPlay = false; // bound to the actor — don't despawn
-                    onActorEffect.Play(settings);
-                    return onActorEffect;
-                }
+                Effect onActorEffect = effectsModule != null ? effectsModule.PlayExistingEffectById(GetEffectId(), settings) : null;
+                if (onActorEffect != null) return onActorEffect;
             }
 
             if(EffectPrefab != null)

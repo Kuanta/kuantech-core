@@ -608,7 +608,7 @@ namespace Kuantech.Core
 
             if (target != null)
             {
-                Damage.ShowDamageText = ShowCombatText;
+                Damage.HideDamageText = !ShowCombatText;
                 target.OnHit(new HitInfo()
                 {
                     DamageInfo = Damage,

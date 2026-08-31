@@ -27,7 +27,6 @@ namespace Kuantech.Midcore.UI
         private Dictionary<string, AttributeIndicator> _attributeIndicatorsById = new Dictionary<string, AttributeIndicator>();
         
         [NonSerialized] public CollectableAsset CurrentDataAsset;
-        [NonSerialized] public DeckSelectionMenu ParentDeckSelectionMenu;
 
         // True for the one frame the panel opens on, so the same tap/click that opened it doesn't also
         // land on this frame's outside-tap check in LateUpdate and instantly close it again.
@@ -164,8 +163,6 @@ namespace Kuantech.Midcore.UI
             {
                 CollectibleLevelIndicator.SetCollectableRank(CurrentDataAsset);
             }
-            
-            ParentDeckSelectionMenu.UpdateCards();
         }
     }
 }

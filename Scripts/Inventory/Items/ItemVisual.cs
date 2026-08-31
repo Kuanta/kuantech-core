@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Kuantech.Core;
+using Kuantech.Core.FX;
 using UnityEngine;
 
 namespace Kuantech.Inventory
@@ -15,6 +16,13 @@ namespace Kuantech.Inventory
         public SkinnedMeshRenderer[] SkinnedRenderers;
 
         public bool IsSkinned => SkinnedRenderers != null && SkinnedRenderers.Length > 0;
+
+        [Header("Effects")]
+        // Direct Effect references, not EffectPlayerComponent sockets -- an item's FX (muzzle flash, etc.)
+        // is a real Effect object living on the item's own visual, not a pointer to one looked up elsewhere.
+        // EffectPlayerComponent stays reserved for actual sockets (e.g. EffectsModule's static
+        // ExistingEffectPlayerComponents, or a future single-slot-reuse system for high-frequency emitters).
+        public List<Effect> Effects;
 
         //Runtime
         [NonSerialized] public ItemData ItemData;
@@ -34,6 +42,15 @@ namespace Kuantech.Inventory
                 PoolManager.PoolObject(gameObject);
         }
 
+        public void OnEquipped()
+        {
+            
+        }
+
+        public void OnUnequipped()
+        {
+            
+        }
         public void RebindBones(Transform[] targetBones)
         {
             if (SkinnedRenderers == null) return;

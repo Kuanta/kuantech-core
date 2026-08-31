@@ -62,7 +62,7 @@ namespace Kuantech.Rpg.Skills
         public string GetId()
         {
             if(SkillDataAsset == null) return "";
-            return SkillDataAsset.SkillId;
+            return SkillDataAsset.GetId();
         }
 
         public void SetSkillRank(int rank)
@@ -70,6 +70,15 @@ namespace Kuantech.Rpg.Skills
             SkillRank = rank;
         }
 
+        public float GetCooldown()
+        {
+            return SkillDataAsset.SkillCooldown;
+        }
+
+        public float GetLastCastTime()
+        {
+            return _lastCastTime;
+        }
         #region Checks
 
         public bool IsCasting()
@@ -151,11 +160,6 @@ namespace Kuantech.Rpg.Skills
         public TargetPriorityBehaviour GetTargetPriorityBehaviour()
         {
             return TargetPriorityBehaviourOverride != null ? TargetPriorityBehaviourOverride : SkillDataAsset.TargetPriorityBehaviour;
-        }
-
-        public float GetLastCastTime()
-        {
-            return _lastCastTime;
         }
         
         #endregion

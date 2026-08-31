@@ -54,7 +54,7 @@ namespace Kuantech.Rpg
                 DamageAmount = damage,
                 DamageType = DamageType,
                 IsCritical = cr,
-                ShowDamageText = true,
+                // HideDamageText left at its default (false) -- combat text shows unless something opts out.
             };
         }
     }
