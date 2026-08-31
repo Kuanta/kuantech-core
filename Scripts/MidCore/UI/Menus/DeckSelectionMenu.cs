@@ -62,8 +62,6 @@ namespace Kuantech.Midcore.UI
             CancelEquipButton.onClick.AddListener(ClearCardToEquip);
             CancelEquipButton.gameObject.SetActive(false);
 
-            CollectibleInfoPanel.ParentDeckSelectionMenu = this;
-            
             DeckBuildingManager.GetContext<DeckBuildingManager>().OnDeckChanged += OnDeckChangedHandler;
         }
         

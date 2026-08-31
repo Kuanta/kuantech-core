@@ -173,6 +173,15 @@ namespace Kuantech.Core.Database
             }
             return row;
         }
+
+        /// <summary>Deletes every row, keeping Schema intact -- for re-seeding from assets (e.g. a
+        /// balancer's "Update From Assets") without hand-clearing the Inspector list first.</summary>
+        [Button("Clear All Rows")]
+        public void ClearAllRows()
+        {
+            Rows.Clear();
+            _rowLookup?.Clear();
+        }
         #endregion
 
         #region Data Setting

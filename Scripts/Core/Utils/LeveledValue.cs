@@ -25,6 +25,17 @@ namespace Kuantech.Utils
             }
             return value;
         }
+
+        // Curve-shape fields (LevelIntervals/Min/Max/LimitValue) stay editor-authored -- these two are the
+        // only ones a balancer needs to read/write, the actual "number" a designer tunes.
+        public float GetBaseValue() => BaseValue;
+        public float GetValuePerLevel() => ValuePerLevel;
+
+        public void SetCurve(float baseValue, float valuePerLevel)
+        {
+            BaseValue = baseValue;
+            ValuePerLevel = valuePerLevel;
+        }
     }
 
     [Serializable]

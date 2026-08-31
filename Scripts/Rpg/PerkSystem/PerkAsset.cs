@@ -67,9 +67,10 @@ namespace Kuantech.Rpg
         /// instead of keeping a second copy of them here.
         /// </summary>
         /// <param name="rank">Rank to show values for — usually the rank the player would end up at.</param>
-        /// <param name="variableOverride">See <see cref="GetPerkVariable"/> — substitutes one variable's
-        /// numbers (e.g. a utility item's gem-rank-scaled values) without touching this asset.</param>
-        public string BuildDescription(int rank, SkillVariableData variableOverride = null)
+        /// <param name="variableOverrides">See <see cref="GetPerkVariable"/> — substitutes one or more
+        /// variables' numbers (e.g. a utility item's gem-rank-scaled values) without touching this asset.
+        /// A utility can rescale several variables at once, so this is a collection, not a single value.</param>
+        public string BuildDescription(int rank, IEnumerable<SkillVariableData> variableOverrides = null)
         {
             string descriptionTemplate = GetDescription();
             var rx = new Regex(@"\{([A-Za-z_][A-Za-z0-9_]*)\s*(?::([^}]+))?\}", RegexOptions.Compiled);
@@ -78,7 +79,16 @@ namespace Kuantech.Rpg
                 string varName = m.Groups[1].Value;
                 string fmt     = m.Groups[2].Success ? m.Groups[2].Value : null;
 
-                SkillVariableData variable = GetPerkVariable(varName, variableOverride);
+                SkillVariableData externalOverride = null;
+                if (variableOverrides != null)
+                {
+                    foreach (var over in variableOverrides)
+                    {
+                        if (over != null && over.VariableId == varName) { externalOverride = over; break; }
+                    }
+                }
+
+                SkillVariableData variable = GetPerkVariable(varName, externalOverride);
                 if (variable == null) return "";
 
                 float value = variable.GetDisplayValue(rank);

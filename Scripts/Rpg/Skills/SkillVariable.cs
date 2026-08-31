@@ -1,4 +1,5 @@
 ﻿using System;
+using Kuantech.Core.Database.Attributes;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -11,25 +12,54 @@ namespace Kuantech.Rpg.Skills
     /// The value itself needs no runtime context: <see cref="GetValueByRank"/> works straight off the
     /// data, which is what description building uses. Attribute scaling needs a StatsModule and is
     /// resolved by <see cref="SkillVariable"/> at runtime.
+    ///
+    /// [KtDatabaseVariable]-tagged fields are what SkillBalancer rebuilds from the "SkillVariables" table
+    /// (see DataTable.SetVariablesFromRow). TextColor is left out on purpose: a Color doesn't map onto the
+    /// KtDataType set (KtFloat/KtInt/KtString/KtBool/arrays only), and it's a display-only concern a
+    /// designer is unlikely to need to retune from a spreadsheet.
+    ///
+    /// AttributeToScaleWith itself can't be reflection-populated either (it's an AttributeAsset reference,
+    /// not a primitive) -- AttributeToScaleWithId carries the id through the table instead, and
+    /// SkillBalancer resolves it to the actual asset via RpgManager.GetAttributeAssetById after the
+    /// reflection pass runs.
     /// </summary>
     [Serializable]
     public class SkillVariableData
     {
+        [Tooltip("Whether SkillBalancer writes/reads this variable to/from the database. Turn off for a " +
+                 "fixed default that a modifier perk (e.g. ActiveSkillVariableOverridePerk) overrides -- " +
+                 "the perk's own PerkVariables is where that number is actually tuned, so the skill's own " +
+                 "copy is structural, not something a designer needs in the sheet. Never itself written to " +
+                 "the table (it's an authoring-time choice, not a balance number).")]
+        public bool Balancable = true;
+
         [Tooltip("Key used to reference this variable — the {Placeholder} name in a description.")]
         [FormerlySerializedAs("Name")]
+        [KtDatabaseVariable("VariableId")]
         public string VariableId;
+        [KtDatabaseVariable("VariableName")]
         public string VariableName;
+        [KtDatabaseVariable("BaseValue")]
         public float BaseValue;
+        [KtDatabaseVariable("ValuePerRank")]
         public float ValuePerRank;
         public AttributeAsset AttributeToScaleWith;
+        [Tooltip("Id of AttributeToScaleWith, resolved via RpgManager.GetAttributeAssetById -- only used " +
+                 "as the round-trip through the database table; AttributeToScaleWith is what's read at runtime.")]
+        [KtDatabaseVariable("AttributeToScaleWithId")]
+        public string AttributeToScaleWithId;
+        [KtDatabaseVariable("AttributeScalingFactor")]
         public float AttributeScalingFactor;
+        [KtDatabaseVariable("UsedForDPS")]
         public bool UsedForDPS; //To calculate dps
 
         [Header("Display")]
         public Color TextColor = Color.white;
         [Tooltip("Show as a percentage: the value is multiplied by 100 and suffixed with '%'.")]
+        [KtDatabaseVariable("IsPercentage")]
         public bool IsPercentage;
         [Tooltip("Always display the base value, ignoring rank — for numbers that do not grow.")]
+        [KtDatabaseVariable("DisplayOnlyBaseValue")]
         public bool DisplayOnlyBaseValue;
 
         /// <summary>Rank-scaled value, without attribute scaling (no actor context needed).</summary>
