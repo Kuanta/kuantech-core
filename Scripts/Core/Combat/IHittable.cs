@@ -14,7 +14,9 @@ namespace Kuantech.Core
         public DamageType DamageType; //Type of damge
         public float DamageAmount; //Amount of damage
         public bool IsCritical; //If is critical, useful for UI
-        public bool ShowDamageText;
+        // Defaults to false, i.e. shown -- opt OUT of combat text per hit, instead of having to opt every
+        // single damage source in (which is how most skills ended up never showing any text at all).
+        public bool HideDamageText;
 
         public float GetDamage()
         {

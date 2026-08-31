@@ -441,7 +441,7 @@ namespace Kuantech.Core.Combat
             {
                 DamageType = damageInfo.DamageType,
                 IsCritical = damageInfo.IsCritical,
-                ShowDamageText = damageInfo.ShowDamageText,
+                HideDamageText = damageInfo.HideDamageText,
             };
             reducedDamageInfo.SetDamage(reducedDamage);
             return reducedDamageInfo;

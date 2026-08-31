@@ -53,7 +53,7 @@ namespace Kuantech.Core
         #region Damage Texts
         public static void ShowDamageText(Actor receiver, DamageInfo damageInfo)
         {
-            if(!damageInfo.ShowDamageText) return;
+            if(damageInfo.HideDamageText) return;
             CombatManager ctx = GetContext<CombatManager>();
             if (ctx == null || ctx.DamageTextPrefab == null) return;
             FloatingDamageText damageText =
