@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Kuantech.Core
 {
     [CreateAssetMenu(fileName = "ComboAttackPatternAsset", menuName = "Kuantech/Combat/ComboAttackPattern")]
-    public class ComboAttackPatternAsset : ScriptableObject
+    public class ComboAttackPatternAsset : MetadataAsset
     {
         public List<AttackPatternAsset> Patterns;
 

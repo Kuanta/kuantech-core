@@ -129,5 +129,11 @@ namespace Kuantech.Rpg
 
             return instance;
         }
+
+        /// <summary>Applies balance data from Skills.json (see SkillBalancer) onto this asset.</summary>
+        public void LoadFromSkillData(SkillData data)
+        {
+            SkillVariableData.RebuildBalancable(PerkVariables, data.VariableDatas);
+        }
     }
 }

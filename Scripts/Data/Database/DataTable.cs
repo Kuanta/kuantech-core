@@ -14,9 +14,9 @@ namespace Kuantech.Core.Database
         
         public List<ColumnSchema> Schema = new();
         
-        public List<RowData> Rows = new();
+        public List<KtRowData> Rows = new();
         
-        private Dictionary<string, RowData> _rowLookup;
+        private Dictionary<string, KtRowData> _rowLookup;
         
         [Serializable]
         public class ColumnSchema
@@ -35,7 +35,7 @@ namespace Kuantech.Core.Database
         }
         
         [Serializable]
-        public class RowData
+        public class KtRowData
         {
             public string Id;
             [SerializeReference]
@@ -87,6 +87,21 @@ namespace Kuantech.Core.Database
                 }
             }
             
+            public string[] GetStringList(string key, char seperator=',')
+            {
+                CellData cellData = GetCellData(key);
+                if (cellData == null) return null;
+                string listString;
+                try
+                {
+                    listString = cellData.Value.Get<string>();
+                    return listString.Split(seperator);
+                }
+                catch (Exception e)
+                {
+                    return null;
+                }
+            }
             public int GetIntValue(string key, int defaultValue)
             {
                 CellData cellData = GetCellData(key);
@@ -105,7 +120,7 @@ namespace Kuantech.Core.Database
 
         public void BuildTable()
         {
-            _rowLookup = new Dictionary<string, RowData>();
+            _rowLookup = new Dictionary<string, KtRowData>();
 
             foreach (var row in Rows)
             {
@@ -128,7 +143,7 @@ namespace Kuantech.Core.Database
         }
 
         #region Reading
-        public RowData GetRow(string rowId)
+        public KtRowData GetRow(string rowId)
         {
             if (_rowLookup.IsNullOrEmpty() || !_rowLookup.ContainsKey(rowId)) return null;
             return _rowLookup[rowId];
@@ -136,7 +151,7 @@ namespace Kuantech.Core.Database
         
         public KtDataType GetDataEntry(string rowId, string entryKey)
         {
-            RowData rowData = GetRow(rowId);
+            KtRowData rowData = GetRow(rowId);
             if (rowData == null) return null;
             CellData cellData = rowData.GetCellData(entryKey);
             if (cellData == null) return null;
@@ -154,9 +169,9 @@ namespace Kuantech.Core.Database
         #region Write
                 
         [Button("Add New Row")]
-        public RowData AddNewRow(string rowId)
+        public KtRowData AddNewRow(string rowId)
         {
-            var row = new RowData {Id = rowId};
+            var row = new KtRowData {Id = rowId};
             row.Values = new List<CellData>();
             foreach (var column in Schema)
             {
@@ -188,7 +203,7 @@ namespace Kuantech.Core.Database
         /// <summary>
         /// Given an object, set KtDatabaseVariables from RowData
         /// </summary>
-        public static void SetVariablesFromRow(object instance, RowData row)
+        public static void SetVariablesFromRow(object instance, KtRowData row)
         {
             if (instance == null || row == null) return;
 
@@ -224,7 +239,7 @@ namespace Kuantech.Core.Database
                 type = type.BaseType;
             }
         }
-        private static void SetValueForMember(System.Type memberType, System.Action<object> assign, RowData row, string column)
+        private static void SetValueForMember(System.Type memberType, System.Action<object> assign, KtRowData row, string column)
         {
             object result = null;
 
@@ -263,7 +278,7 @@ namespace Kuantech.Core.Database
                 assign(result);
         }
 
-        private static TVal[] ParseArrayFromCell<TKt, TVal>(RowData row, string column,
+        private static TVal[] ParseArrayFromCell<TKt, TVal>(KtRowData row, string column,
             System.Func<string, TVal[]> fromString, System.Func<TKt, TVal[]> fromTyped) where TKt : KtDataType
         {
             CellData cell = row.GetCellData(column);

@@ -66,7 +66,7 @@ namespace Kuantech.Core.Database
                     if (string.IsNullOrEmpty(rowId)) continue;
 
                     //Get row
-                    DataTable.RowData row = table.GetRow(rowId);
+                    DataTable.KtRowData row = table.GetRow(rowId);
                     
                     //If row is null, insert new row
                     if (row == null)

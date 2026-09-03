@@ -62,16 +62,13 @@ namespace Kuantech.Core.Data
             // 2️⃣ Fallback to local
             if (!BetterStreamingAssets.FileExists(GetFullFilePath()))
             {
-                if (!BetterStreamingAssets.FileExists(GetFullFilePath()))
-                {
-                    Debug.LogError($"JsonData: File not found locally at {FilePath}");
-                    return;
-                }
-
-                json = await UniTask.Run(() => BetterStreamingAssets.ReadAllText(FilePath));
-                _data = JsonUtility.FromJson(json, SerializeType);
-                Debug.Log("JsonData: Loaded from local.");
+                Debug.LogError($"JsonData: File not found locally at {GetFullFilePath()}");
+                return;
             }
+
+            json = await UniTask.Run(() => BetterStreamingAssets.ReadAllText(GetFullFilePath()));
+            _data = JsonUtility.FromJson(json, SerializeType);
+            Debug.Log("JsonData: Loaded from local.");
         }
 
         public object ReadData()

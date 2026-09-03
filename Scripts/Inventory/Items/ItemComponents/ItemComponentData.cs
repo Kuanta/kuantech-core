@@ -1,4 +1,5 @@
 using System;
+using static Kuantech.Core.Database.DataTable;
 
 namespace Kuantech.Inventory
 {
@@ -6,5 +7,10 @@ namespace Kuantech.Inventory
     public abstract class ItemComponentData
     {
         public abstract ItemComponent CreateInstance();
+
+        public virtual void FillFromRowData(KtRowData rowData)
+        {
+            
+        }
     }
 }

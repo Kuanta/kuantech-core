@@ -28,35 +28,8 @@ namespace Kuantech.Core
             }
             return null;
         }
-                
-        //DEPRECATED, use UpdateFromDatabaseRow instead
-        public void UpdateVariablesFromDatabase(KtDatabase database, string tableName, string rowId)
-        {
-            foreach (var attribDefinition in AttributeDefinitions)
-            {
-                string attributeId = attribDefinition.AttributeAsset.GetId();
-                string entry = database.GetString(tableName, rowId, attributeId);
-                
-                //base and per level must be sepeated by '/'
-                string[] parts= entry.Split('/');
-                if(parts == null || parts.Length <= 0) continue;
-                
-                //Base Value
-                attribDefinition.BaseValue = parts[0].TryParseFloat(attribDefinition.BaseValue);
 
-                if (parts.Length > 1)
-                {
-                    attribDefinition.ValuePerLevel = parts[1].TryParseFloat(attribDefinition.ValuePerLevel);
-                }
-
-                if (parts.Length > 2)
-                {
-                    attribDefinition.ValuePerRank = parts[2].TryParseFloat(attribDefinition.ValuePerRank);
-                }
-            }
-        }
-
-        public override void UpdateFromDatabaseRow(DataTable.RowData rowData)
+        public override void UpdateFromDatabaseRow(DataTable.KtRowData rowData)
         {
             foreach (var attribDefinition in AttributeDefinitions)
             {

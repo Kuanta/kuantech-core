@@ -1,15 +1,20 @@
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Kuantech.Core;
+using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Inventory
 {
     public class ItemsLibrary : SubManager
     {
+        [Header("Item Datas")]
         public List<ItemDataAsset> ItemAssets;
         public List<ItemTemplate> ItemTemplates;
 
+        [Header("Equipment Slots")]
+        public MetadataAssetContainer<EquipmentSlotType> EquipmentSlots;
+        
         private Dictionary<string, ItemData> _itemMap;
         private Dictionary<string, ItemTemplate> _templateMap;
 
@@ -53,6 +58,27 @@ namespace Kuantech.Inventory
         public static Sprite GetItemIcon(string itemId)
         {
             return GetItemData(itemId)?.GetIcon();
+        }
+
+        public static EquipmentSlotType GetEquipmentSlotById(string id)
+        {
+            var ctx = GetContext<ItemsLibrary>();
+            if(ctx == null) return null;
+            return ctx.EquipmentSlots.GetMetadata(id);
+        }
+
+        /// <summary>
+        /// Adds/overwrites a synthetic ItemData built at balance-time from the database (see
+        /// HordeBonkersItemsBalancer), independent of ItemAssets -- last-write-wins, same as the
+        /// asset-driven entries Initialize() populates. Balancers run after Initialize() (two-phase
+        /// SubManager init), so this is how a DB-driven item ends up reachable via GetItemData.
+        /// </summary>
+        public static void RegisterItemData(ItemData data)
+        {
+            var ctx = GetContext<ItemsLibrary>();
+            if (ctx == null || data == null || string.IsNullOrEmpty(data.Id)) return;
+            if (ctx._itemMap == null) ctx._itemMap = new Dictionary<string, ItemData>();
+            ctx._itemMap[data.Id] = data;
         }
     }
 }

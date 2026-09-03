@@ -49,9 +49,9 @@ namespace Kuantech.Inventory.UI
             {
                 SlotNameText.text = slotType.SlotName;
             }
-            if(EmptySlotIcon != null && SlotType != null && SlotType.DefaultIcon != null)
+            if(EmptySlotIcon != null && SlotType != null && SlotType.GetIcon() != null)
             {
-                EmptySlotIcon.sprite = SlotType.DefaultIcon;
+                EmptySlotIcon.sprite = SlotType.GetIcon();
             }
         }
     }

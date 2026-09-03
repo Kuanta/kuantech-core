@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using Kuantech.Core;
-using Microsoft.Unity.VisualStudio.Editor;
 using UnityEngine;
 
 namespace Kuantech.Rpg.Skills
@@ -41,11 +40,19 @@ namespace Kuantech.Rpg.Skills
         [Tooltip("Random seconds added to cooldown after each cast. Prevents groups of enemies casting in sync.")]
         public float CooldownJitter = 0f;
         public float SkillRange;
-        
+
         //todo: This is ai related, remove it from here
-        [Header("Targeting Behaviour")] 
+        [Header("Targeting Behaviour")]
         public bool TargetsAllies = false;
         public bool TargetsEnemies = true;
         public TargetPriorityBehaviour TargetPriorityBehaviour;
+
+        /// <summary>Applies balance data from Skills.json (see SkillBalancer) onto this asset.</summary>
+        public void LoadFromSkillData(SkillData data)
+        {
+            SkillName = data.SkillName;
+            SkillDescription = data.SkillDescription;
+            SkillVariableData.RebuildBalancable(SkillVariableDatas, data.VariableDatas);
+        }
     }
 }
