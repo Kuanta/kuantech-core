@@ -15,6 +15,7 @@ namespace Kuantech.Core
         //Events
         public UnityAction<ActorVisual> OnActorVisualRemoved;
         public UnityAction<ActorVisual> OnActorVisualSet;
+        public UnityAction<ActorVisual> OnPostActorVisualSet; //A second post event for modules that need it. (for example slots must be set on first event trigger)
 
         public override void Initialize()
         {
@@ -39,12 +40,14 @@ namespace Kuantech.Core
         /// <param name="visual"></param>
         public void SetActorVisual(ActorVisual visual)
         {
+            if(CurrentActorVisual == visual) return;
             ClearCurrentVisual();
             CurrentActorVisual = visual;
             CurrentActorVisual.gameObject.AttachToParent(ActorVisualSlot != null ? ActorVisualSlot : transform);
             CurrentActorVisual.OnAttachedToActor(Actor);
             CurrentActorVisual.ParentActor = Actor;
             OnActorVisualSet?.Invoke(CurrentActorVisual);
+            OnPostActorVisualSet?.Invoke(CurrentActorVisual);
             visual.gameObject.SetActive(true);
         }
 

@@ -18,8 +18,18 @@ namespace Kuantech.Inventory
 
     public class InventoryModule : ActorModule
     {
+        [Header("Setup")]
+        [SerializeField] private int Capacity = 20;
+        // Slot list only -- EquipmentSlot.item is runtime state and stays empty on the prefab/asset.
+        [SerializeField] private Equipment EquipmentSetup;
+
         private Inventory _inventory;
         public Inventory Inventory => _inventory;
+
+        // Tracks which ActorVisual equipped visuals currently live on, so RefreshEquippedVisuals can tell
+        // "item moved to a new mesh" (e.g. PlayerModule's FP/TP toggle) apart from "already up to date" and
+        // properly tear down the stale instance instead of leaking it under the now-inactive old mesh.
+        private ActorVisual _lastEquipVisual;
 
         // Fires on this module after the shared inventory fires its event (post-network-sync on clients)
         public event Action<Item> OnItemAdded;
@@ -41,7 +51,19 @@ namespace Kuantech.Inventory
         {
             base.Initialize();
             if (Actor.VisualHandler != null)
-                Actor.VisualHandler.OnActorVisualSet += OnActorVisualSet;
+            {
+                //Subscribe to post actor visual set. New slots from new visual must be set in slots handler
+                Actor.VisualHandler.OnPostActorVisualSet += OnActorVisualSet;
+            }
+
+            // Every actor with this module owns its own Inventory -- nothing outside builds one for it.
+            // LoadState (called right after this, when a saved state exists) needs _inventory non-null.
+            if (_inventory == null)
+            {
+                var inventory = new Inventory(Capacity) { Equipment = EquipmentSetup };
+                inventory.Initialize(Capacity);
+                SetInventory(inventory);
+            }
         }
 
         public void SetInventory(Inventory inventory)
@@ -93,6 +115,7 @@ namespace Kuantech.Inventory
             _inventory.OnItemUnequipped -= HandleItemUnequipped;
             _inventory.Detach(); // removes each equipped item's actor-side effects (stat modifiers)
             _inventory = null;
+            _lastEquipVisual = null;
         }
 
         // ── Event handlers → send RPCs from server, relay events to listeners ─
@@ -134,6 +157,10 @@ namespace Kuantech.Inventory
             if (_inventory?.Equipment?.slotTable == null) return;
             ActorVisual visual = Actor.VisualHandler != null ? Actor.VisualHandler.GetActorVisual() : null;
             if (visual == null) return;
+
+            ActorVisual previousVisual = _lastEquipVisual;
+            _lastEquipVisual = visual;
+
             foreach (var slot in _inventory.Equipment.slotTable.Values)
             {
                 Item item = slot.item;
@@ -145,16 +172,35 @@ namespace Kuantech.Inventory
                 // inventory), that reference is stale for us specifically. Treat it as absent and re-slot.
                 if (item.ItemVisual != null && item.ItemVisual.transform.IsChildOf(visual.transform)) continue;
 
+                // The active ActorVisual changed under us (e.g. PlayerModule switching FP/TP mesh) rather
+                // than this being a first-time equip -- properly unslot from the mesh we just left, or the
+                // old instance leaks as an invisible orphan under the now-deactivated mesh, still subscribed
+                // to whatever it was subscribed to (e.g. WeaponVisual/CombatModule).
+                if (item.ItemVisual != null)
+                {
+                    if (previousVisual != null) previousVisual.UnslotItem(item);
+                    else { item.ItemVisual.OnUnequipped(); item.ItemVisual.Despawn(); item.ItemVisual = null; }
+                }
+
                 item.ItemVisual = visual.EquipItemVisual(item);
             }
         }
 
         private void HandleItemSlotted(Item item, EquipmentSlotType slotType)
         {
-            if (Actor.VisualHandler == null) return;
+            if (Actor.VisualHandler == null)
+            {
+                Debug.LogWarning($"[InventoryModule] HandleItemSlotted: '{item.GetId()}' -- Actor has no ActorVisualHandler on '{name}'.");
+                return;
+            }
             ActorVisual visual = Actor.VisualHandler.GetActorVisual();
-            if (visual != null)
-                item.ItemVisual = visual.EquipItemVisual(item);
+            if (visual == null)
+            {
+                Debug.LogWarning($"[InventoryModule] HandleItemSlotted: '{item.GetId()}' -- ActorVisualHandler.GetActorVisual() is null on '{name}' (no ActorVisual set yet?).");
+                return;
+            }
+            item.ItemVisual = visual.EquipItemVisual(item);
+            Debug.Log($"[InventoryModule] HandleItemSlotted: '{item.GetId()}' -> ItemVisual = {(item.ItemVisual != null ? item.ItemVisual.name : "null")} on visual '{visual.name}'.");
         }
 
         private void HandleItemUnslotted(Item item)
@@ -186,7 +232,9 @@ namespace Kuantech.Inventory
         public bool AddItem(ItemData itemData, int amount = 1)
         {
             if (IsServerInitialized)
+            {
                 return _inventory?.AddItem(itemData, amount) != null;
+            }
             ServerAddItem_Rpc(itemData.GetId(), amount);
             return true;
         }
@@ -227,12 +275,27 @@ namespace Kuantech.Inventory
         public bool AddAndEquipItem(string itemId, EquipmentSlotType slotType = null, int amount = 1)
         {
             ItemData data = ItemsLibrary.GetItemData(itemId);
-            if (data == null) return false;
+            if (data == null)
+            {
+                Debug.LogWarning($"[InventoryModule] AddAndEquipItem: no ItemData for id '{itemId}' (check ItemsLibrary.ItemAssets).");
+                return false;
+            }
             if (IsServerInitialized)
             {
-                Item item = _inventory?.AddItem(data, amount);
-                if (item == null) return false;
-                _inventory.EquipItem(item, slotType);
+                if (_inventory == null)
+                {
+                    Debug.LogWarning($"[InventoryModule] AddAndEquipItem: '{itemId}' -- _inventory is null on '{name}'.");
+                    return false;
+                }
+                Item item = _inventory.AddItem(data, amount);
+                if (item == null)
+                {
+                    Debug.LogWarning($"[InventoryModule] AddAndEquipItem: Inventory.AddItem('{itemId}') returned null (no free slot?) on '{name}'.");
+                    return false;
+                }
+                bool equipped = _inventory.EquipItem(item, slotType);
+                if (!equipped)
+                    Debug.LogWarning($"[InventoryModule] AddAndEquipItem: item '{itemId}' was added but Inventory.EquipItem failed (check EquipableComponent/SuitableSlots and Equipment.SlotTypes) on '{name}'.");
                 return true;
             }
             ServerAddAndEquipItem_Rpc(itemId, amount, slotType != null ? slotType.GetId() : "");

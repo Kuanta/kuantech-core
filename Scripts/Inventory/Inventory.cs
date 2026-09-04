@@ -136,9 +136,17 @@ namespace Kuantech.Inventory
             }
 
             int target = slot >= 0 ? slot : GetAvailableSlot();
-            if (target < 0) return null;
+            if (target < 0)
+            {
+                Debug.LogWarning($"[Inventory] AddItem: no available slot for '{data.GetId()}' (Capacity={Capacity}).");
+                return null;
+            }
             if (target >= Items.Length) Extend(target + 1);
-            if (Items[target] != null) return null;
+            if (Items[target] != null)
+            {
+                Debug.LogWarning($"[Inventory] AddItem: target slot {target} for '{data.GetId()}' unexpectedly occupied.");
+                return null;
+            }
 
             Item item = Item.GetItemFromData(data);
             item.SetInventoryId(target);
@@ -215,17 +223,37 @@ namespace Kuantech.Inventory
         {
             if(item == null) return false;
             EquipableComponent equipable = item.GetItemComponent<EquipableComponent>();
-            if (equipable == null) return false;
+            if (equipable == null)
+            {
+                Debug.LogWarning($"[Inventory] CanEquip: item '{item.GetId()}' has no EquipableComponent (add an EquipableComponentData to its ItemData).");
+                return false;
+            }
 
             if (slotType == null)
             {
                 slotType = equipable.GetSuitableSlot();
-                if (slotType == null) return false;
+                if (slotType == null)
+                {
+                    Debug.LogWarning($"[Inventory] CanEquip: item '{item.GetId()}' has no SuitableSlots configured on its EquipableComponentData.");
+                    return false;
+                }
             }
 
-            if (!item.CanEquip(slotType)) return false;
-            if(Equipment == null) return false;
-            if (!Equipment.CanEquip(slotType)) return false;
+            if (!item.CanEquip(slotType))
+            {
+                Debug.LogWarning($"[Inventory] CanEquip: item '{item.GetId()}' rejected slot '{slotType.GetId()}' (not in its SuitableSlots?).");
+                return false;
+            }
+            if(Equipment == null)
+            {
+                Debug.LogWarning($"[Inventory] CanEquip: item '{item.GetId()}' -- Inventory.Equipment is null (InventoryModule's EquipmentSetup not assigned?).");
+                return false;
+            }
+            if (!Equipment.CanEquip(slotType))
+            {
+                Debug.LogWarning($"[Inventory] CanEquip: item '{item.GetId()}' -- slot '{slotType.GetId()}' not present in Equipment.SlotTypes.");
+                return false;
+            }
 
             foreach(var overlapping in equipable.GetOccupiedSlots())
             {
@@ -278,6 +306,7 @@ namespace Kuantech.Inventory
             EquipmentSlotType finalSlot = item.GetEquippedSlot() != null ? item.GetEquippedSlot() : resolvedSlot;
             if (Equipment != null && !Equipment.EquipItem(item, finalSlot))
             {
+                Debug.LogWarning($"[Inventory] EquipItem: item '{item.GetId()}' -- Equipment.EquipItem failed for slot '{finalSlot?.GetId()}' (slot missing from slotTable, or CanEquipItem rejected it).");
                 item.Unequip();
                 return false;
             }
