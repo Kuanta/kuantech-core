@@ -6,7 +6,6 @@ namespace Kuantech.Midcore
     [Serializable]
     public class Reward
     {
-        
         /// <summary>
         /// Earns the reward
         /// </summary>
