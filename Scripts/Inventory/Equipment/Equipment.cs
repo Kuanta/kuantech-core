@@ -34,7 +34,7 @@ namespace Kuantech.Inventory
                 slot.item = null;
                 _slots.Add(slot);
                 slotTable[slot.SlotType] = slot;
-                _slotTypesById[slot.SlotType.Id] = slot.SlotType;
+                _slotTypesById[slot.SlotType.GetId()] = slot.SlotType;
             }
         }
 

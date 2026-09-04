@@ -40,7 +40,7 @@ namespace Kuantech.ConveyorDefense
             }
         }
 
-        public override void UpdateFromDatabaseRow(DataTable.RowData rowData)
+        public override void UpdateFromDatabaseRow(DataTable.KtRowData rowData)
         {
             AttackPattern.AttackImplementationTime = rowData.GetFloatValue("AttackTime", AttackPattern.AttackImplementationTime);
             AttackPattern.AnimationTime = rowData.GetFloatValue("AnimationTime", AttackPattern.AnimationTime);

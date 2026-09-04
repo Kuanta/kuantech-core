@@ -1,5 +1,6 @@
 ﻿using System;
 using Cysharp.Threading.Tasks;
+using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.Serialization;
@@ -9,16 +10,25 @@ namespace Kuantech.Core.Data
     [Serializable]
     public class JsonData
     {
-        [Header("Remote")] 
+        // TypeNameHandling.Auto: a polymorphic field (e.g. List<Reward> holding CurrencyReward instances)
+        // round-trips via a "$type" property Newtonsoft embeds/reads automatically -- no hand-rolled
+        // type-string-plus-blob parsing needed, and no quoted nested-JSON-in-a-string authoring either.
+        private static readonly JsonSerializerSettings Settings = new JsonSerializerSettings
+        {
+            TypeNameHandling = TypeNameHandling.Auto,
+            SerializationBinder = new ClassTypeSerializationBinder(),
+        };
+
+        [Header("Remote")]
         [SerializeField] private bool ReadFromRemote = true;
         [SerializeField] private string RemoteUrl;
         [SerializeField] private string RemoteDevUrl; // for testing in editor
-        
+
         [Header("Local")]
         [SerializeField] private string TypeName; // fully-qualified type name
         [SerializeField] private string FilePath;
         [SerializeField] private string DevFilePath;
-        
+
         [NonSerialized] private object _data;
 
         public Type SerializeType => Type.GetType(TypeName);
@@ -49,7 +59,7 @@ namespace Kuantech.Core.Data
                     }
 
                     json = SanitizeJson(json);
-                    _data = JsonUtility.FromJson(json, SerializeType);
+                    _data = JsonConvert.DeserializeObject(json, SerializeType, Settings);
                     return;
                 }
                 catch (Exception e)
@@ -62,16 +72,13 @@ namespace Kuantech.Core.Data
             // 2️⃣ Fallback to local
             if (!BetterStreamingAssets.FileExists(GetFullFilePath()))
             {
-                if (!BetterStreamingAssets.FileExists(GetFullFilePath()))
-                {
-                    Debug.LogError($"JsonData: File not found locally at {FilePath}");
-                    return;
-                }
-
-                json = await UniTask.Run(() => BetterStreamingAssets.ReadAllText(FilePath));
-                _data = JsonUtility.FromJson(json, SerializeType);
-                Debug.Log("JsonData: Loaded from local.");
+                Debug.LogError($"JsonData: File not found locally at {GetFullFilePath()}");
+                return;
             }
+
+            json = await UniTask.Run(() => BetterStreamingAssets.ReadAllText(GetFullFilePath()));
+            _data = JsonConvert.DeserializeObject(json, SerializeType, Settings);
+            Debug.Log("JsonData: Loaded from local.");
         }
 
         public object ReadData()
@@ -82,8 +89,8 @@ namespace Kuantech.Core.Data
                 return null;
             }
 
-            var json =BetterStreamingAssets.ReadAllText(GetFullFilePath());
-            return JsonUtility.FromJson(json, SerializeType);
+            var json = BetterStreamingAssets.ReadAllText(GetFullFilePath());
+            return JsonConvert.DeserializeObject(json, SerializeType, Settings);
         }
         static string SanitizeJson(string s)
         {

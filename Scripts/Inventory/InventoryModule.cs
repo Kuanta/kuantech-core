@@ -212,7 +212,7 @@ namespace Kuantech.Inventory
             if (IsServerInitialized)
                 _inventory?.EquipItem(item, slotType);
             else
-                ServerEquipItem_Rpc(item.GetInventoryId(), slotType != null ? slotType.Id : "");
+                ServerEquipItem_Rpc(item.GetInventoryId(), slotType != null ? slotType.GetId() : "");
         }
 
         public void UnequipItem(Item item)
@@ -235,7 +235,7 @@ namespace Kuantech.Inventory
                 _inventory.EquipItem(item, slotType);
                 return true;
             }
-            ServerAddAndEquipItem_Rpc(itemId, amount, slotType != null ? slotType.Id : "");
+            ServerAddAndEquipItem_Rpc(itemId, amount, slotType != null ? slotType.GetId() : "");
             return true;
         }
 

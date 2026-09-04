@@ -8,7 +8,7 @@ namespace Kuantech.Core
     {
         public abstract void OnActorCreated(ActorBlueprint blueprint, Actor actor);
 
-        public virtual void UpdateFromDatabaseRow(DataTable.RowData rowData)
+        public virtual void UpdateFromDatabaseRow(DataTable.KtRowData rowData)
         {
             
         }

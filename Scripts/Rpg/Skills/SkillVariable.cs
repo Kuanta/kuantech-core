@@ -1,7 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using Kuantech.Core.Database.Attributes;
+using Kuantech.Rpg.Managers;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace Kuantech.Rpg.Skills
 {
@@ -34,7 +35,6 @@ namespace Kuantech.Rpg.Skills
         public bool Balancable = true;
 
         [Tooltip("Key used to reference this variable — the {Placeholder} name in a description.")]
-        [FormerlySerializedAs("Name")]
         [KtDatabaseVariable("VariableId")]
         public string VariableId;
         [KtDatabaseVariable("VariableName")]
@@ -72,6 +72,46 @@ namespace Kuantech.Rpg.Skills
         public float GetDisplayValue(int rank)
         {
             return DisplayOnlyBaseValue ? BaseValue : GetValueByRank(rank);
+        }
+
+        /// <summary>
+        /// Rebuilds <paramref name="target"/> from <paramref name="source"/> (a skill/perk's balance data,
+        /// from Skills.json or previously a DataTable row): non-Balancable entries are left untouched (a
+        /// modifier perk's fixed default, never meant to be tuned from the sheet), every Balancable entry is
+        /// replaced wholesale by what source currently has for that owner. Source is authoritative for WHICH
+        /// variables exist, not just their values -- an id present in source but missing from target gets
+        /// added, and one missing from source simply isn't recreated.
+        /// </summary>
+        public static void RebuildBalancable(List<SkillVariableData> target, List<SkillVariableData> source)
+        {
+            if (target == null) return;
+            target.RemoveAll(v => v == null || v.Balancable);
+            if (source == null) return;
+
+            foreach (var incoming in source)
+            {
+                if (incoming == null || string.IsNullOrEmpty(incoming.VariableId)) continue;
+
+                var variable = new SkillVariableData
+                {
+                    VariableId = incoming.VariableId,
+                    VariableName = incoming.VariableName,
+                    BaseValue = incoming.BaseValue,
+                    ValuePerRank = incoming.ValuePerRank,
+                    AttributeToScaleWithId = incoming.AttributeToScaleWithId,
+                    AttributeScalingFactor = incoming.AttributeScalingFactor,
+                    UsedForDPS = incoming.UsedForDPS,
+                    IsPercentage = incoming.IsPercentage,
+                    DisplayOnlyBaseValue = incoming.DisplayOnlyBaseValue,
+                };
+
+                // AttributeToScaleWith is an asset reference -- JsonUtility can't carry it, only its id, so
+                // resolve it to the actual asset here (mirrors SkillBalancer's old DataTable round-trip).
+                if (!string.IsNullOrEmpty(variable.AttributeToScaleWithId))
+                    variable.AttributeToScaleWith = RpgManager.GetAttributeAssetById(variable.AttributeToScaleWithId);
+
+                target.Add(variable);
+            }
         }
     }
     

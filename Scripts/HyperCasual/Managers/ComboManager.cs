@@ -1,6 +1,4 @@
 ﻿using Cysharp.Threading.Tasks;
-using Kuantech.Core.HyperCasual.UI;
-using Kuantech.Core;
 using Kuantech.Core.UI;
 using UnityEngine;
 

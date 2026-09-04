@@ -35,14 +35,14 @@ namespace Kuantech.Inventory
 
         public string GetEquippedSlotId()
         {
-            if (_equippedSlot != null) return _equippedSlot.Id;
+            if (_equippedSlot != null) return _equippedSlot.GetId();
             return _equippedSlotId ?? "";
         }
 
         public void SetEquippedSlot(EquipmentSlotType slotType)
         {
             _equippedSlot = slotType;
-            _equippedSlotId = slotType != null ? slotType.Id : "";
+            _equippedSlotId = slotType != null ? slotType.GetId() : "";
         }
 
         // Called when loading old saves that stored equipped state on the item directly
@@ -81,7 +81,7 @@ namespace Kuantech.Inventory
             }
             _isEquipped = true;
             _equippedSlot = slotType;
-            _equippedSlotId = slotType != null ? slotType.Id : "";
+            _equippedSlotId = slotType != null ? slotType.GetId() : "";
         }
 
         public override void OnItemUnequipped(Item item)

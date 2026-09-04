@@ -2,12 +2,17 @@
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Kuantech.Core.Combat;
+using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Core
 {
     public class CombatManager : SubManager
     {
+        [Header("Attack Patterns")]
+        public MetadataAssetContainer<ComboAttackPatternAsset> ComboAttackPatterns;
+        public MetadataAssetContainer<AttackPatternAsset> AttackPatterns;
+
         [Header("Combat Indicators")]
         [SerializeField] private List<CombatIndicator> CombatIndicators;
 
@@ -96,6 +101,22 @@ namespace Kuantech.Core
             UpdateHitStops();
 
         }
+
+        #region Attack Pattern Getters
+        public static ComboAttackPatternAsset GetComboAttackPatternAsset(string id)
+        {
+            var ctx = CombatManager.GetContext<CombatManager>();
+            if(ctx == null) return null;
+            return ctx.ComboAttackPatterns.GetMetadata(id);
+        }
+
+        public static AttackPatternAsset GetAttackPatternAsset(string id)
+        {
+            var ctx = CombatManager.GetContext<CombatManager>();
+            if (ctx == null) return null;
+            return ctx.AttackPatterns.GetMetadata(id);
+        }
+        #endregion
 
         #region HitStop
 

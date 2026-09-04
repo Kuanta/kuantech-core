@@ -130,12 +130,12 @@ namespace Kuantech.Core
 
         public void UpdateFromDatabaseTable(DataTable table)
         {
-            DataTable.RowData rd = table.GetRow(GetId());
+            DataTable.KtRowData rd = table.GetRow(GetId());
             if (rd == null) return;
             UpdateFromDatabaseTableRow(rd);
         }
 
-        public void UpdateFromDatabaseTableRow(DataTable.RowData rowData)
+        public void UpdateFromDatabaseTableRow(DataTable.KtRowData rowData)
         {
             foreach(var comp in ActorBlueprintComponents)
             {

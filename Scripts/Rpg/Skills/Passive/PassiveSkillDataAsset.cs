@@ -27,5 +27,13 @@ namespace Kuantech.Rpg.Skills
 
         [Header("Variables")]
         public List<SkillVariableData> SkillVariableDatas = new();
+
+        /// <summary>Applies balance data from Skills.json (see SkillBalancer) onto this asset.</summary>
+        public void LoadFromSkillData(SkillData data)
+        {
+            SkillName = data.SkillName;
+            SkillDescription = data.SkillDescription;
+            SkillVariableData.RebuildBalancable(SkillVariableDatas, data.VariableDatas);
+        }
     }
 }

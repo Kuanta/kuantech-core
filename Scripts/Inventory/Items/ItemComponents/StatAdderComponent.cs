@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using Kuantech.Core;
+using Kuantech.Core.Database;
 using Kuantech.Rpg;
+using Kuantech.Rpg.Managers;
 using Kuantech.Utils;
 
 namespace Kuantech.Inventory
@@ -11,6 +13,29 @@ namespace Kuantech.Inventory
         public override ItemComponent CreateInstance()
         {
             return new StatAdderItemComponent(ModifierDatas);
+        }
+
+        // Hard-locked to exactly one stat modifier per item for now -- reads straight off the item's own
+        // row, same as every other component, so balancing an item never means checking a second table.
+        // The affix system already covers "an item can have a variable number of bonus stats"; this is just
+        // the one guaranteed base stat. Revisit (e.g. a companion table) only if that stops being true.
+        public override void FillFromRowData(DataTable.KtRowData rowData)
+        {
+            base.FillFromRowData(rowData);
+            ModifierDatas = new List<StatModifierData>();
+
+            AttributeAsset stat = RpgManager.GetAttributeAssetById(rowData.GetStringValue("StatId", ""));
+            if (stat == null) return;
+
+            ModifierDatas.Add(new StatModifierData
+            {
+                Stat = stat,
+                ModifierTag = rowData.GetStringValue("ModifierTag", ""),
+                BaseValue = rowData.GetFloatValue("BaseValue", 0f),
+                LevelToValueFactor = rowData.GetFloatValue("LevelToValueFactor", 0f),
+                ModifierType = (ModifierTypes)rowData.GetIntValue("ModifierType", 0),
+                IsPercentage = rowData.GetValue<bool>("IsPercentage"),
+            });
         }
     }
 

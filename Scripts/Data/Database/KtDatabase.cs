@@ -141,7 +141,7 @@ namespace Kuantech.Core.Database
             return defaultValue;
         }
 
-        public List<DataTable.RowData> Query(string tableName, Predicate<DataTable.RowData> predicate)
+        public List<DataTable.KtRowData> Query(string tableName, Predicate<DataTable.KtRowData> predicate)
         {
             if (!_tablesLookup.TryGetValue(tableName, out var table))
             {
@@ -150,7 +150,7 @@ namespace Kuantech.Core.Database
             return table.Rows.FindAll(predicate);
         }
 
-        public DataTable.RowData FindRowData(string tableName, Predicate<DataTable.RowData> predicate)
+        public DataTable.KtRowData FindRowData(string tableName, Predicate<DataTable.KtRowData> predicate)
         {
             if (!_tablesLookup.TryGetValue(tableName, out var table))
             {

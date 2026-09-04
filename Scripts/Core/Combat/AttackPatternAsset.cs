@@ -3,7 +3,7 @@ using UnityEngine;
 namespace Kuantech.Core
 {
     [CreateAssetMenu(fileName = "AttackPatternAsset", menuName = "Kuantech/Combat/AttackPattern")]
-    public class AttackPatternAsset : ScriptableObject
+    public class AttackPatternAsset : MetadataAsset
     {
         public AttackPattern Template;
 
