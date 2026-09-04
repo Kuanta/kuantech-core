@@ -63,6 +63,26 @@ namespace Kuantech.Core.Combat
         }
 
         /// <summary>
+        /// Gets hittables inside a capsule between two points — used for melee weapon sweeps (WeaponVisual
+        /// queries this every active-window frame between its StartSweep/EndSweep points). The radius is
+        /// meant to be generous, not mesh-accurate: a swing's "did it connect" feel comes from the timing
+        /// matching the animation, not from pixel-precise geometry.
+        /// </summary>
+        public static List<IHittable> GetHittablesInCapsule(Vector3 start, Vector3 end, float radius, LayerMask layerMask)
+        {
+            Collider[] hits = UnityEngine.Physics.OverlapCapsule(start, end, radius, layerMask);
+            List<IHittable> hittables = new List<IHittable>();
+            foreach (var hit in hits)
+            {
+                IHittable hittable = hit.GetComponentInParent<IHittable>();
+                if (hittable == null || !hittable.CanBeHit()) continue;
+                hittables.Add(hittable);
+            }
+
+            return hittables;
+        }
+
+        /// <summary>
         /// Returns hittables in a linear box
         /// </summary>
         public static List<IHittable> GetHittablesInBox(Vector3 startPosition, Vector3 direction, float width, float range, LayerMask layerMask,

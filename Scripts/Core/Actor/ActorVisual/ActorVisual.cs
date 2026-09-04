@@ -132,7 +132,9 @@ namespace Kuantech.Core
                 visual.gameObject.SetActive(true);
                 visual.Spawn(itemToSlot.Data);
                 visual.RuntimeVisualSlot = visual.VisualSlot;
+                visual.ParentItem = itemToSlot;
                 VisualPartsHandler.OnSlotEquipped(visual.VisualSlot, visual);
+                visual.OnEquipped();
                 return visual;
             }
 
@@ -166,7 +168,9 @@ namespace Kuantech.Core
             }
 
             visual.RuntimeVisualSlot = visual.VisualSlot;
+            visual.ParentItem = itemToSlot;
             VisualPartsHandler.OnSlotEquipped(visual.VisualSlot, visual);
+            visual.OnEquipped();
             return visual;
         }
 
@@ -176,6 +180,7 @@ namespace Kuantech.Core
         public void UnslotItem(Item item)
         {
             if (item == null || item.ItemVisual == null) return;
+            item.ItemVisual.OnUnequipped();
             VisualPartsHandler.OnSlotUnequipped(item.ItemVisual.RuntimeVisualSlot, item.ItemVisual);
             item.ItemVisual.Despawn();
             item.ItemVisual = null;

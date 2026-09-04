@@ -557,6 +557,39 @@ namespace Kuantech.Core
 #endif
         }
 
+        #region Weapon Sweep
+
+        private Kuantech.Inventory.WeaponVisual _activeWeapon;
+
+        /// <summary>
+        /// Points the currently-equipped melee weapon's sweep hits at this module. Call this whenever the
+        /// equipped weapon changes (equip/unequip) — that call site isn't wired up yet; this is the
+        /// connection point for whoever hooks into the equipment system next.
+        /// </summary>
+        public void SetActiveWeapon(Kuantech.Inventory.WeaponVisual weapon)
+        {
+            if (_activeWeapon != null) _activeWeapon.HitDetected -= OnWeaponHitDetected;
+            _activeWeapon = weapon;
+            if (_activeWeapon != null) _activeWeapon.HitDetected += OnWeaponHitDetected;
+        }
+
+        /// <summary>
+        /// WeaponVisual only reports "I touched this" — same server-authority + damage + replication path
+        /// as every other hit source here (DamageActor/DamageActors), just fed by a sweep instead of an
+        /// instant arc/box query.
+        /// </summary>
+        private void OnWeaponHitDetected(IHittable hittable)
+        {
+            if (!IsServerInitialized) return;
+            bool hit = ExecuteDamageHittable(hittable);
+#if NETWORKING_FISHNET
+            if (hit && IsSpawned && hittable is Actor actor)
+                ObserverDamageActor_Rpc(actor.GetComponent<NetworkObject>());
+#endif
+        }
+
+        #endregion
+
         /// <summary>
         /// Self-exclusion (never hit your own attacker) and CanBeHit() (is this even eligible right now —
         /// a destroyed prop, say) are the only checks left here. Alive/dead and faction are Actor.OnHit's

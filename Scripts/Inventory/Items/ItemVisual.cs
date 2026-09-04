@@ -28,6 +28,9 @@ namespace Kuantech.Inventory
         [NonSerialized] public ItemData ItemData;
         [NonSerialized] public bool IsInPlace;
         [NonSerialized] public VisualSlotType RuntimeVisualSlot;
+        // Set by ActorVisual.EquipItemVisual before OnEquipped fires. Item.GetOwner() (via ParentInventory)
+        // is the chain a subclass uses to reach the wearing Actor's modules — see WeaponVisual.
+        [NonSerialized] public Item ParentItem;
 
         public virtual void Spawn(ItemData parentItemData)
         {
@@ -42,14 +45,14 @@ namespace Kuantech.Inventory
                 PoolManager.PoolObject(gameObject);
         }
 
-        public void OnEquipped()
+        public virtual void OnEquipped()
         {
-            
+
         }
 
-        public void OnUnequipped()
+        public virtual void OnUnequipped()
         {
-            
+
         }
         public void RebindBones(Transform[] targetBones)
         {
