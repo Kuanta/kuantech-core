@@ -39,6 +39,11 @@ namespace Kuantech.Core
         private float _lastEnsureTime;
         public override void ModuleUpdate(float deltaTime)
         {
+            // Only the server ever actually commands this agent (EnemyModule's AI is server-gated) --
+            // on every other peer NavMeshAgent has no destination, so IsMoving() would read false every
+            // frame and stomp the correct value MotionVectorSyncer just replicated in, fighting it and
+            // showing up as visible jitter in the walk-blend animation on remote clients.
+            if (!IsServerInitialized) return;
             if (!Actor.IsAlive()) return;
 
             // Knockback bypasses movement lock. Agent is disabled here regardless of
@@ -70,6 +75,7 @@ namespace Kuantech.Core
 
         public override void ModuleFixedUpdate()
         {
+            if (!IsServerInitialized) return;
             if (KnockbackRigidbody == null) return;
             if (IsKnockbackActive())
             {
