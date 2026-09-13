@@ -7,6 +7,9 @@ using UnityEngine;
 using FishNet.Connection;
 using FishNet.Object;
 #endif
+#if NETWORKING_NGO
+using Unity.Netcode;
+#endif
 
 namespace Kuantech.Inventory
 {
@@ -183,6 +186,15 @@ namespace Kuantech.Inventory
                 }
 
                 item.ItemVisual = visual.EquipItemVisual(item);
+
+                // The item's original equip could have happened before this actor had picked an ActorVisual
+                // yet (e.g. RestoreEquipmentState firing during LoadActorState, before PlayerModule's
+                // ToggleThirdPersonMesh runs) -- HandleItemSlotted silently no-ops in that case, so
+                // item.ItemVisual stayed null until this refresh. Re-fire OnItemEquipped now that there's
+                // finally a real visual to look at: EffectsModule (and anyone else registering
+                // visual.Effects on equip) is already subscribed to this and just missed the first one.
+                if (item.ItemVisual != null)
+                    OnItemEquipped?.Invoke(item, slot.SlotType);
             }
         }
 
@@ -341,6 +353,9 @@ namespace Kuantech.Inventory
         // ── Networking ────────────────────────────────────────────────────────
 
 #if NETWORKING_FISHNET
+        // Dead code -- NETWORKING_FISHNET is never defined, kept only as a reference for what this looked
+        // like before the NGO port below. ItemsManager (called here) never actually existed anywhere in
+        // this codebase even when this block was live -- don't resurrect that name, use ItemsLibrary.
         [ServerRpc]
         private void ServerAddItem_Rpc(string itemId, int amount)
         {
@@ -402,6 +417,77 @@ namespace Kuantech.Inventory
         }
 
         [ObserversRpc]
+        private void ObserversUnequipItem_Rpc(int inventoryId)
+        {
+            if (IsServerInitialized) return;
+            Item item = _inventory?.GetItemAtSlot(inventoryId);
+            if (item != null) _inventory.UnequipItem(item);
+        }
+#elif NETWORKING_NGO
+        // Client -> server. None of these run anything locally on the calling client first (unlike
+        // CombatModule.Attack's optimistic execution) -- AddItem/EquipItem/etc. just dispatch the RPC and
+        // wait, so every Observers broadcast below has to reach the owner too, not just everyone else.
+        [Rpc(SendTo.Server)]
+        private void ServerAddItem_Rpc(string itemId, int amount)
+        {
+            ItemData data = ItemsLibrary.GetItemData(itemId);
+            if (data != null) _inventory?.AddItem(data, amount);
+        }
+
+        [Rpc(SendTo.Server)]
+        private void ServerRemoveItem_Rpc(int inventoryId, int amount)
+        {
+            Item item = _inventory?.GetItemAtSlot(inventoryId);
+            if (item != null) _inventory.RemoveItem(inventoryId, amount);
+        }
+
+        [Rpc(SendTo.Server)]
+        private void ServerEquipItem_Rpc(int inventoryId, string slotId)
+        {
+            Item item = _inventory?.GetItemAtSlot(inventoryId);
+            if (item == null) return;
+            _inventory.EquipItem(item, _inventory.Equipment?.GetEquipmentSlotType(slotId));
+        }
+
+        [Rpc(SendTo.Server)]
+        private void ServerAddAndEquipItem_Rpc(string itemId, int amount, string slotId)
+        {
+            AddAndEquipItem(itemId, _inventory?.Equipment?.GetEquipmentSlotType(slotId), amount);
+        }
+
+        [Rpc(SendTo.Server)]
+        private void ServerUnequipItem_Rpc(int inventoryId)
+        {
+            Item item = _inventory?.GetItemAtSlot(inventoryId);
+            if (item != null) _inventory.UnequipItem(item);
+        }
+
+        // Server -> everyone, owner included -- skip on server (it already ran this directly).
+        [Rpc(SendTo.Everyone)]
+        private void ObserversOnItemAdded_Rpc(string itemId, int amount, int inventoryId)
+        {
+            if (IsServerInitialized) return;
+            ItemData data = ItemsLibrary.GetItemData(itemId);
+            if (data != null) _inventory?.AddItem(data, amount, inventoryId);
+        }
+
+        [Rpc(SendTo.Everyone)]
+        private void ObserversRemoveItem_Rpc(int inventoryId, int amount)
+        {
+            if (IsServerInitialized) return;
+            _inventory?.RemoveItem(inventoryId, amount);
+        }
+
+        [Rpc(SendTo.Everyone)]
+        private void ObserversEquipItem_Rpc(int inventoryId, string slotId)
+        {
+            if (IsServerInitialized) return;
+            Item item = _inventory?.GetItemAtSlot(inventoryId);
+            if (item == null) return;
+            _inventory.EquipItem(item, _inventory.Equipment?.GetEquipmentSlotType(slotId));
+        }
+
+        [Rpc(SendTo.Everyone)]
         private void ObserversUnequipItem_Rpc(int inventoryId)
         {
             if (IsServerInitialized) return;

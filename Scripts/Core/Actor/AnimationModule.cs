@@ -67,6 +67,10 @@ namespace Kuantech.Core
         private static readonly int HandIndex        = Animator.StringToHash("HandIndex");
         private static readonly int Cast             = Animator.StringToHash("Cast");
         private static readonly int CastIndex        = Animator.StringToHash("CastIndex");
+        // 0=Front, 1=Right, 2=Back, 3=Left -- written alongside DamageReceivedAnimationData's own trigger
+        // (see OnDamageReceive) so the Animator can pick a directional clip via Trigger + Int, the same
+        // pattern Attack/AttackIndex already uses, rather than a blend tree.
+        private static readonly int HitDirectionParam = Animator.StringToHash("HitDirection");
         public static readonly int AttackSpeed       = Animator.StringToHash("AttackSpeed");
         public static readonly int TargetTime        = Animator.StringToHash("TargetTime");
 
@@ -378,9 +382,33 @@ namespace Kuantech.Core
                 WriteBool(Death, false);
         }
 
+        // DamageReceivedAnimationData already fires whatever trigger it's configured with (AnimationData's
+        // TriggerParameterName, set in the Inspector) -- firing a second, separately-coded trigger here too
+        // caused two transitions to land on the Animator the same frame (visible as a foot-plant glitch).
+        // The one thing AnimationData can't do is a per-hit DYNAMIC value (its IntegerParameterValue is a
+        // fixed Inspector number), so HitDirection is written here, then PlayAnimationData does the actual
+        // triggering. The Animator's transitions should gate on THAT trigger + HitDirection == N.
         public void OnDamageReceive(HitInfo hitInfo)
         {
+            if (HasAnimationTarget && hitInfo.HitDirection.sqrMagnitude > 0.0001f)
+                WriteInteger(HitDirectionParam, GetHitDirectionIndex(hitInfo.HitDirection));
             PlayAnimationData(DamageReceivedAnimationData);
+        }
+
+        /// <summary>
+        /// attackDirection points FROM the attacker TOWARD this actor (see CombatModule.GetAttackDirection) --
+        /// the direction back to the attacker (what "where did this come from" actually means) is its negation.
+        /// </summary>
+        private int GetHitDirectionIndex(Vector3 attackDirection)
+        {
+            Vector3 directionToAttacker = -attackDirection;
+            Vector3 local = Actor.transform.InverseTransformDirection(directionToAttacker);
+            float angle = Mathf.Atan2(local.x, local.z) * Mathf.Rad2Deg; // 0=front, 90=right, ±180=back, -90=left
+
+            if (angle > -45f && angle <= 45f) return 0;   // Front
+            if (angle > 45f && angle <= 135f) return 1;   // Right
+            if (angle > 135f || angle <= -135f) return 2; // Back
+            return 3;                                     // Left
         }
 
         /// <summary>

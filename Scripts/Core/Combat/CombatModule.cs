@@ -12,6 +12,9 @@ using UnityEngine.Events;
 #if NETWORKING_FISHNET
 using FishNet.Object;
 #endif
+#if NETWORKING_NGO
+using Unity.Netcode;
+#endif
 
 namespace Kuantech.Core
 {
@@ -536,8 +539,12 @@ namespace Kuantech.Core
                     hurtActors.Add(actor);
                 }
             }
-#if NETWORKING_FISHNET
-            if(!IsSpawned || hurtActors.Count == 0) return;
+            if (!IsSpawned || hurtActors.Count == 0) return;
+#if NETWORKING_NGO
+            NetworkObjectReference[] refs = new NetworkObjectReference[hurtActors.Count];
+            for (int i = 0; i < hurtActors.Count; i++) refs[i] = hurtActors[i].GetComponent<NetworkObject>();
+            ObserverDamageActors_Rpc(refs);
+#elif NETWORKING_FISHNET
             List<NetworkObject> nobs = new List<NetworkObject>(hurtActors.Count);
             foreach (var a in hurtActors) nobs.Add(a.GetComponent<NetworkObject>());
             ObserverDamageActors_Rpc(nobs);
@@ -552,8 +559,11 @@ namespace Kuantech.Core
         {
             if (!IsServerInitialized) return;
             bool hit = ExecuteDamageHittable(actor);
-#if NETWORKING_FISHNET
-            if (hit && IsSpawned) ObserverDamageActor_Rpc(actor.GetComponent<NetworkObject>());
+            if (!hit || !IsSpawned) return;
+#if NETWORKING_NGO
+            ObserverDamageActor_Rpc(actor.GetComponent<NetworkObject>());
+#elif NETWORKING_FISHNET
+            ObserverDamageActor_Rpc(actor.GetComponent<NetworkObject>());
 #endif
         }
 
@@ -562,9 +572,9 @@ namespace Kuantech.Core
         private Kuantech.Inventory.WeaponVisual _activeWeapon;
 
         /// <summary>
-        /// Points the currently-equipped melee weapon's sweep hits at this module. Call this whenever the
-        /// equipped weapon changes (equip/unequip) — that call site isn't wired up yet; this is the
-        /// connection point for whoever hooks into the equipment system next.
+        /// Points the currently-equipped melee weapon's sweep hits at this module. Called from
+        /// WeaponVisual.OnEquipped()/OnUnequipped() via the item's owner chain, whenever the equipped
+        /// weapon changes.
         /// </summary>
         public void SetActiveWeapon(Kuantech.Inventory.WeaponVisual weapon)
         {
@@ -574,17 +584,100 @@ namespace Kuantech.Core
         }
 
         /// <summary>
-        /// WeaponVisual only reports "I touched this" — same server-authority + damage + replication path
-        /// as every other hit source here (DamageActor/DamageActors), just fed by a sweep instead of an
-        /// instant arc/box query.
+        /// Animation-event entry points (see ActorVisualAnimationListener, which sits on the same GameObject
+        /// as the Animator and forwards here) — no reason for the listener to reach for the weapon itself,
+        /// this module already tracks whichever one is currently equipped via SetActiveWeapon.
         /// </summary>
-        private void OnWeaponHitDetected(IHittable hittable)
+        public void OnMeleeSweepStart() => _activeWeapon?.BeginSweep();
+        public void OnMeleeSweepEnd() => _activeWeapon?.StopSweep();
+
+        /// <summary>
+        /// Client-authoritative detection, server-authoritative damage: WeaponVisual only ever sweeps on the
+        /// owning client (see WeaponVisual.Update) because it's the only peer with an accurate, low-latency
+        /// view of its own swing — the server doesn't mirror every client's attack animation, so it has no
+        /// reliable way to run this same capsule query itself. The owner reports what it saw; the server
+        /// decides whether that report actually deals damage.
+        /// </summary>
+        private void OnWeaponHitDetected(IHittable hittable, Vector3 hitPoint)
         {
-            if (!IsServerInitialized) return;
-            bool hit = ExecuteDamageHittable(hittable);
+            // Host (server+owner) or a server-driven actor (e.g. an AI's own weapon) -- already authoritative,
+            // apply directly, no round trip needed. hittable can be null here (a wall/non-hittable) -- that's
+            // fine, ApplyMeleeHit still needs to run so the clang gets broadcast to everyone else.
+            if (IsServerInitialized)
+            {
+                ApplyMeleeHit(hittable, hitPoint);
+                return;
+            }
+
+            // A remote client only ever gets here for weapons it owns (WeaponVisual gates the sweep itself),
+            // but stay defensive rather than trust that invariant blindly. Nothing to do locally for the
+            // owner here -- WeaponVisual already played the instant local clang/hit effect the moment it
+            // detected this, before this event even fired. All that's left is telling the server.
+            if (!IsOwner) return;
+
+#if NETWORKING_NGO
+            NetworkObjectReference targetRef = default;
+            bool hasTarget = hittable is Actor actor && TryGetNetworkReference(actor, out targetRef);
+            ReportMeleeHit_Rpc(hasTarget, targetRef, hitPoint);
+#endif
+        }
+
+#if NETWORKING_NGO
+        private static bool TryGetNetworkReference(Actor actor, out NetworkObjectReference reference)
+        {
+            NetworkObject netObj = actor.GetComponent<NetworkObject>();
+            if (netObj == null) { reference = default; return false; }
+            reference = netObj;
+            return true;
+        }
+
+        /// <summary>Owning client reporting "I hit this" (or "I hit a wall" when hasTarget is false) -- server
+        /// re-resolves the target and decides for itself whether to actually apply damage. No extra
+        /// validation yet (range/attack-active/duplicate checks); add those here if this needs to be
+        /// hardened against a modified client.</summary>
+        [Rpc(SendTo.Server)]
+        private void ReportMeleeHit_Rpc(bool hasTarget, NetworkObjectReference targetRef, Vector3 hitPoint)
+        {
+            IHittable hittable = null;
+            if (hasTarget && targetRef.TryGet(out NetworkObject targetNetObj))
+                hittable = targetNetObj.GetComponent<IHittable>();
+
+            ApplyMeleeHit(hittable, hitPoint);
+        }
+
+        /// <summary>Broadcasts the clang/hit effect to everyone except whoever swung (they already saw it
+        /// instantly, locally, via WeaponVisual, with zero network round trip).</summary>
+        [Rpc(SendTo.NotOwner)]
+        private void NotifyMeleeHit_Rpc(bool hasTarget, NetworkObjectReference targetRef, Vector3 hitPoint)
+        {
+            Actor targetActor = null;
+            if (hasTarget && targetRef.TryGet(out NetworkObject targetNetObj))
+                targetActor = targetNetObj.GetComponent<Actor>();
+
+            PlayMeleeHitEffect(targetActor, hitPoint);
+        }
+
+        // targetActor is currently unused beyond the null check -- kept as the natural extension point for
+        // "play a different effect when the target is an Actor vs. plain geometry" later.
+        private void PlayMeleeHitEffect(Actor targetActor, Vector3 hitPoint)
+        {
+            EffectPlayer weaponHitEffect = _activeWeapon != null ? _activeWeapon.HitEffect : null;
+            weaponHitEffect?.PlayEffectAtPosition(hitPoint, Quaternion.identity);
+        }
+#endif
+
+        private void ApplyMeleeHit(IHittable hittable, Vector3 hitPoint)
+        {
+            bool hit = hittable != null && ExecuteDamageHittable(hittable);
+
+#if NETWORKING_NGO
+            NetworkObjectReference targetRef = default;
+            bool hasTarget = hittable is Actor actor && TryGetNetworkReference(actor, out targetRef);
+            if (IsSpawned) NotifyMeleeHit_Rpc(hasTarget, targetRef, hitPoint);
+#endif
 #if NETWORKING_FISHNET
-            if (hit && IsSpawned && hittable is Actor actor)
-                ObserverDamageActor_Rpc(actor.GetComponent<NetworkObject>());
+            if (hit && IsSpawned && hittable is Actor fnActor)
+                ObserverDamageActor_Rpc(fnActor.GetComponent<NetworkObject>());
 #endif
         }
 
@@ -632,25 +725,33 @@ namespace Kuantech.Core
                         }
                     }
                 }
-                if (IsClientInitialized)
-                {
-                    //Play hit effect
-                    EffectPlayer hitEffect = GetCurrentAttackPattern().HitEffect;
-                    if (hitEffect != null)
-                    {
-                        Vector3 targetHitPoint = actor.GetHitPoint(Actor).GetTargetPosition();
-                        Vector3 attackerPosition = Actor.transform.position;
-                        attackerPosition.y = targetHitPoint.y;
-                        hitEffect.PlayEffectAtPosition(actor.GetHitPoint(Actor).GetTargetPositionTowardsTarget(attackerPosition), Quaternion.LookRotation(GetAttackDirection()));
-                    }
-                }
+                // Melee (sweep) attacks own their hit effect via WeaponVisual.HitEffect + the melee-sweep
+                // broadcast below (exact contact point, not an approximation) -- playing AttackPattern's
+                // HitEffect here too would double it up. Non-melee attack types (Arc/Circle/...) have no
+                // real contact point to work with, so they still use this approximate one.
+                if (IsClientInitialized && !pattern.IsMelee)
+                    PlayNonMeleeHitEffect(actor);
             }
 
             hittable.OnHit(hitInfo);
             if (hittable is Actor hitActor) DamagedActorEvent?.Invoke(hitActor);
             return true;
         }
-        
+
+        // Approximate hit point (torso-height-ish, aimed back toward the attacker) for attack types that
+        // have no real geometric contact point (Arc/Circle/Linear/...). Extracted so both the local
+        // (host/server-as-client) path in ExecuteDamageHittable and the NGO replication RPCs below can play
+        // the exact same effect on remote clients that never ran ExecuteDamageHittable themselves.
+        private void PlayNonMeleeHitEffect(Actor actor)
+        {
+            EffectPlayer hitEffect = GetCurrentAttackPattern().HitEffect;
+            if (hitEffect == null) return;
+            Vector3 targetHitPoint = actor.GetHitPoint(Actor).GetTargetPosition();
+            Vector3 attackerPosition = Actor.transform.position;
+            attackerPosition.y = targetHitPoint.y;
+            hitEffect.PlayEffectAtPosition(actor.GetHitPoint(Actor).GetTargetPositionTowardsTarget(attackerPosition), Quaternion.LookRotation(GetAttackDirection()));
+        }
+
         private void SkillCastAttack()
         {
             AttackPattern currPattern = GetCurrentAttackPattern();
@@ -1026,6 +1127,9 @@ namespace Kuantech.Core
             _isAttacking = false;
             _lastAttackCompleteTime = Time.time;
             RemoveMovementSlow(); //TODO: this is probably will be a runtime bug. We can't just set speed multiplier to 1 like this
+            // Safety net: if the attack got cut short (interrupted/staggered) before the animation's
+            // OnSweepEnd event fired, this stops the sweep from running forever.
+            OnMeleeSweepEnd();
             AttackCompletedEvent?.Invoke(this);
         }
         
@@ -1138,6 +1242,9 @@ namespace Kuantech.Core
 
         #region Networking
 #if NETWORKING_FISHNET
+        // Dead code -- NETWORKING_FISHNET is never defined, kept only as a reference for what this looked
+        // like before the NGO port below. ExecuteDamageActor (called here) was never actually defined
+        // anywhere in this file even when this block was live; don't resurrect this path.
         [ServerRpc]
         private void ServerAttack_Rpc(ActionCastData castData)
         {
@@ -1187,6 +1294,74 @@ namespace Kuantech.Core
             {
                 if (target != null && target.TryGetComponent(out Actor actor))
                     ExecuteDamageActor(actor);
+            }
+        }
+#elif NETWORKING_NGO
+        // Client -> server: attacking client already ran ExecuteAttack() locally (optimistic, zero-lag
+        // local feedback) before this ever gets sent -- see Attack(). This is what makes the SERVER's copy
+        // of a remote client's actor actually start attacking too.
+        [Rpc(SendTo.Server)]
+        private void ServerAttack_Rpc(ActionCastData castData)
+        {
+            Attack(castData);
+        }
+
+        [Rpc(SendTo.Server)]
+        private void ServerCancelAttack_Rpc()
+        {
+            ExecuteEndAttack();
+            ObserverAttackEnd_Rpc();
+        }
+
+        // Server -> everyone but the owner (owner already ran ExecuteAttack locally; the server ALSO
+        // already ran it directly inside Attack(), so it skips here too).
+        [Rpc(SendTo.NotOwner)]
+        private void ObserverAttackStart_Rpc(ActionCastData castData)
+        {
+            if (IsServerInitialized) return;
+            ExecuteAttack(castData);
+        }
+
+        // Everyone, INCLUDING the owner -- unlike attack-start, nobody runs RunAttackImplementation/
+        // ExecuteEndAttack optimistically on their own; ModuleUpdate only ever decides this on the server
+        // (see the IsServerInitialized gate around both triggers there), so the owner's own _isAttacking/
+        // combo state depends entirely on this RPC actually reaching them. Excluding the owner here was
+        // the original bug: it left a remote client's _isAttacking stuck true forever after one swing.
+        [Rpc(SendTo.Everyone)]
+        private void ObserverAttackImplementation_Rpc()
+        {
+            if (IsServerInitialized) return;
+            RunAttackImplementation();
+        }
+
+        [Rpc(SendTo.Everyone)]
+        private void ObserverAttackEnd_Rpc()
+        {
+            if (IsServerInitialized) return;
+            ExecuteEndAttack();
+        }
+
+        // Damage itself is never re-applied on a client -- HealthcareModule's own replication already
+        // carries the actual health change. This only replays the cosmetic hit effect for whoever didn't
+        // run ExecuteDamageHittable themselves -- which, for non-melee attack types, is EVERYONE including
+        // the attacker (DamageActor/DamageActors both early-out unless IsServerInitialized, so a remote
+        // attacking client never ran it either).
+        [Rpc(SendTo.Everyone)]
+        private void ObserverDamageActor_Rpc(NetworkObjectReference targetRef)
+        {
+            if (IsServerInitialized) return;
+            if (targetRef.TryGet(out NetworkObject targetNetObj) && targetNetObj.TryGetComponent(out Actor actor))
+                PlayNonMeleeHitEffect(actor);
+        }
+
+        [Rpc(SendTo.Everyone)]
+        private void ObserverDamageActors_Rpc(NetworkObjectReference[] targets)
+        {
+            if (IsServerInitialized) return;
+            foreach (var targetRef in targets)
+            {
+                if (targetRef.TryGet(out NetworkObject targetNetObj) && targetNetObj.TryGetComponent(out Actor actor))
+                    PlayNonMeleeHitEffect(actor);
             }
         }
 #else

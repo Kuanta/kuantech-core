@@ -14,7 +14,14 @@ namespace Kuantech.Networking
             await base.Initialize(gameManager);
 #if NETWORKING_NGO
             if (NetworkManager.Singleton != null)
+            {
                 NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
+                Debug.Log("[KtNetworkManager] Initialize: subscribed to OnClientConnectedCallback.");
+            }
+            else
+            {
+                Debug.LogWarning("[KtNetworkManager] Initialize: NetworkManager.Singleton is null -- OnClientConnectedCallback subscription skipped, late-join state sync will never fire.");
+            }
 #endif
         }
 
@@ -35,6 +42,7 @@ namespace Kuantech.Networking
         /// </summary>
         private void OnClientConnected(ulong clientId)
         {
+            Debug.Log($"[KtNetworkManager] OnClientConnected: clientId={clientId}, IsServer={NetworkManager.Singleton.IsServer}, actorCount={ActorManager.GetAllActors().Count}.");
             if (!NetworkManager.Singleton.IsServer) return;
             foreach (Actor actor in ActorManager.GetAllActors())
                 actor.PushStateTo(clientId);

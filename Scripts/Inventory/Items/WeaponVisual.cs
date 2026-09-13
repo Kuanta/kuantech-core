@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Kuantech.Core;
-using Kuantech.Core.Combat;
+using Kuantech.Core.FX;
 using UnityEngine;
 
 namespace Kuantech.Inventory
@@ -29,12 +29,19 @@ namespace Kuantech.Inventory
         public float SweepRadius = 0.15f;
         public LayerMask SweepLayers;
 
+        [Header("Environment Clang")]
+        [Tooltip("Layers considered solid environment (walls, pillars, ...) for the clang effect below -- " +
+                 "separate from SweepLayers, which is only actors/hittables. Leave unset to skip this check.")]
+
+        public EffectPlayer HitEffect;
+
         /// <summary>Fired once per IHittable the first time it's touched during the current sweep (never
         /// twice for the same target within one BeginSweep/StopSweep window).</summary>
-        public event Action<IHittable> HitDetected;
+        public event Action<IHittable, Vector3> HitDetected;
 
         private bool _sweeping;
-        private readonly HashSet<IHittable> _hitThisSwing = new HashSet<IHittable>();
+        private bool _environmentHitThisSwing;
+        private readonly HashSet<Collider> _hitThisSwing = new HashSet<Collider>();
         private CombatModule _combatModule;
 
         public bool IsMeleeWeapon => StartSweep != null && EndSweep != null;
@@ -76,19 +83,41 @@ namespace Kuantech.Inventory
         private void Update()
         {
             if (!_sweeping) return;
+            // Only the owning client's weapon actually sweeps -- the server doesn't mirror every client's
+            // swing animation, so its own copy of a remote player's weapon has no accurate StartSweep/
+            // EndSweep positions to query with. See CombatModule.OnWeaponHitDetected for the report-to-
+            // server side of this (owner detects, server decides whether it counts).
+            if (_combatModule != null && !_combatModule.IsOwner) return;
             DoSweepStep();
         }
 
         private void DoSweepStep()
         {
-            List<IHittable> hits = CombatUtilities.GetHittablesInCapsule(
-                StartSweep.position, EndSweep.position, SweepRadius, SweepLayers);
-
-            foreach (IHittable hit in hits)
+            Collider[] hits = UnityEngine.Physics.OverlapCapsule(StartSweep.position, EndSweep.position, SweepRadius, SweepLayers);
+            if (hits.Length == 0) return;
+            Actor owner = ParentItem?.GetOwner();
+            foreach (var hit in hits)
             {
-                if (!_hitThisSwing.Add(hit)) continue; // already reported this swing
-                HitDetected?.Invoke(hit);
+                if(hit.gameObject == owner.gameObject) continue;
+                if (_hitThisSwing.Contains(hit)) continue;
+
+                _hitThisSwing.Add(hit);
+                Vector3 midPoint = (StartSweep.position + EndSweep.position) * 0.5f;
+                Vector3 contactPoint = hit.ClosestPoint(midPoint);
+                HitEffect.PlayEffectAtPosition(contactPoint, Quaternion.identity);
+
+                IHittable hittable = hit.GetComponentInParent<IHittable>();
+                if (hittable == null || !hittable.CanBeHit())
+                {
+                    HitDetected?.Invoke(null, contactPoint);
+                }
+                else
+                {
+                    HitDetected?.Invoke(hittable, contactPoint);
+                }
+
             }
         }
+
     }
 }

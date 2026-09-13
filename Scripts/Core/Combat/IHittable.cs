@@ -1,44 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using Kuantech.Rpg;
+﻿
 using UnityEngine;
 
 namespace Kuantech.Core
 {
-    /// <summary>
-    /// A DTO for damage info
-    /// </summary>
-    [Serializable]
-    public struct DamageInfo
-    {
-        public DamageType DamageType; //Type of damge
-        public float DamageAmount; //Amount of damage
-        public bool IsCritical; //If is critical, useful for UI
-        // Defaults to false, i.e. shown -- opt OUT of combat text per hit, instead of having to opt every
-        // single damage source in (which is how most skills ended up never showing any text at all).
-        public bool HideDamageText;
-
-        public float GetDamage()
-        {
-            return DamageAmount;
-        }
-    
-        public void SetDamage(float damage)
-        {
-            DamageAmount = damage;
-        }
-    }
-    
-    [Serializable]
-    public struct HitInfo
-    {
-        public GameObject Hitter;
-        public DamageInfo DamageInfo;
-        public List<DamageInfo> AdditionalDamages;
-        public Vector3 HitDirection;
-        public float KnockbackForce;
-        public float KnockbackDuration;
-    }
     
     public interface IHittable
     {

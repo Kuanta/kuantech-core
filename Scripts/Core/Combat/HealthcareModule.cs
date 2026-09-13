@@ -528,9 +528,12 @@ namespace Kuantech.Core.Combat
             ExecuteSetResourceValue(resourceAsset, resourceValue);
         }
 
-        // Hit animation — server decides when threshold is crossed, all clients play it.
-        // NOT yet a real [Rpc]: HitInfo isn't network-serializable until RpgSerializer is ported to
-        // INetworkSerializable (Phase B). Until then this only runs locally on whichever peer calls it.
+        // Hit animation — server decides when threshold is crossed (see OnHit above); nothing else ever
+        // calls OnDamageReceive directly, so this has to reach everyone, host included, or the host never
+        // sees a hit reaction on its own screen either.
+#if NETWORKING_NGO
+        [Rpc(SendTo.Everyone)]
+#endif
         private void ObserversHitAnim_Rpc(HitInfo hitInfo)
         {
             if (_animationModule != null) _animationModule.OnDamageReceive(hitInfo);
