@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using Kuantech.Core.UI;
-using Kuantech.HordeBonkers;
+using Kuantech.Midcore;
 using Kuantech.Rpg.Skills;
 using Kuantech.Utils;
 using TMPro;
@@ -36,11 +36,11 @@ namespace Kuantech.RogueLike
             // BuildDescription, not GetDescription: the raw description is a template with {Placeholders}
             // that must be filled with this rank's values.
             //
-            // Resolve the utility override the same way SkillAdderPerk/PassiveSkillAdderPerk do at Apply
-            // time -- otherwise a perk granted by an equipped, ranked-up utility would show its stale
-            // asset-authored numbers here while actually applying the utility's scaled ones once picked.
-            List<SkillVariableData> utilityOverrides = HordeBonkersProgressionManager.GetUtilityScaledVariablesForPerk(_selectionData.PerkAsset);
-            if(PerkDescription != null) PerkDescription.text = _selectionData.PerkAsset.BuildDescription(_selectionData.PerkRank, utilityOverrides);
+            // Ask the game's progression for any overrides it would apply to this perk (e.g. an equipped,
+            // ranked-up item that rescales the perk it grants) -- otherwise the card would show stale
+            // asset-authored numbers while picking it actually applies the scaled ones.
+            List<SkillVariableData> variableOverrides = ProgressionManager.GetPerkVariableOverrides(_selectionData.PerkAsset);
+            if(PerkDescription != null) PerkDescription.text = _selectionData.PerkAsset.BuildDescription(_selectionData.PerkRank, variableOverrides);
             if(PerkRank != null) PerkRank.text = _selectionData.PerkRank.Stringfy();
             if(PerkIcon != null) PerkIcon.sprite = _selectionData.PerkAsset.GetIcon();
         }
