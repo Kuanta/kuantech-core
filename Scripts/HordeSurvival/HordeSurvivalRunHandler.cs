@@ -5,7 +5,6 @@ using Kuantech.Core;
 using Kuantech.Core.Controller;
 using Kuantech.Core.Store;
 using Kuantech.Core.Utils;
-using Kuantech.HordeSurvival;
 using Kuantech.Midcore;
 using Kuantech.RogueLike;
 using Kuantech.Rpg;
@@ -95,6 +94,14 @@ namespace Kuantech.HordeSurvival
         [NonSerialized] public int CurrentTier;
 
         //Events — bind UI/systems to these
+        /// <summary>
+        /// Raised once the run's player exists and the core wiring is done (controller, perks, traits,
+        /// camera). Game-specific player setup (equipment, input registration, game brains) hangs off this
+        /// instead of living in the handler, so the handler stays game-agnostic.
+        /// </summary>
+        public UnityAction<Actor> OnPlayerSpawned;
+        /// <summary>Raised just before the run's player is destroyed, so listeners can detach from it.</summary>
+        public UnityAction<Actor> OnPlayerDespawned;
         public UnityAction OnRunStarted;
         public UnityAction OnPerkXpChanged;
         public UnityAction OnPerkSelectionAvailable;
@@ -250,6 +257,7 @@ namespace Kuantech.HordeSurvival
 
             if (Player != null)
             {
+                OnPlayerDespawned?.Invoke(Player); // listeners detach (inventory, game brains) before it dies
                 Player.OnDeathEvent -= OnPlayerDeath;
                 Destroy(Player.gameObject);
                 Player = null;
@@ -264,10 +272,10 @@ namespace Kuantech.HordeSurvival
             if (RunState == null || RunState.Phase == newPhase) return;
             RunState.Phase = newPhase;
 
-            // Play only runs during Running: stop driving the player and freeze the enemy brains.
-            bool running = newPhase == RunPhase.Running;
-            SetPlayerInputEnabled(running);
-            SetEnemiesActive(running);
+            // Play only runs during Running: freeze the enemy brains outside it. Anything game-specific
+            // that must go quiet too (player input, HUD) subscribes to OnRunStateChanged rather than being
+            // reached into from here.
+            SetEnemiesActive(newPhase == RunPhase.Running);
 
             OnRunStateChanged?.Invoke(newPhase);
         }
@@ -292,12 +300,6 @@ namespace Kuantech.HordeSurvival
             return RunState != null ? RunState.Phase : RunPhase.Waiting;
         }
 
-        private void SetPlayerInputEnabled(bool enabled)
-        {
-            if (Player == null) return;
-            PlayerInputHandler input = Player.GetModule<PlayerInputHandler>();
-            if (input != null) input.SetEnabled(enabled);
-        }
         /// <summary>
         /// Restarts the run in place (test flow): clears the world, resets state and revives the player,
         /// then restarts the arena from wave 0. Reuses the same arena and player rather than reloading.
@@ -388,10 +390,6 @@ namespace Kuantech.HordeSurvival
             if (cm != null && cm.CurrentController != null)
                 cm.CurrentController.SetPlayerActor(player);
 
-            // Wire the horde-bonker brain to this run's arena (for nearest worker/warrior lookups).
-            HordeBonkerPlayerModule bonker = player.GetModule<HordeBonkerPlayerModule>();
-            if (bonker != null) bonker.Arena = CurrentArena;
-
             // Perk selection draws from the player's perk handler.
             PerkSelection?.AttachActor(player);
 
@@ -400,17 +398,13 @@ namespace Kuantech.HordeSurvival
             // maxima. Once per spawned player — a run always instantiates a fresh player, so no doubling.
             ProgressionManager.ApplyTraitUpgradesToActor(player);
 
-            // Attach the persistent inventory: equipped items apply their components (stat modifiers,
-            // attack pattern, animation set) to this run's player, same "meta → fresh player" step as traits.
-            PlayerInventoryManager.ApplyInventoryToPlayer(player);
-
-            // Input + camera.
-            PlayerInputHandler input = player.GetModule<PlayerInputHandler>();
-            if (input != null) input.RegisterInputs();
             if (CameraFollower != null) CameraFollower.Anchor = player.transform;
 
             //Subscribe to events
             player.OnDeathEvent += OnPlayerDeath;
+
+            // Last: everything the handler owns is in place, so a listener sees a fully wired player.
+            OnPlayerSpawned?.Invoke(player);
             return player;
         }
         #endregion
@@ -539,8 +533,8 @@ namespace Kuantech.HordeSurvival
         #endregion
 
 #if KUANTECH_DEBUG
-        // Bound from PlayerInputHandler (shares its InputSystem_Actions instance, so this only fires while
-        // player input is actually enabled — i.e. during an active run, never before RunState exists).
+        // Bound from the game-side input handler, so this only fires while player input is actually
+        // enabled — i.e. during an active run, never before RunState exists.
         public void DebugLevelUpPerk()
         {
             if (RunState == null || !RunState.IsActive) return;

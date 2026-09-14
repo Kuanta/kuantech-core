@@ -1,6 +1,5 @@
 using Kuantech.Core.Data;
 using Kuantech.Core.Database;
-using Kuantech.HordeBonkers;
 
 namespace Kuantech.HordeSurvival
 {
