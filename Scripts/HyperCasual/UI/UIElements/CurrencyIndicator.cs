@@ -111,7 +111,6 @@ namespace Kuantech.HyperCasual.UI
 
         public virtual void SetAmount(int amount)
         {
-            if (CurrencyAsset == null) return;
             CurrencyAmount.text = amount.Stringfy();
         }
 
