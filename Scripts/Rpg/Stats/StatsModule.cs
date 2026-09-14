@@ -665,8 +665,10 @@ namespace Kuantech.Rpg
             //Set stat states
             if (serializableData.Attributes != null)
             {
-                //Clear all stats
-                _statMap = new Dictionary<string, Attribute>();
+                // Overwrite in place (via ExecuteSetAttribute below) rather than wiping _statMap first --
+                // a save snapshot written before an attribute existed (e.g. MaxStamina added after this
+                // save) must not delete that attribute's Inspector-defined entry from Stats/Initialize().
+                // Wiping unconditionally left any such attribute's max value at its 0 default forever.
                 foreach (var def in serializableData.Attributes)
                 {
                     AttributeAsset attributeAsset = RpgManager.GetAttributeAssetById(def.AttributeId);

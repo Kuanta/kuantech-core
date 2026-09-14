@@ -49,6 +49,7 @@ namespace Kuantech.Core
         
         public void Lock(LockKey lockKey, object locker)
         {
+            if (lockKey == null) return;
             Lock(lockKey.LockId, locker);
         }
 
@@ -72,6 +73,7 @@ namespace Kuantech.Core
 
         public void Unlock(LockKey lockKey, object unlocker)
         {
+            if (lockKey == null) return;
             Unlock(lockKey.LockId, unlocker);
         }
         

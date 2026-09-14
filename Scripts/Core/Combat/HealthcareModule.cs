@@ -110,6 +110,35 @@ namespace Kuantech.Core.Combat
             Refresh();
         }
 
+        // Passive regen (e.g. Stamina) -- routed through ReceiveResource so it stays server-authoritative
+        // and reaches every peer via the same sync RPC everything else here already uses. StatsModule's own
+        // ResourceManager.TickResources exists but is unused/unnetworked; this replaces it for that purpose.
+        // Ticked on an interval rather than every frame -- a per-frame ReceiveResource call would mean a
+        // per-frame sync RPC per actor, which doesn't scale to a horde of them.
+        private const float RegenTickInterval = 0.25f;
+        private float _regenTickTimer;
+
+        public override void ModuleUpdate(float deltaTime)
+        {
+            base.ModuleUpdate(deltaTime);
+            if (!IsServer || _statModule == null || Resources.IsNullOrEmpty()) return;
+
+            _regenTickTimer += deltaTime;
+            if (_regenTickTimer < RegenTickInterval) return;
+            float elapsed = _regenTickTimer;
+            _regenTickTimer = 0f;
+
+            foreach (var resource in Resources)
+            {
+                Resource res = _statModule.ResourceManager.GetResource(resource);
+                if (res == null) continue;
+                float regenPerSec = res.GetRegenValue();
+                if (regenPerSec == 0f) continue;
+                if (GetCurrentResource(resource) >= GetMaxResourceValue(resource)) continue;
+                ReceiveResource(resource, regenPerSec * elapsed, true);
+            }
+        }
+
 
         public override void OnActorRankSet(int rank)
         {
@@ -537,6 +566,14 @@ namespace Kuantech.Core.Combat
         private void ObserversHitAnim_Rpc(HitInfo hitInfo)
         {
             if (_animationModule != null) _animationModule.OnDamageReceive(hitInfo);
+
+            // OnReceivedHitEvent already fires unconditionally at the end of OnHit above -- but OnHit only
+            // ever RUNS on whichever peer's Actor.OnHitEvent fired, which is server-only (ExecuteDamageHittable
+            // is server-gated). For the host that IS the local screen, so it already got it there. A remote
+            // owner never ran OnHit locally at all, so this is the only place their own subscribers (e.g.
+            // PlayerModule's local-only camera shake/vignette) ever hear about it.
+            if (IsOwner && !IsServerInitialized)
+                OnReceivedHitEvent?.Invoke(hitInfo);
         }
 
         #endregion

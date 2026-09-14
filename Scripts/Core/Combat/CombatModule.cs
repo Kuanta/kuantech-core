@@ -571,6 +571,10 @@ namespace Kuantech.Core
 
         private Kuantech.Inventory.WeaponVisual _activeWeapon;
 
+        /// <summary>Whatever weapon visual is currently equipped -- BlockModule reads this to play the
+        /// equipped item's own block effects, same as this module reads it for melee hit effects.</summary>
+        public Kuantech.Inventory.WeaponVisual GetActiveWeapon() => _activeWeapon;
+
         /// <summary>
         /// Points the currently-equipped melee weapon's sweep hits at this module. Called from
         /// WeaponVisual.OnEquipped()/OnUnequipped() via the item's owner chain, whenever the equipped
@@ -874,7 +878,6 @@ namespace Kuantech.Core
             {
                 float timeMultiplier = Mathf.Max(0.01f, GetAttackSpeedMultiplier());
                 float animationTime = currPattern.AnimationTime;
-                animationTime = Mathf.Clamp(animationTime, 0, _attackDuration);
                 if (_animationModule != null)
                 {
                     _animationModule.PlayAnimationData(currPattern.AttackAnimationData, animationTime / timeMultiplier);
@@ -1013,7 +1016,7 @@ namespace Kuantech.Core
         /// <returns></returns>
         public bool CanAttack()
         {
-            return Actor.IsAlive() && !IsAttackInCooldown() && !IsAttackLocked();
+            return Actor.IsAlive() && !IsAttackInCooldown() && !IsAttackLocked() && HasResourcesToAttack();
         }
 
         public bool HasResourcesToAttack()

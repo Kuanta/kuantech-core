@@ -35,6 +35,14 @@ namespace Kuantech.Inventory
 
         public EffectPlayer HitEffect;
 
+        [Header("Block")]
+        [Tooltip("Played once when block is raised with this item equipped.")]
+        public EffectPlayer BlockStartEffect;
+        [Tooltip("Played once when block is lowered with this item equipped.")]
+        public EffectPlayer BlockEndEffect;
+        [Tooltip("Played when a hit actually lands while blocking with this item (the 'clang').")]
+        public EffectPlayer BlockedHitEffect;
+
         /// <summary>Fired once per IHittable the first time it's touched during the current sweep (never
         /// twice for the same target within one BeginSweep/StopSweep window).</summary>
         public event Action<IHittable, Vector3> HitDetected;

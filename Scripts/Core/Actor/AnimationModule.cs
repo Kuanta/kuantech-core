@@ -71,6 +71,9 @@ namespace Kuantech.Core
         // (see OnDamageReceive) so the Animator can pick a directional clip via Trigger + Int, the same
         // pattern Attack/AttackIndex already uses, rather than a blend tree.
         private static readonly int HitDirectionParam = Animator.StringToHash("HitDirection");
+        // Drives the PoiseBreak/PoiseBreakLoop states already authored on the Animator controllers.
+        private static readonly int Poised           = Animator.StringToHash("Poised");
+        private static readonly int Blocking         = Animator.StringToHash("Blocking");
         public static readonly int AttackSpeed       = Animator.StringToHash("AttackSpeed");
         public static readonly int TargetTime        = Animator.StringToHash("TargetTime");
 
@@ -254,6 +257,18 @@ namespace Kuantech.Core
         {
             if (!HasAnimationTarget) return;
             WriteBool(Crouching, toggle);
+        }
+
+        public void SetPoised(bool poised)
+        {
+            if (!HasAnimationTarget) return;
+            WriteBool(Poised, poised);
+        }
+
+        public void SetBlocking(bool blocking)
+        {
+            if (!HasAnimationTarget) return;
+            WriteBool(Blocking, blocking);
         }
 
         // Movement event callbacks — subscribed in OnModulesInitialized
