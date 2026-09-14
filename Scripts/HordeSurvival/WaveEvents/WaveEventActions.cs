@@ -2,7 +2,7 @@ using System;
 using Kuantech.Core;
 using UnityEngine;
 
-namespace Kuantech.HordeBonkers
+namespace Kuantech.HordeSurvival
 {
     /// <summary>
     /// Spawns one or more enemies (a boss, an elite pack, a surge) through the wave handler's spawn

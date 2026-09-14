@@ -12,7 +12,7 @@ using Kuantech.Rpg;
 using UnityEngine;
 using UnityEngine.Events;
 
-namespace Kuantech.HordeBonkers
+namespace Kuantech.HordeSurvival
 {
     // /// <summary>
     // /// Input config for a single run, handed over on scene transition (which arena, difficulty, seed, ...).

@@ -3,7 +3,7 @@ using Kuantech.Core.Database.Attributes;
 using Kuantech.HordeSurvival;
 using UnityEngine;
 
-namespace Kuantech.HordeBonkers
+namespace Kuantech.HordeSurvival
 {
     /// <summary>
     /// The single balance sheet for run difficulty. Holds the level-1 wave shape plus a handful of growth

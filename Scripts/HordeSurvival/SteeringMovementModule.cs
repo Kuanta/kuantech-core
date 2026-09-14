@@ -1,7 +1,7 @@
 using Kuantech.Core;
 using UnityEngine;
 
-namespace Kuantech.HordeBonkers
+namespace Kuantech.HordeSurvival
 {
     /// <summary>
     /// Shared steering for a dumb horde agent (grunt or worker): turns a desired direction into an actual

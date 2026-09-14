@@ -1,11 +1,10 @@
 using Kuantech.Core;
 using Kuantech.Core.UI;
-using Kuantech.HordeBonkers;
 using Kuantech.Rpg;
 using TMPro;
 using UnityEngine;
 
-namespace Kuantech.HordeBonkers
+namespace Kuantech.HordeSurvival
 {
     /// <summary>
     /// The in-run perk XP bar. Reflects the run's perk LevelVariable: fills as orbs grant XP, and on a

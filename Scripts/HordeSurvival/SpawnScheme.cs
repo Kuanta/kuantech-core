@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace Kuantech.HordeBonkers
+namespace Kuantech.HordeSurvival
 {
     /// <summary>
     /// A preferred direction to spawn toward, in world space on the XZ plane. Whoever owns the horde

@@ -4,7 +4,7 @@ using Kuantech.Core.UI;
 using Kuantech.HyperCasual.UI;
 using UnityEngine;
 
-namespace Kuantech.HordeBonkers
+namespace Kuantech.HordeSurvival
 {
     /// <summary>
     /// In-run currency readout. Scans its child CurrencyIndicators once and drives them from the run's

@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace Kuantech.HordeBonkers
+namespace Kuantech.HordeSurvival
 {
     /// <summary>
     /// Fires once the current wave has spent at least <see cref="Threshold"/> of its spawn budget — e.g. 0.5

@@ -4,7 +4,7 @@ using Kuantech.Core;
 using Kuantech.Utils;
 using UnityEngine;
 
-namespace Kuantech.HordeBonkers
+namespace Kuantech.HordeSurvival
 {
     public class HordeEnemyModule : ActorModule, IUpdateRateProvider
     {
