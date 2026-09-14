@@ -1,6 +1,6 @@
 using Kuantech.Core;
 
-namespace Kuantech.HordeBonkers
+namespace Kuantech.HordeSurvival
 {
     public class ToMenuSceneTransitionData : LevelTransitionData
     {

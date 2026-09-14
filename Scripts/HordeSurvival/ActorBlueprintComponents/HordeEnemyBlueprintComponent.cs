@@ -4,7 +4,7 @@ using Kuantech.Core.Database;
 using Kuantech.Core.Database.Attributes;
 using UnityEngine;
 
-namespace Kuantech.HordeBonkers
+namespace Kuantech.HordeSurvival
 {
     /// <summary>
     /// Horde-specific spawn metadata attached to an enemy's blueprint: where in the difficulty curve it
