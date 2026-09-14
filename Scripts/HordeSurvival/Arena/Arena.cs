@@ -29,7 +29,9 @@ namespace Kuantech.HordeSurvival
         {
             Player = player;
             player.WarpToPoint(PlayerSpawnPoint.position, PlayerSpawnPoint.rotation);
-            Player.GetModule<HordeBonkerPlayerModule>().Arena = this;
+            // Nothing game-specific is pushed onto the player here -- an arena knows nothing about a given
+            // game's player modules. Whoever owns the run wires those from HordeSurvivalRunHandler's
+            // OnPlayerSpawned instead.
             Initialize(); // WorldZone: detect child WorldZoneElements and Initialize(this) each
 
             // Feed the run's data to the wave handler before the zone activates (it reads these when it
