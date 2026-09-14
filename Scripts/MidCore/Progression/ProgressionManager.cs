@@ -4,6 +4,7 @@ using Cysharp.Threading.Tasks;
 using Kuantech.Core;
 using Kuantech.Core.Combat;
 using Kuantech.Rpg;
+using Kuantech.Rpg.Skills;
 using Kuantech.Utils;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -497,6 +498,33 @@ namespace Kuantech.Midcore
             }
             return null;
         }
+        #endregion
+
+        #region Perk Variable Overrides
+
+        /// <summary>
+        /// Variable overrides this game's progression applies to a perk -- e.g. an equipped, ranked-up item
+        /// that rescales the perk it grants. Core has no notion of what may rescale a perk, so the base
+        /// returns nothing; a game overrides this on its own ProgressionManager subclass.
+        /// </summary>
+        protected virtual List<SkillVariableData> ResolvePerkVariableOverrides(PerkAsset perkAsset)
+        {
+            return null;
+        }
+
+        /// <summary>
+        /// The single seam every core display path goes through when it builds a perk's description
+        /// (PerkAsset.BuildDescription), so the numbers shown always match the ones the game would actually
+        /// apply. Null when the game has no overrides for this perk -- BuildDescription then falls back to
+        /// the asset-authored values.
+        /// </summary>
+        public static List<SkillVariableData> GetPerkVariableOverrides(PerkAsset perkAsset)
+        {
+            if (perkAsset == null) return null;
+            var ctx = GetContext<ProgressionManager>();
+            return ctx != null ? ctx.ResolvePerkVariableOverrides(perkAsset) : null;
+        }
+
         #endregion
 
         #region Collectibles
