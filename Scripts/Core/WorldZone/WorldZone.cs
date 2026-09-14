@@ -14,7 +14,7 @@ namespace Kuantech.Core
         private List<WorldZoneElement> _zoneElements = new List<WorldZoneElement>();
         private readonly Dictionary<Type, List<WorldZoneElement>> _elementsByType = new Dictionary<Type, List<WorldZoneElement>>();
 
-        public void Initialize()
+        public virtual void Initialize()
         {
             DetectZoneElements();
             foreach(var zoneElement in _zoneElements)

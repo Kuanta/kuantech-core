@@ -1,5 +1,8 @@
+using System;
 using System.Collections.Generic;
 using Kuantech.Core;
+using UnityEngine;
+using static Kuantech.Core.Actor;
 
 namespace Kuantech.HordeSurvival
 {
@@ -23,6 +26,10 @@ namespace Kuantech.HordeSurvival
         public int AliveCount => _aliveEnemies.Count;
         public int SpawnedCount => _spawnedEnemies.Count;
 
+        /// <summary>Relays every tracked enemy's KillFeedEvent -- the single place run-level systems (kill
+        /// rewards, kill feed UI, ...) hook in, instead of each one subscribing to every spawned Actor itself.</summary>
+        public event Action<Actor, GameObject> OnEnemyKilled;
+
         /// <summary>
         /// Starts tracking an enemy actor already spawned into the world. Idempotent (-=/+=) so a pooled
         /// actor reused without a clean despawn — its despawn deferred to a coroutine a scene change
@@ -37,6 +44,13 @@ namespace Kuantech.HordeSurvival
             actor.OnDeathEvent += OnEnemyDeath;
             actor.OnDespawnedEvent -= OnEnemyDespawned;
             actor.OnDespawnedEvent += OnEnemyDespawned;
+            actor.OnKillFeedEvent -= OnEnemyKillFeed;
+            actor.OnKillFeedEvent += OnEnemyKillFeed;
+        }
+
+        private void OnEnemyKillFeed(KillFeedData data)
+        {
+            OnEnemyKilled?.Invoke(data.DeadActor, data.Killer);
         }
 
         /// <summary>
@@ -59,6 +73,7 @@ namespace Kuantech.HordeSurvival
             if (actor == null) return;
             actor.OnDeathEvent -= OnEnemyDeath;
             actor.OnDespawnedEvent -= OnEnemyDespawned;
+            actor.OnKillFeedEvent -= OnEnemyKillFeed;
             _aliveEnemies.Remove(actor);
             _spawnedEnemies.Remove(actor);
         }
