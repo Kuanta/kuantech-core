@@ -116,6 +116,13 @@ namespace Kuantech.Core
         public UnityAction<HitInfo> OnHitEvent;
         public UnityAction<int> OnRankSetEvent;
         public UnityAction<Actor> OnStateLoaded;
+        /// <summary>
+        /// Fired from KillActor, the one place the killer is actually known -- ChangeActorState's Dead
+        /// transition also replicates to observers, but only the ActorState enum crosses that RPC, so a
+        /// killer looked up from there would always be null on remote peers. Server-only in practice, since
+        /// KillActor is only ever called from HealthcareModule.OnHit's server-gated death branch.
+        /// </summary>
+        public UnityAction<KillFeedData> OnKillFeedEvent;
 
         #region Lifecycle
         private void Start()
@@ -378,6 +385,7 @@ namespace Kuantech.Core
             OnSpawnedEvent = null;
             OnDespawnedEvent = null;
             OnHitEvent = null;
+            OnKillFeedEvent = null;
         }
         
         /// <summary>
@@ -534,6 +542,7 @@ namespace Kuantech.Core
         /// </summary>
         public void KillActor(GameObject killer = null)
         {
+            OnKillFeedEvent?.Invoke(new KillFeedData { Killer = killer, DeadActor = this });
             ChangeActorState(ActorState.Dead);
         }
 
