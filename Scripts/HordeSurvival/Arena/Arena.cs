@@ -25,7 +25,7 @@ namespace Kuantech.HordeSurvival
         /// prefab authors them as (shared across every arena, not data-driven) -- only PowerLevel, the
         /// difficulty numbers and the wave-event script come from arenaData.
         /// </summary>
-        public void InitializeArena(Actor player, ArenaData arenaData)
+        public virtual void InitializeArena(Actor player, ArenaData arenaData)
         {
             Player = player;
             player.WarpToPoint(PlayerSpawnPoint.position, PlayerSpawnPoint.rotation);

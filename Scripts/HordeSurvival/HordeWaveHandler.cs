@@ -6,7 +6,7 @@ using Kuantech.Core.Utils;
 using UnityEngine;
 using UnityEngine.Events;
 
-namespace Kuantech.HordeBonkers
+namespace Kuantech.HordeSurvival
 {
     public class HordeWaveHandler : WorldZoneElement
     {
