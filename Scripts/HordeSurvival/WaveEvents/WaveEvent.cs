@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace Kuantech.HordeBonkers
+namespace Kuantech.HordeSurvival
 {
     /// <summary>
     /// A condition evaluated against the wave handler's live state (budget spent, wave cleared, ...).

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Kuantech.Core;
 using UnityEngine;
 
-namespace Kuantech.HordeBonkers
+namespace Kuantech.HordeSurvival
 {
     /// <summary>
     /// Decides *which way* the horde should arrive from, so the player keeps feeling surrounded instead of

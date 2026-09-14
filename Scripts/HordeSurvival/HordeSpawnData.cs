@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace Kuantech.HordeBonkers
+namespace Kuantech.HordeSurvival
 {
     // Enemy roster + per-enemy spawn gating now live on the enemy blueprints themselves
     // (ActorBlueprintCollection + HordeEnemyBlueprintComponent), so this file only holds the wave shape.

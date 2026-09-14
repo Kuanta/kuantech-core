@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using Kuantech.Core;
 using UnityEngine;
 
-namespace Kuantech.HordeBonkers
+namespace Kuantech.HordeSurvival
 {
     /// <summary>
     /// Physics-free anti-overlap for large crowds. Agents register themselves (optionally with their own
