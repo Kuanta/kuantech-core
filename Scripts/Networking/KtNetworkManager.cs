@@ -88,5 +88,27 @@ namespace Kuantech.Networking
         }
 
         #endregion
+
+        #region Actor Lookup
+
+        /// <summary>
+        /// Resolves the Actor owned by a connected client via its auto-spawned PlayerObject
+        /// (NetworkConfig.PlayerPrefab) -- the native NGO way, O(1) instead of scanning every
+        /// registered Actor for a matching OwnerClientId. Any server-side system that only has a
+        /// clientId (an incoming named message, an RPC param, ...) should resolve through here
+        /// rather than rolling its own ActorManager.GetAllActors() search.
+        /// </summary>
+        public static Actor GetPlayerActor(ulong clientId)
+        {
+#if NETWORKING_NGO
+            if (NetworkManager.Singleton == null) return null;
+            if (!NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out NetworkClient client)) return null;
+            return client.PlayerObject != null ? client.PlayerObject.GetComponent<Actor>() : null;
+#else
+            return null; // offline: no such thing as "a" remote client to resolve
+#endif
+        }
+
+        #endregion
     }
 }

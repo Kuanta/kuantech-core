@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Kuantech.Core;
+using Kuantech.Networking;
 #if NETWORKING_NGO
 using Unity.Netcode;
 #endif
@@ -114,7 +115,7 @@ namespace Kuantech.HordeSurvival
         // -- catch just that one client up on whatever wave is currently active.
         private void OnClientConnected(ulong clientId)
         {
-            if (!IsServer() || _currentWaveIndex < 0) return;
+            if (!KtNetworkManager.HasAuthority() || _currentWaveIndex < 0) return;
             WaveAnnouncer.AnnounceWaveStartedTo(_currentWaveIndex, clientId);
         }
 #endif
@@ -122,7 +123,7 @@ namespace Kuantech.HordeSurvival
         public override void OnZoneActivated()
         {
             base.OnZoneActivated();
-            if (!IsServer()) return;
+            if (!KtNetworkManager.HasAuthority()) return;
 
             if (_startRunRoutine != null) StopCoroutine(_startRunRoutine);
             _startRunRoutine = StartCoroutine(StartRunRoutine());
@@ -144,18 +145,9 @@ namespace Kuantech.HordeSurvival
 
         private void Update()
         {
-            if (!IsServer() || State != WaveState.Spawning) return;
+            if (!KtNetworkManager.HasAuthority() || State != WaveState.Spawning) return;
             TrySpawnBatch();
             CheckWaveCompletion();
-        }
-
-        private static bool IsServer()
-        {
-#if NETWORKING_NGO
-            return NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer;
-#else
-            return true;
-#endif
         }
 
         #region Wave Management
