@@ -44,6 +44,14 @@ namespace Kuantech.Networking
         {
             Debug.Log($"[KtNetworkManager] OnClientConnected: clientId={clientId}, IsServer={NetworkManager.Singleton.IsServer}, actorCount={ActorManager.GetAllActors().Count}.");
             if (!NetworkManager.Singleton.IsServer) return;
+
+            // OnClientConnectedCallback also fires for the host's own local connection -- every actor it
+            // already has locally (its own player included, with correct visuals/equipment straight out of
+            // Spawn/GiveStartingLoadout) needs no push at all. Without this, the host re-loads its OWN
+            // already-live inventory state from a snapshot of itself, which re-equips -- and so re-visualizes
+            // -- every already-equipped item a second time (e.g. a duplicate starting-weapon ItemVisual).
+            if (clientId == NetworkManager.Singleton.LocalClientId) return;
+
             foreach (Actor actor in ActorManager.GetAllActors())
                 actor.PushStateTo(clientId);
         }

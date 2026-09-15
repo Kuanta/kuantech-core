@@ -196,7 +196,14 @@ namespace Kuantech.Core
         private int _currentComboIndex;
 
         private ActionCastData _currentCastData;
-        
+
+        // One-off attack pattern that bypasses the combo cycle entirely (e.g. BlockModule's bash) -- takes
+        // priority in GetCurrentAttackPattern() over DefaultAttackPattern/SetCurrentAttackPattern, and never
+        // advances or resets _currentComboIndex (see the guard in ExecuteAttack), so the weapon's normal
+        // combo chain is exactly where it left off once the override clears. Set/cleared by whoever wants a
+        // one-off action -- this module doesn't know or care who or why.
+        private AttackPattern _attackPatternOverride;
+
         #region Lifecycle
         public override void OnModulesInitialized()
         {
@@ -522,7 +529,11 @@ namespace Kuantech.Core
             }
             else
             {
-                projectile.Shoot(Actor, null, GetAttackPosition(), GetAttackDirection(), null);
+                // Free-aim (no locked target): fire toward wherever the caster was aiming when the attack
+                // STARTED, not wherever they're facing now -- this only runs once AttackImplementationTime
+                // has elapsed, so without prioritizeCastDirection a player who keeps turning during the
+                // windup would see the shot fly off toward their new facing instead of the original aim.
+                projectile.Shoot(Actor, null, GetAttackPosition(), GetAttackDirection(prioritizeCastDirection: true), null);
             }
 
             OnShotProjectileEvent?.Invoke(projectile);
@@ -858,8 +869,13 @@ namespace Kuantech.Core
             else if (castData.Direction.sqrMagnitude > 0.01f)
                 Actor.MotionVectorsHandler.SetTargetVector(castData.Direction);
 
-            float timeSinceLastAttack = Time.time - _lastAttackCompleteTime;
-            _currentComboIndex = timeSinceLastAttack < ComboRefreshTime ? _currentComboIndex + 1 : 0;
+            // An override attack (bash, ...) is a one-off outside the weapon's own combo chain -- leave
+            // _currentComboIndex exactly where it was so the chain resumes correctly once the override clears.
+            if (_attackPatternOverride == null)
+            {
+                float timeSinceLastAttack = Time.time - _lastAttackCompleteTime;
+                _currentComboIndex = timeSinceLastAttack < ComboRefreshTime ? _currentComboIndex + 1 : 0;
+            }
 
             //Common
             AttackPattern currPattern = GetCurrentAttackPattern();
@@ -992,6 +1008,7 @@ namespace Kuantech.Core
 
         public AttackPattern GetCurrentAttackPattern()
         {
+            if (_attackPatternOverride != null) return _attackPatternOverride;
             var combo = _currentAttackPattern ?? DefaultAttackPattern;
             return combo?.GetPattern(_currentComboIndex);
         }
@@ -1005,6 +1022,16 @@ namespace Kuantech.Core
         public void SetCurrentComboAttackPattern(ComboAttackPattern combo)
         {
             _currentAttackPattern = combo;
+        }
+
+        /// <summary>
+        /// Set by whoever needs a one-off attack outside the normal combo cycle (e.g. BlockModule while
+        /// blocking) -- see the field doc on _attackPatternOverride. Pass null to clear it and fall back to
+        /// the regular combo/default pattern again.
+        /// </summary>
+        public void SetAttackPatternOverride(AttackPattern pattern)
+        {
+            _attackPatternOverride = pattern;
         }
         #endregion
 

@@ -1,4 +1,3 @@
-using System.Collections;
 #if NETWORKING_NGO
 using Unity.Netcode;
 #endif
@@ -10,9 +9,11 @@ namespace Kuantech.Core.Combat
     /// Hold-to-block: input-driven (unlike PoiseModule, which is server-decided), so it follows the same
     /// owner-acts-locally + server-authoritative-relay shape as MovementModule.Dash for zero-lag feedback.
     /// Reduces incoming damage via HealthcareModule.DamageInterceptor (which also covers a hit's
-    /// AdditionalDamages entries, so a blocked hit's poise damage is reduced too, for free) and locks
-    /// CombatModule's own AttackLockKey for the duration plus a short release-recovery window, so block
-    /// can't be feathered into a free instant attack.
+    /// AdditionalDamages entries, so a blocked hit's poise damage is reduced too, for free).
+    ///
+    /// Doesn't lock attacking -- pressing Attack while blocking still goes through CombatModule.Attack()
+    /// normally, it just swings BashPattern instead of the weapon's usual combo (see
+    /// CombatModule.SetAttackPatternOverride, set/cleared here in lockstep with the block itself).
     /// </summary>
     public class BlockModule : ActorModule
     {
@@ -20,19 +21,24 @@ namespace Kuantech.Core.Combat
         [Range(0f, 1f)] public float DamageReductionPercent = 0.7f;
         [Tooltip("Movement speed multiplier while blocking (1 = no slow, 0 = rooted).")]
         [Range(0f, 1f)] public float MovementSpeedMultiplier = 0.5f;
-        [Tooltip("Seconds after releasing block before attacking is allowed again.")]
-        public float ReleaseRecoveryDuration = 0.2f;
         [Tooltip("Total frontal arc (degrees) a hit must come from to actually be blocked -- a hit from " +
                  "outside this, e.g. from behind, ignores the raised guard entirely.")]
         [Range(0f, 360f)] public float BlockArcDegrees = 120f;
+
+        [Header("Bash")]
+        [Tooltip("What CombatModule.Attack() swings while blocking, instead of the weapon's normal combo. " +
+                 "Leave unset for a weapon with no bash.")]
+
+        public AttackPatternAsset DefaultBashPattern;
+        public AttackPattern BashPattern;
 
         private CombatModule _combatModule;
         private MovementModule _movementModule;
         private HealthcareModule _healthcareModule;
         private AnimationModule _animationModule;
+        private PoiseModule _poiseModule;
 
         private bool _blocking;
-        private Coroutine _releaseRoutine;
 
         public bool IsBlocking() => _blocking;
 
@@ -43,15 +49,25 @@ namespace Kuantech.Core.Combat
             _movementModule = Actor.GetModule<MovementModule>();
             _healthcareModule = Actor.GetModule<HealthcareModule>();
             _animationModule = Actor.GetModule<AnimationModule>();
+            _poiseModule = Actor.GetModule<PoiseModule>();
 
             if (_healthcareModule != null) _healthcareModule.DamageInterceptor += OnDamageIntercepted;
+            if (_poiseModule != null) _poiseModule.OnPoiseBreak += OnPoiseBreak;
+            BashPattern = DefaultBashPattern.GetAttackPattern();
         }
 
         public override void Cleanup()
         {
             base.Cleanup();
             if (_healthcareModule != null) _healthcareModule.DamageInterceptor -= OnDamageIntercepted;
+            if (_poiseModule != null) _poiseModule.OnPoiseBreak -= OnPoiseBreak;
         }
+
+        // A heavy enough hit knocks a raised guard down too -- PoiseModule doesn't know or care that this
+        // is what happens, it just fires OnPoiseBreak; this is the one place that decides "and also cancel
+        // the block". Runs identically on every peer, same as PoiseModule's own break handling (see
+        // CancelBlock's doc below).
+        private void OnPoiseBreak() => CancelBlock();
 
         private DamageInfo OnDamageIntercepted(DamageInfo damageInfo, HitInfo hitInfo)
         {
@@ -125,11 +141,11 @@ namespace Kuantech.Core.Combat
         }
 
         /// <summary>
-        /// Poise breaking through a raised guard should knock it down -- called by PoiseModule from inside
-        /// its own SendTo.Everyone broadcast handler, which already runs identically on every peer. Calls
-        /// ExecuteEndBlock directly rather than the public EndBlock() -- that one gates on IsServer/IsOwner
-        /// to decide whether TO dispatch an RPC, which would leave a remote observer's local mirrored state
-        /// (and Animator "Blocking" bool) stuck on, since a plain observer is neither.
+        /// Poise breaking through a raised guard should knock it down -- reached via OnPoiseBreak, fired
+        /// from inside PoiseModule's own SendTo.Everyone broadcast handler, which already runs identically
+        /// on every peer. Calls ExecuteEndBlock directly rather than the public EndBlock() -- that one gates
+        /// on IsServer/IsOwner to decide whether TO dispatch an RPC, which would leave a remote observer's
+        /// local mirrored state (and Animator "Blocking" bool) stuck on, since a plain observer is neither.
         /// </summary>
         public void CancelBlock()
         {
@@ -139,13 +155,8 @@ namespace Kuantech.Core.Combat
 
         private void ExecuteStartBlock()
         {
-            if (_releaseRoutine != null)
-            {
-                StopCoroutine(_releaseRoutine);
-                _releaseRoutine = null;
-            }
             _blocking = true;
-            _combatModule?.LockAttack(this);
+            _combatModule?.SetAttackPatternOverride(BashPattern);
             _movementModule?.SetSpeedMultiplier(MovementSpeedMultiplier);
             _animationModule?.SetBlocking(true);
             _combatModule?.GetActiveWeapon()?.BlockStartEffect.PlayEffect();
@@ -154,21 +165,10 @@ namespace Kuantech.Core.Combat
         private void ExecuteEndBlock()
         {
             _blocking = false;
+            _combatModule?.SetAttackPatternOverride(null);
             _movementModule?.SetSpeedMultiplier(1f);
             _animationModule?.SetBlocking(false);
             _combatModule?.GetActiveWeapon()?.BlockEndEffect.PlayEffect();
-
-            // Attack stays locked a little longer than the visual block -- a short recovery window so
-            // dropping guard can't be feathered straight into a free, unpunishable attack.
-            if (_releaseRoutine != null) StopCoroutine(_releaseRoutine);
-            _releaseRoutine = StartCoroutine(ReleaseRecoveryRoutine());
-        }
-
-        private IEnumerator ReleaseRecoveryRoutine()
-        {
-            yield return new WaitForSeconds(ReleaseRecoveryDuration);
-            _releaseRoutine = null;
-            _combatModule?.UnlockAttack(this);
         }
 
 #if NETWORKING_NGO

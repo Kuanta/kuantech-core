@@ -15,6 +15,7 @@ namespace Kuantech.Core
         
         [Header("Animations")] 
         public Animator Animator;
+        public RuntimeAnimatorController DefaultAnimatorController;
 
         [Header("Visual Parts")]
         public ActorVisualPartsHandler VisualPartsHandler;
@@ -76,6 +77,14 @@ namespace Kuantech.Core
             return ModuleHandler.GetModule<T>() as T;
         }
 
+        #endregion
+
+        #region Animations
+        public void SetAnimatorRuntimeController(RuntimeAnimatorController controller)
+        {
+            if(Animator == null) return;
+            Animator.runtimeAnimatorController = controller != null ? controller : DefaultAnimatorController;
+        }
         #endregion
 
         #region Item Slotting
