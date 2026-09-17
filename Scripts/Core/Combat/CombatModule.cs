@@ -41,16 +41,15 @@ namespace Kuantech.Core
     [Serializable]
     public class AttackPattern
     {
+        #region Shape
+
         [Header("Attack Point")]
         public string AttackPointSlotName = "AttackPoint";
-        [Tooltip("If true, attack implementation waits until the actor faces the attack direction before dealing damage.")]
-        public bool WaitRotationalAlign = false;
 
         [Header("Attack Shape")]
         public AttackTypes AttackType;
         public bool IsMelee;
 
-        #region Attributr Based Variables
         [Header("Damage")]
         public AtributeBasedDamageVariable Damage;
         public List<AtributeBasedDamageVariable> AdditionalDamages;
@@ -70,25 +69,23 @@ namespace Kuantech.Core
         public AttributeBasedVariable Knockback;
         public AttributeBasedVariable KnockbackTime;
 
+        [Header("Projectile")]
+        public Projectile ProjectilePrefab;
+
+        [Header("Skill")]
+        public SkillDataAsset SkillToCast;
+
         #endregion
 
+        #region Resource / Modifiers
 
         [Header("Required Resource")]
         public ResourceAsset RequiredResource;
         public float RequiredResourceAmount = 0;
-        
-        [Header("Timings")] 
-        public float AttackImplementationTime;
-        public float EffectPlayTime;
-        public float ContinuousAttackMaxTime;
-        public bool ScaleAttackImplementationTimeWithAttackSpeed = true;
-        public float AnimationTime;
-        public float AttackDuration;
-        public bool Continious; //Continious will attack every 'attack time' during the attack
 
-        [Header("Attack Modifiers")] 
+        [Header("Attack Modifiers")]
         public List<StatusEffectAsset> StatusEffectsToApply;
-        
+
         [Header("Movement Manupilation")]
         public AttributeBasedVariable MovementSlow; //Factor between 0-1, movement speed while attacking will be MovementSpeed * (1-MovementSlow)
 
@@ -100,22 +97,69 @@ namespace Kuantech.Core
         [Tooltip("Seconds after movement lock before rotation is also locked. Lets the actor finish turning before freezing.")]
         public float RotationLockDelay     = 0f;
 
-        [Header("Projectile")]
-        public Projectile ProjectilePrefab;
+        #endregion
 
-        [Header("Skill")] 
-        public SkillDataAsset SkillToCast;
+        #region Timings
 
-        [Header("Animation")] 
+        [Header("Timings")]
+        [Tooltip("If true, attack implementation waits until the actor faces the attack direction before dealing damage.")]
+        public bool WaitRotationalAlign = false;
+        public float AttackImplementationTime;
+        public float EffectPlayTime;
+        public float ContinuousAttackMaxTime;
+        public bool ScaleAttackImplementationTimeWithAttackSpeed = true;
+        public float AnimationTime;
+        public float AttackDuration;
+        public bool Continious; //Continious will attack every 'attack time' during the attack
+
+        [Header("Charge Timings")]
+        [Tooltip("If true, this attack waits for an explicit release (or MaxChargeTime) instead of " +
+                 "auto-implementing on its own fixed timeline -- AttackImplementationTime/AttackDuration then " +
+                 "count from the release moment, not from attack start (e.g. a bow's follow-through before " +
+                 "the arrow leaves). A melee 'heavy' that commits the instant it's triggered should leave " +
+                 "this false -- it's a normal pattern, just picked via ExplicitPatternSlot.")]
+        public bool Charged = false;
+        [Tooltip("A release attempt before this many seconds of charging have passed is ignored entirely -- " +
+                 "the attack ends with no implementation, as if it were never cast.")]
+        public float MinChargeTime = 0f;
+        [Tooltip("Seconds after which charging auto-releases even with no player release input. Negative = " +
+                 "hold indefinitely (only an explicit release, or an external interrupt, ends it).")]
+        public float MaxChargeTime = -1f;
+
+        #endregion
+
+        #region Animation
+
+        [Header("Attack Animation")]
         public AnimationData AttackAnimationData;
 
-        [Header("FX")] 
+        [Header("Charge Animation")]
+        [Tooltip("Fires (trigger only, see AnimationData) the instant a charge commits to firing -- drives " +
+                 "the Hold -> Hit transition. Only relevant when Charged is true.")]
+        public AnimationData ReleaseHoldAnimationData;
+        [Tooltip("Fires (trigger only) whenever charging ends WITHOUT a valid release -- released before " +
+                 "MinChargeTime, or externally interrupted (poise break, ...) -- drives Hold -> Idle directly, " +
+                 "skipping Hit entirely. Only relevant when Charged is true.")]
+        public AnimationData CancelHoldAnimationData;
+
+        #endregion
+
+        #region Effects
+
+        [Header("Attack FX")]
         public EffectPlayer AttackFx = null;
         public bool SetAttackFxPosition = true;
         public bool SetAttackFxRotation = true;
-
         public EffectPlayer HitEffect = null;
-        
+
+        [Header("Charge FX")]
+        [Tooltip("Played alongside ReleaseHoldAnimationData -- the 'whoosh'/release cue. Only relevant when Charged is true.")]
+        public EffectPlayer ReleaseFx = null;
+        [Tooltip("Played alongside CancelHoldAnimationData -- the fizzle cue. Only relevant when Charged is true.")]
+        public EffectPlayer CancelFx = null;
+
+        #endregion
+
         public DamageInfo GetDamageInfo(StatsModule statsModule)
         {
             return Damage.GetDamageInfo(statsModule);
@@ -138,6 +182,14 @@ namespace Kuantech.Core
 
     public class CombatModule: ActorModule
     {
+        /// <summary>Named attacks on top of the combo/default cycle -- see CurrentHeavyAttack/
+        /// CurrentAlternativeAttack and LightAttack/HeavyAttack/AlternativeAttack below.</summary>
+        public enum AttackSlot
+        {
+            Heavy = 0,
+            Alternative = 1,
+        }
+
         [Header("Timings")]
         public AttributeAsset AttackSpeedAttribute;
         public float MinAttackSpeed = 100.0f;
@@ -148,6 +200,14 @@ namespace Kuantech.Core
         [Header("Attack Pattern")]
         public ComboAttackPattern DefaultAttackPattern;
         private ComboAttackPattern _currentAttackPattern;
+
+        [Header("Heavy / Alternative")]
+        [Tooltip("Set by whichever weapon component drives this actor's attacks (e.g. WeaponComponent on " +
+                 "equip). Null if the current weapon has no heavy attack -- HeavyAttack() then just fails " +
+                 "like any attack with no pattern.")]
+        public AttackPattern CurrentHeavyAttack;
+        [Tooltip("Same as CurrentHeavyAttack, for the alternative-fire slot.")]
+        public AttackPattern CurrentAlternativeAttack;
 
         [Header("Defaults")]
         public ComboAttackPatternAsset DefaultComboPatternAsset;
@@ -172,8 +232,12 @@ namespace Kuantech.Core
         public UnityAction<CombatModule> AlignedEvent;       // fires once when rotational alignment is achieved
         public UnityAction<CombatModule> AttackedEvent;      // Deals damage here
         public UnityAction<CombatModule> AttackCompletedEvent;
-        public UnityAction<Projectile> OnShotProjectileEvent; 
+        public UnityAction<Projectile> OnShotProjectileEvent;
         public UnityAction<Actor> DamagedActorEvent;
+        /// <summary>Fired the instant a Charged attack actually commits (release accepted past MinChargeTime)
+        /// -- never fires for a non-charged attack, and never fires for a release that fizzled below
+        /// MinChargeTime (that just ends the attack with no implementation at all).</summary>
+        public UnityAction<CombatModule> OnChargeReleased;
 
 
         //Quick module references
@@ -204,6 +268,20 @@ namespace Kuantech.Core
         // one-off action -- this module doesn't know or care who or why.
         private AttackPattern _attackPatternOverride;
 
+        // Resolved once per attack from castData.ExplicitPatternSlot (see ResolveExplicitPattern) -- unlike
+        // _attackPatternOverride above (long-lived, externally managed, e.g. for the whole duration of a
+        // block), this is scoped to exactly one attack and cleared in ExecuteEndAttack. Also skips the combo
+        // advance, same reasoning as the override.
+        private AttackPattern _requestedAttackPattern;
+
+        // Charge state -- only ever meaningful while GetCurrentAttackPattern().Charged is true. See
+        // ReleaseAttack/ExecuteReleaseAttack and the Charged branch in ModuleUpdate.
+        private float _chargeStartTime;
+        private float _releaseTime;
+        private bool _released; // a release attempt was processed (successful or fizzled) -- guards re-entry
+        private bool _chargeCommitted; // true only once that attempt actually passed MinChargeTime -- tells
+                                        // ExecuteEndAttack whether CancelHoldAnimationData still needs to play
+
         #region Lifecycle
         public override void OnModulesInitialized()
         {
@@ -221,13 +299,14 @@ namespace Kuantech.Core
         public override void ModuleUpdate(float deltaTime)
         {
             if (!IsAttacking()) return;
-            float elapsedTime = Time.time - _attackStartTime;
             AttackPattern currentPattern = GetCurrentAttackPattern();
             bool isNetworked = Networking.KtNetworkManager.IsNetworked();
 
             if (IsClientInitialized || !isNetworked)
             {
-                if (elapsedTime >= _effectPlayTime && !_effectPlayed)
+                // Windup FX (e.g. a draw/charge sound) always plays relative to attack START, charged or not.
+                float elapsedSinceStart = Time.time - _attackStartTime;
+                if (elapsedSinceStart >= _effectPlayTime && !_effectPlayed)
                 {
                     PlayAttackFx();
                 }
@@ -235,6 +314,23 @@ namespace Kuantech.Core
 
             if (IsServerInitialized || !isNetworked)
             {
+                if (currentPattern.Charged && !_released)
+                {
+                    // Still charging -- nothing implements until a release (player input or this auto-cap).
+                    if (currentPattern.MaxChargeTime >= 0f && Time.time - _chargeStartTime >= currentPattern.MaxChargeTime)
+                    {
+                        Debug.Log($"[CombatModule] {name}: MaxChargeTime ({currentPattern.MaxChargeTime}s) reached at t={Time.time} with no release ever received -- auto-releasing.");
+                        ReleaseAttack();
+                    }
+                    return;
+                }
+
+                // A Charged pattern's implementation/duration count from the RELEASE moment (the actual
+                // commit point), not from attack start -- e.g. a bow's follow-through before the arrow leaves.
+                // A non-charged pattern (including a "heavy" melee, which commits the instant it's triggered)
+                // is unaffected, same timeline as always.
+                float elapsedTime = Time.time - (currentPattern.Charged ? _releaseTime : _attackStartTime);
+
                 if (_requireAlignment && !_hasAligned)
                 {
                     _hasAligned = HasAlignedWithAttackDirection();
@@ -834,6 +930,75 @@ namespace Kuantech.Core
             return canAttack;
         }
 
+        /// <summary>Explicit alias for the plain combo/default Attack() -- exists so callers that also use
+        /// HeavyAttack/AlternativeAttack can name all three symmetrically instead of one being unnamed.</summary>
+        public bool LightAttack(ActionCastData castData) => Attack(castData);
+
+        public bool HeavyAttack(ActionCastData castData)
+        {
+            castData.ExplicitPatternSlot = (int)AttackSlot.Heavy;
+            return Attack(castData);
+        }
+
+        public bool AlternativeAttack(ActionCastData castData)
+        {
+            castData.ExplicitPatternSlot = (int)AttackSlot.Alternative;
+            return Attack(castData);
+        }
+
+        /// <summary>
+        /// Releases a Charged attack that's currently waiting -- a no-op for anything else (not attacking,
+        /// already released, or a non-Charged pattern). Runs locally first for zero-lag feedback (whether
+        /// that's the owner releasing input, or the server itself deciding via MaxChargeTime), then relays:
+        /// unlike Attack()/StartBlock's owner-vs-server split, release can legitimately be decided by EITHER
+        /// side (a player letting go, or the server forcing it at the charge cap) so the broadcast has to
+        /// reach absolutely everyone, owner included -- see ObserverReleaseAttack_Rpc.
+        /// </summary>
+        public void ReleaseAttack()
+        {
+            ExecuteReleaseAttack();
+            if (IsServerInitialized && IsSpawned)
+                ObserverReleaseAttack_Rpc();
+            else if (!IsServerInitialized && IsSpawned)
+                ServerReleaseAttack_Rpc();
+        }
+
+        /// <summary>
+        /// Idempotent (guarded by _released) so it's safe to run from every path that can reach it: the
+        /// releasing peer's own optimistic local call, the server's authoritative copy, and every other
+        /// observer's broadcast-received copy.
+        /// </summary>
+        private void ExecuteReleaseAttack()
+        {
+            AttackPattern pattern = GetCurrentAttackPattern();
+            Debug.Log($"[CombatModule] {name}: ExecuteReleaseAttack called at t={Time.time} -- _isAttacking={_isAttacking}, _released={_released}, pattern={(pattern != null ? pattern.AttackType.ToString() : "null")}, Charged={(pattern != null ? pattern.Charged.ToString() : "n/a")}.");
+            if (!_isAttacking || _released || pattern == null || !pattern.Charged) return;
+            _released = true;
+
+            if (Time.time - _chargeStartTime < pattern.MinChargeTime)
+            {
+                // Didn't hold long enough -- fizzles entirely, exactly as if it had never been cast. No
+                // implementation, no OnChargeReleased.
+                Debug.Log($"[CombatModule] {name}: charge fizzled -- held {(Time.time - _chargeStartTime):F2}s, needed {pattern.MinChargeTime}s.");
+                ExecuteEndAttack();
+                return;
+            }
+
+            // Re-aim at the actual moment of commit. Charging is meant to keep tracking the live aim right
+            // up until release -- MotionVectorsHandler's target vector has been continuously updated the
+            // whole time (InputHandler keeps aiming locked while attacking), unlike an instant attack, whose
+            // direction is deliberately frozen back at ExecuteAttack (see GetAttackDirection's
+            // prioritizeCastDirection usage in RangedProjectileAttack).
+            Vector3 liveDirection = Actor.MotionVectorsHandler.GetTargetVector();
+            if (liveDirection.sqrMagnitude > 0.01f) _currentCastData.Direction = liveDirection;
+
+            _chargeCommitted = true;
+            _releaseTime = Time.time;
+            if (_animationModule != null) _animationModule.PlayAnimationData(pattern.ReleaseHoldAnimationData);
+            PlayChargeFx(pattern.ReleaseFx);
+            OnChargeReleased?.Invoke(this);
+        }
+
         /// <summary>
         /// Executes attack
         /// </summary>
@@ -841,6 +1006,13 @@ namespace Kuantech.Core
         /// <returns></returns>
         private bool ExecuteAttack(ActionCastData castData)
         {
+            // Resolved BEFORE CanAttack()/GetCurrentAttackPattern() below read it -- every peer (owner
+            // locally, server/observers via the Attack RPC) derives the same AttackPattern from the same
+            // transmitted slot, no need to send the pattern itself over the wire.
+            _requestedAttackPattern = castData.ExplicitPatternSlot >= 0 ? ResolveExplicitPattern(castData.ExplicitPatternSlot) : null;
+            if (castData.ExplicitPatternSlot >= 0 && _requestedAttackPattern == null)
+                Debug.LogWarning($"[CombatModule] {name}: ExplicitPatternSlot {castData.ExplicitPatternSlot} requested but resolved to no AttackPattern -- silently falling back to the combo/default pattern. Is CurrentHeavyAttack/CurrentAlternativeAttack actually set? (check the equipped weapon's WeaponComponentData Heavy/AlternativeAttackPatternAsset)");
+
             if(!CanAttack()) return false;
 
             //Server specific
@@ -869,9 +1041,10 @@ namespace Kuantech.Core
             else if (castData.Direction.sqrMagnitude > 0.01f)
                 Actor.MotionVectorsHandler.SetTargetVector(castData.Direction);
 
-            // An override attack (bash, ...) is a one-off outside the weapon's own combo chain -- leave
-            // _currentComboIndex exactly where it was so the chain resumes correctly once the override clears.
-            if (_attackPatternOverride == null)
+            // An override/requested attack (bash, heavy, alternative...) is a one-off outside the weapon's
+            // own combo chain -- leave _currentComboIndex exactly where it was so the chain resumes correctly
+            // once it clears.
+            if (_attackPatternOverride == null && _requestedAttackPattern == null)
             {
                 float timeSinceLastAttack = Time.time - _lastAttackCompleteTime;
                 _currentComboIndex = timeSinceLastAttack < ComboRefreshTime ? _currentComboIndex + 1 : 0;
@@ -882,6 +1055,9 @@ namespace Kuantech.Core
             _isAttacking = true;
             _attacked = false;
             _attackStartTime = Time.time;
+            _chargeStartTime = _attackStartTime; // only meaningful for Charged patterns, harmless otherwise
+            _released = false;
+            _chargeCommitted = false;
             _effectPlayed = false;
             _attackDuration = GetAttackDuration();
             _attackImplementationTime = GetAttackImplementationTime();
@@ -1009,9 +1185,17 @@ namespace Kuantech.Core
         public AttackPattern GetCurrentAttackPattern()
         {
             if (_attackPatternOverride != null) return _attackPatternOverride;
+            if (_requestedAttackPattern != null) return _requestedAttackPattern;
             var combo = _currentAttackPattern ?? DefaultAttackPattern;
             return combo?.GetPattern(_currentComboIndex);
         }
+
+        private AttackPattern ResolveExplicitPattern(int slot) => (AttackSlot)slot switch
+        {
+            AttackSlot.Heavy => CurrentHeavyAttack,
+            AttackSlot.Alternative => CurrentAlternativeAttack,
+            _ => null,
+        };
 
         public void SetCurrentAttackPattern(AttackPattern attackPattern)
         {
@@ -1154,7 +1338,22 @@ namespace Kuantech.Core
         private void ExecuteEndAttack()
         {
             if (!_isAttacking) return;
+
+            // Covers BOTH ways a charge can end without ever committing: released too early (ExecuteReleaseAttack
+            // routes the fizzle straight here) and an external interrupt while still charging (e.g. a poise
+            // break calling EndAttack() directly, never going through ExecuteReleaseAttack at all).
+            AttackPattern pattern = GetCurrentAttackPattern();
+            if (pattern != null && pattern.Charged && !_chargeCommitted)
+            {
+                if (_animationModule != null) _animationModule.PlayAnimationData(pattern.CancelHoldAnimationData);
+                PlayChargeFx(pattern.CancelFx);
+            }
+
             _isAttacking = false;
+            _requestedAttackPattern = null; // single-attack scoped -- next attack resolves its own (or none)
+            _chargeCommitted = false;
+            _released = false; // belt-and-suspenders -- ExecuteAttack also resets this, but nothing should
+                                // depend on that being the only place it happens
             _lastAttackCompleteTime = Time.time;
             RemoveMovementSlow(); //TODO: this is probably will be a runtime bug. We can't just set speed multiplier to 1 like this
             // Safety net: if the attack got cut short (interrupted/staggered) before the animation's
@@ -1174,19 +1373,33 @@ namespace Kuantech.Core
         {
             if (_effectPlayed) return;
             _effectPlayed = true;
-            Vector3 attackDirection = GetAttackDirection();
-            Vector3 attackPosition = GetAttackPosition(); //Position where attack is starterd, casted
             EffectPlayer attackEffect = GetCurrentAttackPattern().AttackFx;
             if (attackEffect == null) return;
-            EffectPlaySettings playSettings = EffectPlaySettings.GetPlayAtPositionSettings(attackPosition, Quaternion.LookRotation(attackDirection));
-            playSettings.SetPosition = GetCurrentAttackPattern().SetAttackFxPosition;
-            playSettings.SetRotation = GetCurrentAttackPattern().SetAttackFxRotation;
-            playSettings.Caster = Actor;
-            playSettings.ComboIndex = GetCurrentComboIndex();
-            playSettings.EffectSpeedMultiplier = GetAttackSpeedMultiplier(); // effect scales with attack speed
-            attackEffect.PlayEffect(playSettings);
+            attackEffect.PlayEffect(BuildAttackEffectSettings());
         }
-        
+
+        // Same position/rotation/combo/speed shape as PlayAttackFx -- reused for the charge FX below (and
+        // anything else that wants "play at the attack point, facing the attack direction") instead of
+        // rebuilding EffectPlaySettings by hand each time.
+        private EffectPlaySettings BuildAttackEffectSettings()
+        {
+            AttackPattern pattern = GetCurrentAttackPattern();
+            EffectPlaySettings settings = EffectPlaySettings.GetPlayAtPositionSettings(GetAttackPosition(), Quaternion.LookRotation(GetAttackDirection()));
+            settings.SetPosition = pattern.SetAttackFxPosition;
+            settings.SetRotation = pattern.SetAttackFxRotation;
+            settings.Caster = Actor;
+            settings.ComboIndex = GetCurrentComboIndex();
+            settings.EffectSpeedMultiplier = GetAttackSpeedMultiplier();
+            return settings;
+        }
+
+        // ReleaseFx/CancelFx -- the "whoosh"/fizzle cues for a Charged attack, played alongside
+        // ReleaseHoldAnimationData/CancelHoldAnimationData (see ExecuteReleaseAttack/ExecuteEndAttack).
+        private void PlayChargeFx(EffectPlayer effect)
+        {
+            effect?.PlayEffect(BuildAttackEffectSettings());
+        }
+
         #endregion
 
         #region CastData
@@ -1352,6 +1565,25 @@ namespace Kuantech.Core
             ExecuteAttack(castData);
         }
 
+        [Rpc(SendTo.Server)]
+        private void ServerReleaseAttack_Rpc()
+        {
+            ExecuteReleaseAttack();
+            ObserverReleaseAttack_Rpc();
+        }
+
+        // SendTo.Everyone (not NotOwner) -- unlike attack-start, release isn't always something the owner
+        // already knows about: a player-triggered release IS pre-known to them (ExecuteReleaseAttack already
+        // ran locally in ReleaseAttack() before this dispatches, so this re-run is a harmless no-op there),
+        // but a server-forced release (MaxChargeTime elapsed) is something ONLY the server decided -- the
+        // owner has no other way to hear about it, so they can't be excluded here the way attack-start can.
+        [Rpc(SendTo.Everyone)]
+        private void ObserverReleaseAttack_Rpc()
+        {
+            if (IsServerInitialized) return;
+            ExecuteReleaseAttack();
+        }
+
         // Everyone, INCLUDING the owner -- unlike attack-start, nobody runs RunAttackImplementation/
         // ExecuteEndAttack optimistically on their own; ModuleUpdate only ever decides this on the server
         // (see the IsServerInitialized gate around both triggers there), so the owner's own _isAttacking/
@@ -1400,6 +1632,8 @@ namespace Kuantech.Core
         private void ObserverAttackStart_Rpc(ActionCastData castData) { }
         private void ObserverAttackImplementation_Rpc() { }
         private void ObserverAttackEnd_Rpc() { }
+        private void ServerReleaseAttack_Rpc() { }
+        private void ObserverReleaseAttack_Rpc() { }
         private void ObserverDamageActor_Rpc(UnityEngine.GameObject target) { }
         private void ObserverDamageActors_Rpc(List<UnityEngine.GameObject> targets) { }
 #endif

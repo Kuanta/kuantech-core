@@ -29,6 +29,16 @@ namespace Kuantech.Inventory
         public float SweepRadius = 0.15f;
         public LayerMask SweepLayers;
 
+        [Header("Attack Point")]
+        [Tooltip("Where CombatModule.GetAttackPosition() fires projectiles / measures range from while this " +
+                 "weapon is equipped -- e.g. a bow's arrow-nock point. Registered into the owner's " +
+                 "ActorSlotsHandler on equip, removed on unequip. Leave unset for a weapon that doesn't need " +
+                 "a specific muzzle (CombatModule falls back to whatever slot -- or actor root -- was already there).")]
+        public Transform AttackPoint;
+        [Tooltip("Slot name AttackPoint registers under -- must match the AttackPattern's own " +
+                 "AttackPointSlotName for this to actually be picked up.")]
+        public string AttackPointSlot = "AttackPoint";
+
         [Header("Environment Clang")]
         [Tooltip("Layers considered solid environment (walls, pillars, ...) for the clang effect below -- " +
                  "separate from SweepLayers, which is only actors/hittables. Leave unset to skip this check.")]
@@ -51,6 +61,7 @@ namespace Kuantech.Inventory
         private bool _environmentHitThisSwing;
         private readonly HashSet<Collider> _hitThisSwing = new HashSet<Collider>();
         private CombatModule _combatModule;
+        private ActorSlotsHandler _slotsHandler;
 
         public bool IsMeleeWeapon => StartSweep != null && EndSweep != null;
 
@@ -63,6 +74,12 @@ namespace Kuantech.Inventory
             Actor owner = ParentItem?.GetOwner();
             _combatModule = owner != null ? owner.GetModule<CombatModule>() : null;
             _combatModule?.SetActiveWeapon(this);
+
+            if (AttackPoint != null)
+            {
+                _slotsHandler = owner != null ? owner.GetModule<ActorSlotsHandler>() : null;
+                _slotsHandler?.RegisterSlot(AttackPointSlot, AttackPoint);
+            }
         }
 
         public override void OnUnequipped()
@@ -71,6 +88,12 @@ namespace Kuantech.Inventory
             StopSweep();
             _combatModule?.SetActiveWeapon(null);
             _combatModule = null;
+
+            if (AttackPoint != null && _slotsHandler != null)
+            {
+                _slotsHandler.UnregisterSlot(AttackPointSlot, AttackPoint);
+                _slotsHandler = null;
+            }
         }
 
         /// <summary>Starts the active window — call this when the swing's "blade is now cutting" moment

@@ -21,6 +21,17 @@ namespace Kuantech.Core
         public bool OverrideRotation = true;
 
         /// <summary>
+        /// -1 = use the combat module's own combo/default pattern resolution (unchanged behavior). Any
+        /// other value asks CombatModule.ResolveExplicitPattern(slot) to pick a specific pattern instead --
+        /// meaningless to CombatModule itself (always returns null), interpreted entirely by whichever
+        /// subclass understands it (e.g. CastleDefendersCombatModule's Heavy/Alternative attacks). Travels
+        /// over the wire because, unlike BlockModule's bash (whose state is already replicated ahead of the
+        /// attack via StartBlock/EndBlock), which pattern to use here is decided at the same moment as the
+        /// attack itself -- every peer needs this to resolve the same AttackPattern locally.
+        /// </summary>
+        public int ExplicitPatternSlot = -1;
+
+        /// <summary>
         /// Optional: re-evaluated every tick by a channeled behaviour (see SkillBehaviour.GetLiveDirection)
         /// to aim at whatever "the current target" means to whoever built this cast data — a player's live
         /// closest-enemy, a cursor position, anything. Lets each caster (AutoCastModule, manual test-cast,
@@ -46,6 +57,7 @@ namespace Kuantech.Core
             serializer.SerializeValue(ref Direction);
             serializer.SerializeValue(ref TargetPosition);
             serializer.SerializeValue(ref OverrideRotation);
+            serializer.SerializeValue(ref ExplicitPatternSlot);
 
             NetworkObjectReference targetRef = default;
             if (!serializer.IsReader && Target != null)

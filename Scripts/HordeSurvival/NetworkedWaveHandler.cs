@@ -126,7 +126,7 @@ namespace Kuantech.HordeSurvival
             if (!KtNetworkManager.HasAuthority()) return;
 
             if (_startRunRoutine != null) StopCoroutine(_startRunRoutine);
-            _startRunRoutine = StartCoroutine(StartRunRoutine());
+            //_startRunRoutine = StartCoroutine(StartRunRoutine());
         }
 
         public override void OnZoneDeactivated()

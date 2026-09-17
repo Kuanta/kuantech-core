@@ -71,6 +71,30 @@ namespace Kuantech.Core
             return _slots[slotName];
         }
 
+        /// <summary>
+        /// Registers (or overwrites) a single slot at runtime -- for anything that attaches to the actor
+        /// AFTER the bulk ActorSlot scans above already ran (Initialize, ActorVisual swap), most notably an
+        /// equipped item's own attack point (see WeaponVisual.AttackPoint). Overwrites whatever was already
+        /// registered under the same name.
+        /// </summary>
+        public void RegisterSlot(string slotName, Transform slot)
+        {
+            if (string.IsNullOrEmpty(slotName) || slot == null) return;
+            if (_slots == null) _slots = new Dictionary<string, Transform>();
+            _slots[slotName] = slot;
+        }
+
+        /// <summary>
+        /// Removes a slot registered via RegisterSlot -- only if it's still the SAME transform, so an
+        /// unequip racing a re-equip of a different item can't clobber the newer registration.
+        /// </summary>
+        public void UnregisterSlot(string slotName, Transform slot)
+        {
+            if (string.IsNullOrEmpty(slotName) || _slots == null) return;
+            if (_slots.TryGetValue(slotName, out Transform current) && current == slot)
+                _slots.Remove(slotName);
+        }
+
         public void OnActorVisualSet(ActorVisual actorVisual)
         {
             if (_slots == null) _slots = new Dictionary<string, Transform>();
