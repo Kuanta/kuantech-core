@@ -34,6 +34,7 @@ namespace Kuantech.Core
         private readonly Dictionary<Type, SubManager> _sceneManagersByType = new Dictionary<Type, SubManager>();
 
         private bool _startedGame = false;
+        private bool _leavingScene = false;
         protected virtual void Awake()
         {
 #if DEV_BUILD
@@ -174,29 +175,57 @@ namespace Kuantech.Core
             return SceneManager.GetActiveScene().name;
         }
         
-        public static void ChangeScene(string sceneName, LevelTransitionData levelTransitionData = null)
+        /// <summary>
+        /// Installed by a networking layer to take over the actual scene load, returning true when it
+        /// handled it. Scene loading in a networked session has to go through the netcode's own scene
+        /// manager -- a plain SceneManager.LoadScene on the server would move only the server, leaving
+        /// every client sitting in the old scene. This hook keeps that knowledge out of GameManager:
+        /// every existing ChangeScene call site becomes networked without being touched.
+        /// </summary>
+        public static Func<string, bool> SceneLoadOverride;
+
+        /// <summary>
+        /// Runs the tear-down half of a scene change without loading anything. A networked scene load is
+        /// driven by the server, so clients never call ChangeScene at all -- their netcode layer calls
+        /// this instead, as soon as it learns a load is coming, so scene sub-managers still get their
+        /// Cleanup and global managers still get OnSceneLeave.
+        /// </summary>
+        public static void NotifySceneLeaving()
         {
             var ctx = GameManager.Instance;
+            // The server reaches here twice for one networked load: once through its own ChangeScene call,
+            // and again when the netcode announces the very load that call started. Second one is a no-op.
+            if (ctx._leavingScene) return;
+            ctx._leavingScene = true;
             ctx.PreviousSceneName = GetCurrentSceneName();
-            ctx.LevelTransitionData = levelTransitionData;
+
             //Clear existing scene specific sub managers
             if(ctx._sceneSubManagers != null)
             {
                 foreach(var sceneSubManager in ctx._sceneSubManagers)
                 {
-                    sceneSubManager.Cleanup();
+                    sceneSubManager.CleanupOnce();
                 }
                 ctx._sceneSubManagers = null;
                 ctx._sceneManagersByType.Clear();
             }
-            
+
             //Call scene leave for global managers
             foreach (var manager in ctx._subManagers)
             {
                 manager.OnSceneLeave();
             }
             if(ctx.LoadingScreen != null) ctx.LoadingScreen.SetActive(true);
-            //Change scene
+        }
+
+        public static void ChangeScene(string sceneName, LevelTransitionData levelTransitionData = null)
+        {
+            var ctx = GameManager.Instance;
+            ctx.LevelTransitionData = levelTransitionData;
+            NotifySceneLeaving();
+
+            //Change scene -- unless a networking layer claims the load as its own
+            if (SceneLoadOverride != null && SceneLoadOverride(sceneName)) return;
             SceneManager.LoadScene(sceneName);
         }
 
@@ -207,6 +236,7 @@ namespace Kuantech.Core
 
         private async void OnNewScene()
         {
+            _leavingScene = false;
             //Check new scene submanagers
             SceneSubManagerContainer container = FindObjectOfType<SceneSubManagerContainer>();
             if(container == null) return;

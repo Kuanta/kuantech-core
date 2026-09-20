@@ -48,11 +48,36 @@ namespace Kuantech.Core
         }
 
         /// <summary>
-        /// Called when a scene-specific SubManager is removed during scene cleanup.
+        /// Called when a scene-specific SubManager is removed during scene cleanup. Overrides should stay
+        /// safe to run twice -- see OnDestroy below.
         /// </summary>
         public virtual void Cleanup()
         {
         }
+
+        /// <summary>
+        /// Runs <see cref="Cleanup"/> at most once, whichever path gets here first. Call this rather than
+        /// Cleanup directly from lifecycle code.
+        /// </summary>
+        public void CleanupOnce()
+        {
+            if (_cleanedUp) return;
+            _cleanedUp = true;
+            Cleanup();
+        }
+
+        /// <summary>
+        /// Safety net for scene sub-managers whose scene went away without GameManager.ChangeScene being
+        /// the one to unload it -- a netcode-driven scene load on a client is exactly that case. Hooking
+        /// Unity's sceneUnloaded event instead would be too late: by the time it fires the scene's objects
+        /// are already destroyed, so there is nothing left to run Cleanup on.
+        /// </summary>
+        protected virtual void OnDestroy()
+        {
+            CleanupOnce();
+        }
+
+        private bool _cleanedUp = false;
 
         public static T GetContext<T>() where T : SubManager
         {
