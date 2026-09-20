@@ -4,10 +4,24 @@ using UnityEngine;
 
 namespace Kuantech.Core.Camera
 {
+    // Must run its LateUpdate after every ordinary follower (OrbitCameraFollower, ControllerRotationFollower,
+    // PointFollower, ...) so the hard snap below in LateUpdate() always reads THIS frame's fresh virtual-cam
+    // transform, never a stale one from before those followers ran -- Unity doesn't order different
+    // MonoBehaviours' LateUpdate calls for you, this attribute is what actually guarantees it.
+    [DefaultExecutionOrder(1000)]
     public class KtCamera : MonoBehaviour
     {
         public UnityEngine.Camera Camera;
         public GameObject Rig;
+
+        [Header("Virtual Cameras")]
+        [Tooltip("The ONE real AudioListener -- moved to whichever KtVirtualCam is active (or its own " +
+                 "ListenerTransform, if it set one) every LateUpdate. Leave null if audio position doesn't " +
+                 "matter for this game.")]
+        [SerializeField] private AudioListener Listener;
+        [Tooltip("Snapped to by SwitchToDefaultVirtualCam() -- normally the scene's third-person orbit point.")]
+        [SerializeField] private KtVirtualCam DefaultVirtualCam;
+        public KtVirtualCam ActiveVirtualCam { get; private set; }
 
         [Header("FOV")]
         [SerializeField] private float BaseFOV = 60f;
@@ -30,6 +44,11 @@ namespace Kuantech.Core.Camera
         private bool _zoomedIn;
         private Vector3 _zoomVel;
 
+        private void Awake()
+        {
+            if (ActiveVirtualCam == null) ActiveVirtualCam = DefaultVirtualCam;
+        }
+
         private void Update()
         {
             if(ZoomAnchor == null) return;
@@ -40,6 +59,26 @@ namespace Kuantech.Core.Camera
 
             ZoomAnchor.transform.localPosition = Vector3.SmoothDamp(ZoomAnchor.transform.localPosition,
                 GetZoomRigOffset(), ref _zoomVel, ZoomSmoothDampTime);
+        }
+
+        // Hard snap, no smoothing -- ActiveVirtualCam's OWN followers already smoothed however they wanted
+        // to before this ran (see the DefaultExecutionOrder comment above for why this is guaranteed to run
+        // last). NOTE: this overwrites Camera.transform.position outright, so the Zoom offset above (applied
+        // to ZoomAnchor, a local child) only actually shows up if Camera reads its position FROM ZoomAnchor's
+        // hierarchy rather than this script setting it directly -- verify zoom still visibly pushes in once
+        // this is wired up; if it doesn't, the zoom offset needs to be folded into this method instead.
+        private void LateUpdate()
+        {
+            if (ActiveVirtualCam == null || Camera == null) return;
+
+            Transform vt = ActiveVirtualCam.transform;
+            Camera.transform.SetPositionAndRotation(vt.position, vt.rotation);
+
+            if (Listener != null)
+            {
+                Transform listenerTarget = ActiveVirtualCam.ListenerTransform != null ? ActiveVirtualCam.ListenerTransform : vt;
+                Listener.transform.SetPositionAndRotation(listenerTarget.position, listenerTarget.rotation);
+            }
         }
         
         #region Camera Effects
@@ -66,6 +105,20 @@ namespace Kuantech.Core.Camera
                     .OnComplete(() => Camera.transform.localPosition = Vector3.zero);
             }
         }
+        #endregion
+
+        #region Virtual Cameras
+
+        /// <summary>
+        /// Switches viewpoint -- e.g. a Player's own FP virtual cam (a point under its Camera_Holder,
+        /// already correctly positioned/rotated by ordinary Unity parenting, optionally with a
+        /// PointFollower on it for bob) instead of the scene's default third-person orbit point. There's
+        /// only ever ONE real Camera/AudioListener (see LateUpdate); this just changes what they snap to.
+        /// </summary>
+        public void SetActiveVirtualCam(KtVirtualCam virtualCam) => ActiveVirtualCam = virtualCam;
+
+        public void SwitchToDefaultVirtualCam() => SetActiveVirtualCam(DefaultVirtualCam);
+
         #endregion
 
         #region Zoom
