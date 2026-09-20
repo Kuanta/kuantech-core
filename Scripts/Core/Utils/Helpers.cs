@@ -684,10 +684,18 @@ return GameObject.Instantiate(prefab);
 
         public static void AttachToParent(this GameObject gameObject, Transform parent)
         {
-            gameObject.transform.SetParent(parent);
-            gameObject.transform.localPosition = Vector3.zero;
-            gameObject.transform.localRotation = Quaternion.identity;
-            gameObject.transform.localScale = Vector3.one;
+            gameObject.transform.SetParentAndResetLocal(parent);
+        }
+
+        /// <summary>Reparents and snaps local position/rotation/scale back to identity -- the "rides its new
+        /// parent exactly, zero offset" reparent (view models, weapon sockets, ...). Transform-based twin of
+        /// AttachToParent above for call sites that only have a Transform reference on hand.</summary>
+        public static void SetParentAndResetLocal(this Transform transform, Transform parent)
+        {
+            transform.SetParent(parent, false);
+            transform.localPosition = Vector3.zero;
+            transform.localRotation = Quaternion.identity;
+            transform.localScale = Vector3.one;
         }
         
         public static void SortChildren(this Transform parentTransform, Comparison<Transform> comparison)

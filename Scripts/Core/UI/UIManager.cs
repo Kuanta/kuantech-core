@@ -8,6 +8,11 @@ namespace Kuantech.Core.UI
 {
     public class UIManager : SubManager
     {
+        /// <summary>Fires whenever the menu stack goes from empty to non-empty or back -- lets systems that
+        /// don't otherwise care about UI (e.g. a gameplay cursor-lock controller) react to "is any menu open"
+        /// without polling GetTopMenu() every frame.</summary>
+        public static event System.Action<bool> OnMenuStackChanged;
+
         private Stack<UIMenu> _menuStack = new Stack<UIMenu>();
         
         [Header("Default Menu")]
@@ -153,8 +158,9 @@ namespace Kuantech.Core.UI
 
             _menuStack.Push(menu);
             if(callOpen) menu.Open();
+            OnMenuStackChanged?.Invoke(_menuStack.Count > 0);
         }
- 
+
         public void PopFromStack(UIMenu menu, bool callClose = true)
         {
             if (_menuStack.IsNullOrEmpty() || _menuStack.Peek() != menu)
@@ -163,6 +169,7 @@ namespace Kuantech.Core.UI
                 return;
             }
             UIMenu menuToClose = _menuStack.Pop();
+            OnMenuStackChanged?.Invoke(_menuStack.Count > 0);
             if (_menuStack.Count == 1 && menu == _defaultMenu)
             {
                 return;

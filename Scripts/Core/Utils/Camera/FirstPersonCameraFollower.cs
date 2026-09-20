@@ -53,6 +53,25 @@ namespace Kuantech.Core.Utils
         public bool UseControllerYawPitch = true;
         public bool UseTargetValues = false;
 
+        [Tooltip("On: rotation is copied straight from Anchor (e.g. a rig's CameraBone, itself driven by " +
+                 "the actor's own instant yaw + a ControllerRotationFollower's smoothed pitch) instead of " +
+                 "being computed here from the Controller. Yaw ends up coming from exactly one place either " +
+                 "way (the actor's rotation), but reading it AGAIN here through this script's OWN separate " +
+                 "SmoothDampAngle -- on top of the actor's already-instant rotation feeding Anchor's POSITION " +
+                 "-- puts position and rotation out of phase with each other during fast turns, which reads " +
+                 "as swimmy jitter. Turn this on once Anchor is a rig bone; leave it off for a plain, " +
+                 "unanimated anchor with no bone of its own to read rotation from.")]
+        public bool ReadRotationFromAnchor = false;
+
+        [Tooltip("Off: this script never touches rotation at all -- use this when the camera is a REAL " +
+                 "Unity child of a pitch-driven holder (Player_Root [yaw] -> Camera_Holder [pitch, via a " +
+                 "ControllerRotationFollower] -> this camera), so rotation is already correct by ordinary " +
+                 "parent-child inheritance and Unity guarantees it's resolved before rendering regardless of " +
+                 "script execution order. That's the cleanest fix for turning jitter -- no follower script " +
+                 "computing rotation on its own timing at all. Only ever set this true if the camera ISN'T " +
+                 "parented that way and something here needs to drive rotation instead.")]
+        public bool DriveRotation = true;
+
         private float _yawVel;
         private float _pitchVel;
         private Vector3 _positionVel;
@@ -73,6 +92,28 @@ namespace Kuantech.Core.Utils
         private void LateUpdate()
         {
             if (Anchor == null) return;
+
+            Transform t = GetTransformToUpdate();
+            Vector3 targetPosition = Anchor.TransformPoint(AnchorOffset);
+
+            // Reads and writes the same transform (t) — OrbitCameraFollower's LateUpdate has the full story
+            // on why that matters: mixing this script's own (often stationary) transform with the driven
+            // camera's transform is what caused its wobble.
+            t.position = PositionSmoothTime <= 0f
+                ? targetPosition
+                : Vector3.SmoothDamp(t.position, targetPosition, ref _positionVel, PositionSmoothTime, MaxFollowSpeed, Mathf.Max(Time.deltaTime, 1e-6f));
+
+            if (!DriveRotation) return;
+
+            if (ReadRotationFromAnchor)
+            {
+                // Anchor's rotation is already whatever the rig produced this frame (actor's instant yaw +
+                // a bone's own smoothed pitch, say) -- copying it directly keeps rotation in the exact same
+                // phase as the position above, which comes from that same Anchor. Adding a SECOND smoothing
+                // pass here on top of an already-resolved source is what caused the turning jitter.
+                t.rotation = Anchor.rotation;
+                return;
+            }
 
             if (UseControllerYawPitch)
             {
@@ -95,16 +136,6 @@ namespace Kuantech.Core.Utils
             _currentPitchAngle = Mathf.SmoothDampAngle(
                 _currentPitchAngle, _targetPitchAngle, ref _pitchVel, PitchSmoothTime, Mathf.Infinity, dt);
             _currentPitchAngle = Mathf.Clamp(_currentPitchAngle, MinPitch, MaxPitch);
-
-            Transform t = GetTransformToUpdate();
-            Vector3 targetPosition = Anchor.TransformPoint(AnchorOffset);
-
-            // Reads and writes the same transform (t) — OrbitCameraFollower's LateUpdate has the full story
-            // on why that matters: mixing this script's own (often stationary) transform with the driven
-            // camera's transform is what caused its wobble.
-            t.position = PositionSmoothTime <= 0f
-                ? targetPosition
-                : Vector3.SmoothDamp(t.position, targetPosition, ref _positionVel, PositionSmoothTime, MaxFollowSpeed, dt);
 
             t.rotation = Quaternion.Euler(_currentPitchAngle, _currentYawAngle, 0f);
         }

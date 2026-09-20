@@ -390,11 +390,31 @@ namespace Kuantech.Core
         public override void OnActorStateChanged(ActorState oldState, ActorState newState)
         {
             base.OnActorStateChanged(oldState, newState);
+
             if (!HasAnimationTarget) return;
             if (newState == ActorState.Dead)
                 WriteBool(Death, true);
             else if (newState == ActorState.Spawned)
+            {
                 WriteBool(Death, false);
+                RandomizePlaybackPhase();
+            }
+        }
+
+        // A whole horde spawned (or pooled/respawned) in the same frame all start their Animator's current
+        // state -- almost always the locomotion blend tree -- at normalizedTime 0. Since a walk cycle's
+        // length never changes, that keeps them in lockstep forever: same foot landing on the same frame,
+        // forever. Scrubbing to a random point right as each actor spawns breaks that for free, no extra
+        // clips or Animator work needed. Deliberately does NOT touch Animator.speed -- AnimationMontagePlayer
+        // resets that to 1 after every montage (attack), which would silently undo any per-instance jitter.
+        private void RandomizePlaybackPhase()
+        {
+            if (Animator == null) return;
+            for (int layer = 0; layer < Animator.layerCount; layer++)
+            {
+                AnimatorStateInfo stateInfo = Animator.GetCurrentAnimatorStateInfo(layer);
+                Animator.Play(stateInfo.fullPathHash, layer, UnityEngine.Random.value);
+            }
         }
 
         // DamageReceivedAnimationData already fires whatever trigger it's configured with (AnimationData's
