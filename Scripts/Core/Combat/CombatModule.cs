@@ -689,9 +689,9 @@ namespace Kuantech.Core
         /// </summary>
         public void SetActiveWeapon(Kuantech.Inventory.WeaponVisual weapon)
         {
-            if (_activeWeapon != null) _activeWeapon.HitDetected -= OnWeaponHitDetected;
+            if (_activeWeapon != null) _activeWeapon.HitDetectedOnSurface -= OnWeaponHitDetected;
             _activeWeapon = weapon;
-            if (_activeWeapon != null) _activeWeapon.HitDetected += OnWeaponHitDetected;
+            if (_activeWeapon != null) _activeWeapon.HitDetectedOnSurface += OnWeaponHitDetected;
         }
 
         /// <summary>
@@ -709,14 +709,14 @@ namespace Kuantech.Core
         /// reliable way to run this same capsule query itself. The owner reports what it saw; the server
         /// decides whether that report actually deals damage.
         /// </summary>
-        private void OnWeaponHitDetected(IHittable hittable, Vector3 hitPoint)
+        private void OnWeaponHitDetected(IHittable hittable, Vector3 hitPoint, int surfaceTag)
         {
             // Host (server+owner) or a server-driven actor (e.g. an AI's own weapon) -- already authoritative,
             // apply directly, no round trip needed. hittable can be null here (a wall/non-hittable) -- that's
             // fine, ApplyMeleeHit still needs to run so the clang gets broadcast to everyone else.
             if (IsServerInitialized)
             {
-                ApplyMeleeHit(hittable, hitPoint);
+                ApplyMeleeHit(hittable, hitPoint, surfaceTag);
                 return;
             }
 
@@ -729,7 +729,10 @@ namespace Kuantech.Core
 #if NETWORKING_NGO
             NetworkObjectReference targetRef = default;
             bool hasTarget = hittable is Actor actor && TryGetNetworkReference(actor, out targetRef);
-            ReportMeleeHit_Rpc(hasTarget, targetRef, hitPoint);
+            // The surface is purely cosmetic (which vfx/sfx the clang uses), so the owner's resolve is taken
+            // at face value rather than re-queried server side -- the server has no collider to re-query for
+            // a wall hit anyway. Sent as a byte: tag ids come from a hand-authored list, they stay small.
+            ReportMeleeHit_Rpc(hasTarget, targetRef, hitPoint, (byte)surfaceTag);
 #endif
         }
 
@@ -747,44 +750,45 @@ namespace Kuantech.Core
         /// validation yet (range/attack-active/duplicate checks); add those here if this needs to be
         /// hardened against a modified client.</summary>
         [Rpc(SendTo.Server)]
-        private void ReportMeleeHit_Rpc(bool hasTarget, NetworkObjectReference targetRef, Vector3 hitPoint)
+        private void ReportMeleeHit_Rpc(bool hasTarget, NetworkObjectReference targetRef, Vector3 hitPoint, byte surfaceTag)
         {
             IHittable hittable = null;
             if (hasTarget && targetRef.TryGet(out NetworkObject targetNetObj))
                 hittable = targetNetObj.GetComponent<IHittable>();
 
-            ApplyMeleeHit(hittable, hitPoint);
+            ApplyMeleeHit(hittable, hitPoint, surfaceTag);
         }
 
         /// <summary>Broadcasts the clang/hit effect to everyone except whoever swung (they already saw it
         /// instantly, locally, via WeaponVisual, with zero network round trip).</summary>
         [Rpc(SendTo.NotOwner)]
-        private void NotifyMeleeHit_Rpc(bool hasTarget, NetworkObjectReference targetRef, Vector3 hitPoint)
+        private void NotifyMeleeHit_Rpc(bool hasTarget, NetworkObjectReference targetRef, Vector3 hitPoint, byte surfaceTag)
         {
             Actor targetActor = null;
             if (hasTarget && targetRef.TryGet(out NetworkObject targetNetObj))
                 targetActor = targetNetObj.GetComponent<Actor>();
 
-            PlayMeleeHitEffect(targetActor, hitPoint);
+            PlayMeleeHitEffect(targetActor, hitPoint, surfaceTag);
         }
 
-        // targetActor is currently unused beyond the null check -- kept as the natural extension point for
-        // "play a different effect when the target is an Actor vs. plain geometry" later.
-        private void PlayMeleeHitEffect(Actor targetActor, Vector3 hitPoint)
+        // targetActor stays unused beyond the null check: "actor vs. plain geometry" is no longer something
+        // this has to infer, the surface tag the swinger resolved from the actual collider says it outright
+        // (an enemy is just another surface, e.g. Flesh).
+        private void PlayMeleeHitEffect(Actor targetActor, Vector3 hitPoint, int surfaceTag)
         {
             EffectPlayer weaponHitEffect = _activeWeapon != null ? _activeWeapon.HitEffect : null;
-            weaponHitEffect?.PlayEffectAtPosition(hitPoint, Quaternion.identity);
+            weaponHitEffect?.PlayEffectAtPosition(hitPoint, Quaternion.identity, surfaceTag);
         }
 #endif
 
-        private void ApplyMeleeHit(IHittable hittable, Vector3 hitPoint)
+        private void ApplyMeleeHit(IHittable hittable, Vector3 hitPoint, int surfaceTag)
         {
             bool hit = hittable != null && ExecuteDamageHittable(hittable);
 
 #if NETWORKING_NGO
             NetworkObjectReference targetRef = default;
             bool hasTarget = hittable is Actor actor && TryGetNetworkReference(actor, out targetRef);
-            if (IsSpawned) NotifyMeleeHit_Rpc(hasTarget, targetRef, hitPoint);
+            if (IsSpawned) NotifyMeleeHit_Rpc(hasTarget, targetRef, hitPoint, (byte)surfaceTag);
 #endif
 #if NETWORKING_FISHNET
             if (hit && IsSpawned && hittable is Actor fnActor)
@@ -860,7 +864,10 @@ namespace Kuantech.Core
             Vector3 targetHitPoint = actor.GetHitPoint(Actor).GetTargetPosition();
             Vector3 attackerPosition = Actor.transform.position;
             attackerPosition.y = targetHitPoint.y;
-            hitEffect.PlayEffectAtPosition(actor.GetHitPoint(Actor).GetTargetPositionTowardsTarget(attackerPosition), Quaternion.LookRotation(GetAttackDirection()));
+            // No contact collider here, so the surface comes off the target actor itself (its own SurfaceTag,
+            // or its layer) -- an arrow or a fireball landing on a zombie still gets the flesh variant.
+            int surfaceTag = SurfaceTags.Resolve(actor.gameObject);
+            hitEffect.PlayEffectAtPosition(actor.GetHitPoint(Actor).GetTargetPositionTowardsTarget(attackerPosition), Quaternion.LookRotation(GetAttackDirection()), surfaceTag);
         }
 
         private void SkillCastAttack()

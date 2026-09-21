@@ -24,7 +24,7 @@ namespace Kuantech.Networking
     {
         [Header("Match")]
         [Tooltip("Scene the leader loads everybody into. Must be in Build Settings.")]
-        [SerializeField] private string GameSceneName = "TestScene";
+        [SerializeField] private string GameSceneName = "GameScene";
 
         [Tooltip("How long the leader waits for every party member to connect before giving up on the " +
                  "stragglers and starting anyway.")]
@@ -38,6 +38,20 @@ namespace Kuantech.Networking
 
         /// <summary>Raised on the leader the moment a match start is committed to.</summary>
         public event Action MatchStarting;
+
+        /// <summary>
+        /// Server-side. Raised once a connecting client has been admitted and its identity recorded --
+        /// before it has a body. Systems that keep per-player bookkeeping hook this rather than reading
+        /// the roster once, because a level can come up before or after a given player arrives.
+        /// </summary>
+        public event Action<ulong> PlayerJoinedMatch;
+
+        /// <summary>
+        /// True once this manager has claimed the netcode callbacks it needs. Anything that starts a
+        /// network on its own has to wait for it -- connecting before approval is wired up produces a
+        /// player nobody has an identity for.
+        /// </summary>
+        public bool IsReady { get; private set; }
 
         private MatchJoinRequest _localRequest;
 
@@ -112,6 +126,7 @@ namespace Kuantech.Networking
             NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnect;
 
             ApplyConnectionPayload();
+            IsReady = true;
 #endif
         }
 
@@ -359,7 +374,14 @@ namespace Kuantech.Networking
         {
             // Fired locally, on every peer, just before its own load begins -- the one moment where the
             // outgoing scene is still intact and can be torn down in order.
-            if (sceneEvent.SceneEventType == SceneEventType.Load) GameManager.NotifySceneLeaving();
+            if (sceneEvent.SceneEventType != SceneEventType.Load) return;
+
+            // Unless it is not a change at all. A client that connects to a server already standing in the
+            // same scene gets synchronized into the scene it is currently in, and tearing that scene's
+            // sub-managers down underneath it would break a level nobody is actually leaving.
+            if (sceneEvent.SceneName == SceneManager.GetActiveScene().name) return;
+
+            GameManager.NotifySceneLeaving();
         }
 
         private void OnLoadEventCompleted(string sceneName, LoadSceneMode loadSceneMode,
@@ -385,8 +407,31 @@ namespace Kuantech.Networking
             SetStatus($"Match running with {spawnIndex} player(s)");
         }
 
+        /// <summary>
+        /// Gives one client a body in whatever scene is loaded right now.
+        ///
+        /// The normal path waits for a networked scene load to finish on every peer, which is the only
+        /// correct moment when a match is travelling from the menu into a level. A level opened straight
+        /// from the Editor never has such a load -- it is already the scene -- so this is how a session
+        /// started in place still ends up with players in it.
+        /// </summary>
+        public void SpawnPlayerInCurrentScene(ulong clientId, int spawnIndex)
+        {
+            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer) return;
+            SpawnPlayerFor(clientId, spawnIndex);
+        }
+
         private void SpawnPlayerFor(ulong clientId, int spawnIndex)
         {
+            // Whoever already has a body keeps it. Both spawn paths can plausibly run over the same
+            // client -- a solo session that also happens to load a scene, a reload -- and a second body
+            // for one player is a far worse outcome than a skipped call.
+            if (NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out NetworkClient connected)
+                && connected.PlayerObject != null)
+            {
+                return;
+            }
+
             GameObject playerPrefab = NetworkManager.Singleton.NetworkConfig.PlayerPrefab;
             if (playerPrefab == null)
             {
@@ -452,6 +497,7 @@ namespace Kuantech.Networking
             response.Pending = false;
 
             Debug.Log($"[MatchManager] Approved clientId={request.ClientNetworkId}: {joinRequest}");
+            PlayerJoinedMatch?.Invoke(request.ClientNetworkId);
         }
 
         private static bool TryReadPayload(byte[] payload, out MatchJoinRequest request)

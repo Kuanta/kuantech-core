@@ -1,7 +1,9 @@
+using System;
 using Kuantech.Inventory;
 
 namespace Kuantech.TotemHero
 {
+    [Serializable]
     public class LootComponentData : ItemComponentData
     {
         public int Rarity;

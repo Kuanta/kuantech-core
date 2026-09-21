@@ -9,6 +9,27 @@ namespace Kuantech.Core.FX
 {
     public class Effect : MonoBehaviour
     {
+        /// <summary>
+        /// What this effect plays against one surface. Whole Sound / VisualEffect components, not clips or
+        /// particle systems: each surface keeps its own pitch randomization, combo and queue settings on the
+        /// sound side, and its own emitters on the visual side, because the variant IS one of those
+        /// components rather than a stripped-down copy of one.
+        /// </summary>
+        [Serializable]
+        public struct SurfaceVariant
+        {
+            [KTTag("SurfaceTag")]
+            public int Surface;
+            [Tooltip("Leave unset to keep the effect's default Vfx -- same sparks, different sound.")]
+            public VisualEffect Vfx;
+            [Tooltip("Leave unset to keep the effect's default Sfx -- same sound, different sparks.")]
+            public Sound Sfx;
+            [Tooltip("Tick to play this surface through the AudioLibrary tag below instead of the Sfx above.")]
+            public bool OverrideAudioTag;
+            [KTTag("AudioTag")]
+            public int AudioTag;
+        }
+
         [Header("Effect Properties")]
         public string EffectId;
         public float Duration;
@@ -25,6 +46,13 @@ namespace Kuantech.Core.FX
         public int AudioTag;
         public Sound Sfx;
         public float SfxFadeOutDuration = 0; //If set to a value >0, sfx will top with fading out
+
+        [Header("Surface Variants")]
+        [Tooltip("Which Sound / VisualEffect to use for the surface that was hit " +
+                 "(EffectPlaySettings.SurfaceTag). The Vfx/Sfx fields above stay the fallback for every " +
+                 "surface not listed here, so an effect with no variants behaves exactly as it always did. " +
+                 "First match wins.")]
+        public List<SurfaceVariant> SurfaceVariants = new List<SurfaceVariant>();
 
         [Header("Animations")]
         public Animator Animator;
@@ -43,6 +71,16 @@ namespace Kuantech.Core.FX
         [NonSerialized] public bool SpawnedFromPool = false; //This is used to determine if the effect was spawned from the pool or not. 
         [NonSerialized] public EffectsModule OwnerEffectModule; //Effects may be owned by actors
         [NonSerialized] public EffectPlaySettings EffectPlaySettings; //This is used to store the settings used to play the effect
+
+        // Whatever the last Play() resolved out of SurfaceVariants -- held in fields because Stop() and
+        // PoolRoutine() run long after PlayEffects() and have to act on the same components that started.
+        private VisualEffect _activeVfx;
+        private Sound _activeSfx;
+        private int _activeAudioTag;
+
+        // Fall back to the defaults when nothing has played yet (e.g. OnDisable cleanup before a first Play).
+        private VisualEffect ActiveVfx => _activeVfx != null ? _activeVfx : Vfx;
+        private Sound ActiveSfx => _activeSfx != null ? _activeSfx : Sfx;
 
         private IEnumerator _stopRoutine = null;
         private IEnumerator _despawnRoutine = null;
@@ -230,32 +268,57 @@ namespace Kuantech.Core.FX
             Stop();
         }
 
+        /// <summary>
+        /// Picks the Sound / VisualEffect for the surface the caller reported, falling back to this effect's
+        /// own Vfx/Sfx/AudioTag for any surface with no entry -- an effect with no variants at all plays
+        /// exactly what it played before surfaces existed.
+        /// </summary>
+        private void ResolveSurfaceVariant(int surfaceTag)
+        {
+            _activeVfx = Vfx;
+            _activeSfx = Sfx;
+            _activeAudioTag = AudioTag;
+
+            if (SurfaceVariants.IsNullOrEmpty()) return;
+
+            foreach (var variant in SurfaceVariants)
+            {
+                if (variant.Surface != surfaceTag) continue;
+                if (variant.Vfx != null) _activeVfx = variant.Vfx;
+                if (variant.Sfx != null) _activeSfx = variant.Sfx;
+                if (variant.OverrideAudioTag) _activeAudioTag = variant.AudioTag;
+                return;
+            }
+        }
+
         protected virtual void PlayEffects(EffectPlaySettings playSettings)
         {
             IsFxPlaying = true;
             _lastPlayedTime = Time.time;
-            
-            if(Sfx != null)
+
+            ResolveSurfaceVariant(playSettings.SurfaceTag);
+
+            if(_activeSfx != null)
             {
-                Sfx.OnDeqeued = OnSoundDequeued;
+                _activeSfx.OnDeqeued = OnSoundDequeued;
             }
 
             float speed = GetSpeedMultiplier();
 
             //Sound
             if (!EffectsLibrary.CanPlayEffect(EffectId, playSettings.EffectCooldown)) return;
-            if(!EffectsLibrary.PlayAudio(AudioTag))
+            if(!EffectsLibrary.PlayAudio(_activeAudioTag))
             {
-                if (Sfx != null)
+                if (_activeSfx != null)
                 {
-                    Sfx.ComboFromEffect = playSettings.ComboIndex;
-                    Sfx.SetSpeedMultiplier(speed); // pitch (and fire rate) scale with playback speed
-                    Sfx.PlayThroughAudioLibrary();
+                    _activeSfx.ComboFromEffect = playSettings.ComboIndex;
+                    _activeSfx.SetSpeedMultiplier(speed); // pitch (and fire rate) scale with playback speed
+                    _activeSfx.PlayThroughAudioLibrary();
                 }
             }
 
             //Visual Effect
-            if (Vfx != null) Vfx.Play(playSettings, speed);
+            if (_activeVfx != null) _activeVfx.Play(playSettings, speed);
 
             //Animation
             if (Animator != null)
@@ -304,10 +367,10 @@ namespace Kuantech.Core.FX
             IsFxPlaying = false;
             
             // VFX
-            if(Vfx!=null) Vfx.Stop();
+            if(ActiveVfx != null) ActiveVfx.Stop();
             
             // SFX
-            if (Sfx != null) Sfx.Stop(SfxFadeOutDuration);
+            if (ActiveSfx != null) ActiveSfx.Stop(SfxFadeOutDuration);
             
             // Shader
             if (PlayedShaderEffect != null)
@@ -333,19 +396,19 @@ namespace Kuantech.Core.FX
         
         public void SetAudioPitch(float pitch)
         {
-            if (Sfx != null) Sfx.SetPitch(pitch);
+            if (ActiveSfx != null) ActiveSfx.SetPitch(pitch);
         }
 
         private IEnumerator PoolRoutine(float duration)
         {
             if(!SpawnedFromPool) yield break;
-            if(Sfx != null && Sfx.Enqueued)
+            if(ActiveSfx != null && ActiveSfx.Enqueued)
             {
                 yield break;
             }
             if (duration < 0)
             {
-                duration = Vfx.GetDuration();
+                duration = ActiveVfx.GetDuration();
             }
             yield return new WaitForSeconds(duration);
             _stopRoutine = null;
@@ -394,7 +457,7 @@ namespace Kuantech.Core.FX
 
         public void OnSoundDequeued()
         {
-            Sfx.Enqueued = false;
+            ActiveSfx.Enqueued = false;
             StartCoroutine(PoolRoutine(GetDuration()));
         }
     }

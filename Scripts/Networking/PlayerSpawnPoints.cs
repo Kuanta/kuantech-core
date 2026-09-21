@@ -28,6 +28,22 @@ namespace Kuantech.Networking
         }
 
         /// <summary>
+        /// Whether any level geometry has registered somewhere to stand yet. A spawner that runs off a
+        /// connection callback can easily beat the level into existence, and this is how it waits.
+        /// </summary>
+        public static bool HasAny
+        {
+            get
+            {
+                foreach (PlayerSpawnPoints set in Registered)
+                {
+                    if (set != null && set.Points != null && set.Points.Length > 0) return true;
+                }
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Resolves the spawn pose for the given player index. Falls back to the world origin when the
         /// level has no spawn points registered, so a missing set costs a warning, not a broken match.
         /// </summary>

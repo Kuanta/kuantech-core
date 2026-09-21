@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Kuantech.Core;
 using Kuantech.Core.Database;
@@ -7,6 +8,7 @@ using Kuantech.Utils;
 
 namespace Kuantech.Inventory
 {
+    [Serializable]
     public class StatAdderItemComponentData : ItemComponentData
     {
         public List<StatModifierData> ModifierDatas;

@@ -18,6 +18,11 @@ namespace Kuantech.Core.FX
         //Combo
         public int ComboIndex;
         
+        //Surface
+        [Tooltip("What the effect is playing against (stone/flesh/wood/...), resolved by SurfaceTags.Resolve " +
+                 "at the hit site. Effect.SurfaceVariants picks its vfx/sfx from this.")]
+        public int SurfaceTag;
+        
         //Play under parent
         public bool SetPosition; //If true, the position will be set
         public bool SetRotation;
@@ -44,6 +49,7 @@ namespace Kuantech.Core.FX
                 DespawnAfterPlay = false,
                 SetPosition = false,
                 SetRotation = false,
+                SurfaceTag = SurfaceTags.Default,
                 EffectParent = null,
                 LocalPlayPosition = Vector3.zero,
                 LocalPlayRotation = Quaternion.identity,
@@ -52,9 +58,10 @@ namespace Kuantech.Core.FX
             };
         }
 
-        public static EffectPlaySettings GetPlayAtPositionSettings(Vector3 position, Quaternion rotation)
+        public static EffectPlaySettings GetPlayAtPositionSettings(Vector3 position, Quaternion rotation, int surfaceTag = SurfaceTags.Default)
         {
             EffectPlaySettings settings = GetDefaultSettings();
+            settings.SurfaceTag = surfaceTag;
             settings.PlayStartPosition = position;
             settings.PlayStartRotation = rotation;
             settings.SetPosition = true;

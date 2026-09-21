@@ -1,5 +1,8 @@
+using System;
+
 namespace Kuantech.Utils
 {
+    [Serializable]
     public class KtLinearFormula : KtFormula
     {
         public float Scale;

@@ -20,6 +20,23 @@ namespace Kuantech.Core.FX
         public Dictionary<string, Effect> _existingEffectsById;
 
         public PrefabPool EffectsPool;
+
+        [Serializable]
+        public struct SurfaceLayerMapping
+        {
+            public LayerMask Layers;
+            [KTTag("SurfaceTag")]
+            public int Surface;
+        }
+
+        [Header("Surfaces")]
+        [Tooltip("Off by default: every effect plays exactly what it always played, and nothing pays for a " +
+                 "surface lookup. Tick this to let hit effects pick per-surface variants " +
+                 "(see Effect.SurfaceVariants).")]
+        public bool EnableSurfaceEffects;
+        [Tooltip("Fallback surface per physics layer, used when whatever got hit carries no SurfaceTag " +
+                 "component of its own. First matching entry wins, so order these most-specific first.")]
+        public List<SurfaceLayerMapping> SurfaceLayers = new List<SurfaceLayerMapping>();
         
         private Dictionary<string, float> _effectLastPlayedTimes = new Dictionary<string, float>();
 
@@ -134,6 +151,27 @@ namespace Kuantech.Core.FX
                 context._effectLastPlayedTimes = new Dictionary<string, float>();
             context._effectLastPlayedTimes[effectId] = Time.time;
         }
+
+        #region Surfaces
+
+        /// <summary>
+        /// Layer-level fallback for SurfaceTags.Resolve -- lets a whole layer (e.g. Environment) read as
+        /// stone without tagging every wall in the scene. Returns Default when nothing matches.
+        /// </summary>
+        public static int GetSurfaceForLayer(int layer)
+        {
+            EffectsLibrary context = GetContext<EffectsLibrary>();
+            if (context == null || context.SurfaceLayers.IsNullOrEmpty()) return SurfaceTags.Default;
+
+            int layerBit = 1 << layer;
+            foreach (var mapping in context.SurfaceLayers)
+            {
+                if ((mapping.Layers.value & layerBit) != 0) return mapping.Surface;
+            }
+            return SurfaceTags.Default;
+        }
+
+        #endregion
 
         #region AudioLibrary
         public static AudioLibrary GetAudioLibrary()

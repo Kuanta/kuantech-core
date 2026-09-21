@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Kuantech.Core;
 using Kuantech.Inventory;
@@ -5,6 +6,7 @@ using Kuantech.Rpg.Skills;
 
 namespace Kuantech.Rpg
 {
+    [Serializable]
     public class BuffAdderItemComponentData : ItemComponentData
     {
         public List<SkillDataAsset> SkillToAdd;

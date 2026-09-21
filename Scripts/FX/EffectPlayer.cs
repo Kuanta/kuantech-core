@@ -72,9 +72,11 @@ namespace Kuantech.Core.FX
             // registered under tag 0 elsewhere. See EffectsModule.AttackEffect for the bug this caused.
             return null;
         }
-        public Effect PlayEffectAtPosition(Vector3 position, Quaternion rotation)
+        /// <summary>Plays at a world point. surfaceTag is what was hit there (SurfaceTags.Resolve) -- the
+        /// effect picks a matching variant out of its SurfaceVariants, or its defaults when there is none.</summary>
+        public Effect PlayEffectAtPosition(Vector3 position, Quaternion rotation, int surfaceTag = SurfaceTags.Default)
         {
-            EffectPlaySettings settings = EffectPlaySettings.GetPlayAtPositionSettings(position, rotation);
+            EffectPlaySettings settings = EffectPlaySettings.GetPlayAtPositionSettings(position, rotation, surfaceTag);
             settings.DespawnAfterPlay = true;
             return PlayEffect(settings);
         }

@@ -57,6 +57,12 @@ namespace Kuantech.Inventory
         /// twice for the same target within one BeginSweep/StopSweep window).</summary>
         public event Action<IHittable, Vector3> HitDetected;
 
+        /// <summary>The same hit, plus the surface that was struck (SurfaceTags.Resolve) -- this sweep is
+        /// the only place that still holds the collider, so anything wanting a surface-aware hit effect has
+        /// to be told here. Both events fire for every hit; HitDetected stays for callers that predate
+        /// surfaces and do not care.</summary>
+        public event Action<IHittable, Vector3, int> HitDetectedOnSurface;
+
         private bool _sweeping;
         private bool _environmentHitThisSwing;
         private readonly HashSet<Collider> _hitThisSwing = new HashSet<Collider>();
@@ -135,17 +141,13 @@ namespace Kuantech.Inventory
                 _hitThisSwing.Add(hit);
                 Vector3 midPoint = (StartSweep.position + EndSweep.position) * 0.5f;
                 Vector3 contactPoint = hit.ClosestPoint(midPoint);
-                HitEffect.PlayEffectAtPosition(contactPoint, Quaternion.identity);
+                int surfaceTag = SurfaceTags.Resolve(hit);
+                HitEffect.PlayEffectAtPosition(contactPoint, Quaternion.identity, surfaceTag);
 
                 IHittable hittable = hit.GetComponentInParent<IHittable>();
-                if (hittable == null || !hittable.CanBeHit())
-                {
-                    HitDetected?.Invoke(null, contactPoint);
-                }
-                else
-                {
-                    HitDetected?.Invoke(hittable, contactPoint);
-                }
+                IHittable reported = hittable != null && hittable.CanBeHit() ? hittable : null;
+                HitDetected?.Invoke(reported, contactPoint);
+                HitDetectedOnSurface?.Invoke(reported, contactPoint, surfaceTag);
 
             }
         }
