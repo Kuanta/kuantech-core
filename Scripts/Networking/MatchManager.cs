@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Kuantech.Core;
@@ -25,6 +25,10 @@ namespace Kuantech.Networking
         [Header("Match")]
         [Tooltip("Scene the leader loads everybody into. Must be in Build Settings.")]
         [SerializeField] private string GameSceneName = "GameScene";
+
+        [Tooltip("Scene everybody returns to when the match ends. The party is NOT left on the way -- " +
+                 "going back to the lobby with the same people is the whole point.")]
+        [SerializeField] private string MainMenuSceneName = "MainMenuScene";
 
         [Tooltip("How long the leader waits for every party member to connect before giving up on the " +
                  "stragglers and starting anyway.")]
@@ -61,6 +65,7 @@ namespace Kuantech.Networking
 
         private int _expectedPlayerCount;
         private bool _starting;
+        private bool _leaving;
 
         public static MatchManager Get() => GetContext<MatchManager>();
 
@@ -232,6 +237,11 @@ namespace Kuantech.Networking
                 SetStatus("Cannot start a match: only the party leader can");
                 return false;
             }
+            if (!party.EveryoneReady)
+            {
+                SetStatus("Cannot start a match: somebody is not ready");
+                return false;
+            }
 
             _starting = true;
             try
@@ -351,8 +361,95 @@ namespace Kuantech.Networking
 
         private void OnClientDisconnect(ulong clientId)
         {
-            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer) return;
+            if (NetworkManager.Singleton == null) return;
+
+            // A pure client only ever hears about its OWN disconnect, and it means the session is over
+            // for us: the host shut down, or we were dropped. Either way there is nothing left to stand
+            // in, so this doubles as the "host left" path -- without it a client sits in a dead level
+            // forever, which is exactly what happens today.
+            if (!NetworkManager.Singleton.IsServer)
+            {
+                LeaveMatch().Forget();
+                return;
+            }
+
             _roster.Remove(clientId);
+        }
+
+        #endregion
+
+        #region Leaving a match
+
+        /// <summary>
+        /// Tears this peer's match down and goes back to the lobby. Safe to call on a host or a client,
+        /// and safe to call twice.
+        ///
+        /// Deliberately does NOT leave the party. The UGS session and the netcode connection are separate
+        /// things -- the session is what holds the group together, the network is only how this match was
+        /// played -- so dropping the second one leaves everybody standing in the lobby together.
+        /// </summary>
+        public async UniTask LeaveMatch()
+        {
+            if (_leaving) return;
+            _leaving = true;
+
+            try
+            {
+                // First, before anything else: while this is set every GameManager.ChangeScene tries to
+                // be a NETWORKED load, and the network is about to stop existing. Leaving it in place
+                // means the load below is handed to a dead SceneManager.
+                if (GameManager.SceneLoadOverride == LoadSceneNetworked) GameManager.SceneLoadOverride = null;
+
+                if (NetworkManager.Singleton != null) UnsubscribeFromSceneManager();
+
+                // The host goes through the session, NOT straight to NetworkManager.Shutdown: the session
+                // tracks its own NetworkState and refuses to start a second network while that still
+                // reads Started, so shutting netcode down behind its back gets everyone back to the lobby
+                // with a Start button that can never work again. StopNetwork stops netcode too, through
+                // the session's own handler.
+                //
+                // A member has no such call -- the SDK keeps it internal on the client interface, because
+                // only the host owns the network's lifetime -- so it just drops its own connection. That
+                // is also all it needs to do: nothing on a member's side gates the next match.
+                PartyManager party = PartyManager.Get();
+                bool stopped = party != null && party.IsLeader && await party.StopNetwork();
+
+                if (!stopped && NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+                {
+                    NetworkManager.Singleton.Shutdown();
+                }
+
+                // Either path: shutdown unwinds over the next frames rather than immediately. Loading a
+                // scene on top of a half-shut-down NetworkManager is how you get despawn callbacks firing
+                // into a scene that no longer exists.
+                float deadline = Time.realtimeSinceStartup + 5f;
+                while (NetworkManager.Singleton != null
+                       && NetworkManager.Singleton.ShutdownInProgress
+                       && Time.realtimeSinceStartup < deadline)
+                {
+                    await UniTask.Yield();
+                }
+
+                _roster.Clear();
+                _expectedPlayerCount = 0;
+
+                // Locked when the match started, so it has to be unlocked or the party can never take
+                // anyone new again. Host only -- a member has no say.
+                if (party != null && party.IsLeader) await party.LockParty(false);
+
+                // Each peer clears its OWN readiness, because a player property is writable only by the
+                // player it belongs to -- the host cannot reset anyone else's even if it wanted to. That
+                // restriction is the feature: coming back from a match, everybody has to say they are
+                // ready again before the leader can drag them into another one.
+                if (party != null && !party.IsLeader) await party.SetReady(false);
+
+                SetStatus("Match ended -- back to the lobby");
+                GameManager.ChangeScene(MainMenuSceneName);
+            }
+            finally
+            {
+                _leaving = false;
+            }
         }
 
         private bool LoadSceneNetworked(string sceneName)
