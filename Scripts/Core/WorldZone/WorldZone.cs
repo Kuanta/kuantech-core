@@ -92,6 +92,14 @@ namespace Kuantech.Core
                 zoneElement.CleanupZone();
             }
         }
+
+        public void ResetZone()
+        {
+            foreach (var zoneElement in _zoneElements)
+            {
+                zoneElement.ResetZone();
+            }
+        }
         #endregion
     }
 }

@@ -62,5 +62,10 @@ namespace Kuantech.HordeSurvival
         {
             return Player != null ? Player.transform.position : transform.position;
         }
+
+        public void ResetArena()
+        {
+            ResetZone();
+        }
     }
 }
