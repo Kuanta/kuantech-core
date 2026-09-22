@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Kuantech.Core;
@@ -21,11 +21,15 @@ namespace Kuantech.Networking
         public readonly string Name;
         public readonly bool IsLeader;
 
-        public PartyMember(string id, string name, bool isLeader)
+        /// <summary>Meaningless for the leader, who says so by pressing Start.</summary>
+        public readonly bool IsReady;
+
+        public PartyMember(string id, string name, bool isLeader, bool isReady)
         {
             Id = id;
             Name = name;
             IsLeader = isLeader;
+            IsReady = isReady;
         }
     }
 
@@ -64,6 +68,41 @@ namespace Kuantech.Networking
         public bool IsBusy { get; private set; }
 
         public static PartyManager Get() => GetContext<PartyManager>();
+
+        /// <summary>
+        /// Key this player's readiness is stored under, as an ordinary session player property. Player
+        /// properties are writable only by the player they belong to, which is exactly the rule wanted
+        /// here -- nobody else gets to declare you ready.
+        /// </summary>
+        private const string ReadyPropertyKey = "ready";
+
+        /// <summary>True when every member other than the leader has readied up. Vacuously true for a
+        /// party of one, so playing alone still works.</summary>
+        public bool EveryoneReady
+        {
+            get
+            {
+                foreach (PartyMember member in _members)
+                {
+                    if (!member.IsLeader && !member.IsReady) return false;
+                }
+                return true;
+            }
+        }
+
+        /// <summary>Whether THIS player has readied up. Always false for the leader.</summary>
+        public bool IsLocalPlayerReady
+        {
+#if UGS_SERVICES
+            get
+            {
+                if (_session?.CurrentPlayer == null || _session.IsHost) return false;
+                return ReadPlayerReady(_session.CurrentPlayer);
+            }
+#else
+            get => false;
+#endif
+        }
 
 #if UGS_SERVICES
         private ISession _session;
@@ -262,6 +301,77 @@ namespace Kuantech.Networking
 #endif
         }
 
+        /// <summary>
+        /// The counterpart to StartNetwork, and leader-only for the same reason: the SDK exposes
+        /// StopNetworkAsync on IHostSessionNetwork but keeps it internal on IClientSessionNetwork, because
+        /// only the host owns the network's lifetime. A member's side goes away on its own when the
+        /// host's does.
+        ///
+        /// Not the same as shutting netcode down, either. The session keeps its own NetworkState, and
+        /// StartRelayNetworkAsync refuses outright while that still reads Started
+        /// (NetworkModule.ValidateNetworkStateForStartNetwork). Killing the NetworkManager directly
+        /// leaves it stuck there -- the party would survive one match only for the NEXT one to fail to
+        /// start. This resets it properly, and stops netcode on the way through the session's own handler.
+        /// </summary>
+        public async UniTask<bool> StopNetwork()
+        {
+#if UGS_SERVICES
+            if (_session == null || !_session.IsHost) return false;
+            try
+            {
+                await _session.AsHost().Network.StopNetworkAsync();
+                SetStatus("Network stopped");
+                return true;
+            }
+            catch (Exception e)
+            {
+                // Throws when it was not Started -- a match that never got off the ground, or a second
+                // call. Not worth failing the trip back to the lobby over, so this is a note, not a Fail.
+                Debug.LogWarning($"[PartyManager] Stop network: {e.Message}");
+                return false;
+            }
+#else
+            await UniTask.CompletedTask;
+            return false;
+#endif
+        }
+
+        /// <summary>
+        /// Declares this player ready or not. Members only -- the leader's readiness IS the Start button.
+        ///
+        /// Written to this player's own session properties rather than announced, for the same reason the
+        /// relay details are: somebody joining, reconnecting or refreshing reads the current answer
+        /// instead of having missed the moment it changed.
+        /// </summary>
+        public async UniTask<bool> SetReady(bool ready)
+        {
+#if UGS_SERVICES
+            if (_session?.CurrentPlayer == null || _session.IsHost) return false;
+            if (ReadPlayerReady(_session.CurrentPlayer) == ready) return true;
+
+            try
+            {
+                _session.CurrentPlayer.SetProperty(ReadyPropertyKey,
+                    new PlayerProperty(ready ? "1" : "0", VisibilityPropertyOptions.Member));
+                await _session.SaveCurrentPlayerDataAsync();
+
+                // Redrawn locally too: the round trip that tells everyone else also tells us, but not
+                // until it lands, and a button that does nothing for half a second reads as broken.
+                RebuildMembers();
+                PartyChanged?.Invoke();
+                return true;
+            }
+            catch (Exception e)
+            {
+                Fail("Set ready", e);
+                return false;
+            }
+#else
+            await UniTask.CompletedTask;
+            return FailNoDefine("Set ready");
+#endif
+        }
+
         public async UniTask LeaveParty()
         {
 #if UGS_SERVICES
@@ -339,8 +449,16 @@ namespace Kuantech.Networking
                 _members.Add(new PartyMember(
                     player.Id,
                     string.IsNullOrEmpty(playerName) ? player.Id : playerName,
-                    player.Id == _session.Host));
+                    player.Id == _session.Host,
+                    ReadPlayerReady(player)));
             }
+        }
+
+        private static bool ReadPlayerReady(IReadOnlyPlayer player)
+        {
+            if (player?.Properties == null) return false;
+            return player.Properties.TryGetValue(ReadyPropertyKey, out PlayerProperty property)
+                   && property?.Value == "1";
         }
 
         private void OnSessionChanged()

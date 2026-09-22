@@ -29,6 +29,13 @@ namespace Kuantech.Core
         [Tooltip("Send movement as a single magnitude float instead of Forward/Sideways")]
         public bool UseOneDimensionalMovement;
 
+        [Tooltip("Re-apply bool parameters to the new Animator when the actor's visual is swapped. An " +
+                 "Animator only knows what was written to it, so an actor that changes mesh mid-state " +
+                 "silently loses anything already set -- switch to third person on death and the new rig " +
+                 "never hears that it is dead. Off by default so existing actors behave exactly as before; " +
+                 "turn it on for anything that swaps visuals while alive, i.e. a first/third person player.")]
+        [SerializeField] private bool RestoreStateOnVisualChange = false;
+
         [Header("Animation Parameters")]
         [SerializeField] private AnimationData DamageReceivedAnimationData;
 
@@ -157,10 +164,44 @@ namespace Kuantech.Core
             else Driver?.SetFloat(hash, value);
         }
 
+        // Remembered so a later Animator can be told what it missed. Bools only: they are the parameters
+        // that describe a lasting state (dead, downed, crouching) rather than a moment, and a moment
+        // cannot be meaningfully replayed onto a rig that was not there for it.
+        private readonly System.Collections.Generic.Dictionary<int, bool> _writtenBools =
+            new System.Collections.Generic.Dictionary<int, bool>();
+
         private void WriteBool(int hash, bool value)
         {
+            _writtenBools[hash] = value;
             if (Animator != null) Animator.SetBool(hash, value);
             else Driver?.SetBool(hash, value);
+        }
+
+        /// <summary>
+        /// Writes a bool this module has no opinion about, by parameter name. Exists so a game-side module
+        /// can drive its own animator state (downed, carrying, disguised) without Core having to learn
+        /// what any of those mean. Goes through the same path as the built-in ones, so it is remembered
+        /// and restored on a visual swap like everything else.
+        /// </summary>
+        public void SetBool(string parameterName, bool value)
+        {
+            if (string.IsNullOrEmpty(parameterName)) return;
+            // Fully qualified: this class has its own member called Animator, which would otherwise win.
+            WriteBool(UnityEngine.Animator.StringToHash(parameterName), value);
+        }
+
+        /// <summary>
+        /// Pushes every bool this module has written back onto the current Animator. Called automatically
+        /// on a visual swap when RestoreStateOnVisualChange is on; public so a caller that swaps visuals
+        /// by some other route can ask for it explicitly.
+        /// </summary>
+        public void RefreshAnimatorState()
+        {
+            foreach (System.Collections.Generic.KeyValuePair<int, bool> entry in _writtenBools)
+            {
+                if (Animator != null) Animator.SetBool(entry.Key, entry.Value);
+                else Driver?.SetBool(entry.Key, entry.Value);
+            }
         }
 
         private void WriteTrigger(int hash)
@@ -189,6 +230,10 @@ namespace Kuantech.Core
             Animator = newVisual.Animator;
             if (Animator != null) Animator.logWarnings = false;
             if (MontagePlayer != null) MontagePlayer.Animator = Animator;
+
+            // The fresh rig starts from its own defaults and knows nothing about what the actor has been
+            // doing. Opt-in, so no existing actor's behaviour changes by adding this.
+            if (RestoreStateOnVisualChange) RefreshAnimatorState();
         }
 
         // ─── Animation sets ───────────────────────────────────────────────────────

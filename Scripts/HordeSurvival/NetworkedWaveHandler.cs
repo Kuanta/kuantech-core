@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using Kuantech.Core;
 using Kuantech.Networking;
@@ -57,6 +57,12 @@ namespace Kuantech.HordeSurvival
         public float WaveCompleteDelay = 1.5f;
         [Tooltip("If true, the next wave starts automatically after NextWaveDelay once a wave completes.")]
         public bool AutoStartNextWave = true;
+
+        [Tooltip("Whether activating the zone starts wave 0 by itself. On by default so existing levels " +
+                 "behave exactly as before -- turn it OFF for a level that wants the run started " +
+                 "deliberately (a test arena, a lobby room, a level with a starting lever), then call " +
+                 "StartRun when something decides it is time.")]
+        public bool AutoStartOnZoneActivated = true;
         public float NextWaveDelay = 3f;
 
         [Header("Timing")]
@@ -123,10 +129,32 @@ namespace Kuantech.HordeSurvival
         public override void OnZoneActivated()
         {
             base.OnZoneActivated();
+            if (!AutoStartOnZoneActivated) return;
+            StartRun();
+        }
+
+        /// <summary>
+        /// Server only. Begins the run at wave 0. Called by zone activation on a level that starts by
+        /// itself, and by hand -- a lever, a console command -- on one that does not.
+        /// </summary>
+        public void StartRun()
+        {
             if (!KtNetworkManager.HasAuthority()) return;
 
             if (_startRunRoutine != null) StopCoroutine(_startRunRoutine);
             _startRunRoutine = StartCoroutine(StartRunRoutine());
+        }
+
+        /// <summary>
+        /// Back to before the first wave. Stops whatever is running and forgets the wave count, but does
+        /// NOT start again -- whether a reset rolls straight into a new run is the level's decision, and
+        /// it already expressed it through AutoStartOnZoneActivated.
+        /// </summary>
+        public override void ResetZone()
+        {
+            base.ResetZone();
+            StopWave();
+            _currentWaveIndex = -1;
         }
 
         public override void OnZoneDeactivated()

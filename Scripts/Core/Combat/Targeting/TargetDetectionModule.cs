@@ -19,7 +19,13 @@ namespace Kuantech.Core.Combat
 
         public TargetPriorityBehaviour allyTargetPriorityBehaviour;
         public TargetPriorityBehaviour EnemyDetectingBehaviour;
-        
+
+        // SubclassSelector, not a bare SerializeReference: Unity's own managed-reference type picker does
+        // not produce a usable row here (the property measures as a normal line and then draws nothing),
+        // so every polymorphic field in this project goes through SubclassSelectorDrawer instead.
+        [SerializeReference] [SubclassSelector] public TargetFilter EnemyFilter = null;
+        [SerializeReference] [SubclassSelector] public TargetFilter AllyFilter = null;
+
         /// <summary>
         /// Detects allies and enemies
         /// </summary>
@@ -97,8 +103,34 @@ namespace Kuantech.Core.Combat
             SortAllies(allyTargetPriorityBehaviour);
         }
         
+        public List<Actor> FilterEnemies()
+        {
+            if(EnemyFilter == null) return DetectedEnemies;
+            List<Actor> filtered = new List<Actor>();
+            foreach(var enemy in DetectedEnemies)
+            {
+                if(EnemyFilter.FilterOutTarget(Actor, enemy)) continue;
+                filtered.Add(enemy);
+            }
+            return filtered;
+        }
+
+        public List<Actor> FilterAllies()
+        {
+            if (AllyFilter == null) return DetectedAllies;
+            List<Actor> filtered = new List<Actor>();
+            foreach (var ally in DetectedAllies)
+            {
+                if (AllyFilter.FilterOutTarget(Actor, ally)) continue;
+                filtered.Add(ally);
+            }
+            return filtered;
+        }
+
         public void SortEnemies(TargetPriorityBehaviour priorityBehaviour)
         {
+            //Apply filter
+            DetectedEnemies = FilterEnemies();
             if (!DetectedEnemies.IsNullOrEmpty() && DetectedEnemies.Count > 1 && priorityBehaviour != null)
             {
                 DetectedEnemies.Sort((a, b) => priorityBehaviour.Compare(a, b, Actor));
@@ -107,6 +139,8 @@ namespace Kuantech.Core.Combat
         
         public void SortAllies(TargetPriorityBehaviour priorityBehaviour)
         {
+            //Apply Filter
+            DetectedAllies = FilterAllies();
             if (!DetectedAllies.IsNullOrEmpty() && DetectedAllies.Count > 1 && priorityBehaviour != null)
             {
                 DetectedAllies.Sort((a, b) => priorityBehaviour.Compare(a, b, Actor));
@@ -157,7 +191,6 @@ namespace Kuantech.Core.Combat
             {
                 if (!enemy.IsAlive())
                 {
-                    Debug.LogError("Dead enemy in DetectedEnemies list");
                     continue;
                 }
 

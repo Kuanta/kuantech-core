@@ -6,6 +6,7 @@ using Unity.Netcode;
 #endif
 using Kuantech.Core.Utils;
 using Kuantech.Rpg;
+using Kuantech.Utils;
 using UnityEngine;
 using Attribute = Kuantech.Rpg.Attribute;
 
@@ -28,11 +29,11 @@ namespace Kuantech.Core
         [Header("Dash")]
         public float DashStrength = 3f;
         public float DashDuration = 0.5f;
-        [SerializeReference] public DashHandler DashHandler;
+        [SerializeReference] [SubclassSelector] public DashHandler DashHandler;
         [SerializeField] private bool LockRotationOnDash = true;
         [SerializeField] private bool SnapToDirectionOnDash = false;
         
-        [SerializeReference] private CrouchHandler CrouchHandler;
+        [SerializeReference] [SubclassSelector] private CrouchHandler CrouchHandler;
         private bool _crouching;
         
         [Header("Jump")]
@@ -63,7 +64,7 @@ namespace Kuantech.Core
         public EventHandler CrouchStarted;
         public EventHandler CrouchEnded;
 
-        [SerializeReference] public JumpHandler JumpHandler;
+        [SerializeReference] [SubclassSelector] public JumpHandler JumpHandler;
         private AimHandler _aimHandler;
         private LockModule _lockModule;
 

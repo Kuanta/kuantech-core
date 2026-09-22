@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 #if NETWORKING_NGO
 using System.Collections.Generic;
 using Unity.Collections;
@@ -20,11 +20,13 @@ namespace Kuantech.HordeSurvival
         public static event Action<int> OnWaveStarted;
 
 #if NETWORKING_NGO
-        // Tracks which NetworkManager instance we last registered on (not just "have we ever registered") --
-        // a bare bool would stay true forever after the first registration even if NetworkManager.Singleton
-        // gets torn down and recreated (a menu->game scene transition, a reconnect), silently leaving the
-        // CURRENT instance with no handler at all while looking "already done".
-        private static NetworkManager _listeningOn;
+        // Tracks the CustomMessagingManager we last registered on, NOT the NetworkManager. Netcode
+        // builds a fresh CustomMessagingManager on every start and drops it on every shutdown
+        // (NetworkManager.cs: "CustomMessagingManager = new ..." / "= null"), taking the whole handler
+        // table with it -- while the NetworkManager object itself survives from one match to the next.
+        // Guarding on the NetworkManager therefore reports "already registered" for a table that was
+        // emptied, and this peer goes deaf from the second match onwards.
+        private static CustomMessagingManager _listeningOn;
 
         /// <summary>
         /// Registers this peer's message handler on the CURRENT NetworkManager.Singleton. Safe to call
@@ -38,9 +40,9 @@ namespace Kuantech.HordeSurvival
         public static void EnsureListening()
         {
             if (NetworkManager.Singleton == null || NetworkManager.Singleton.CustomMessagingManager == null) return;
-            if (_listeningOn == NetworkManager.Singleton) return;
+            if (_listeningOn == NetworkManager.Singleton.CustomMessagingManager) return;
             NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(MessageName, OnMessageReceived);
-            _listeningOn = NetworkManager.Singleton;
+            _listeningOn = NetworkManager.Singleton.CustomMessagingManager;
             Debug.Log($"[WaveAnnouncer] EnsureListening: registered on '{NetworkManager.Singleton.name}' (IsServer={NetworkManager.Singleton.IsServer}, IsClient={NetworkManager.Singleton.IsClient}).");
         }
 

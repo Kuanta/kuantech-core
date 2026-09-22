@@ -96,5 +96,11 @@ namespace Kuantech.HordeSurvival
             base.CleanupZone();
             ClearAllEnemies();
         }
+
+        public override void ResetZone()
+        {
+            base.ResetZone();
+            ClearAllEnemies();
+        }
     }
 }

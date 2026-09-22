@@ -13,6 +13,22 @@ namespace Kuantech.Core
     /// </summary>
     public class MotionVectorSyncer : ActorModule
     {
+        [Header("Aim")]
+        [Tooltip("Resamples the direction this actor is deliberately facing on a fixed cadence, instead " +
+                 "of only when something sets it. Off by default -- this is shared Core and it costs a " +
+                 "write per actor per interval. Turn it on for server-driven AI that faces a MOVING " +
+                 "target and whose rotation is computed per-peer by AimHandler (i.e. NetworkTransform is " +
+                 "not syncing rotation).")]
+        [SerializeField] private bool SyncAimDirection;
+
+        [Tooltip("Seconds between aim samples; 0 samples every frame. A sample is only written when the " +
+                 "direction actually moved, so a short interval costs nothing for an actor standing " +
+                 "still facing something that is also standing still.")]
+        [SerializeField] private float AimSyncInterval = 0.05f;
+
+        [Tooltip("Degrees the aim direction has to move before a sample is written.")]
+        [SerializeField] private float AimSyncAngleThreshold = 2f;
+
 #if NETWORKING_NGO
         private readonly NetworkVariable<Vector3> _syncedMovement = new NetworkVariable<Vector3>();
         private readonly NetworkVariable<Vector3> _syncedTargetVector = new NetworkVariable<Vector3>();
@@ -23,12 +39,16 @@ namespace Kuantech.Core
         private readonly OfflineNetworkVariable<float> _syncedSpeedMultiplier = new OfflineNetworkVariable<float>();
 #endif
 
+        private Vector3 _lastSyncedAim;
+        private float _lastAimSyncTime;
+
         public override void Initialize()
         {
             base.Initialize();
             Actor.MotionVectorsHandler.OnMovementVectorChanged += NotifyMovementVectorChanged;
             Actor.MotionVectorsHandler.OnTargetVectorChanged += NotifyTargetVectorChanged;
             Actor.MotionVectorsHandler.OnMovementMultiplierChanged += NotifySpeedMultiplierChanged;
+            Actor.MotionVectorsHandler.OnTargetChanged += OnTargetObjectChanged;
 #if !NETWORKING_NGO
             _syncedMovement.OnValueChanged += OnMovementChanged;
             _syncedTargetVector.OnValueChanged += OnTargetVectorChanged;
@@ -53,6 +73,74 @@ namespace Kuantech.Core
             _syncedSpeedMultiplier.OnValueChanged -= OnSpeedMultiplierChanged;
         }
 #endif
+
+        /// <summary>
+        /// Who an actor is facing cannot be replicated as a reference: TargetedObject is a plain Transform
+        /// and is under no obligation to be a NetworkObject -- a scene prop, a bone, a hit point on a rig
+        /// somebody else owns all qualify. So the DIRECTION is what travels.
+        ///
+        /// And it has to be resampled rather than captured once when the target was picked, because both
+        /// actors keep moving relative to each other. A sample taken at target-change time is correct for
+        /// exactly one frame, and worse than sending nothing at all: GetTargetVector ranks TargetVector
+        /// ABOVE MovementVector, so the stale sample would outrank the live walk direction remote peers
+        /// were already facing correctly.
+        /// </summary>
+        public override void ModuleUpdate(float deltaTime)
+        {
+            base.ModuleUpdate(deltaTime);
+            if (!SyncAimDirection || !IsServer) return;
+#if NETWORKING_NGO
+            if (!IsSpawned) return;
+#endif
+            if (Time.time - _lastAimSyncTime < AimSyncInterval) return;
+            _lastAimSyncTime = Time.time;
+
+            Vector3 aim = Actor.MotionVectorsHandler.GetAimDirection();
+            if (!HasAimMovedEnough(aim)) return;
+
+            _lastSyncedAim = aim;
+            _syncedTargetVector.Value = aim;
+        }
+
+        /// <summary>
+        /// A target change is used as a hint, not as the message itself: it is exactly when the aim
+        /// direction jumps, so give up the rest of the current interval and resample on the next tick.
+        /// The direction still travels as a direction -- this only decides when it is sampled.
+        /// </summary>
+        private void OnTargetObjectChanged(Transform _) => _lastAimSyncTime = float.NegativeInfinity;
+
+        /// <summary>
+        /// What makes a short interval affordable: a zombie standing over a stationary player resamples
+        /// constantly and writes nothing.
+        /// </summary>
+        private bool HasAimMovedEnough(Vector3 aim)
+        {
+            bool wasAiming = _lastSyncedAim.sqrMagnitude > float.Epsilon;
+            bool isAiming = aim.sqrMagnitude > float.Epsilon;
+
+            // Dropping to zero gets through whatever the threshold says. Zero means "nothing is aiming me
+            // any more", and a peer that never hears it keeps facing the last direction forever instead of
+            // falling back to its movement vector.
+            if (!wasAiming || !isAiming) return wasAiming != isAiming;
+
+            return Vector3.Angle(_lastSyncedAim, aim) >= AimSyncAngleThreshold;
+        }
+
+        public override void ResetModule()
+        {
+            base.ResetModule();
+            _lastSyncedAim = Vector3.zero;
+            _lastAimSyncTime = float.NegativeInfinity;
+
+            // MotionVectorsHandler.Reset() clears its own vectors by writing the fields directly, so none
+            // of it reaches this syncer. Without clearing here, an actor coming back out of the pool would
+            // still be replicating the aim direction of its previous life.
+            if (!IsServer) return;
+#if NETWORKING_NGO
+            if (!IsSpawned) return;
+#endif
+            _syncedTargetVector.Value = Vector3.zero;
+        }
 
         /// <summary>
         /// Called by MotionVectorsHandler when MovementVector is set.

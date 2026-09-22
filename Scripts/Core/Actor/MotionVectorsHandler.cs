@@ -26,6 +26,7 @@ namespace Kuantech.Core
         public Action<Vector3> OnMovementVectorChanged;
         public Action<Vector3> OnTargetVectorChanged;
         public Action<float> OnMovementMultiplierChanged;
+        public Action<Transform> OnTargetChanged;
         
 
         public MotionVectorsHandler(Actor actor, Vector3 actorForwardVector, Vector3 actorUpVector)
@@ -152,13 +153,6 @@ namespace Kuantech.Core
         /// <returns></returns>
         public Vector3 GetTargetVector(bool prioritizeMovementOverTarget = false)
         {
-            //If target manager has a target...
-            // if (ParentActor != null && ParentActor.GetModule<SurroundManager>() != null)
-            // {
-            //     Actor target = ParentActor.GetModule<SurroundManager>().GetCurrentTarget();
-            //     if (target != null) TargetedObject = target.transform;
-            // }
-            
             
             if (ForceLookDirection.sqrMagnitude > 0.1f)
                 return ForceLookDirection;
@@ -186,10 +180,28 @@ namespace Kuantech.Core
 
             return ParentActor.transform.forward;
         }
-        
+
+        /// <summary>
+        /// The direction this actor is DELIBERATELY facing, or zero when nothing is aiming it.
+        ///
+        /// Same ranking as GetTargetVector minus its fallbacks, and the fallbacks are the whole point of
+        /// having a second method: the movement vector and transform.forward are things any peer can work
+        /// out for itself from state it already has, so replicating them is waste at best. Replicating
+        /// transform.forward is worse than waste -- it freezes a remote actor's facing at whatever angle
+        /// the sample happened to catch, instead of letting it fall back to its own movement direction.
+        /// </summary>
+        public Vector3 GetAimDirection()
+        {
+            if (ForceLookDirection.sqrMagnitude > 0.1f) return ForceLookDirection;
+            if (TargetedObject != null)
+                return (TargetedObject.position - ParentActor.transform.position).normalized;
+            return TargetVector;
+        }
+
         public void SetTargetObject(Transform targetObject)
         {
             TargetedObject = targetObject;
+            OnTargetChanged?.Invoke(targetObject);
         }
         
         public void SetTargetVector(Vector3 targetVector)
