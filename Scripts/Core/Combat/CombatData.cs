@@ -1,3 +1,4 @@
+﻿using Kuantech.Core.Combat;
 using Kuantech.Rpg;
 using Kuantech.Rpg.Managers;
 using System;
@@ -66,6 +67,17 @@ namespace Kuantech.Core
         public float KnockbackForce;
         public float KnockbackDuration;
 
+        /// <summary>
+        /// Where on the body this landed, or null when the hit resolved against an actor with no parts
+        /// authored -- which is every actor until hitboxes are placed on its rig, so null has to stay a
+        /// perfectly ordinary answer.
+        ///
+        /// The damage in DamageInfo already has the part's multiplier baked in; this is carried separately
+        /// for everything that needs to know WHERE rather than how much: a headshot's own sound, a different
+        /// gore variant, the damage text taking the part's colour.
+        /// </summary>
+        public BodyPartAsset HitBodyPart;
+
 #if NETWORKING_NGO
         // Hitter is a GameObject -- can't serialize a GameObject reference directly, it has to be the
         // NetworkObject sitting on it. AdditionalDamages has no built-in List<T> support for a custom
@@ -95,6 +107,12 @@ namespace Kuantech.Core
             serializer.SerializeValue(ref HitDirection);
             serializer.SerializeValue(ref KnockbackForce);
             serializer.SerializeValue(ref KnockbackDuration);
+
+            // Same asset-by-id trip DamageType makes just above, resolved through CombatManager instead.
+            string bodyPartId = !serializer.IsReader ? (HitBodyPart != null ? HitBodyPart.GetId() : string.Empty) : string.Empty;
+            serializer.SerializeValue(ref bodyPartId);
+            if (serializer.IsReader)
+                HitBodyPart = string.IsNullOrEmpty(bodyPartId) ? null : CombatManager.GetBodyPart(bodyPartId);
         }
 #endif
     }

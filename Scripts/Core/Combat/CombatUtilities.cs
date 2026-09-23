@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Numerics;
 using Kuantech.Utils;
 using UnityEngine;
@@ -31,18 +31,33 @@ namespace Kuantech.Core.Combat
         // HealthcareModule for whether the actor is alive enough to take damage.
 
         /// <summary>
+        /// Adds a hittable to the result exactly once, however many of its colliders the query caught.
+        ///
+        /// A physics overlap returns one entry per COLLIDER, and everything downstream treats one entry as
+        /// one hit -- so an actor carrying more than one collider (a rig with per-bone hitboxes, say) would
+        /// land in the list once per bone and take that many times the damage from a single swing. Every
+        /// actor happens to carry exactly one collider today, which is the only reason this has never shown.
+        /// </summary>
+        private static bool AddOnce(List<IHittable> results, HashSet<IHittable> seen, IHittable hittable)
+        {
+            if (hittable == null || !hittable.CanBeHit()) return false;
+            if (!seen.Add(hittable)) return false;
+            results.Add(hittable);
+            return true;
+        }
+
+        /// <summary>
         /// Gets hittables in 2d circle
         /// </summary>
         public static List<IHittable> GetHittablesInCircle2D(Vector3 position, float radius, LayerMask layerMask)
         {
             Collider2D[] hits = UnityEngine.Physics2D.OverlapCircleAll(position, radius, layerMask);
             List<IHittable> hittables = new();
+            HashSet<IHittable> seen = new HashSet<IHittable>();
 
             foreach (var hit in hits)
             {
-                IHittable hittable = hit.GetComponentInParent<IHittable>();
-                if (hittable == null || !hittable.CanBeHit()) continue;
-                hittables.Add(hittable);
+                AddOnce(hittables, seen, hit.GetComponentInParent<IHittable>());
             }
 
             return hittables;
@@ -52,11 +67,10 @@ namespace Kuantech.Core.Combat
         {
             Collider[] hits = UnityEngine.Physics.OverlapSphere(position, radius, layerMask);
             List<IHittable> hittables = new List<IHittable>();
+            HashSet<IHittable> seen = new HashSet<IHittable>();
             foreach (var hit in hits)
             {
-                IHittable hittable = hit.GetComponentInParent<IHittable>();
-                if (hittable == null || !hittable.CanBeHit()) continue;
-                hittables.Add(hittable);
+                AddOnce(hittables, seen, hit.GetComponentInParent<IHittable>());
             }
 
             return hittables;
@@ -72,11 +86,10 @@ namespace Kuantech.Core.Combat
         {
             Collider[] hits = UnityEngine.Physics.OverlapCapsule(start, end, radius, layerMask);
             List<IHittable> hittables = new List<IHittable>();
+            HashSet<IHittable> seen = new HashSet<IHittable>();
             foreach (var hit in hits)
             {
-                IHittable hittable = hit.GetComponentInParent<IHittable>();
-                if (hittable == null || !hittable.CanBeHit()) continue;
-                hittables.Add(hittable);
+                AddOnce(hittables, seen, hit.GetComponentInParent<IHittable>());
             }
 
             return hittables;
@@ -93,11 +106,10 @@ namespace Kuantech.Core.Combat
             Vector3 halfSizes = new Vector3(width * 0.5f, boxHeight * 0.5f, range * 0.5f);
             Quaternion rotation = Quaternion.LookRotation(direction, Vector3.up);
             Collider[] hits = UnityEngine.Physics.OverlapBox(center, halfSizes, rotation, layerMask);
+            HashSet<IHittable> seen = new HashSet<IHittable>();
             foreach (var hit in hits)
             {
-                IHittable hittable = hit.GetComponentInParent<IHittable>();
-                if (hittable == null || !hittable.CanBeHit()) continue;
-                hittables.Add(hittable);
+                AddOnce(hittables, seen, hit.GetComponentInParent<IHittable>());
             }
 
             return hittables;
@@ -118,6 +130,7 @@ namespace Kuantech.Core.Combat
             bool useClosestPoint = true)
         {
             var detected = new List<IHittable>();
+            var seen = new HashSet<IHittable>();
 
             // Yönü normalize et, boşsa default ver
             var dir = direction.sqrMagnitude < 1e-6f ? Vector2.right : direction.normalized;
@@ -151,7 +164,7 @@ namespace Kuantech.Core.Combat
 
                 float dot = Vector2.Dot(dir, v.normalized); // cos(theta)
                 if (dot >= cosHalf)
-                    detected.Add(hittable);
+                    AddOnce(detected, seen, hittable);
             }
 
             return detected;
@@ -169,6 +182,7 @@ namespace Kuantech.Core.Combat
             int maxActorCount = 128)
         {
             var detected = new List<IHittable>();
+            var seen = new HashSet<IHittable>();
 
             var dir = direction.sqrMagnitude < 1e-6f ? Vector3.right : direction.normalized;
 
@@ -201,7 +215,7 @@ namespace Kuantech.Core.Combat
 
                     float dot = Vector3.Dot(dir, v.normalized); // cos(theta)
                     if (dot >= cosHalf)
-                        detected.Add(hittable);
+                        AddOnce(detected, seen, hittable);
                 }
             }
             return detected;
@@ -318,6 +332,7 @@ namespace Kuantech.Core.Combat
             LayerMask layerMask)
         {
             List<IHittable> hittables = new List<IHittable>();
+            HashSet<IHittable> seen = new HashSet<IHittable>();
             direction.z = 0;
             direction.Normalize();
             Vector3 boxCenter = startPosition + direction * length * 0.5f;
@@ -333,10 +348,7 @@ namespace Kuantech.Core.Combat
             foreach (var hit in hits)
             {
                 if (hit == null) continue;
-                IHittable hittable = hit.GetComponentInParent<IHittable>();
-                if (hittable == null || !hittable.CanBeHit()) continue;
-
-                hittables.Add(hittable);
+                AddOnce(hittables, seen, hit.GetComponentInParent<IHittable>());
             }
 
             return hittables;
@@ -346,14 +358,13 @@ namespace Kuantech.Core.Combat
             LayerMask layerMask)
         {
             List<IHittable> hittables = new List<IHittable>();
+            HashSet<IHittable> seen = new HashSet<IHittable>();
             RaycastHit2D[] hits = Physics2D.RaycastAll(startPosition, direction, range, layerMask);
 
             foreach (var hit in hits)
             {
                 if (hit.collider == null) continue;
-                IHittable hittable = hit.collider.GetComponentInParent<IHittable>();
-                if (hittable == null || !hittable.CanBeHit()) continue;
-                hittables.Add(hittable);
+                AddOnce(hittables, seen, hit.collider.GetComponentInParent<IHittable>());
             }
 
             return hittables;

@@ -17,9 +17,9 @@ namespace Kuantech.Core
             _remainingPiercing = PiercingCount;
         }
 
-        protected override void Impact(GameObject impacted)
+        protected override void Impact(GameObject impacted, Component hitCollider = null)
         {
-            base.Impact(impacted);
+            base.Impact(impacted, hitCollider);
 
             _remainingPiercing--;
             

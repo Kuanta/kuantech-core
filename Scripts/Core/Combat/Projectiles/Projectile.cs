@@ -95,6 +95,12 @@ namespace Kuantech.Core
         public UnityAction<Projectile> LifetimeEndEvent;
         public EventHandler<GameObject> OnImpactEvent;
         public UnityAction<IHittable> OnActorHitEvent;
+
+        // One actor, one hit, however many of its colliders this projectile clips on the way through. A rig
+        // with per-bone hitboxes presents several, and without this an arrow through a shoulder would damage
+        // head, torso and arm separately and burn three pierces doing it. Cleared per flight, since the
+        // projectile is pooled.
+        private readonly HashSet<IHittable> _hitThisFlight = new HashSet<IHittable>();
         public UnityAction<Projectile> OnDespawnEvent;
 
         // Runtime state
@@ -246,6 +252,7 @@ namespace Kuantech.Core
             ImpactOverride = null;
             //DestroyOnImpact = true;
             _currentPiercingCount = DefaultPiercingCount;
+            _hitThisFlight.Clear();
             CurrentSpeed = Speed + relativeSpeed;
 
             if (StartEffect != null) StartEffect.PlayEffectAtPosition(transform.position, Quaternion.identity);
@@ -485,26 +492,37 @@ namespace Kuantech.Core
         private void OnTriggerEnter(Collider other)
         {
             if (!((Targets.value & (1 << other.gameObject.layer)) > 0)) return;
-            HandleOnTriggerEnter(other.gameObject);
+            HandleOnTriggerEnter(other.gameObject, other);
         }
 
         private void OnTriggerEnter2D(Collider2D other)
         {
             if (!((Targets.value & (1 << other.gameObject.layer)) > 0)) return;
-            HandleOnTriggerEnter(other.gameObject);
+            HandleOnTriggerEnter(other.gameObject, other);
         }
 
         // ==========================
         // Impact Handling
         // ==========================
-        protected virtual void HandleOnTriggerEnter(GameObject triggeredObject)
+        /// <summary>
+        /// hitCollider is the collider that actually triggered this, when there was one -- it is the only
+        /// thing that knows WHICH part of the target was struck. Optional because a homing projectile that
+        /// simply reaches its target has no collision to speak of.
+        /// </summary>
+        protected virtual void HandleOnTriggerEnter(GameObject triggeredObject, Component hitCollider = null)
         {
             if (CastBy != null && triggeredObject.transform.IsChildOf(CastBy.transform)) return;
             if (_useArc && !_reachedPeak && RequireReachPeakForImpact) return; //Wait for peak
 
-            _currentPiercingCount--;
+            // GetComponentInParent, not GetComponent: with hitboxes on the rig the collider that triggered
+            // this is a bone several levels below the Actor. Looking only at the collider's own GameObject
+            // found nothing there, so a projectile passed through an enemy dealing no damage at all.
+            Actor targetActor = triggeredObject.GetComponentInParent<Actor>();
 
-            Actor targetActor = triggeredObject.GetComponent<Actor>();
+            IHittable alreadyHitCheck = triggeredObject.GetComponentInParent<IHittable>();
+            if (alreadyHitCheck != null && !_hitThisFlight.Add(alreadyHitCheck)) return;
+
+            _currentPiercingCount--;
             if (targetActor != null && (!targetActor.IsAlive()))
             {
                 CheckDespawn();
@@ -532,7 +550,7 @@ namespace Kuantech.Core
             }
             
             //Impact hit target
-            Impact(triggeredObject);
+            Impact(triggeredObject, hitCollider);
             CheckDespawn();
         }
 
@@ -598,25 +616,47 @@ namespace Kuantech.Core
                 CombatUtilities.HitInSphere(origin, SplashRadius, Targets, hitInfo);
             }
         }
-        protected virtual void Impact(GameObject impacted)
+        protected virtual void Impact(GameObject impacted, Component hitCollider = null)
         {
             if (Despawned) return;
             if (IsVisualOnly) return;
 
-            IHittable target = impacted.GetComponent<IHittable>();
+            IHittable target = impacted.GetComponentInParent<IHittable>();
             GameObject hitter = CastBy != null ? CastBy.gameObject : null;
 
             if (target != null)
             {
+                BodyPartAsset bodyPart = HitBox.ResolveBodyPart(hitCollider);
+                float partMultiplier = HitBox.GetDamageMultiplier(bodyPart);
+
                 Damage.HideDamageText = !ShowCombatText;
+                DamageInfo damageInfo = Damage;
+                List<DamageInfo> additionalDamages = AdditionalDamages;
+
+                if (!Mathf.Approximately(partMultiplier, 1f))
+                {
+                    damageInfo.SetDamage(damageInfo.GetDamage() * partMultiplier);
+
+                    // A copy, never the projectile's own list: this object is pooled, and scaling in place
+                    // would leave the next shot carrying the last one's headshot bonus.
+                    additionalDamages = new List<DamageInfo>(AdditionalDamages.Count);
+                    foreach (DamageInfo additional in AdditionalDamages)
+                    {
+                        DamageInfo scaled = additional;
+                        scaled.SetDamage(scaled.GetDamage() * partMultiplier);
+                        additionalDamages.Add(scaled);
+                    }
+                }
+
                 target.OnHit(new HitInfo()
                 {
-                    DamageInfo = Damage,
+                    DamageInfo = damageInfo,
                     Hitter = hitter,
                     HitDirection = _direction,
                     KnockbackDuration = KnockbackTime,
                     KnockbackForce = Knockback,
-                    AdditionalDamages = AdditionalDamages,
+                    AdditionalDamages = additionalDamages,
+                    HitBodyPart = bodyPart,
                 });
                 OnActorHitEvent?.Invoke(target);
             }

@@ -1,6 +1,7 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Kuantech.Core;
+using Kuantech.Core.Combat;
 using Kuantech.Core.FX;
 using UnityEngine;
 
@@ -57,15 +58,22 @@ namespace Kuantech.Inventory
         /// twice for the same target within one BeginSweep/StopSweep window).</summary>
         public event Action<IHittable, Vector3> HitDetected;
 
-        /// <summary>The same hit, plus the surface that was struck (SurfaceTags.Resolve) -- this sweep is
-        /// the only place that still holds the collider, so anything wanting a surface-aware hit effect has
-        /// to be told here. Both events fire for every hit; HitDetected stays for callers that predate
-        /// surfaces and do not care.</summary>
-        public event Action<IHittable, Vector3, int> HitDetectedOnSurface;
+        /// <summary>The same hit, plus the surface that was struck (SurfaceTags.Resolve) and the body part
+        /// the collider belongs to (HitBox, null when the rig has none authored). This sweep is the only
+        /// place that still holds the collider, so anything wanting either has to be told here -- by the
+        /// time CombatModule applies damage the collider is long gone. Both events fire for every hit;
+        /// HitDetected stays for callers that predate surfaces and do not care.</summary>
+        public event Action<IHittable, Vector3, int, BodyPartAsset> HitDetectedOnSurface;
 
         private bool _sweeping;
         private bool _environmentHitThisSwing;
-        private readonly HashSet<Collider> _hitThisSwing = new HashSet<Collider>();
+        // Two sets, because "already hit" means two different things here. For something hittable it means
+        // the ACTOR -- one swing deals one hit however many of its colliders the blade passes through, which
+        // is what keeps a rig with per-bone hitboxes from taking head + torso + arm damage from a single
+        // swing. For everything else there is no actor to key on, so the collider itself is the identity and
+        // each piece of scenery the blade clips still gets its own impact effect.
+        private readonly HashSet<IHittable> _hittablesThisSwing = new HashSet<IHittable>();
+        private readonly HashSet<Collider> _collidersThisSwing = new HashSet<Collider>();
         private CombatModule _combatModule;
         private ActorSlotsHandler _slotsHandler;
 
@@ -108,7 +116,8 @@ namespace Kuantech.Inventory
         {
             if (!IsMeleeWeapon) return;
             _sweeping = true;
-            _hitThisSwing.Clear();
+            _hittablesThisSwing.Clear();
+            _collidersThisSwing.Clear();
         }
 
         /// <summary>Ends the active window — call this when the swing's cutting moment is over.</summary>
@@ -136,18 +145,32 @@ namespace Kuantech.Inventory
             foreach (var hit in hits)
             {
                 if(hit.gameObject == owner.gameObject) continue;
-                if (_hitThisSwing.Contains(hit)) continue;
 
-                _hitThisSwing.Add(hit);
+                // Resolved before the effect, not after: whether this collider counts as "new" depends on
+                // what owns it, so the owner has to be known before anything is played.
+                IHittable hittable = hit.GetComponentInParent<IHittable>();
+                IHittable reported = hittable != null && hittable.CanBeHit() ? hittable : null;
+
+                if (reported != null)
+                {
+                    if (!_hittablesThisSwing.Add(reported)) continue;
+                }
+                else
+                {
+                    if (!_collidersThisSwing.Add(hit)) continue;
+                }
+
                 Vector3 midPoint = (StartSweep.position + EndSweep.position) * 0.5f;
                 Vector3 contactPoint = hit.ClosestPoint(midPoint);
                 int surfaceTag = SurfaceTags.Resolve(hit);
-                HitEffect.PlayEffectAtPosition(contactPoint, Quaternion.identity, surfaceTag);
+                // Resolved from the exact collider the blade touched -- this is the only moment that
+                // information exists. Deliberately NOT GetComponentInParent: a hitbox describes its own
+                // collider, and walking up would let a limb inherit the torso's part.
+                BodyPartAsset bodyPart = HitBox.ResolveBodyPart(hit);
 
-                IHittable hittable = hit.GetComponentInParent<IHittable>();
-                IHittable reported = hittable != null && hittable.CanBeHit() ? hittable : null;
+                HitEffect.PlayEffectAtPosition(contactPoint, Quaternion.identity, surfaceTag);
                 HitDetected?.Invoke(reported, contactPoint);
-                HitDetectedOnSurface?.Invoke(reported, contactPoint, surfaceTag);
+                HitDetectedOnSurface?.Invoke(reported, contactPoint, surfaceTag, bodyPart);
 
             }
         }

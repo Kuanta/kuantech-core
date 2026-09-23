@@ -13,6 +13,11 @@ namespace Kuantech.Core
         public MetadataAssetContainer<ComboAttackPatternAsset> ComboAttackPatterns;
         public MetadataAssetContainer<AttackPatternAsset> AttackPatterns;
 
+        [Header("Body Parts")]
+        [Tooltip("Every hittable zone in the game. Registered here so a hit can cross the network as a part " +
+                 "ID and be resolved back on the other side -- the same trick DamageType already uses.")]
+        public MetadataAssetContainer<BodyPartAsset> BodyParts;
+
         [Header("Combat Indicators")]
         [SerializeField] private List<CombatIndicator> CombatIndicators;
 
@@ -115,6 +120,17 @@ namespace Kuantech.Core
             var ctx = CombatManager.GetContext<CombatManager>();
             if (ctx == null) return null;
             return ctx.AttackPatterns.GetMetadata(id);
+        }
+
+        /// <summary>
+        /// How a BodyPartAsset gets back from an id that came off the wire. A hit is decided on the server and
+        /// replayed on every client, and a ScriptableObject reference cannot make that trip.
+        /// </summary>
+        public static BodyPartAsset GetBodyPart(string id)
+        {
+            var ctx = GetContext<CombatManager>();
+            if (ctx == null) return null;
+            return ctx.BodyParts.GetMetadata(id);
         }
         #endregion
 

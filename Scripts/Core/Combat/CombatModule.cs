@@ -794,8 +794,39 @@ namespace Kuantech.Core
         /// as the Animator and forwards here) — no reason for the listener to reach for the weapon itself,
         /// this module already tracks whichever one is currently equipped via SetActiveWeapon.
         /// </summary>
-        public void OnMeleeSweepStart() => _activeWeapon?.BeginSweep();
+        /// <summary>
+        /// The animation event asks for a sweep; whether one actually happens is this module's call, not the
+        /// clip's. A staff that fires a projectile while reusing a sword's animation still carries that
+        /// animation's sweep events, and without this check it would swing a live blade: real damage, clang
+        /// effects, melee-hit reports to the server, all from an attack that is supposed to be a projectile.
+        ///
+        /// IsMelee() rather than the pattern's IsMelee field, because the field describes the ANIMATION and
+        /// the method describes the ATTACK -- it already refuses RangedProjectile/RangedRaycast whatever the
+        /// field says, which is exactly the case this guards against.
+        /// </summary>
+        public void OnMeleeSweepStart()
+        {
+            if (!IsMelee()) return;
+            _activeWeapon?.BeginSweep();
+        }
+
+        // Unconditional on purpose: a sweep that somehow started must always be able to stop, and stopping
+        // one that never began is free.
         public void OnMeleeSweepEnd() => _activeWeapon?.StopSweep();
+
+        /// <summary>
+        /// Whether the weapon's own sweep is already playing an effect at the real contact point for this
+        /// hit -- in which case the pattern's HitEffect would be a second one on top.
+        ///
+        /// Asks about the WEAPON, not just about being melee: an actor swinging its bare hands (a zombie)
+        /// has no sweep to provide anything, so its pattern's HitEffect is the only one there is. That is
+        /// why nothing played for zombie hits before -- the old check was `!pattern.IsMelee`, which is true
+        /// for a zombie and so suppressed the one effect it had.
+        /// </summary>
+        private bool SweepProvidesHitEffect()
+        {
+            return IsMelee() && _activeWeapon != null && _activeWeapon.IsMeleeWeapon;
+        }
 
         /// <summary>
         /// Client-authoritative detection, server-authoritative damage: WeaponVisual only ever sweeps on the
@@ -804,14 +835,14 @@ namespace Kuantech.Core
         /// reliable way to run this same capsule query itself. The owner reports what it saw; the server
         /// decides whether that report actually deals damage.
         /// </summary>
-        private void OnWeaponHitDetected(IHittable hittable, Vector3 hitPoint, int surfaceTag)
+        private void OnWeaponHitDetected(IHittable hittable, Vector3 hitPoint, int surfaceTag, BodyPartAsset bodyPart)
         {
             // Host (server+owner) or a server-driven actor (e.g. an AI's own weapon) -- already authoritative,
             // apply directly, no round trip needed. hittable can be null here (a wall/non-hittable) -- that's
             // fine, ApplyMeleeHit still needs to run so the clang gets broadcast to everyone else.
             if (IsServerInitialized)
             {
-                ApplyMeleeHit(hittable, hitPoint, surfaceTag);
+                ApplyMeleeHit(hittable, hitPoint, surfaceTag, bodyPart);
                 return;
             }
 
@@ -827,7 +858,7 @@ namespace Kuantech.Core
             // The surface is purely cosmetic (which vfx/sfx the clang uses), so the owner's resolve is taken
             // at face value rather than re-queried server side -- the server has no collider to re-query for
             // a wall hit anyway. Sent as a byte: tag ids come from a hand-authored list, they stay small.
-            ReportMeleeHit_Rpc(hasTarget, targetRef, hitPoint, (byte)surfaceTag);
+            ReportMeleeHit_Rpc(hasTarget, targetRef, hitPoint, (byte)surfaceTag, bodyPart != null ? bodyPart.GetId() : string.Empty);
 #endif
         }
 
@@ -845,45 +876,61 @@ namespace Kuantech.Core
         /// validation yet (range/attack-active/duplicate checks); add those here if this needs to be
         /// hardened against a modified client.</summary>
         [Rpc(SendTo.Server)]
-        private void ReportMeleeHit_Rpc(bool hasTarget, NetworkObjectReference targetRef, Vector3 hitPoint, byte surfaceTag)
+        private void ReportMeleeHit_Rpc(bool hasTarget, NetworkObjectReference targetRef, Vector3 hitPoint, byte surfaceTag, string bodyPartId)
         {
             IHittable hittable = null;
             if (hasTarget && targetRef.TryGet(out NetworkObject targetNetObj))
                 hittable = targetNetObj.GetComponent<IHittable>();
 
-            ApplyMeleeHit(hittable, hitPoint, surfaceTag);
+            // The part travels as an id and is resolved back here, same trip DamageType and HitInfo make.
+            // Taken at the owner is word like the surface tag: the server has no collider of its own to
+            // re-resolve it from, since it never ran this swing.
+            ApplyMeleeHit(hittable, hitPoint, surfaceTag, CombatManager.GetBodyPart(bodyPartId));
         }
 
         /// <summary>Broadcasts the clang/hit effect to everyone except whoever swung (they already saw it
         /// instantly, locally, via WeaponVisual, with zero network round trip).</summary>
         [Rpc(SendTo.NotOwner)]
-        private void NotifyMeleeHit_Rpc(bool hasTarget, NetworkObjectReference targetRef, Vector3 hitPoint, byte surfaceTag)
+        private void NotifyMeleeHit_Rpc(bool hasTarget, NetworkObjectReference targetRef, Vector3 hitPoint, byte surfaceTag, string bodyPartId)
         {
             Actor targetActor = null;
             if (hasTarget && targetRef.TryGet(out NetworkObject targetNetObj))
                 targetActor = targetNetObj.GetComponent<Actor>();
 
-            PlayMeleeHitEffect(targetActor, hitPoint, surfaceTag);
+            // The part reaches observers too, not just the server: a headshot should sound and look like one
+            // for the people watching it, not only for the player who landed it.
+            PlayMeleeHitEffect(targetActor, hitPoint, surfaceTag, CombatManager.GetBodyPart(bodyPartId));
         }
 
         // targetActor stays unused beyond the null check: "actor vs. plain geometry" is no longer something
         // this has to infer, the surface tag the swinger resolved from the actual collider says it outright
         // (an enemy is just another surface, e.g. Flesh).
-        private void PlayMeleeHitEffect(Actor targetActor, Vector3 hitPoint, int surfaceTag)
+        private void PlayMeleeHitEffect(Actor targetActor, Vector3 hitPoint, int surfaceTag, BodyPartAsset bodyPart)
         {
             EffectPlayer weaponHitEffect = _activeWeapon != null ? _activeWeapon.HitEffect : null;
             weaponHitEffect?.PlayEffectAtPosition(hitPoint, Quaternion.identity, surfaceTag);
+
+            // bodyPart is threaded here rather than used yet -- this is where a headshot's own sound and
+            // gore variant hang once there are assets for them, and the argument existing is what keeps
+            // that from needing another pass through the RPCs.
+            MeleeHitLanded?.Invoke(targetActor, hitPoint, bodyPart);
         }
+
+        /// <summary>
+        /// A melee hit landed, on every peer that sees it. Carries the body part so feedback can react to a
+        /// headshot without asking the combat system to re-derive where the blow went.
+        /// </summary>
+        public UnityAction<Actor, Vector3, BodyPartAsset> MeleeHitLanded;
 #endif
 
-        private void ApplyMeleeHit(IHittable hittable, Vector3 hitPoint, int surfaceTag)
+        private void ApplyMeleeHit(IHittable hittable, Vector3 hitPoint, int surfaceTag, BodyPartAsset bodyPart)
         {
-            bool hit = hittable != null && ExecuteDamageHittable(hittable);
+            bool hit = hittable != null && ExecuteDamageHittable(hittable, bodyPart);
 
 #if NETWORKING_NGO
             NetworkObjectReference targetRef = default;
             bool hasTarget = hittable is Actor actor && TryGetNetworkReference(actor, out targetRef);
-            if (IsSpawned) NotifyMeleeHit_Rpc(hasTarget, targetRef, hitPoint, (byte)surfaceTag);
+            if (IsSpawned) NotifyMeleeHit_Rpc(hasTarget, targetRef, hitPoint, (byte)surfaceTag, bodyPart != null ? bodyPart.GetId() : string.Empty);
 #endif
 #if NETWORKING_FISHNET
             if (hit && IsSpawned && hittable is Actor fnActor)
@@ -899,19 +946,41 @@ namespace Kuantech.Core
         /// job now (see HealthcareModule.OnHit and Actor.OnHit), so a basic attack reaches a corpse or a
         /// destructible exactly the way it reaches a live enemy — nothing here needs to know the difference.
         /// </summary>
-        private bool ExecuteDamageHittable(IHittable hittable)
+        private bool ExecuteDamageHittable(IHittable hittable, BodyPartAsset bodyPart = null)
         {
             if (hittable == null || !hittable.CanBeHit() || ReferenceEquals(hittable, Actor)) return false;
             AttackPattern pattern = GetCurrentAttackPattern();
 
+            // Scales EVERY damage channel the hit carries, not just the health one. A headshot worth double
+            // that only doubled health damage would leave poise untouched, so the shot that should obviously
+            // stagger would stagger exactly as much as a hit to the shin. Null part (nothing authored on that
+            // collider, or an attack that never resolved one) gives 1 and leaves the numbers alone.
+            float partMultiplier = HitBox.GetDamageMultiplier(bodyPart);
+
+            DamageInfo damageInfo = GetDamage();
+            List<DamageInfo> additionalDamages = GetAdditionalDamageInfos();
+            if (!Mathf.Approximately(partMultiplier, 1f))
+            {
+                damageInfo.SetDamage(damageInfo.GetDamage() * partMultiplier);
+                for (int i = 0; i < additionalDamages.Count; i++)
+                {
+                    DamageInfo additional = additionalDamages[i];
+                    additional.SetDamage(additional.GetDamage() * partMultiplier);
+                    additionalDamages[i] = additional;
+                }
+            }
+
             HitInfo hitInfo = new HitInfo()
             {
                 Hitter = gameObject,
-                DamageInfo = GetDamage(),
-                AdditionalDamages = GetAdditionalDamageInfos(),
+                DamageInfo = damageInfo,
+                AdditionalDamages = additionalDamages,
                 HitDirection = GetAttackDirection(),
                 KnockbackForce = pattern.Knockback.GetValue(_statModule),
-                KnockbackDuration = pattern.KnockbackTime.GetValue(_statModule)
+                KnockbackDuration = pattern.KnockbackTime.GetValue(_statModule),
+                // Carried alongside the already-scaled damage so listeners can react to WHERE rather than
+                // recompute how much -- a headshot sound, a different gore variant, part-coloured damage text.
+                HitBodyPart = bodyPart
             };
 
             // Status effects and the hit VFX are Actor-specific extras on top of plain damage — a
@@ -935,12 +1004,12 @@ namespace Kuantech.Core
                         }
                     }
                 }
-                // Melee (sweep) attacks own their hit effect via WeaponVisual.HitEffect + the melee-sweep
-                // broadcast below (exact contact point, not an approximation) -- playing AttackPattern's
-                // HitEffect here too would double it up. Non-melee attack types (Arc/Circle/...) have no
-                // real contact point to work with, so they still use this approximate one.
-                if (IsClientInitialized && !pattern.IsMelee)
-                    PlayNonMeleeHitEffect(actor);
+                // A weapon sweep owns its hit effect: WeaponVisual plays it at the real contact point, so the
+                // pattern's HitEffect on top would be a second one. Everything else -- an Arc or Circle with
+                // no contact point to speak of, a projectile, a zombie with no weapon at all -- has only
+                // this approximate one, and should get it.
+                if (IsClientInitialized && !SweepProvidesHitEffect())
+                    PlayPatternHitEffect(actor);
             }
 
             hittable.OnHit(hitInfo);
@@ -948,11 +1017,12 @@ namespace Kuantech.Core
             return true;
         }
 
-        // Approximate hit point (torso-height-ish, aimed back toward the attacker) for attack types that
-        // have no real geometric contact point (Arc/Circle/Linear/...). Extracted so both the local
+        // Approximate hit point (torso-height-ish, aimed back toward the attacker) for every attack whose
+        // effect is not already coming from a weapon sweep -- Arc/Circle/Linear have no real contact point,
+        // and neither does an actor swinging bare hands. Extracted so both the local
         // (host/server-as-client) path in ExecuteDamageHittable and the NGO replication RPCs below can play
         // the exact same effect on remote clients that never ran ExecuteDamageHittable themselves.
-        private void PlayNonMeleeHitEffect(Actor actor)
+        private void PlayPatternHitEffect(Actor actor)
         {
             EffectPlayer hitEffect = GetCurrentAttackPattern().HitEffect;
             if (hitEffect == null) return;
@@ -1837,7 +1907,7 @@ namespace Kuantech.Core
         {
             if (IsServerInitialized) return;
             if (targetRef.TryGet(out NetworkObject targetNetObj) && targetNetObj.TryGetComponent(out Actor actor))
-                PlayNonMeleeHitEffect(actor);
+                PlayPatternHitEffect(actor);
         }
 
         [Rpc(SendTo.Everyone)]
@@ -1847,7 +1917,7 @@ namespace Kuantech.Core
             foreach (var targetRef in targets)
             {
                 if (targetRef.TryGet(out NetworkObject targetNetObj) && targetNetObj.TryGetComponent(out Actor actor))
-                    PlayNonMeleeHitEffect(actor);
+                    PlayPatternHitEffect(actor);
             }
         }
 #else
