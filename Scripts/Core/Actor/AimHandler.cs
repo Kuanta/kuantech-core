@@ -19,6 +19,23 @@ namespace Kuantech.Core
         private Vector3 _targetAimVector;
         Quaternion _targetRot = Quaternion.identity;
 
+        /// <summary>
+        /// Scales rotateSpeedDegPerSec for as long as something holds it down. 1 = untouched.
+        ///
+        /// This is the difference between an attack that can be dodged and one that cannot: an attacker
+        /// that keeps turning at full speed through its own windup simply follows whoever it is swinging
+        /// at, so there is no angle to step out of and no moment of commitment to read.
+        ///
+        /// A plain value rather than a lock stack, because the one thing that sets it (an attack, through
+        /// CombatModule) owns the actor's whole attack window anyway, and the value is cleared both when
+        /// the attack ends and when the actor is reset out of the pool.
+        /// </summary>
+        public float RotationSpeedMultiplier { get; private set; } = 1f;
+
+        public void SetRotationSpeedMultiplier(float multiplier) => RotationSpeedMultiplier = Mathf.Max(0f, multiplier);
+
+        public void ResetRotationSpeedMultiplier() => RotationSpeedMultiplier = 1f;
+
         public LockKey RotationLockKey;
 
         private LockModule _lockModule;
@@ -43,17 +60,24 @@ namespace Kuantech.Core
                 return;
             
             _targetRot = DirectionToRotation(transform, _targetAimVector);
+
+            // A held-down multiplier also suspends InstantRotation -- snapping is exactly what whoever
+            // slowed the rotation is trying to prevent, and first person only ever asks for the snap while
+            // nothing is slowing it anyway.
+            bool instant = InstantRotation && RotationSpeedMultiplier >= 1f;
+            float rotateStep = rotateSpeedDegPerSec * RotationSpeedMultiplier * deltaTime;
+
             if(Rigidbody == null || Rigidbody.isKinematic)
             {
-                t.rotation = InstantRotation
+                t.rotation = instant
                     ? _targetRot
-                    : Quaternion.RotateTowards(t.rotation, _targetRot, rotateSpeedDegPerSec * deltaTime);
+                    : Quaternion.RotateTowards(t.rotation, _targetRot, rotateStep);
             }
             else
             {
-                var next = InstantRotation
+                var next = instant
                     ? _targetRot
-                    : Quaternion.RotateTowards(Rigidbody.rotation, _targetRot, rotateSpeedDegPerSec * deltaTime);
+                    : Quaternion.RotateTowards(Rigidbody.rotation, _targetRot, rotateStep);
                 Rigidbody.MoveRotation(next);
             }
         }
@@ -87,6 +111,15 @@ namespace Kuantech.Core
             {
                 Rigidbody.rotation = rot;
             }
+        }
+
+        public override void ResetModule()
+        {
+            base.ResetModule();
+
+            // Safety net for the pool: an actor despawned mid-attack never runs the end of that attack on
+            // every peer, and would otherwise come back up still turning at a fraction of its speed.
+            ResetRotationSpeedMultiplier();
         }
 
         #region Locks
