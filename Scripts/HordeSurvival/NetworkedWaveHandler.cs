@@ -155,6 +155,7 @@ namespace Kuantech.HordeSurvival
             base.ResetZone();
             StopWave();
             _currentWaveIndex = -1;
+            ClearSpawnPoints();
         }
 
         public override void OnZoneDeactivated()
@@ -232,6 +233,24 @@ namespace Kuantech.HordeSurvival
         public int GetWaveBudget(int wave) => Difficulty != null ? Difficulty.GetWaveBudget(wave, PowerLevel) : 0;
 
         #endregion
+
+        /// <summary>
+        /// Merges extra spawn points into the active scheme -- called when an ArenaRoom opens so its own
+        /// spawners start contributing to this wave's spawns. Only meaningful for FixedPointSpawnScheme;
+        /// any other scheme (annulus, ...) has no notion of discrete points and just ignores this.
+        /// </summary>
+        public void AddSpawnPoints(IEnumerable<Transform> points)
+        {
+            if (SpawnScheme is FixedPointSpawnScheme fixedPointScheme)
+                fixedPointScheme.AddSpawnPoints(points);
+        }
+
+        /// <summary>Drops every runtime-merged spawn point -- see FixedPointSpawnScheme.ClearSpawnPoints.</summary>
+        public void ClearSpawnPoints()
+        {
+            if (SpawnScheme is FixedPointSpawnScheme fixedPointScheme)
+                fixedPointScheme.ClearSpawnPoints();
+        }
 
         #region Spawning
 
