@@ -387,6 +387,10 @@ namespace Kuantech.Core
 
         public void Dash(Vector3 direction)
         {
+            // Called on the entry point rather than in ExecuteDash so it runs once, on the peer that
+            // initiated the dash -- the server hears about it through the attack's own cancel Rpc.
+            Actor.GetModule<CombatModule>()?.TryCancelAttack();
+
             if (IsServer)
             {
                 ExecuteDash(direction);

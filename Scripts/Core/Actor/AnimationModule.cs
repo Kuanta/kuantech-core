@@ -81,6 +81,7 @@ namespace Kuantech.Core
         // Drives the PoiseBreak/PoiseBreakLoop states already authored on the Animator controllers.
         private static readonly int Poised           = Animator.StringToHash("Poised");
         private static readonly int Blocking         = Animator.StringToHash("Blocking");
+        private static readonly int Blocked = Animator.StringToHash("Blocked");
         public static readonly int AttackSpeed       = Animator.StringToHash("AttackSpeed");
         public static readonly int TargetTime        = Animator.StringToHash("TargetTime");
 
@@ -314,6 +315,7 @@ namespace Kuantech.Core
         {
             if (!HasAnimationTarget) return;
             WriteBool(Blocking, blocking);
+            if(blocking) WriteTrigger(Blocked);
         }
 
         // Movement event callbacks — subscribed in OnModulesInitialized
@@ -400,6 +402,23 @@ namespace Kuantech.Core
         {
             if (!HasAnimationTarget) return;
             WriteTrigger(hash);
+        }
+
+        /// <summary>
+        /// Clears a trigger that nothing consumed.
+        ///
+        /// An Animator trigger stays raised until some transition takes it, so one that was set and then
+        /// orphaned -- an attack released and staggered in the same frame, say -- sits there waiting and
+        /// fires on the NEXT attack, which then skips straight past its own windup. Whoever raises a
+        /// trigger that a state machine might not reach has to be able to take it back.
+        ///
+        /// Animator only: a driver has no trigger queue to clear, so IAnimationDriver is left alone rather
+        /// than gaining a method every implementation would have to no-op.
+        /// </summary>
+        public void ResetTrigger(string parameterName)
+        {
+            if (Animator == null || string.IsNullOrEmpty(parameterName)) return;
+            Animator.ResetTrigger(parameterName);
         }
 
         public void SetBoolean(int hash, bool value)

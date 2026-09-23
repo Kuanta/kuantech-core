@@ -97,6 +97,26 @@ namespace Kuantech.Core
         [Tooltip("Seconds after movement lock before rotation is also locked. Lets the actor finish turning before freezing.")]
         public float RotationLockDelay     = 0f;
 
+        [Tooltip("How much the attack slows the attacker's TURNING, on the same 0-1 scale as MovementSlow: " +
+                 "0 leaves rotation untouched (the default, and what every pattern authored before this " +
+                 "field did), 1 freezes it outright. Unlike LockRotationOnAttack this needs no extra module " +
+                 "and is not all-or-nothing.\n\n" +
+                 "This is what makes an attack dodgeable. An attacker that keeps turning at full speed " +
+                 "through its own windup just follows whoever it is swinging at, so there is no commitment " +
+                 "to read and no angle to step out of -- and with Angle set, this is also what decides " +
+                 "whether the blow lands at all.")]
+        [Range(0f, 1f)]
+        public float AttackRotationSlow = 0f;
+
+        [Tooltip("Takes over from AttackRotationSlow the moment the attack commits, so the windup and the " +
+                 "strike can turn at different rates. Only reached by an attack that HAS a commit point " +
+                 "(WindupTime or Charged); a plain attack keeps AttackRotationSlow throughout.\n\n" +
+                 "The pair is what lets an enemy stay believable without becoming unfair: a little tracking " +
+                 "during the windup so it does not swing at where you used to be, and none at all once the " +
+                 "blow is committed, so the last moment before it lands is the one you can actually beat.")]
+        [Range(0f, 1f)]
+        public float StrikeRotationSlow = 0f;
+
         #endregion
 
         #region Timings
@@ -104,7 +124,41 @@ namespace Kuantech.Core
         [Header("Timings")]
         [Tooltip("If true, attack implementation waits until the actor faces the attack direction before dealing damage.")]
         public bool WaitRotationalAlign = false;
+
+        [Tooltip("Seconds the attack spends winding up before it commits. 0 (the default, and what every " +
+                 "pattern authored before this field does) means it commits the instant it starts -- one " +
+                 "phase, exactly as before.\n\n" +
+                 "Above 0 the attack becomes two phases without needing Charged: AttackAnimationData plays " +
+                 "the anticipation, the attack sits in it for this long, then releases into " +
+                 "ReleaseHoldAnimationData. Charged is the same shape driven by player input instead of the " +
+                 "clock, and the two are mutually exclusive in practice -- Charged wins.\n\n" +
+                 "Once there IS a windup, AttackImplementationTime and AttackDuration are measured from the " +
+                 "RELEASE, not from the start, so the strike keeps its own short timing however long the " +
+                 "windup is tuned to. That is the whole point: the windup is the number you tune for feel, " +
+                 "and it does not drag the contact frame around with it.")]
+        public float WindupTime = 0f;
+
+        /// <summary>
+        /// Whether this attack has a commit point separate from its start -- either the clock provides it
+        /// (WindupTime) or the player does (Charged). Everything downstream keys off this rather than off
+        /// Charged, so the two phases behave identically no matter which one opened them.
+        /// </summary>
+        public bool HasWindupPhase => Charged || WindupTime > 0f;
+
         public float AttackImplementationTime;
+
+        [Tooltip("Seconds into the attack after which a dash or a block may cut it short. 0 or less means it " +
+                 "cannot be cancelled at all, which is what every pattern did before this field.\n\n" +
+                 "This is the player's half of the commitment bargain. An enemy commits so its attack can be " +
+                 "read and beaten; a player who cannot leave their own follow-through just feels stuck to the " +
+                 "floor. Set it past the point where the damage is actually dealt -- for a sweep that is the " +
+                 "end of the animation's sweep window, not AttackImplementationTime, which sweeps leave at 0 " +
+                 "because the animation deals the damage itself.\n\n" +
+                 "Measured from the RELEASE for an attack with a windup, except while it is still winding up " +
+                 "-- so a charge held longer than this can be dashed out of, which is what lets a bow be " +
+                 "abandoned rather than fired into the ground.")]
+        public float CancelWindowStart = 0f;
+
         public float EffectPlayTime;
         public float ContinuousAttackMaxTime;
         public bool ScaleAttackImplementationTimeWithAttackSpeed = true;
@@ -232,6 +286,16 @@ namespace Kuantech.Core
         public UnityAction<CombatModule> AlignedEvent;       // fires once when rotational alignment is achieved
         public UnityAction<CombatModule> AttackedEvent;      // Deals damage here
         public UnityAction<CombatModule> AttackCompletedEvent;
+
+        /// <summary>
+        /// The swing landed on nothing -- out of range, or outside the cone. Server-side, same moment
+        /// AttackedEvent fires for a hit.
+        ///
+        /// Worth its own event because a dodge that produces no sound and no reaction is indistinguishable
+        /// from an attack that never happened: the player who just earned an escape is told nothing about
+        /// it. This is where a whiff swoosh and a miss reaction hang.
+        /// </summary>
+        public UnityAction<CombatModule> AttackMissedEvent;
         public UnityAction<Projectile> OnShotProjectileEvent;
         public UnityAction<Actor> DamagedActorEvent;
         /// <summary>Fired the instant a Charged attack actually commits (release accepted past MinChargeTime)
@@ -242,6 +306,7 @@ namespace Kuantech.Core
 
         //Quick module references
         private LockModule _lockModule;
+        private AimHandler _aimHandler;
         private StatsModule _statModule;
         private AnimationModule _animationModule;
         private ActorSlotsHandler _slotsHandler;
@@ -274,7 +339,8 @@ namespace Kuantech.Core
         // advance, same reasoning as the override.
         private AttackPattern _requestedAttackPattern;
 
-        // Charge state -- only ever meaningful while GetCurrentAttackPattern().Charged is true. See
+        // Windup state -- only meaningful while GetCurrentAttackPattern().HasWindupPhase is true, which
+        // covers both a player-held charge and a clock-driven windup. See
         // ReleaseAttack/ExecuteReleaseAttack and the Charged branch in ModuleUpdate.
         private float _chargeStartTime;
         private float _releaseTime;
@@ -293,6 +359,7 @@ namespace Kuantech.Core
             _healthcareModule = Actor.GetModule<HealthcareModule>();
             _spellBook = Actor.GetModule<SpellBook>();
             _lockModule = Actor.GetModule<LockModule>();
+            _aimHandler = Actor.GetModule<AimHandler>();
             if(_lockModule != null) _lockModule.OnLocked += OnLockHandler;
         }
 
@@ -314,12 +381,21 @@ namespace Kuantech.Core
 
             if (IsServerInitialized || !isNetworked)
             {
-                if (currentPattern.Charged && !_released)
+                if (currentPattern.HasWindupPhase && !_released)
                 {
-                    // Still charging -- nothing implements until a release (player input or this auto-cap).
-                    if (currentPattern.MaxChargeTime >= 0f && Time.time - _chargeStartTime >= currentPattern.MaxChargeTime)
+                    // Still winding up -- nothing implements until the commit. Who provides that commit is
+                    // the only difference between the two shapes: a Charged attack waits on player input
+                    // (with MaxChargeTime as a backstop), a windup attack waits on its own clock.
+                    if (currentPattern.Charged)
                     {
-                        Debug.Log($"[CombatModule] {name}: MaxChargeTime ({currentPattern.MaxChargeTime}s) reached at t={Time.time} with no release ever received -- auto-releasing.");
+                        if (currentPattern.MaxChargeTime >= 0f && Time.time - _chargeStartTime >= currentPattern.MaxChargeTime)
+                        {
+                            Debug.Log($"[CombatModule] {name}: MaxChargeTime ({currentPattern.MaxChargeTime}s) reached at t={Time.time} with no release ever received -- auto-releasing.");
+                            ReleaseAttack();
+                        }
+                    }
+                    else if (Time.time - _chargeStartTime >= GetWindupTime())
+                    {
                         ReleaseAttack();
                     }
                     return;
@@ -329,7 +405,7 @@ namespace Kuantech.Core
                 // commit point), not from attack start -- e.g. a bow's follow-through before the arrow leaves.
                 // A non-charged pattern (including a "heavy" melee, which commits the instant it's triggered)
                 // is unaffected, same timeline as always.
-                float elapsedTime = Time.time - (currentPattern.Charged ? _releaseTime : _attackStartTime);
+                float elapsedTime = Time.time - (currentPattern.HasWindupPhase ? _releaseTime : _attackStartTime);
 
                 if (_requireAlignment && !_hasAligned)
                 {
@@ -470,6 +546,23 @@ namespace Kuantech.Core
 
             return currPattern.AttackImplementationTime;
         }
+
+        /// <summary>
+        /// Scaled by attack speed on the same switch as the implementation time, deliberately: a faster
+        /// attacker should wind up faster too, otherwise the anticipation and the strike drift apart and a
+        /// buffed enemy telegraphs for the same length of time while hitting sooner.
+        /// </summary>
+        public float GetWindupTime()
+        {
+            AttackPattern currPattern = GetCurrentAttackPattern();
+            float attackSpeedMultiplier = GetAttackSpeedMultiplier();
+            if (currPattern.ScaleAttackImplementationTimeWithAttackSpeed && attackSpeedMultiplier > 0)
+            {
+                return currPattern.WindupTime / attackSpeedMultiplier;
+            }
+
+            return currPattern.WindupTime;
+        }
         #endregion
 
 
@@ -567,11 +660,13 @@ namespace Kuantech.Core
             Actor currentTarget = GetCurrentTarget();
             if (currentTarget == null) return;
 
-            if (!IsInAttackRange(currentTarget.GetHitPoint(Actor)))
+            WorldPoint hitPoint = currentTarget.GetHitPoint(Actor);
+            if (!IsInAttackRange(hitPoint) || !IsInAttackAngle(hitPoint))
             {
+                AttackMissedEvent?.Invoke(this);
                 return;
             }
-            
+
             DamageActor(currentTarget);
         }
         
@@ -978,11 +1073,12 @@ namespace Kuantech.Core
         private void ExecuteReleaseAttack()
         {
             AttackPattern pattern = GetCurrentAttackPattern();
-            Debug.Log($"[CombatModule] {name}: ExecuteReleaseAttack called at t={Time.time} -- _isAttacking={_isAttacking}, _released={_released}, pattern={(pattern != null ? pattern.AttackType.ToString() : "null")}, Charged={(pattern != null ? pattern.Charged.ToString() : "n/a")}.");
-            if (!_isAttacking || _released || pattern == null || !pattern.Charged) return;
+            if (!_isAttacking || _released || pattern == null || !pattern.HasWindupPhase) return;
             _released = true;
 
-            if (Time.time - _chargeStartTime < pattern.MinChargeTime)
+            // Only a Charged attack can fizzle: MinChargeTime is a rule about how long the PLAYER held it,
+            // and a windup attack's commit is the clock's decision, never an early letting-go.
+            if (pattern.Charged && Time.time - _chargeStartTime < pattern.MinChargeTime)
             {
                 // Didn't hold long enough -- fizzles entirely, exactly as if it had never been cast. No
                 // implementation, no OnChargeReleased.
@@ -1001,7 +1097,10 @@ namespace Kuantech.Core
 
             _chargeCommitted = true;
             _releaseTime = Time.time;
-            if (_animationModule != null) _animationModule.PlayAnimationData(pattern.ReleaseHoldAnimationData);
+            ApplyStrikeRotationSlow();
+            if (_animationModule != null)
+                _animationModule.PlayAnimationData(pattern.ReleaseHoldAnimationData,
+                    pattern.AttackDuration / Mathf.Max(0.01f, GetAttackSpeedMultiplier()));
             PlayChargeFx(pattern.ReleaseFx);
             OnChargeReleased?.Invoke(this);
         }
@@ -1062,7 +1161,7 @@ namespace Kuantech.Core
             _isAttacking = true;
             _attacked = false;
             _attackStartTime = Time.time;
-            _chargeStartTime = _attackStartTime; // only meaningful for Charged patterns, harmless otherwise
+            _chargeStartTime = _attackStartTime; // start of the windup, charged or clock-driven; harmless otherwise
             _released = false;
             _chargeCommitted = false;
             _effectPlayed = false;
@@ -1076,14 +1175,26 @@ namespace Kuantech.Core
             if (IsClientInitialized || !isNetworked)
             {
                 float timeMultiplier = Mathf.Max(0.01f, GetAttackSpeedMultiplier());
-                float animationTime = currPattern.AnimationTime;
+                float animationTime = currPattern.WindupTime > 0f ? currPattern.WindupTime : currPattern.AnimationTime;
                 if (_animationModule != null)
                 {
+                    // A windup opens a gap between raising the release/cancel triggers and something
+                    // consuming them, and an Animator trigger that nothing consumed stays raised. One left
+                    // over from an attack that was interrupted at the wrong moment would fire the instant
+                    // the next windup starts, skipping it entirely. Clearing them here costs nothing and
+                    // makes that impossible.
+                    if (currPattern.HasWindupPhase)
+                    {
+                        _animationModule.ResetTrigger(currPattern.ReleaseHoldAnimationData.TriggerParameterName);
+                        _animationModule.ResetTrigger(currPattern.CancelHoldAnimationData.TriggerParameterName);
+                    }
+
                     _animationModule.PlayAnimationData(currPattern.AttackAnimationData, animationTime / timeMultiplier);
                 }
             }
             AttackStartedEvent?.Invoke(this);
             ApplyMovementSlow();
+            ApplyAttackRotationSlow();
             return true;
         }
 
@@ -1094,6 +1205,48 @@ namespace Kuantech.Core
             float movementSlow = currPattern.MovementSlow.GetValue(_statModule);
             float movementSpeedMultiplier = 1 - movementSlow;
             mm.SetSpeedMultiplier(movementSpeedMultiplier);
+        }
+
+        /// <summary>
+        /// Runs on EVERY peer, like ApplyMovementSlow beside it, and that is the point rather than an
+        /// accident: the zombie's rotation is not replicated (NetworkTransform syncs position only), each
+        /// peer's AimHandler computes it from the replicated aim direction. A slow applied only on the
+        /// server would leave every client watching a zombie that still snaps around at full speed -- the
+        /// commitment the player is supposed to read would exist only on the host.
+        ///
+        /// The server still decides the hit, so a small divergence between peers is cosmetic. Both sides
+        /// run the same slow from the same starting rotation toward the same synced direction, so it stays
+        /// small.
+        /// </summary>
+        private void ApplyAttackRotationSlow()
+        {
+            AttackPattern currPattern = GetCurrentAttackPattern();
+            if (currPattern == null) return;
+            ApplyRotationSlow(currPattern.AttackRotationSlow);
+        }
+
+        /// <summary>
+        /// Applied again at the commit point, not only at the start, because the two phases want opposite
+        /// things: the windup should track a little so the enemy does not swing at where the player used to
+        /// be, and the strike should track not at all so the last moment before it lands is winnable.
+        /// </summary>
+        private void ApplyStrikeRotationSlow()
+        {
+            AttackPattern currPattern = GetCurrentAttackPattern();
+            if (currPattern == null) return;
+            ApplyRotationSlow(currPattern.StrikeRotationSlow);
+        }
+
+        private void ApplyRotationSlow(float rotationSlow)
+        {
+            if (_aimHandler == null) return;
+            _aimHandler.SetRotationSpeedMultiplier(1f - Mathf.Clamp01(rotationSlow));
+        }
+
+        private void RemoveAttackRotationSlow()
+        {
+            if (_aimHandler == null) return;
+            _aimHandler.ResetRotationSpeedMultiplier();
         }
 
         private void RemoveMovementSlow()
@@ -1297,6 +1450,34 @@ namespace Kuantech.Core
             float dist = Vector3.Magnitude(target.GetTargetPosition() - Actor.GetActorLocation()) - target.Radius - Actor.ActorRadius;
             return dist <= (GetAttackRange() + RangeTolerance);
         }
+
+        /// <summary>
+        /// Whether the target is inside the attack's cone AT THIS MOMENT. Angle is the FULL width of that
+        /// cone; unset (0 or less) or 360 means no limit at all, which is what every pattern authored
+        /// before this check existed keeps.
+        ///
+        /// Measured against the actor's real facing, deliberately NOT against GetAttackDirection(): that
+        /// one resolves to "wherever the target is standing right now" whenever there is a target, so the
+        /// cone would follow the target around and the check could never fail. The question being asked is
+        /// whether the attacker actually managed to turn far enough before the blow landed, and only its
+        /// transform can answer that -- which in turn only means anything when AttackRotationSlow stops it
+        /// from turning instantly.
+        /// </summary>
+        public bool IsInAttackAngle(WorldPoint target)
+        {
+            float coneAngle = GetCurrentAttackPattern().Angle.GetValue(_statModule);
+            if (coneAngle <= 0f || coneAngle >= 360f) return true;
+
+            Vector3 up = Actor.ActorUpVector;
+            Vector3 toTarget = Vector3.ProjectOnPlane(target.GetTargetPosition() - Actor.GetActorLocation(), up);
+            Vector3 facing = Vector3.ProjectOnPlane(Actor.transform.forward, up);
+
+            // Standing inside each other, or a degenerate facing: there is no meaningful angle to compare,
+            // and refusing the hit there would be arbitrary rather than earned.
+            if (toTarget.sqrMagnitude < 0.0001f || facing.sqrMagnitude < 0.0001f) return true;
+
+            return Vector3.Angle(facing, toTarget) <= coneAngle * 0.5f;
+        }
         #endregion
 
         #region Locking
@@ -1328,6 +1509,37 @@ namespace Kuantech.Core
         private float _attackImplementationTime;
         private float _maxContinuousAttackTime;
 
+        /// <summary>
+        /// Whether the attack in flight has reached the point where another action may interrupt it.
+        /// </summary>
+        public bool CanCancelAttack()
+        {
+            if (!_isAttacking) return false;
+            AttackPattern pattern = GetCurrentAttackPattern();
+            if (pattern == null || pattern.CancelWindowStart <= 0f) return false;
+
+            // Same clock the implementation time runs on, for the same reason: once an attack has a commit
+            // point, everything after it should be measured from there or a longer windup would silently
+            // drag the cancel window along with it.
+            float start = pattern.HasWindupPhase && _released ? _releaseTime : _attackStartTime;
+            return Time.time - start >= pattern.CancelWindowStart;
+        }
+
+        /// <summary>
+        /// Cuts the attack short if it is far enough along, and reports whether it did. Called by whatever
+        /// wants to interrupt -- a dash, a raised guard -- so the decision lives with the attack rather than
+        /// being duplicated by everything that might interrupt one.
+        ///
+        /// An attack that is NOT cancellable is left running rather than blocking the caller: refusing the
+        /// dash outright is a separate design decision, and a heavier one.
+        /// </summary>
+        public bool TryCancelAttack()
+        {
+            if (!CanCancelAttack()) return false;
+            EndAttack();
+            return true;
+        }
+
         private void EndAttack()
         {
             if(IsServerInitialized)
@@ -1346,15 +1558,19 @@ namespace Kuantech.Core
         {
             if (!_isAttacking) return;
 
-            // Covers BOTH ways a charge can end without ever committing: released too early (ExecuteReleaseAttack
-            // routes the fizzle straight here) and an external interrupt while still charging (e.g. a poise
-            // break calling EndAttack() directly, never going through ExecuteReleaseAttack at all).
             AttackPattern pattern = GetCurrentAttackPattern();
-            if (pattern != null && pattern.Charged && !_chargeCommitted)
-            {
-                if (_animationModule != null) _animationModule.PlayAnimationData(pattern.CancelHoldAnimationData);
-                PlayChargeFx(pattern.CancelFx);
-            }
+
+            // Getting OUT of the hold pose is the one thing that really is windup-only -- a plain attack was
+            // never in one. Covers both ways a windup can end without committing: released too early
+            // (ExecuteReleaseAttack routes the fizzle straight here) and an external interrupt while still
+            // holding (a poise break calling EndAttack() directly, never going through the release at all).
+            if (pattern != null && pattern.HasWindupPhase && !_chargeCommitted && _animationModule != null)
+                _animationModule.PlayAnimationData(pattern.CancelHoldAnimationData);
+
+            // The FX is not windup-only, because "this attack was interrupted before it landed a blow" is
+            // not windup-only. _attacked rather than the windup flags: an attack cut short during its
+            // recovery already hit somebody, and calling that a cancel would be a lie.
+            if (pattern != null && !_attacked) PlayChargeFx(pattern.CancelFx);
 
             _isAttacking = false;
             _requestedAttackPattern = null; // single-attack scoped -- next attack resolves its own (or none)
@@ -1363,6 +1579,7 @@ namespace Kuantech.Core
                                 // depend on that being the only place it happens
             _lastAttackCompleteTime = Time.time;
             RemoveMovementSlow(); //TODO: this is probably will be a runtime bug. We can't just set speed multiplier to 1 like this
+            RemoveAttackRotationSlow();
             // Safety net: if the attack got cut short (interrupted/staggered) before the animation's
             // OnSweepEnd event fired, this stops the sweep from running forever.
             OnMeleeSweepEnd();

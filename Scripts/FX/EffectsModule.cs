@@ -65,6 +65,7 @@ namespace Kuantech.Core.FX
         private HealthcareModule _healthcareModule;
         private CombatModule _combatModule;
         private InventoryModule _inventoryModule;
+        private MovementModule _movementModule;
 
         public override void Initialize()
         {
@@ -111,6 +112,19 @@ namespace Kuantech.Core.FX
             _combatModule = Actor.GetModule<CombatModule>();
             _healthcareModule = Actor.GetModule<HealthcareModule>();
             _inventoryModule = Actor.GetModule<InventoryModule>();
+            _movementModule = Actor.GetModule<MovementModule>();
+
+            // DodgeEffect/JumpEffect have been assignable in the Inspector all along, but nothing ever
+            // subscribed to the events that would play them -- so an assigned dodge effect simply never
+            // fired. MovementModule already raises both on every peer (ExecuteDash and ExecuteJump/
+            // OnSyncedJumpingChanged run on owner, server and observers alike), so listening here is all
+            // that was missing. Playing them from MovementModule instead would have taught the movement
+            // code about FX, which is the one thing this module exists to keep it from having to know.
+            if (_movementModule != null)
+            {
+                _movementModule.DashStartEvent += OnDodge;
+                _movementModule.OnJumpEvent += OnJump;
+            }
 
             if (_combatModule != null)
             {
@@ -270,18 +284,20 @@ namespace Kuantech.Core.FX
                 HealEffect.Play(GetEffectPlaySettings());
             }
         }
-        private void OnDodge(object sender, EventArgs args)
+        // Vector3, not EventArgs: DashStartEvent carries the dash direction. The old EventArgs signature is
+        // part of why this never got hooked up -- it could not have been subscribed to that event as it was.
+        private void OnDodge(object sender, Vector3 direction)
         {
             if (DodgeEffect != null)
             {
-                DodgeEffect.Play();
+                DodgeEffect.Play(GetEffectPlaySettings());
             }
         }
         private void OnJump(object sender, EventArgs args)
         {
             if (JumpEffect != null)
             {
-                JumpEffect.Play();
+                JumpEffect.Play(GetEffectPlaySettings());
             }
         }
 

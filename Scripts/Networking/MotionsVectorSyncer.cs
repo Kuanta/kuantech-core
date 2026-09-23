@@ -88,7 +88,13 @@ namespace Kuantech.Core
         public override void ModuleUpdate(float deltaTime)
         {
             base.ModuleUpdate(deltaTime);
-            if (!SyncAimDirection || !IsServer) return;
+            if (!SyncAimDirection) return;
+
+            if (!IsServer)
+            {
+                ClearLocallySetTarget();
+                return;
+            }
 #if NETWORKING_NGO
             if (!IsSpawned) return;
 #endif
@@ -108,6 +114,29 @@ namespace Kuantech.Core
         /// The direction still travels as a direction -- this only decides when it is sampled.
         /// </summary>
         private void OnTargetObjectChanged(Transform _) => _lastAimSyncTime = float.NegativeInfinity;
+
+        /// <summary>
+        /// On a peer that takes this actor's facing off the wire, TargetedObject is not allowed to hold
+        /// anything: the replicated direction is the whole truth there.
+        ///
+        /// Needed because CombatModule points TargetedObject at whoever is being swung at on EVERY peer --
+        /// ExecuteAttack runs everywhere, not only on the server -- and never clears it, while
+        /// GetTargetVector ranks TargetedObject ABOVE TargetVector. Without this a remote enemy keeps
+        /// staring at the last player it attacked and ignores every direction the server sends. It is the
+        /// original "it still faces the corpse" bug surviving on clients alone, because on the server the
+        /// AI overwrites TargetedObject with the live target every frame and on a client nothing does.
+        ///
+        /// Done as a per-frame check rather than a clear inside the receive callback on purpose: whether a
+        /// synced value arrives at all depends on the sample threshold, so hanging the fix off that would
+        /// leave the bug alive in exactly the case where the old and new targets lie in nearly the same
+        /// direction.
+        /// </summary>
+        private void ClearLocallySetTarget()
+        {
+            if (IsOwner) return;
+            MotionVectorsHandler handler = Actor.MotionVectorsHandler;
+            if (handler.TargetedObject != null) handler.TargetedObject = null;
+        }
 
         /// <summary>
         /// What makes a short interval affordable: a zombie standing over a stationary player resamples

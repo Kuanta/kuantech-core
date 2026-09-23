@@ -1,4 +1,4 @@
-#if NETWORKING_NGO
+﻿#if NETWORKING_NGO
 using Unity.Netcode;
 #endif
 using UnityEngine;
@@ -113,6 +113,10 @@ namespace Kuantech.Core.Combat
         public void StartBlock()
         {
             if (_blocking) return;
+
+            // Raising the guard out of the tail of your own swing, same bargain as the dash.
+            Actor.GetModule<CombatModule>()?.TryCancelAttack();
+
             if (IsServer)
             {
                 ExecuteStartBlock();
