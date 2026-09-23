@@ -1,5 +1,4 @@
-﻿using DG.Tweening;
-using Kuantech.Utils;
+﻿using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Core.Camera
@@ -26,11 +25,25 @@ namespace Kuantech.Core.Camera
         [Header("FOV")]
         [SerializeField] private float BaseFOV = 60f;
         
-        [Header("Camera Shake")] 
+        [Header("Camera Shake")]
         public float ShakeDuration = 0.5f;
         public float ShakeStrength = 1.0f;
         public int Vibrato = 10;
-        private float Randomness = 90.0f;
+
+        [Tooltip("Degrees of angular kick per unit of shake strength. First person lives on this one: a " +
+                 "positional shake big enough to read from inside the head looks like the whole world is " +
+                 "sliding, while a rotational one reads as being hit. Third person is the opposite, so drop " +
+                 "this and raise the strength there.")]
+        public float ShakeAngularPerUnit = 20f;
+
+        // Shake state. Held as an OFFSET rather than written onto the camera transform -- see LateUpdate.
+        private float _shakeTimeLeft;
+        private float _shakeTotalDuration;
+        private float _shakeStrength;
+        private int _shakeVibrato;
+        private Vector2 _shakeSeed;
+        private Vector3 _shakeOffset;
+        private Vector3 _shakeEuler;
 
         [Header("Zoom")]
         [SerializeField] private GameObject ZoomAnchor;
@@ -71,8 +84,20 @@ namespace Kuantech.Core.Camera
         {
             if (ActiveVirtualCam == null || Camera == null) return;
 
+            UpdateShake(Time.unscaledDeltaTime);
+
             Transform vt = ActiveVirtualCam.transform;
-            Camera.transform.SetPositionAndRotation(vt.position, vt.rotation);
+
+            // The shake is added ON TOP of the snap, in the virtual cam's own space, and that is the whole
+            // point of it living here. The snap overwrites the camera transform outright every frame, so a
+            // shake that animates that same transform -- which is what the old DOShakePosition did -- is
+            // erased before it is ever drawn. It looked like the shake "stopped working" when virtual cams
+            // arrived; it had simply lost the argument over who writes the transform last.
+            Quaternion rotation = vt.rotation;
+            Vector3 position = vt.position + rotation * _shakeOffset;
+            if (_shakeEuler != Vector3.zero) rotation *= Quaternion.Euler(_shakeEuler);
+
+            Camera.transform.SetPositionAndRotation(position, rotation);
 
             if (Listener != null)
             {
@@ -98,12 +123,45 @@ namespace Kuantech.Core.Camera
         /// <param name="vibrato"></param>
         public void ShakeCamera(float shakesStrength, float shakeDuration, int vibrato)
         {
-            if (Camera != null)
+            if (shakesStrength <= 0f || shakeDuration <= 0f) return;
+
+            // A new shake replaces the one in flight instead of adding to it. Being hit by two zombies at
+            // once should not compound into a wobble that outlasts both blows, and restarting a 0.2s shake
+            // is not something the eye can pick out anyway.
+            _shakeTotalDuration = shakeDuration;
+            _shakeTimeLeft = shakeDuration;
+            _shakeStrength = shakesStrength;
+            _shakeVibrato = Mathf.Max(1, vibrato);
+            _shakeSeed = new Vector2(UnityEngine.Random.value * 1000f, UnityEngine.Random.value * 1000f);
+        }
+
+        /// <summary>
+        /// Unscaled time on purpose: a hit stop (see HitStopFxBehaviour) freezes the world precisely when
+        /// something has just landed, which is exactly when the shake should still be moving.
+        /// </summary>
+        private void UpdateShake(float deltaTime)
+        {
+            if (_shakeTimeLeft <= 0f)
             {
-                Camera.transform.DOKill();
-                Camera.transform.DOShakePosition(shakeDuration, shakesStrength, vibrato, Randomness)
-                    .OnComplete(() => Camera.transform.localPosition = Vector3.zero);
+                _shakeOffset = Vector3.zero;
+                _shakeEuler = Vector3.zero;
+                return;
             }
+
+            _shakeTimeLeft -= deltaTime;
+            float remaining = Mathf.Clamp01(_shakeTimeLeft / Mathf.Max(0.0001f, _shakeTotalDuration));
+            float damper = remaining * remaining; // eases out, and lands on exactly zero
+            float phase = (_shakeTotalDuration - _shakeTimeLeft) * _shakeVibrato;
+
+            // Smooth noise rather than a fresh random each frame: per-frame randomness turns into buzzing at
+            // high frame rates and shakes visibly harder on a 144Hz screen than on a 60Hz one. Perlin is
+            // sampled by TIME, so it reads the same on both.
+            float x = Mathf.PerlinNoise(_shakeSeed.x + phase, 0f) * 2f - 1f;
+            float y = Mathf.PerlinNoise(_shakeSeed.y + phase, 0f) * 2f - 1f;
+
+            float amount = _shakeStrength * damper;
+            _shakeOffset = new Vector3(x, y, 0f) * amount;
+            _shakeEuler = new Vector3(-y, x, x * 0.5f) * (amount * ShakeAngularPerUnit);
         }
         #endregion
 
