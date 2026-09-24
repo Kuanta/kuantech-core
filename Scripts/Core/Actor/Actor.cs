@@ -774,6 +774,35 @@ namespace Kuantech.Core
             });
         }
 
+        /// <summary>
+        /// Server only. Moves this actor's OWNER to a new position, touching nothing about its state --
+        /// unlike a respawn, this is not "the player came back from something", just "the level moved".
+        ///
+        /// Split across two peers for the same reason DownedModule.Respawn is: NetworkTransform is owner
+        /// authoritative, so the server writing this transform directly would just be overwritten by the
+        /// owner's next update (and NetworkTransform.Teleport throws outright on the non-authoritative
+        /// side). The move is asked for, not applied.
+        /// </summary>
+        public void ServerWarpToPoint(Vector3 position, Quaternion rotation)
+        {
+#if NETWORKING_NGO
+            if (!IsServer) return;
+            WarpToPoint_Rpc(position, rotation);
+#else
+            WarpToPoint(position, rotation);
+#endif
+        }
+
+#if NETWORKING_NGO
+        [Rpc(SendTo.Owner)]
+        private void WarpToPoint_Rpc(Vector3 position, Quaternion rotation)
+        {
+            // WarpToPoint rather than a bare transform write: RigidbodyMovementModule listens for
+            // OnActorWarped and moves the body itself, which a rigidbody needs in order not to fight it.
+            WarpToPoint(position, rotation);
+        }
+#endif
+
         public Vector3 GetActorDirection()
         {
             return MotionVectorsHandler?.GetTargetVector() ?? transform.forward;
@@ -928,6 +957,26 @@ namespace Kuantech.Core
         public void SetVisualRpc(string visualId)
         {
             ApplyVisual(visualId);
+        }
+
+        /// <summary>
+        /// Server calls this right after spawning a blank Actor as a NetworkObject, to configure it as a
+        /// specific ActorBlueprint on every peer (host included) -- the networked counterpart to
+        /// ActorBlueprint.CreateActor(), which instead pools+instantiates a whole new local actor. This is
+        /// what lets a spawner (NetworkedWaveHandler, ...) hand out real ActorBlueprint variety -- different
+        /// visuals, components, balance data -- through one shared network prefab instead of one prefab per
+        /// enemy type.
+        /// </summary>
+        [Rpc(SendTo.Everyone)]
+        public void SetActorBlueprintRpc(string blueprintId)
+        {
+            ActorBlueprint blueprint = ActorDataManager.GetActorBlueprint(blueprintId);
+            if (blueprint == null)
+            {
+                Debug.LogWarning($"[Actor] SetActorBlueprintRpc: no blueprint found for id '{blueprintId}'.");
+                return;
+            }
+            blueprint.ApplyToActor(this);
         }
 
         private void OnStartLocalPlayer()

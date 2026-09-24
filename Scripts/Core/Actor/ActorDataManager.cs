@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+using Kuantech.Utils;
 using UnityEngine;
 
 namespace Kuantech.Core
@@ -21,6 +22,12 @@ namespace Kuantech.Core
         [SerializeField] private Actor DefaultActorPrefab;
         [SerializeField] private List<ActorSpawnData> ActorSpawnData;
         [SerializeField] private List<ActorVisual> ActorVisuals;
+
+        [Tooltip("Every ActorBlueprint an Actor.SetActorBlueprintRpc call can resolve -- a networked spawn " +
+                 "only ever sends a blueprint id, and this is where every peer looks it up locally. Use " +
+                 "'Find All In Project' to keep this at literally every blueprint in the project, rather " +
+                 "than a hand-picked subset that can silently miss one.")]
+        public MetadataAssetContainer<ActorBlueprint> ActorBlueprints;
 
         //Runtime
         private Dictionary<string,ActorSpawnData> _actorSpawnDatas;
@@ -92,6 +99,17 @@ namespace Kuantech.Core
                 return null;
             }
             return ctx._actorVisuals[actorVisualId];
+        }
+
+        /// <summary>
+        /// Looks up an ActorBlueprint by id -- the only thing a networked blueprint spawn ever puts on the
+        /// wire (see Actor.SetActorBlueprintRpc), since every peer holds the same ActorBlueprints data.
+        /// </summary>
+        public static ActorBlueprint GetActorBlueprint(string blueprintId)
+        {
+            var ctx = GetContext<ActorDataManager>();
+            if (ctx == null || ctx.ActorBlueprints == null) return null;
+            return ctx.ActorBlueprints.GetMetadata(blueprintId);
         }
 
         public static Actor GetActorPrefab(string actorPrefabId=null)

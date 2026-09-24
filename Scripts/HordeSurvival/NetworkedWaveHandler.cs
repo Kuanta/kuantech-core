@@ -1,6 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using Kuantech.CastleDefenders;
 using Kuantech.Core;
+using Kuantech.Core.Utils;
 using Kuantech.Networking;
 #if NETWORKING_NGO
 using Unity.Netcode;
@@ -30,18 +32,40 @@ namespace Kuantech.HordeSurvival
         }
 
         [Header("Enemy")]
-        [Tooltip("NetworkObject prefab to spawn. Must be registered in NetworkManager's Network Prefabs list.")]
+        [Tooltip("Fallback NetworkObject prefab, spawned directly when EnemyBlueprints below is not " +
+                 "assigned -- a level that never heard of blueprints keeps working exactly as before.")]
 #if NETWORKING_NGO
         public NetworkObject EnemyPrefab;
+
+        [Tooltip("Blank NetworkObject template every blueprint-driven enemy actually spawns as. The server " +
+                 "spawns this and tells every peer which ActorBlueprint to become via " +
+                 "Actor.SetActorBlueprintRpc -- the networked counterpart to ActorBlueprint.CreateActor()'s " +
+                 "local pool+instantiate. Only needed when EnemyBlueprints is assigned.")]
+        public NetworkObject BlankEnemyTemplate;
 #endif
         [Tooltip("FactionHandler.BelongingFaction value used to find players for spawn-focus purposes.")]
         public int PlayerFaction = 0;
 
+        [Header("Enemy Blueprints")]
+        [Tooltip("Optional roster to draw from instead of the single EnemyPrefab above. Each blueprint " +
+                 "gates itself via HordeEnemyBlueprintComponent -- the same power-level/wave gate " +
+                 "HordeWaveHandler already uses -- so assigning a different collection per floor gives " +
+                 "different floors different enemy sets for free.")]
+        public ActorBlueprintCollection EnemyBlueprints;
+
+        [Header("Middlewares")]
+        [Tooltip("Optional custom enemy-selection logic. Falls back to plain weighted-random among " +
+                 "eligible blueprints when none is assigned.")]
+        public NetworkedSpawnSelectorMiddleware SpawnSelectorMiddleware;
+        [Tooltip("Optional post-spawn difficulty hook, applied to every blueprint-spawned enemy.")]
+        public EnemySpawnMiddleware EnemySpawnMiddleware;
+
         [Header("Data")]
         [Tooltip("The single balance sheet. Budget, cap and enemy level all come from here, scaled by PowerLevel.")]
         public DifficultyConfig Difficulty;
-        [Tooltip("Difficulty index for this run. Gates nothing here (single enemy type) but still scales " +
-                 "budget/cap/enemy level via DifficultyConfig.")]
+        [Tooltip("Difficulty index for this run -- also the HordeEnemyBlueprintComponent power-level gate " +
+                 "when EnemyBlueprints is assigned. Still scales budget/cap/enemy level via DifficultyConfig " +
+                 "either way.")]
         public int PowerLevel = 1;
 
         [Header("Placement")]
@@ -89,6 +113,7 @@ namespace Kuantech.HordeSurvival
         private Coroutine _startWaveRoutine;
         private Coroutine _nextWaveRoutine;
         private EnemyUnitHandler _unitHandler;
+        private WeightedProbabilityArray<ActorBlueprint> _enemyBlueprints;
 
         public int RemainingBudget => _remainingBudget;
 
@@ -193,7 +218,35 @@ namespace Kuantech.HordeSurvival
             if (Difficulty == null)
                 Debug.LogError("NetworkedWaveHandler has no DifficultyConfig assigned.");
 
+            if (EnemyBlueprints != null) BuildEligibleRoster(waveIndex);
+
             OnWaveSet?.Invoke(waveIndex);
+        }
+
+        /// <summary>
+        /// Builds the weighted roster of blueprints eligible at this PowerLevel/waveIndex -- mirrors
+        /// HordeWaveHandler._SetWave exactly, reusing the same HordeEnemyBlueprintComponent gate.
+        /// </summary>
+        private void BuildEligibleRoster(int waveIndex)
+        {
+            _enemyBlueprints = new WeightedProbabilityArray<ActorBlueprint>();
+            if (EnemyBlueprints.ActorBlueprints == null) return;
+
+            foreach (var blueprint in EnemyBlueprints.ActorBlueprints)
+            {
+                if (blueprint == null) continue;
+                HordeEnemyBlueprintComponent gating = blueprint.GetActorBlueprintComponent<HordeEnemyBlueprintComponent>();
+                if (gating == null)
+                {
+                    Debug.LogWarning($"[NetworkedWaveHandler] Enemy blueprint '{blueprint.GetId()}' has no HordeEnemyBlueprintComponent -- it can never spawn.");
+                    continue;
+                }
+                if (gating.IsEligibleAt(PowerLevel, waveIndex))
+                    _enemyBlueprints.AddElement(blueprint, gating.SpawnWeight);
+            }
+
+            if (_enemyBlueprints.IsNullOrEmpty())
+                Debug.LogWarning($"[NetworkedWaveHandler] No enemies eligible at power level {PowerLevel} (wave {waveIndex}).");
         }
 
         public void StartWave()
@@ -260,6 +313,7 @@ namespace Kuantech.HordeSurvival
             if (Time.time - _lastSpawnTime < Difficulty.BaseConfig.SpawnInterval) return;
             if (_remainingBudget <= 0) return;
             if (_unitHandler != null && _unitHandler.AliveCount >= _concurrentCap) return;
+            if (EnemyBlueprints != null && (_enemyBlueprints == null || _enemyBlueprints.IsNullOrEmpty())) return;
 
             Vector3 focus = GetFocus();
 
@@ -285,8 +339,17 @@ namespace Kuantech.HordeSurvival
                     pos = GetMemberPosition(batchCenter);
                 }
 
-                if (SpawnEnemy(pos) != null)
-                    _remainingBudget -= 1; // single enemy type for now -- no per-enemy budget cost yet
+                Actor spawned = SpawnEnemy(pos);
+                if (spawned != null)
+                {
+                    // Blueprint-spawned enemies cost whatever their own HordeEnemyBlueprintComponent says;
+                    // the legacy single-EnemyPrefab path never sets ActorBlueprint, so this falls back to
+                    // the flat 1 it always charged.
+                    HordeEnemyBlueprintComponent gating = spawned.ActorBlueprint != null
+                        ? spawned.ActorBlueprint.GetActorBlueprintComponent<HordeEnemyBlueprintComponent>()
+                        : null;
+                    _remainingBudget -= Mathf.Max(1, gating != null ? gating.SpawnBudget : 1);
+                }
             }
 
             _lastSpawnTime = Time.time;
@@ -313,6 +376,8 @@ namespace Kuantech.HordeSurvival
         public Actor SpawnEnemy(Vector3 position)
         {
 #if NETWORKING_NGO
+            if (EnemyBlueprints != null) return SpawnBlueprintEnemy(position);
+
             if (EnemyPrefab == null) return null;
             NetworkObject instance = Instantiate(EnemyPrefab, position, Quaternion.identity);
             instance.Spawn();
@@ -330,6 +395,43 @@ namespace Kuantech.HordeSurvival
             return null;
 #endif
         }
+
+#if NETWORKING_NGO
+        /// <summary>
+        /// Spawns BlankEnemyTemplate as a NetworkObject, then tells every peer which ActorBlueprint to
+        /// become -- see Actor.SetActorBlueprintRpc. That Rpc runs locally on this (the server) peer too
+        /// (SendTo.Everyone), so spawned.ActorBlueprint is already set by the time this returns, which is
+        /// what lets TrySpawnBatch read the enemy's SpawnBudget right after.
+        /// </summary>
+        private Actor SpawnBlueprintEnemy(Vector3 position)
+        {
+            ActorBlueprint blueprint = GetNextEnemyToSpawn();
+            if (blueprint == null || BlankEnemyTemplate == null) return null;
+
+            NetworkObject instance = Instantiate(BlankEnemyTemplate, position, Quaternion.identity);
+            instance.Spawn();
+
+            Actor actor = instance.GetComponent<Actor>();
+            if (actor == null) return null;
+
+            actor.SetActorBlueprintRpc(blueprint.GetId());
+
+            Rpg.StatsModule stats = actor.GetModule<Rpg.StatsModule>();
+            if (stats != null && Difficulty != null) stats.SetLevel(Difficulty.GetEnemyLevel(PowerLevel));
+
+            _unitHandler?.RegisterEnemy(actor);
+            if (EnemySpawnMiddleware != null) EnemySpawnMiddleware.ApplyDifficultyToEnemy(actor);
+
+            OnEnemySpawned?.Invoke(actor);
+            return actor;
+        }
+
+        private ActorBlueprint GetNextEnemyToSpawn()
+        {
+            if (SpawnSelectorMiddleware != null) return SpawnSelectorMiddleware.GetActorToSpawn(this);
+            return _enemyBlueprints != null ? _enemyBlueprints.Sample() : null;
+        }
+#endif
 
         #endregion
 

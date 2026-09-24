@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Kuantech.CastleDefenders;
 using Kuantech.Core;
 using Kuantech.Core.Utils;
 using UnityEngine;
@@ -63,6 +64,10 @@ namespace Kuantech.HordeSurvival
         public float StartDelay = 1f;
         [Tooltip("Delay after a wave is announced (OnWaveStarted) before enemies actually spawn — a 'get ready' beat.")]
         public float StartWaveDelay = 1f;
+
+        [Header("Middlewares")]
+        [SerializeField] private EnemySpawnMiddleware EnemySpawnMiddleware;
+        [SerializeField] private SpawnSelectorMiddleware SpawnSelectorMiddleware;
 
         /// <summary>
         /// Provides the spawn center (usually the player position). Falls back to this handler's
@@ -318,7 +323,7 @@ namespace Kuantech.HordeSurvival
                 if (_remainingBudget <= 0) break;
                 if (_unitHandler != null && _unitHandler.AliveCount >= _concurrentCap) break;
 
-                ActorBlueprint blueprint = _enemyBlueprints.Sample();
+                ActorBlueprint blueprint = GetNextEnemyToSpawn();
                 if (blueprint == null) continue;
 
                 // Spread: each enemy gets its own annulus angle → the batch surrounds the player (360°).
@@ -345,6 +350,15 @@ namespace Kuantech.HordeSurvival
             }
 
             _lastSpawnTime = Time.time;
+        }
+
+        private ActorBlueprint GetNextEnemyToSpawn()
+        {
+            if(SpawnSelectorMiddleware == null)
+            {
+                return _enemyBlueprints.Sample();
+            }
+            return SpawnSelectorMiddleware.GetActorToSpawn(this);
         }
 
         /// <summary>
@@ -402,6 +416,11 @@ namespace Kuantech.HordeSurvival
                 hem.OnSpawn(position);
             }
 
+            //Enemy spawn middleware
+            if(EnemySpawnMiddleware != null)
+            {
+                EnemySpawnMiddleware.ApplyDifficultyToEnemy(actor);
+            }
             OnEnemySpawned?.Invoke(actor);
             return actor;
         }

@@ -97,7 +97,7 @@ namespace Kuantech.Core
 
             if (ProgressableDataAsset != null)
             {
-                //Set progressibles 
+                //Set progressibles
                 ProgressionHandlerActorModule progressionHandlerActorModule = actor.GetComponentInChildren<ProgressionHandlerActorModule>();
                 if (progressionHandlerActorModule != null) //Check if not null
                 {
@@ -106,15 +106,35 @@ namespace Kuantech.Core
             }
 
             actor.Initialize();
+            ApplyVisualAndComponents(actor);
+            return actor;
+        }
+
+        /// <summary>
+        /// Applies this blueprint's identity, visual and components onto an actor that ALREADY exists --
+        /// the networked counterpart to CreateActor(), which instead pools+instantiates a brand new one.
+        /// Used when the actor was already brought into being some other way (a NetworkObject spawn via
+        /// Actor.SetActorBlueprintRpc, ...) and only the blueprint's DATA still needs applying, identically
+        /// on every peer. Deliberately skips ProgressableDataAsset wiring -- that path assumes CreateActor's
+        /// pooled, non-networked actors; nothing networked uses it today.
+        /// </summary>
+        public void ApplyToActor(Actor actor)
+        {
+            actor.Id = GetId();
+            actor.FactionHandler.BelongingFaction = FactionId;
+            ApplyVisualAndComponents(actor);
+        }
+
+        private void ApplyVisualAndComponents(Actor actor)
+        {
             if (actor.VisualHandler != null && ActorVisualPrefab != null)
             {
                 actor.VisualHandler.SetActorVisual(PoolManager.GetObjectFromPool(ActorVisualPrefab.gameObject).GetComponent<ActorVisual>());
             }
-                
+
             //Sets blueprint comps
             ApplyComponentsToActor(actor);
             actor.ActorBlueprint = this;
-            return actor;
         }
 
         public void ApplyComponentsToActor(Actor actor)
