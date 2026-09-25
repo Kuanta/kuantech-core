@@ -485,7 +485,13 @@ namespace Kuantech.Networking
             List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
         {
             if (!NetworkManager.Singleton.IsServer) return;
-            if (sceneName != GameSceneName) return;
+
+            // Written back when GameSceneName was the only place a networked load ever landed. It no longer
+            // is -- a Hub sits in front of it now, and a run can hop between more than one gameplay scene
+            // from there -- so this only has to rule out the one scene bodies never belong in, not name the
+            // one they do. SpawnPlayerFor's own "already has a body" guard is what actually keeps a client
+            // from getting spawned twice if some other path (DirectPlayBootstrap, ...) got there first.
+            if (sceneName == MainMenuSceneName) return;
 
             // Deliberately here and not on connection: a player spawned any earlier would land in the
             // menu, or in an arena that only exists on some peers.

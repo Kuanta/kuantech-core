@@ -9,6 +9,7 @@ namespace Kuantech.Core
     {
         //Runtime
         private bool _active;
+        private bool _initialized;
         public bool IsActive => _active;
 
         private List<WorldZoneElement> _zoneElements = new List<WorldZoneElement>();
@@ -21,6 +22,7 @@ namespace Kuantech.Core
             {
                 zoneElement.Initialize(this);
             }
+            _initialized = true;
         }
 
         private void DetectZoneElements()
@@ -41,6 +43,14 @@ namespace Kuantech.Core
             }
         }
 
+        private void Update()
+        {
+            if(!_initialized) return;
+            foreach(var element in _zoneElements)
+            {
+                element.UpdateZoneElement(Time.deltaTime, _active);
+            }
+        }
         #region Element Access
 
         /// <summary>

@@ -28,6 +28,16 @@ namespace Kuantech.Networking
         }
 
         /// <summary>
+        /// Replaces this set's points at runtime -- lets a spawner that only knows its points once the
+        /// level is built (a DungeonRoom becoming the current checkpoint, ...) participate in the same
+        /// registry as a level authored with these assigned from the start in the Inspector.
+        /// </summary>
+        public void SetPoints(IEnumerable<Transform> points)
+        {
+            Points = points != null ? new List<Transform>(points).ToArray() : System.Array.Empty<Transform>();
+        }
+
+        /// <summary>
         /// Whether any level geometry has registered somewhere to stand yet. A spawner that runs off a
         /// connection callback can easily beat the level into existence, and this is how it waits.
         /// </summary>

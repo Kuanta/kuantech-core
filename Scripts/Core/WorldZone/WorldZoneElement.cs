@@ -23,6 +23,10 @@ namespace Kuantech.Core
             
         }
 
+        public virtual void UpdateZoneElement(float deltaTime, bool zoneActive)
+        {
+            
+        }
         public virtual void CleanupZone()
         {
             

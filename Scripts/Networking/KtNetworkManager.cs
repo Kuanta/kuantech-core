@@ -62,7 +62,12 @@ namespace Kuantech.Networking
         public static bool HasAuthority()
         {
 #if NETWORKING_NGO
-            return NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer;
+            // No NetworkManager, or one that hasn't started listening yet (e.g. a bootstrap script still
+            // resolving its managers before calling StartHost): nobody else could possibly share this
+            // session, so treat it as owned. Mirrors the !IsNetworked() || HasAuthority() guard several
+            // callers already apply manually -- doing it here means every direct caller gets it for free.
+            if (!IsNetworked()) return true;
+            return NetworkManager.Singleton.IsServer;
 #else
             return true; //Single player
 #endif
