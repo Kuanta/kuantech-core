@@ -13,8 +13,9 @@ namespace Kuantech.Networking
     /// OnEnable only claims the singleton "if (Singleton == null)", so the newcomer neither becomes the
     /// singleton nor goes away. It just sits there, DontDestroyOnLoad'ed, one more every round trip.
     ///
-    /// Keeping the ORIGINAL rather than the newcomer matters: MatchManager wired its approval callback
-    /// and its events onto that instance once, at startup, and has no way to notice it was replaced.
+    /// Keeping the ORIGINAL rather than the newcomer matters: PlayerConnectionManager wired its approval
+    /// callback and its events onto that instance once, at startup, and has no way to notice it was
+    /// replaced.
     /// </summary>
     [DefaultExecutionOrder(-1000)]
     public class SingleNetworkManagerGuard : MonoBehaviour

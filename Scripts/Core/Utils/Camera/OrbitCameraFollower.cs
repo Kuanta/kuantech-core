@@ -8,9 +8,7 @@ namespace Kuantech.Core.Utils
 {
     public class OrbitCameraFollower : MonoBehaviour
     {
-        // Scene has exactly one active follow camera per client — PlayerInputHandler.OnLocalPlayerStart
-        // looks it up here to bind Anchor, the same way IsometricCameraFollower does.
-        public static OrbitCameraFollower Instance { get; private set; }
+        public static OrbitCameraFollower Instance;
 
         public KtCamera Camera;
         public Transform Anchor;

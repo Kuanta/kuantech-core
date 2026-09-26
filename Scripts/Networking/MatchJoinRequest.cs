@@ -11,7 +11,7 @@ namespace Kuantech.Networking
     /// exactly why nothing earned belongs in this type. Ranks, traits, unlocks and the like are looked up
     /// server-side against the backend; a client that could send them would send whatever it liked.
     ///
-    /// The server turns this into a <see cref="PlayerLoadoutData"/> (see MatchManager.GetPlayerLoadoutData)
+    /// The server turns this into a <see cref="PlayerLoadoutData"/> (see PlayerConnectionManager.GetPlayerLoadoutData)
     /// and only that result is ever replicated. Keeping the two apart is the whole point: this is a
     /// request, that is the verdict.
     /// </summary>

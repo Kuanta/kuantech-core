@@ -40,7 +40,7 @@ namespace Kuantech.Networking
         public string DisplayName => _loadout.Value.PlayerName.ToString();
 
         /// <summary>
-        /// Server only. Called by MatchManager right after the player is spawned.
+        /// Server only. Called by PlayerConnectionManager right after the player is spawned.
         /// </summary>
         public void ApplyLoadout(PlayerLoadoutData loadout)
         {
