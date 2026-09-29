@@ -31,10 +31,11 @@ namespace Kuantech.HordeSurvival
             Spawning
         }
 
+#if NETWORKING_NGO
+
         [Header("Enemy")]
         [Tooltip("Fallback NetworkObject prefab, spawned directly when EnemyBlueprints below is not " +
                  "assigned -- a level that never heard of blueprints keeps working exactly as before.")]
-#if NETWORKING_NGO
         public NetworkObject EnemyPrefab;
 
         [Tooltip("Blank NetworkObject template every blueprint-driven enemy actually spawns as. The server " +

@@ -102,13 +102,7 @@ namespace Kuantech.Core.Combat
             _combatModule?.GetActiveWeapon()?.BlockedHitEffect.PlayEffectAtPosition(Actor.transform.position, Actor.transform.rotation);
         }
 
-#if NETWORKING_NGO
-        [Rpc(SendTo.Everyone)]
-        private void ObserversBlockedHit_Rpc()
-        {
-            PlayBlockedHitEffect();
-        }
-#endif
+
 
         public void StartBlock()
         {
@@ -176,6 +170,12 @@ namespace Kuantech.Core.Combat
         }
 
 #if NETWORKING_NGO
+   [Rpc(SendTo.Everyone)]
+        private void ObserversBlockedHit_Rpc()
+        {
+            PlayBlockedHitEffect();
+        }
+
         [Rpc(SendTo.Server)]
         private void ServerStartBlock_Rpc()
         {
@@ -201,6 +201,28 @@ namespace Kuantech.Core.Combat
         {
             ExecuteEndBlock();
         }
+#else
+private void ObserversBlockedHit_Rpc()
+        {
+        }
+        private void ServerStartBlock_Rpc()
+        {
+
+        }
+
+        private void ServerEndBlock_Rpc()
+        {
+
+        }
+
+        private void ObserversStartBlock_Rpc()
+        {
+        }
+
+        private void ObserversEndBlock_Rpc()
+        {
+        }
 #endif
+
     }
 }
