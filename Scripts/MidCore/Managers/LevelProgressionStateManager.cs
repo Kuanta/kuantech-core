@@ -6,13 +6,6 @@ using UnityEngine.Events;
 
 namespace Kuantech.Midcore
 {
-    [Serializable]
-    public struct LevelIndexData
-    {
-        public int WorldIndex;
-        public int LevelIndex;
-    }
-    
     /// <summary>
     /// Saves the progress for levels
     /// </summary>

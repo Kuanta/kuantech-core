@@ -207,7 +207,7 @@ namespace Kuantech.Core.UI
         /// <returns></returns>
         public static LevelUI GetLevelUI()
         {
-            var ctx = LevelManager.GetContext<UIManager>();
+            var ctx = GetContext<UIManager>();
             if (ctx == null) return null;
             return ctx.LevelUI;
         }

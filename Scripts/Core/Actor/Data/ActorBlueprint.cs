@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using Kuantech.Core.Database;
 using Kuantech.Core.HyperCasual;
-using Kuantech.Midcore;
 using UnityEngine;
 
 namespace Kuantech.Core
@@ -25,40 +24,12 @@ namespace Kuantech.Core
         [Header("Visuals")]
         public ActorVisual ActorVisualPrefab;
         
-        [Header("Progressable Data")]
-        [Tooltip("Corresponding progressable data")]
-        public ProgressableDataAsset ProgressableDataAsset;
-        
         [Header("Price")] 
         public BuyableInfo BuyableInfo;
         
         private Dictionary<Type, ActorBlueprintComponent> _componentLookup;
 
 
-        public override string GetId()
-        {
-            if (ProgressableDataAsset != null) return ProgressableDataAsset.GetId();
-            return base.GetId();
-        }
-        
-        public override string GetName()
-        {
-            if (ProgressableDataAsset != null) return ProgressableDataAsset.GetName();
-            return base.GetName();
-        }
-        
-        public override string GetDescription()
-        {
-            if (ProgressableDataAsset != null) return ProgressableDataAsset.GetDescription();
-            return base.GetDescription();
-        }
-
-        public override Sprite GetIcon()
-        {
-            if (ProgressableDataAsset != null) return ProgressableDataAsset.GetIcon();
-            return base.GetIcon();
-        }
-        
         private void EnsureComponentLookupBuilt()
         {
             if (_componentLookup != null)
@@ -95,16 +66,6 @@ namespace Kuantech.Core
             actor.Id = GetId();
             actor.FactionHandler.BelongingFaction = FactionId;
 
-            if (ProgressableDataAsset != null)
-            {
-                //Set progressibles
-                ProgressionHandlerActorModule progressionHandlerActorModule = actor.GetComponentInChildren<ProgressionHandlerActorModule>();
-                if (progressionHandlerActorModule != null) //Check if not null
-                {
-                    progressionHandlerActorModule.ActorProgressableAsset = ProgressableDataAsset;
-                }
-            }
-
             actor.Initialize();
             ApplyVisualAndComponents(actor);
             return actor;
@@ -115,8 +76,7 @@ namespace Kuantech.Core
         /// the networked counterpart to CreateActor(), which instead pools+instantiates a brand new one.
         /// Used when the actor was already brought into being some other way (a NetworkObject spawn via
         /// Actor.SetActorBlueprintRpc, ...) and only the blueprint's DATA still needs applying, identically
-        /// on every peer. Deliberately skips ProgressableDataAsset wiring -- that path assumes CreateActor's
-        /// pooled, non-networked actors; nothing networked uses it today.
+        /// on every peer.
         /// </summary>
         public void ApplyToActor(Actor actor)
         {
