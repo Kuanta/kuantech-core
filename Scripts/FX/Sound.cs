@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using Kuantech.Utils;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -224,7 +223,7 @@ namespace Kuantech.Core.FX
             while (audioSource.volume > 0)
             {
                 audioSource.volume -= startVolume * Time.deltaTime / fadeOutSecs;
-                yield return new WaitForNextFrameUnit();
+                yield return null;
             }
 
             audioSource.Stop();

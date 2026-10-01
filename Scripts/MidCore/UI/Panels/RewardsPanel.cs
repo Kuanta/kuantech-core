@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using Kuantech.Utils;
-using Unity.VisualScripting;
 using UnityEngine;
 
 namespace Kuantech.Midcore.UI
@@ -49,7 +48,7 @@ namespace Kuantech.Midcore.UI
 
         private IEnumerator ShowRewardsCoroutine(List<Reward> rewards)
         {
-            yield return new WaitForNextFrameUnit();
+            yield return null;
             foreach (var reward in rewards)
             {
                 if (reward == null) continue;

@@ -9,7 +9,6 @@ using Kuantech.Core.Utils;
 using Kuantech.Rpg;
 using Kuantech.Rpg.Managers;
 using Kuantech.Utils;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -148,7 +147,7 @@ namespace Kuantech.Core.Combat
 
         private IEnumerator RefreshAfterFrame()
         {
-            yield return new WaitForNextFrameUnit();
+            yield return null;
             Refresh();
         }
 
