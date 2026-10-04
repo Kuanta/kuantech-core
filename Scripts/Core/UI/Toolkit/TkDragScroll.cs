@@ -9,6 +9,8 @@ namespace Kuantech.Core.UI
     /// <see cref="ScrollPhysics"/>). UI Toolkit scrolls by touch on its own but a mouse only has the wheel. A touch is left alone
     /// (the ScrollView handles it itself), so nothing scrolls twice.
     ///
+    /// It scrolls along the ScrollView's own direction: sideways for a ScrollView whose mode is Horizontal, up and down otherwise.
+    ///
     /// A press that moves less than <see cref="Threshold"/> is still a tap and reaches whatever is under it; once the drag starts
     /// the ScrollView takes the pointer, so the press does not turn into a tap on a card at the end.
     ///
@@ -28,13 +30,19 @@ namespace Kuantech.Core.UI
         private bool _pressed;
         private bool _dragging;
         private int _pointerId;
-        private float _startY;
+        private float _startPointer;
         private float _startPosition;
-        private float _lastY;
+        private float _lastPointer;
         private long _lastTime;
         private float _velocity;
 
         private ScrollView Scroll => (ScrollView)target;
+        private bool Horizontal => Scroll.mode == ScrollViewMode.Horizontal;
+
+        // The part of a point along the scrolling direction, and how far the list can be scrolled that way.
+        private float Along(Vector2 point) => Horizontal ? point.x : point.y;
+        private float Range => Horizontal ? Scroll.horizontalScroller.highValue : Scroll.verticalScroller.highValue;
+        private float CurrentOffset => Along(Scroll.scrollOffset);
 
         protected override void RegisterCallbacksOnTarget()
         {
@@ -64,14 +72,14 @@ namespace Kuantech.Core.UI
 
             // Holding the content stops it, wherever it was going; a content that is still pulled past an end is held from there.
             _animation.Pause();
-            _physics.Max = Scroll.verticalScroller.highValue;
-            _startPosition = _physics.IsMoving ? _physics.Offset - _physics.Overscroll : Scroll.scrollOffset.y;
+            _physics.Max = Range;
+            _startPosition = _physics.IsMoving ? _physics.Offset - _physics.Overscroll : CurrentOffset;
 
             _pressed = true;
             _dragging = false;
             _pointerId = evt.pointerId;
-            _startY = evt.position.y;
-            _lastY = evt.position.y;
+            _startPointer = Along(evt.position);
+            _lastPointer = _startPointer;
             _lastTime = evt.timestamp;
             _velocity = 0f;
         }
@@ -80,7 +88,8 @@ namespace Kuantech.Core.UI
         {
             if (!_pressed || evt.pointerId != _pointerId) return;
 
-            float moved = evt.position.y - _startY;
+            float pointer = Along(evt.position);
+            float moved = pointer - _startPointer;
             if (!_dragging)
             {
                 if (Mathf.Abs(moved) < Threshold) return;
@@ -89,8 +98,8 @@ namespace Kuantech.Core.UI
                 target.CapturePointer(_pointerId);
             }
 
-            // Dragging down moves the content down, so the offset goes the other way.
-            _physics.Max = Scroll.verticalScroller.highValue;
+            // Dragging the content one way moves the offset the other way.
+            _physics.Max = Range;
             _physics.Drag(_startPosition - moved);
             Apply();
 
@@ -98,10 +107,10 @@ namespace Kuantech.Core.UI
             if (evt.timestamp > _lastTime)
             {
                 float seconds = (evt.timestamp - _lastTime) / 1000f;
-                float speed = -(evt.position.y - _lastY) / seconds;
+                float speed = -(pointer - _lastPointer) / seconds;
                 _velocity = Mathf.Lerp(_velocity, speed, 0.5f);
             }
-            _lastY = evt.position.y;
+            _lastPointer = pointer;
             _lastTime = evt.timestamp;
             evt.StopPropagation();
         }
@@ -136,7 +145,7 @@ namespace Kuantech.Core.UI
 
         private void OnTick(TimerState state)
         {
-            _physics.Max = Scroll.verticalScroller.highValue;
+            _physics.Max = Range;
             float dt = Mathf.Min(state.deltaTime / 1000f, 0.05f);
             bool moving = _physics.Step(dt);
             Apply();
@@ -144,12 +153,23 @@ namespace Kuantech.Core.UI
         }
 
         // The offset scrolls the ScrollView; what is past an end is shown by moving the content (the ScrollView itself cannot go past).
-        // The ScrollView scrolls by the content's translate, so this uses top, which it does not touch.
+        // The ScrollView scrolls by the content's translate, so this uses top or left, which it does not touch.
         private void Apply()
         {
-            Scroll.scrollOffset = new Vector2(Scroll.scrollOffset.x, _physics.Offset);
-            if (_physics.Overscroll == 0f) Scroll.contentContainer.style.top = StyleKeyword.Null;
-            else Scroll.contentContainer.style.top = _physics.Overscroll;
+            Vector2 offset = Scroll.scrollOffset;
+            Scroll.scrollOffset = Horizontal ? new Vector2(_physics.Offset, offset.y) : new Vector2(offset.x, _physics.Offset);
+
+            VisualElement content = Scroll.contentContainer;
+            if (Horizontal)
+            {
+                if (_physics.Overscroll == 0f) content.style.left = StyleKeyword.Null;
+                else content.style.left = _physics.Overscroll;
+            }
+            else
+            {
+                if (_physics.Overscroll == 0f) content.style.top = StyleKeyword.Null;
+                else content.style.top = _physics.Overscroll;
+            }
         }
     }
 }

@@ -45,14 +45,28 @@ namespace Kuantech.Core.UI
         [Tooltip("How long a screen takes to slide in and out, in seconds. 0 or less: no slide.")]
         [SerializeField] private float SlideDuration = 0.3f;
 
+        [Header("Safe area")]
+        [Tooltip("Editor only: pretend the display is covered by this much on each edge (left, top, right, bottom, in panel units), to see how " +
+                 "the menus look on a phone with a notch. Changes apply at once in play mode. Leave at 0 for the real device.")]
+        [SerializeField] private Vector4 DebugInsets;
+
         /// <summary>Raised whenever the panel on top of the stack changes.</summary>
         public event Action<UIPanel> TopChanged;
+
+        /// <summary>Raised when the safe area (the part of the display not covered by a notch or the home bar) changes.</summary>
+        public event Action<SafeInsets> SafeAreaChanged;
+
+        /// <summary>How much of each edge of the display is covered, in the panel's units. Screens and the HUD are kept clear of it;
+        /// a <see cref="UIPanel.FullBleed"/> panel makes its own room from it.</summary>
+        public SafeInsets SafeArea { get; private set; } = SafeInsets.Zero;
 
         /// <summary>Raised when another screen becomes the root of the stack (see <see cref="SetRoot"/>).</summary>
         public event Action<UIPanel> RootChanged;
 
         private readonly Dictionary<string, UIPanel> _panelById = new();
         private readonly List<UIPanel> _stack = new();
+
+        private VisualElement _documentRoot;
 
         // Layers, bottom to top: background, screens, HUD, popups.
         private VisualElement _backgroundLayer;
@@ -76,11 +90,20 @@ namespace Kuantech.Core.UI
         {
             await base.Initialize(gameManager);
 
-            VisualElement documentRoot = GetComponent<UIDocument>().rootVisualElement;
-            _backgroundLayer = CreateLayer("ktui-background", documentRoot);
-            _screenLayer = CreateLayer("ktui-screens", documentRoot);
-            _hudLayer = CreateLayer("ktui-hud", documentRoot);
-            _popupLayer = CreateLayer("ktui-popups", documentRoot);
+            _documentRoot = GetComponent<UIDocument>().rootVisualElement;
+            _backgroundLayer = CreateLayer("ktui-background", _documentRoot);
+            _screenLayer = CreateLayer("ktui-screens", _documentRoot);
+            _hudLayer = CreateLayer("ktui-hud", _documentRoot);
+            _popupLayer = CreateLayer("ktui-popups", _documentRoot);
+
+            // The display can change shape (a phone turned) and the safe area with it; the panel is measured after its layout.
+            _documentRoot.RegisterCallback<GeometryChangedEvent>(_ => UpdateSafeArea());
+        }
+
+        // Editing the debug insets in the Inspector in play mode shows at once.
+        private void OnValidate()
+        {
+            if (Application.isPlaying && _documentRoot != null) UpdateSafeArea();
         }
 
         public override void OnSubmanagersInitialized()
@@ -122,6 +145,7 @@ namespace Kuantech.Core.UI
 
             VisualElement root = uxml.Instantiate();
             Fill(root);
+            ApplySafeArea(panel, root);
             if (IsAlwaysOn(panel)) root.pickingMode = PickingMode.Ignore;
             GetLayer(panel.Kind).Add(root);
             panel.Build(root);
@@ -183,7 +207,11 @@ namespace Kuantech.Core.UI
             _stack.Clear();
             _stack.Add(panel);
 
-            if (slides) StartSlide(oldRoot, panel, slide);
+            if (slides)
+            {
+                StartSlide(oldRoot, panel, slide);
+                UpdateHud();
+            }
             else RefreshVisibility();
 
             RootChanged?.Invoke(panel);
@@ -326,6 +354,18 @@ namespace Kuantech.Core.UI
                 panel.Show();
                 covered = panel.Kind == UIPanelKind.Screen;
             }
+            UpdateHud();
+        }
+
+        // The HUD is hidden while a panel that asks for it is on the stack (and shown, so it can be seen).
+        private void UpdateHud()
+        {
+            bool hide = false;
+            foreach (UIPanel panel in _stack)
+            {
+                if (panel.IsVisible && panel.HidesHud) hide = true;
+            }
+            _hudLayer.style.display = hide ? DisplayStyle.None : DisplayStyle.Flex;
         }
 
         // ── Helpers ────────────────────────────────────────────────────────────
@@ -337,6 +377,36 @@ namespace Kuantech.Core.UI
                 if (template.PanelId == panelId) return template.Uxml;
             }
             return null;
+        }
+
+        // ── Safe area ──────────────────────────────────────────────────────────
+
+        // Measures what the phone covers and moves the screens and the HUD out of it. Popups (their dark area covers the whole display),
+        // the background and the panels that ask to be full bleed are left alone.
+        private void UpdateSafeArea()
+        {
+            Vector2 panelSize = _documentRoot.layout.size;
+            if (float.IsNaN(panelSize.x) || panelSize.x <= 0f) return;
+
+            SafeInsets insets = SafeAreaCalculator.Calculate(Screen.safeArea, new Vector2(Screen.width, Screen.height), panelSize);
+            if (Application.isEditor)
+                insets = insets.Plus(new SafeInsets(DebugInsets.x, DebugInsets.y, DebugInsets.z, DebugInsets.w));
+            if (insets.Approximately(SafeArea)) return;
+
+            SafeArea = insets;
+            foreach (UIPanel panel in _panelById.Values)
+                ApplySafeArea(panel, panel.Root);
+            SafeAreaChanged?.Invoke(SafeArea);
+        }
+
+        private void ApplySafeArea(UIPanel panel, VisualElement root)
+        {
+            bool kept = !panel.FullBleed && (panel.Kind == UIPanelKind.Screen || panel.Kind == UIPanelKind.Hud);
+            SafeInsets insets = kept ? SafeArea : SafeInsets.Zero;
+            root.style.left = insets.Left;
+            root.style.top = insets.Top;
+            root.style.right = insets.Right;
+            root.style.bottom = insets.Bottom;
         }
 
         private static VisualElement CreateLayer(string layerName, VisualElement parent)

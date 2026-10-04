@@ -38,6 +38,17 @@ namespace Kuantech.Core.UI
 
         public virtual UIPanelKind Kind => UIPanelKind.Screen;
 
+        /// <summary>
+        /// A Screen or Hud panel is kept inside the safe area of the display (clear of a notch or the home bar). A panel that wants to draw
+        /// under them (a coloured band at the top, a bar at the bottom) returns true and makes its own room, from
+        /// <see cref="UIToolkitManager.SafeArea"/>. Popups and the background always cover the whole display.
+        /// </summary>
+        public virtual bool FullBleed => false;
+
+        /// <summary>While this panel is shown, the HUD (the panels of kind Hud: a navigation bar, a settings button) is hidden. For a
+        /// screen that takes the whole display, like an editor with its own buttons.</summary>
+        public virtual bool HidesHud => false;
+
         public VisualElement Root { get; private set; }
         public bool IsVisible { get; private set; }
 
