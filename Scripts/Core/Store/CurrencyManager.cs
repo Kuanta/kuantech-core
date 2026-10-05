@@ -104,6 +104,22 @@ namespace Kuantech.Core.Store
                 return 0;
             }
         }
+        /// <summary>Whether the wallet holds at least this much of the currency.</summary>
+        public static bool CanAfford(string currencyId, int amount)
+        {
+            return amount <= GetCurrencyAmount(currencyId);
+        }
+
+        /// <summary>Takes the amount from the wallet when it is there and returns true; otherwise changes nothing and returns false. Use it for buying: RemoveCurrency does not check the balance.</summary>
+        public static bool TrySpend(string currencyId, int amount)
+        {
+            if (amount < 0 || !CanAfford(currencyId, amount)) return false;
+            if (GetCurrencyAssetById(currencyId) == null) return false;
+
+            RemoveCurrency(currencyId, amount);
+            return true;
+        }
+
         [Button("Add Currency")]
         public static void AddCurrency(CurrencyAsset currencyAsset, int amount)
         {
@@ -142,20 +158,21 @@ namespace Kuantech.Core.Store
         {
             var ctx = GetContext<CurrencyManager>();
             if (ctx == null) return;
-            ctx._amountsById[currencyId] = amount;
             CurrencyAsset asset = GetCurrencyAssetById(currencyId);
             if (asset == null)
             {
                 Debug.LogWarning($"No currency asset with id {currencyId}");
                 return;
             }
-            ctx.TriggerCurrencyUpdatedEvent(GetCurrencyAssetById(currencyId));
+            ctx._amountsById[currencyId] = amount;
+            ctx.TriggerCurrencyUpdatedEvent(asset);
             ctx.SaveState();
         }
 
         public static CurrencyAsset GetCurrencyAssetById(string id)
         {
             var ctx = GetContext<CurrencyManager>();
+            if (ctx == null || string.IsNullOrEmpty(id)) return null;
             if (ctx._assetsById.ContainsKey(id)) return ctx._assetsById[id];
             return null;
         }
