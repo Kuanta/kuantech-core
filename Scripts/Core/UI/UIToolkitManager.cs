@@ -164,6 +164,10 @@ namespace Kuantech.Core.UI
         public static void Push(string panelId) => GetContext<UIToolkitManager>()?.PushInternal(panelId);
         public static void Pop() => GetContext<UIToolkitManager>()?.PopInternal();
         public static void PopToRoot() => GetContext<UIToolkitManager>()?.PopToRootInternal();
+
+        /// <summary>Closes every panel on the stack, the root included. For a manager whose panels are all popups (a result panel over a game scene) and that
+        /// has nothing to go back to.</summary>
+        public static void CloseAll() => GetContext<UIToolkitManager>()?.CloseAllInternal();
         public static void Back() => GetContext<UIToolkitManager>()?.BackInternal();
 
         public static UIPanel GetPanel(string panelId)
@@ -327,6 +331,18 @@ namespace Kuantech.Core.UI
             }
             RefreshVisibility();
             TopChanged?.Invoke(Top);
+        }
+
+        private void CloseAllInternal()
+        {
+            if (_stack.Count == 0) return;
+
+            FinishSlide();
+            foreach (UIPanel open in _stack)
+                open.Hide();
+            _stack.Clear();
+            UpdateHud();
+            TopChanged?.Invoke(null);
         }
 
         private void BackInternal()
