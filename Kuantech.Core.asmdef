@@ -17,7 +17,12 @@
         "Unity.RenderPipelines.Core.Runtime",
         "Unity.VisualScripting.Core",
         "Unity.Mathematics",
-        "Unity.Collections"
+        "Unity.Collections",
+        "Unity.Netcode.Runtime",
+        "Unity.Networking.Transport",
+        "Unity.Services.Core",
+        "Unity.Services.Authentication",
+        "Unity.Services.Multiplayer"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

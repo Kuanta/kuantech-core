@@ -3,6 +3,7 @@
     "rootNamespace": "Kuantech",
     "references": [
         "Kuantech.Core",
+        "Unity.Netcode.Runtime",
         "Kuantech.AI",
         "Kuantech.Casual",
         "UniTask",

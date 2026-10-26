@@ -3,6 +3,7 @@
     "rootNamespace": "Kuantech",
     "references": [
         "Kuantech.Core",
+        "Unity.Netcode.Runtime",
         "UniTask",
         "YamlDotNet",
         "DOTween.Modules",

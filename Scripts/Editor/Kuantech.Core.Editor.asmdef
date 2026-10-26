@@ -3,6 +3,8 @@
     "rootNamespace": "Kuantech",
     "references": [
         "Kuantech.Core",
+        "Unity.Netcode.Runtime",
+        "Unity.Netcode.Editor",
         "Kuantech.HordeSurvival",
         "Kuantech.TowerDefense",
         "Kuantech.RealTimeStrategy",
