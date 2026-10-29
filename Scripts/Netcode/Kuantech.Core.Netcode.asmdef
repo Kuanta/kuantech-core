@@ -1,0 +1,20 @@
+{
+    "name": "Kuantech.Core.Netcode",
+    "rootNamespace": "Kuantech",
+    "references": [
+        "Kuantech.Core",
+        "Unity.Netcode.Runtime",
+        "Unity.Collections"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "NETWORKING_NGO"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,13 +1,11 @@
-﻿#if NETWORKING_NGO
-using Unity.Netcode;
-#endif
-using UnityEngine;
+﻿using UnityEngine;
+using UnityEngine.Events;
 
 namespace Kuantech.Core.Combat
 {
     /// <summary>
-    /// Hold-to-block: input-driven (unlike PoiseModule, which is server-decided), so it follows the same
-    /// owner-acts-locally + server-authoritative-relay shape as MovementModule.Dash for zero-lag feedback.
+    /// Hold-to-block: input-driven (unlike PoiseModule, which is authority-decided), so it follows the same
+    /// controller-acts-locally + authority-relay shape as MovementModule.Dash for zero-lag feedback.
     /// Reduces incoming damage via HealthcareModule.DamageInterceptor (which also covers a hit's
     /// AdditionalDamages entries, so a blocked hit's poise damage is reduced too, for free).
     ///
@@ -39,6 +37,14 @@ namespace Kuantech.Core.Combat
         private PoiseModule _poiseModule;
 
         private bool _blocking;
+
+        // Outbound events for whatever carries a block to other peers. Nobody listens offline.
+        // Requested: the controlling peer asks the authority. Broadcast: the authority tells everyone else.
+        public UnityAction OnStartBlockRequested;
+        public UnityAction OnEndBlockRequested;
+        public UnityAction OnStartBlockBroadcast;
+        public UnityAction OnEndBlockBroadcast;
+        public UnityAction OnBlockedHitBroadcast;
 
         public bool IsBlocking() => _blocking;
 
@@ -75,11 +81,11 @@ namespace Kuantech.Core.Combat
 
             damageInfo.SetDamage(damageInfo.GetDamage() * (1f - DamageReductionPercent));
 
-            // This only ever runs server-side (DamageInterceptor fires from inside HealthcareModule.OnHit's
-            // IsServer block), so the "clang" cue needs its own broadcast to reach every peer -- same reason
-            // CombatModule's own melee hit effect has NotifyMeleeHit_Rpc alongside the local instant one.
-            if (IsSpawned) ObserversBlockedHit_Rpc();
-            else PlayBlockedHitEffect();
+            // This only ever runs on the authority (DamageInterceptor fires from inside HealthcareModule.OnHit's
+            // authority block), so the "clang" cue is played here and also broadcast to reach every other peer --
+            // same reason CombatModule's own melee hit effect has NotifyMeleeHit_Rpc alongside the local instant one.
+            PresentBlockedHit();
+            OnBlockedHitBroadcast?.Invoke();
 
             return damageInfo;
         }
@@ -97,7 +103,7 @@ namespace Kuantech.Core.Combat
             return angleFromForward <= BlockArcDegrees * 0.5f;
         }
 
-        private void PlayBlockedHitEffect()
+        public void PresentBlockedHit()
         {
             _combatModule?.GetActiveWeapon()?.BlockedHitEffect.PlayEffectAtPosition(Actor.transform.position, Actor.transform.rotation);
         }
@@ -111,38 +117,71 @@ namespace Kuantech.Core.Combat
             // Raising the guard out of the tail of your own swing, same bargain as the dash.
             Actor.GetModule<CombatModule>()?.TryCancelAttack();
 
-            if (IsServer)
+            if (Actor.HasAuthority)
             {
                 ExecuteStartBlock();
-                if (IsSpawned) ObserversStartBlock_Rpc();
+                OnStartBlockBroadcast?.Invoke();
             }
-            else if (IsOwner)
+            else if (Actor.IsLocallyControlled)
             {
                 ExecuteStartBlock();
-                if (IsSpawned) ServerStartBlock_Rpc();
+                OnStartBlockRequested?.Invoke();
             }
         }
 
         public void EndBlock()
         {
             if (!_blocking) return;
-            if (IsServer)
+            if (Actor.HasAuthority)
             {
                 ExecuteEndBlock();
-                if (IsSpawned) ObserversEndBlock_Rpc();
+                OnEndBlockBroadcast?.Invoke();
             }
-            else if (IsOwner)
+            else if (Actor.IsLocallyControlled)
             {
                 ExecuteEndBlock();
-                if (IsSpawned) ServerEndBlock_Rpc();
+                OnEndBlockRequested?.Invoke();
             }
+        }
+
+        // Entry points for the network layer. The guards matter: a broadcast can reach a peer that already
+        // ran the same block itself (the authority relaying a request it just executed, say), and running
+        // ExecuteStartBlock twice would play its effect twice.
+
+        /// <summary>On the authority: the controlling peer asked to raise its guard.</summary>
+        public void ReceiveStartBlockRequest()
+        {
+            if (!Actor.HasAuthority || _blocking) return;
+            ExecuteStartBlock();
+            OnStartBlockBroadcast?.Invoke();
+        }
+
+        /// <summary>On the authority: the controlling peer asked to lower its guard.</summary>
+        public void ReceiveEndBlockRequest()
+        {
+            if (!Actor.HasAuthority || !_blocking) return;
+            ExecuteEndBlock();
+            OnEndBlockBroadcast?.Invoke();
+        }
+
+        /// <summary>On any other peer: the authority raised the guard.</summary>
+        public void ReceiveStartBlock()
+        {
+            if (_blocking) return;
+            ExecuteStartBlock();
+        }
+
+        /// <summary>On any other peer: the authority lowered the guard.</summary>
+        public void ReceiveEndBlock()
+        {
+            CancelBlock();
         }
 
         /// <summary>
         /// Poise breaking through a raised guard should knock it down -- reached via OnPoiseBreak, fired
-        /// from inside PoiseModule's own SendTo.Everyone broadcast handler, which already runs identically
-        /// on every peer. Calls ExecuteEndBlock directly rather than the public EndBlock() -- that one gates
-        /// on IsServer/IsOwner to decide whether TO dispatch an RPC, which would leave a remote observer's
+        /// from inside PoiseModule's own break handling, which already runs identically on every peer.
+        /// Calls ExecuteEndBlock directly rather than the public EndBlock() -- that one gates on authority and
+        /// local control to decide whether TO dispatch a request, which would leave a remote observer's
         /// local mirrored state (and Animator "Blocking" bool) stuck on, since a plain observer is neither.
         /// </summary>
         public void CancelBlock()
@@ -168,61 +207,6 @@ namespace Kuantech.Core.Combat
             _animationModule?.SetBlocking(false);
             _combatModule?.GetActiveWeapon()?.BlockEndEffect.PlayEffect();
         }
-
-#if NETWORKING_NGO
-   [Rpc(SendTo.Everyone)]
-        private void ObserversBlockedHit_Rpc()
-        {
-            PlayBlockedHitEffect();
-        }
-
-        [Rpc(SendTo.Server)]
-        private void ServerStartBlock_Rpc()
-        {
-            ExecuteStartBlock();
-            ObserversStartBlock_Rpc();
-        }
-
-        [Rpc(SendTo.Server)]
-        private void ServerEndBlock_Rpc()
-        {
-            ExecuteEndBlock();
-            ObserversEndBlock_Rpc();
-        }
-
-        [Rpc(SendTo.NotOwner)]
-        private void ObserversStartBlock_Rpc()
-        {
-            ExecuteStartBlock();
-        }
-
-        [Rpc(SendTo.NotOwner)]
-        private void ObserversEndBlock_Rpc()
-        {
-            ExecuteEndBlock();
-        }
-#else
-private void ObserversBlockedHit_Rpc()
-        {
-        }
-        private void ServerStartBlock_Rpc()
-        {
-
-        }
-
-        private void ServerEndBlock_Rpc()
-        {
-
-        }
-
-        private void ObserversStartBlock_Rpc()
-        {
-        }
-
-        private void ObserversEndBlock_Rpc()
-        {
-        }
-#endif
 
     }
 }

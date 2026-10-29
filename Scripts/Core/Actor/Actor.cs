@@ -8,10 +8,6 @@ using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.Events;
 
-#if NETWORKING_NGO
-    using Unity.Netcode;
-#endif
-
 namespace Kuantech.Core
 {
     public enum ActorState
@@ -22,20 +18,8 @@ namespace Kuantech.Core
         Despawned,
     }
 
-#if NETWORKING_NGO
-
-    public class Actor : NetworkBehaviour, IHittable, ISpawnable
-#else
     public class Actor : MonoBehaviour, IHittable, ISpawnable
-#endif
     {
-
-        #if !NETWORKING_NGO
-        public bool IsOwner => true;
-        public bool IsServer => true;
-        public bool IsClient => true;
-        #endif
-
         [Serializable]
         public struct KillFeedData
         {
@@ -124,6 +108,12 @@ namespace Kuantech.Core
         /// </summary>
         public UnityAction<KillFeedData> OnKillFeedEvent;
 
+        //Outbound events for whatever carries this actor to other peers. Nobody listens offline.
+        //Deliberately not wiped by Cleanup: the binding subscribes once in Initialize and the actor outlives a despawn when pooled.
+        public UnityAction<ActorState> OnStateChangeBroadcast;
+        public UnityAction<Vector3, Quaternion> OnControllerWarpRequested;
+        public UnityAction<ulong> OnStatePushRequested;
+
         #region Lifecycle
         private void Start()
         {
@@ -153,6 +143,12 @@ namespace Kuantech.Core
                 Modules[module.GetType()].Add(module);
                 module.Actor = this;
                 if(!string.IsNullOrEmpty(module.ModuleId)) ModulesById[module.ModuleId] = module;
+            }
+
+            // Bindings go before module initialization so a module's first event already reaches its listeners.
+            foreach (IActorNetBinding binding in GetComponentsInChildren<IActorNetBinding>())
+            {
+                binding.Bind(this);
             }
 
             foreach(var module in ActorModulesList)
@@ -195,8 +191,8 @@ namespace Kuantech.Core
                 Initialize();
             }
             ResetActor();
-            // Not ChangeActorState(): that gates on IsServer and RPC-broadcasts to observers, which races
-            // OnNetworkSpawn on peers that haven't fully replicated this object yet (the RPC can arrive
+            // Not ChangeActorState(): that gates on HasAuthority and broadcasts to observers, which races
+            // the network spawn on peers that haven't fully replicated this object yet (the message can arrive
             // before the object exists there) — leaving CurrentActorState stuck at Inactive forever on that
             // peer, which makes ActorManager.IsUpdatable() permanently skip it (no ModuleUpdate ever again).
             // Every peer's own Spawn() activating its own local instance directly is safe: this only decides
@@ -389,7 +385,8 @@ namespace Kuantech.Core
         }
         
         /// <summary>
-        /// Despawns the actor. On server: tells all clients via NGO. Standalone: returns to pool directly.
+        /// Despawns the actor. Only the authority can: when the network manages this actor's lifetime it
+        /// despawns it everywhere, otherwise the actor despawns itself locally.
         /// </summary>
         public virtual void Despawn(float delay=0f)
         {
@@ -417,21 +414,18 @@ namespace Kuantech.Core
 
         private void _Despawn()
         {
-#if NETWORKING_NGO
-            if (IsClient && !IsServer)
+            if (!HasAuthority)
             {
-                // Pure client: NGO calls OnNetworkDespawn when the server despawns this object — nothing to do here.
+                // Not ours to despawn: the authority does it and the network layer calls HandleExternalDespawn.
                 _despawnCoroutine = null;
                 return;
             }
-            if (IsServer && IsSpawned)
+            if (Net.TryDespawn())
             {
-                // Server: NetworkObject.Despawn() notifies all clients; cleanup happens in OnNetworkDespawn.
-                NetworkObject.Despawn();
+                // The network layer despawns every peer's copy and calls HandleExternalDespawn on each.
                 _despawnCoroutine = null;
                 return;
             }
-#endif
             ExecuteLocalDespawn();
         }
 
@@ -446,23 +440,17 @@ namespace Kuantech.Core
             //PoolManager.PoolObject(gameObject);
         }
 
-        // Called from NGO callbacks — cleanup only, no pooling (NGO owns the lifecycle)
-        private void ExecuteNetworkDespawn()
+        /// <summary>
+        /// Called by whoever owns this actor's lifetime once it has already despawned it -- cleanup only, no
+        /// destroy or pooling, since that owner decides what happens to the object itself.
+        /// </summary>
+        public void HandleExternalDespawn()
         {
             // Notify despawn before Cleanup wipes the event delegates (see ExecuteLocalDespawn).
             ExecuteChangeActorState(ActorState.Despawned);
             Cleanup();
             if (VisualHandler != null) VisualHandler.ClearCurrentVisual();
         }
-
-#if NETWORKING_NGO
-        public override void OnNetworkDespawn()
-        {
-            base.OnNetworkDespawn();
-            if (_isLocalPlayer) OnStopLocalPlayer();
-            ExecuteNetworkDespawn();
-        }
-#endif
         #endregion
 
         #region ActorRank
@@ -491,27 +479,16 @@ namespace Kuantech.Core
         #region Actor States
         
         /// <summary>
-        /// Changes the actor state
+        /// Changes the actor state. Authority only; every other peer is told through
+        /// <see cref="OnStateChangeBroadcast"/> and applies it with <see cref="ExecuteChangeActorState"/>.
         /// </summary>
         /// <param name="state"></param>
         public void ChangeActorState(ActorState state)
         {
-#if NETWORKING_NGO
-            if (!IsServer) return;
+            if (!HasAuthority) return;
             ExecuteChangeActorState(state);
-            if (IsSpawned) ObserversChangeActorState_Rpc(state);
-#else
-            ExecuteChangeActorState(state);
-#endif
+            OnStateChangeBroadcast?.Invoke(state);
         }
-
-#if NETWORKING_NGO
-        [Rpc(SendTo.NotServer)]
-        private void ObserversChangeActorState_Rpc(ActorState state)
-        {
-            ExecuteChangeActorState(state);
-        }
-#endif
 
         public void ExecuteChangeActorState(ActorState state)
         {
@@ -696,7 +673,7 @@ namespace Kuantech.Core
             if (dict.Count > 0) LoadModuleState(dict);
         }
 
-        private void ApplyVisual(string visualId)
+        public void ApplyVisual(string visualId)
         {
             if (string.IsNullOrEmpty(visualId)) return;
             ActorVisualId = visualId;
@@ -775,33 +752,24 @@ namespace Kuantech.Core
         }
 
         /// <summary>
-        /// Server only. Moves this actor's OWNER to a new position, touching nothing about its state --
-        /// unlike a respawn, this is not "the player came back from something", just "the level moved".
+        /// Authority only. Moves whoever CONTROLS this actor to a new position, touching nothing about its
+        /// state -- unlike a respawn, this is not "the player came back from something", just "the level moved".
         ///
-        /// Split across two peers for the same reason DownedModule.Respawn is: NetworkTransform is owner
-        /// authoritative, so the server writing this transform directly would just be overwritten by the
-        /// owner's next update (and NetworkTransform.Teleport throws outright on the non-authoritative
-        /// side). The move is asked for, not applied.
+        /// Split across two peers for the same reason DownedModule.Respawn is: a controller-authoritative
+        /// transform (NetworkTransform, say) would just overwrite a position the authority wrote directly on
+        /// its next update. So when the authority is not also the controller, the move is asked for through
+        /// <see cref="OnControllerWarpRequested"/> and applied with <see cref="WarpToPoint"/> on the controller.
         /// </summary>
-        public void ServerWarpToPoint(Vector3 position, Quaternion rotation)
+        public void WarpControllerToPoint(Vector3 position, Quaternion rotation)
         {
-#if NETWORKING_NGO
-            if (!IsServer) return;
-            WarpToPoint_Rpc(position, rotation);
-#else
-            WarpToPoint(position, rotation);
-#endif
+            if (!HasAuthority) return;
+            if (IsLocallyControlled)
+            {
+                WarpToPoint(position, rotation);
+                return;
+            }
+            OnControllerWarpRequested?.Invoke(position, rotation);
         }
-
-#if NETWORKING_NGO
-        [Rpc(SendTo.Owner)]
-        private void WarpToPoint_Rpc(Vector3 position, Quaternion rotation)
-        {
-            // WarpToPoint rather than a bare transform write: RigidbodyMovementModule listens for
-            // OnActorWarped and moves the body itself, which a rigidbody needs in order not to fight it.
-            WarpToPoint(position, rotation);
-        }
-#endif
 
         public Vector3 GetActorDirection()
         {
@@ -900,114 +868,54 @@ namespace Kuantech.Core
         
         #endregion
 
-        #region Networking
+        #region Authority
 
-#if NETWORKING_NGO
-        private bool _isLocalPlayer;
+        /// <summary>The network this actor answers to. Offline until a binding registers itself.</summary>
+        public IActorNetwork Net { get; private set; } = OfflineActorNetwork.Instance;
 
-        public override void OnNetworkSpawn()
+        /// <summary>This peer decides game truth for the actor.</summary>
+        public bool HasAuthority => Net.HasAuthority;
+
+        /// <summary>This peer's input drives the actor.</summary>
+        public bool IsLocallyControlled => Net.IsLocallyControlled;
+
+        /// <summary>Id of the peer that controls the actor.</summary>
+        public ulong OwnerId => Net.OwnerId;
+
+        /// <summary>This peer shows the game to a player (false on a dedicated server).</summary>
+        public bool HasPresentation => Net.HasPresentation;
+
+        /// <summary>Called by an <see cref="IActorNetBinding"/> from Bind to take over the authority questions.</summary>
+        public void SetNetwork(IActorNetwork network)
         {
-            base.OnNetworkSpawn();
-            Initialize();
-            Spawn();
-            if (IsOwner) OnStartLocalPlayer();
-        }
-
-        public override void OnGainedOwnership()
-        {
-            base.OnGainedOwnership();
-            if (!_isLocalPlayer) OnStartLocalPlayer();
-        }
-
-        public override void OnLostOwnership()
-        {
-            base.OnLostOwnership();
-            if (_isLocalPlayer) OnStopLocalPlayer();
+            Net = network ?? OfflineActorNetwork.Instance;
         }
 
         /// <summary>
-        /// Pushes a full state snapshot to one client. NGO has no per-object "new observer" callback like
-        /// FishNet's OnSpawnServer — KtNetworkManager calls this for every live actor when a client connects.
+        /// Authority only. Asks the network layer to send a full state snapshot to one peer, for a peer that
+        /// joined after this actor was already live. The peer applies it with <see cref="LoadSyncedState"/>.
         /// </summary>
-        public void PushStateTo(ulong clientId)
+        public void PushStateTo(ulong targetId)
         {
-            if (!IsServer || !IsSpawned) return;
-            ActorSerializableData state = GetActorState();
-            int moduleCount = state.ModuleStates?.Count ?? 0;
-            Debug.Log($"[Actor] PushStateTo → {name} syncing {moduleCount} module(s) to client {clientId}. Modules: [{string.Join(", ", state.ModuleStates?.Keys ?? Enumerable.Empty<string>())}]");
-            byte[] bytes = SaveUtility.SerializePoco(state);
-            TargetSyncActorState_Rpc(bytes, RpcTarget.Single(clientId, RpcTargetUse.Temp));
+            if (!HasAuthority) return;
+            OnStatePushRequested?.Invoke(targetId);
         }
 
-        [Rpc(SendTo.SpecifiedInParams)]
-        private void TargetSyncActorState_Rpc(byte[] bytes, RpcParams rpcParams = default)
+        /// <summary>Applies a snapshot received from the authority, then lets modules react to being in sync.</summary>
+        public void LoadSyncedState(ActorSerializableData state)
         {
-            ActorSerializableData state = SaveUtility.DeserializePoco<ActorSerializableData>(bytes);
-            int moduleCount = state?.ModuleStates?.Count ?? 0;
-            Debug.Log($"[Actor] TargetSyncActorState_Rpc received on {name} — {moduleCount} module(s): [{string.Join(", ", state?.ModuleStates?.Keys ?? Enumerable.Empty<string>())}]");
             LoadActorState(state);
             foreach (var module in ActorModulesList)
                 module.OnNetworkSynced();
         }
 
-        /// <summary>
-        /// Server calls this after spawn to set the visual on all peers (including host).
-        /// </summary>
-        [Rpc(SendTo.Everyone)]
-        public void SetVisualRpc(string visualId)
-        {
-            ApplyVisual(visualId);
-        }
+        #endregion
 
-        /// <summary>
-        /// Server calls this right after spawning a blank Actor as a NetworkObject, to configure it as a
-        /// specific ActorBlueprint on every peer (host included) -- the networked counterpart to
-        /// ActorBlueprint.CreateActor(), which instead pools+instantiates a whole new local actor. This is
-        /// what lets a spawner (NetworkedWaveHandler, ...) hand out real ActorBlueprint variety -- different
-        /// visuals, components, balance data -- through one shared network prefab instead of one prefab per
-        /// enemy type.
-        /// </summary>
-        [Rpc(SendTo.Everyone)]
-        public void SetActorBlueprintRpc(string blueprintId)
-        {
-            ActorBlueprint blueprint = ActorDataManager.GetActorBlueprint(blueprintId);
-            if (blueprint == null)
-            {
-                Debug.LogWarning($"[Actor] SetActorBlueprintRpc: no blueprint found for id '{blueprintId}'.");
-                return;
-            }
-            blueprint.ApplyToActor(this);
-        }
-
-        private void OnStartLocalPlayer()
-        {
-            _isLocalPlayer = true;
-            StartLocalPlayer();
-        }
-
-        private void OnStopLocalPlayer()
-        {
-            _isLocalPlayer = false;
-            StopLocalPlayer();
-        }
-#endif
-
-        public bool IsOnlyClient()
-        {
-#if NETWORKING_NGO
-            return IsClient && !IsServer;
-#else
-            return false;
-#endif
-        }
+        #region Local Player
 
         public bool IsLocalPlayer()
         {
-#if NETWORKING_NGO
-            return IsOwner;
-#else
-            return true;
-#endif
+            return IsLocallyControlled;
         }
 
         public void StartLocalPlayer()

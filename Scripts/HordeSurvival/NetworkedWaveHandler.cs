@@ -415,7 +415,7 @@ namespace Kuantech.HordeSurvival
             Actor actor = instance.GetComponent<Actor>();
             if (actor == null) return null;
 
-            actor.SetActorBlueprintRpc(blueprint.GetId());
+            actor.GetComponent<NetworkedActor>().SetActorBlueprintRpc(blueprint.GetId());
 
             Rpg.StatsModule stats = actor.GetModule<Rpg.StatsModule>();
             if (stats != null && Difficulty != null) stats.SetLevel(Difficulty.GetEnemyLevel(PowerLevel));

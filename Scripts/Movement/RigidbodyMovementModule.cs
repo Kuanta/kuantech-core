@@ -37,13 +37,13 @@ namespace Kuantech.Core
             _movementModule = Actor.GetModule<MovementModule>();
             Actor.OnActorWarped += OnActorWarped;
 #if !NETWORKING_NGO
-            Rigidbody.isKinematic = !Actor.IsOwner;
+            Rigidbody.isKinematic = !Actor.IsLocallyControlled;
 #endif
         }
     
         public override void ModuleFixedUpdate()
         {
-            if (!Actor.IsOwner) return;
+            if (!Actor.IsLocallyControlled) return;
             HandleMovement();
         }
 
@@ -182,7 +182,7 @@ namespace Kuantech.Core
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
-            Rigidbody.isKinematic = !Actor.IsOwner;
+            Rigidbody.isKinematic = !Actor.IsLocallyControlled;
         }
 
         public override void OnGainedOwnership()

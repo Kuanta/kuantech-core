@@ -52,7 +52,7 @@ namespace Kuantech.Core
         public override void ModuleLateUpdate(float deltaTime)
         {
             if (!Actor.IsAlive()) return;
-            if(!RotateOnClient && !Actor.IsServer) return;
+            if(!RotateOnClient && !Actor.HasAuthority) return;
             if (IsRotationLocked()) return;
             _targetAimVector = Actor.MotionVectorsHandler.GetTargetVector(PrioritizeMovementForTargetVector);
             Transform t = Actor.transform;

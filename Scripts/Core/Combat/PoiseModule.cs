@@ -1,10 +1,8 @@
 using System;
 using System.Collections;
-#if NETWORKING_NGO
-using Unity.Netcode;
-#endif
 using Kuantech.Rpg;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace Kuantech.Core.Combat
 {
@@ -45,6 +43,9 @@ namespace Kuantech.Core.Combat
         /// <summary>Fired the instant poise breaks, on every peer alongside the lock/animation it triggers
         /// locally -- lets anything react (BlockModule, FX, ...) without this module needing to know what.</summary>
         public event Action OnPoiseBreak;
+
+        /// <summary>Outbound: the authority tells every other peer a break started (true) or ended (false). Nobody listens offline.</summary>
+        public UnityAction<bool> OnPoiseBreakBroadcast;
 
         public override void OnModulesInitialized()
         {
@@ -90,11 +91,11 @@ namespace Kuantech.Core.Combat
             return damageInfo;
         }
 
-        // OnResourceChanged also fires on clients (ObserverSyncResource_Rpc applies the synced value through
-        // the same setter) -- only the server gets to decide a break happened, then broadcasts it below.
+        // OnResourceChanged also fires on peers without authority (the synced value is applied through the
+        // same setter) -- only the authority gets to decide a break happened, then broadcasts it below.
         private void OnResourceChanged(ResourceAsset resource)
         {
-            if (!IsServerInitialized || _broken) return;
+            if (!Actor.HasAuthority || _broken) return;
             if (PoiseResourceAsset == null || resource != PoiseResourceAsset) return;
             if (_healthcareModule.GetCurrentResource(PoiseResourceAsset) <= 0f)
                 TriggerPoiseBreak();
@@ -103,8 +104,8 @@ namespace Kuantech.Core.Combat
         private void TriggerPoiseBreak()
         {
             _broken = true;
-            if (IsSpawned) ObserversPoiseBreak_Rpc(true);
-            else ExecutePoiseBreakStart();
+            ExecutePoiseBreakStart();
+            OnPoiseBreakBroadcast?.Invoke(true);
 
             if (_breakRoutine != null) StopCoroutine(_breakRoutine);
             _breakRoutine = StartCoroutine(PoiseBreakRoutine());
@@ -123,8 +124,8 @@ namespace Kuantech.Core.Combat
             if (_healthcareModule != null && PoiseResourceAsset != null)
                 _healthcareModule.RefreshResource(PoiseResourceAsset);
 
-            if (IsSpawned) ObserversPoiseBreak_Rpc(false);
-            else ExecutePoiseBreakEnd();
+            ExecutePoiseBreakEnd();
+            OnPoiseBreakBroadcast?.Invoke(false);
         }
 
         private void ExecutePoiseBreakStart()
@@ -142,10 +143,12 @@ namespace Kuantech.Core.Combat
             _animationModule?.SetPoised(false);
         }
 
-#if NETWORKING_NGO
-        [Rpc(SendTo.Everyone)]
-#endif
-        private void ObserversPoiseBreak_Rpc(bool broken)
+        /// <summary>
+        /// Entry point for the network layer on a peer without authority: a break started (true) or ended
+        /// (false). The authority runs the same Execute* itself before broadcasting, so a break plays out
+        /// identically on every peer.
+        /// </summary>
+        public void ReceivePoiseBreak(bool broken)
         {
             if (broken) ExecutePoiseBreakStart();
             else ExecutePoiseBreakEnd();

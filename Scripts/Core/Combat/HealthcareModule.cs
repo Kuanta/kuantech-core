@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-#if NETWORKING_NGO
-using Unity.Netcode;
-#endif
 using Kuantech.Core.FX;
 using Kuantech.Core.Utils;
 using Kuantech.Rpg;
@@ -59,6 +56,12 @@ namespace Kuantech.Core.Combat
         /// </summary>
         public event Func<DamageInfo, HitInfo, DamageInfo> DamageInterceptor;
 
+        //Outbound events for whatever carries this module's changes to other peers. Nobody listens offline.
+        public UnityAction<ResourceAsset, float> OnResourceValueBroadcast;
+        public UnityAction<ResourceAsset> OnResourceRefreshBroadcast;
+        public UnityAction OnRefreshBroadcast;
+        public UnityAction<HitInfo> OnHitAnimBroadcast;
+
         //Invulnerability
         public LockVariable InvulnerabilityLock = new();
         public bool IsInvulnerable()              => InvulnerabilityLock.IsLocked();
@@ -69,7 +72,10 @@ namespace Kuantech.Core.Combat
         private StatsModule _statModule;
         private AnimationModule _animationModule;
         private float _remainingDamageToPlayHitAnim;
-        
+
+        // Tolerates a call before the actor has set itself on the module: nothing is hidden until we know.
+        private bool HasPresentation => Actor == null || Actor.HasPresentation;
+
         public override void Initialize()
         {
             base.Initialize();
@@ -87,7 +93,7 @@ namespace Kuantech.Core.Combat
 
         private void SetupResourceBars()
         {
-            if(IsDedicatedServer) return;
+            if(!HasPresentation) return;
             foreach (var resourceBar in ResourceBars)
             {
                 SetResourceBar(resourceBar.ResourceAsset, resourceBar);
@@ -95,13 +101,11 @@ namespace Kuantech.Core.Combat
             }
         }
 
-#if NETWORKING_NGO
-        public override void OnNetworkSpawn()
+        public override void OnActorSpawned()
         {
-            base.OnNetworkSpawn();
+            base.OnActorSpawned();
             SetupResourceBars(); //Re-update?
         }
-#endif
 
         public override void ResetModule()
         {
@@ -109,18 +113,18 @@ namespace Kuantech.Core.Combat
             Refresh();
         }
 
-        // Passive regen (e.g. Stamina) -- routed through ReceiveResource so it stays server-authoritative
-        // and reaches every peer via the same sync RPC everything else here already uses. StatsModule's own
+        // Passive regen (e.g. Stamina) -- routed through ReceiveResource so it stays authority-driven
+        // and reaches every peer via the same sync broadcast everything else here already uses. StatsModule's own
         // ResourceManager.TickResources exists but is unused/unnetworked; this replaces it for that purpose.
         // Ticked on an interval rather than every frame -- a per-frame ReceiveResource call would mean a
-        // per-frame sync RPC per actor, which doesn't scale to a horde of them.
+        // per-frame sync message per actor, which doesn't scale to a horde of them.
         private const float RegenTickInterval = 0.25f;
         private float _regenTickTimer;
 
         public override void ModuleUpdate(float deltaTime)
         {
             base.ModuleUpdate(deltaTime);
-            if (!IsServer || _statModule == null || Resources.IsNullOrEmpty()) return;
+            if (!Actor.HasAuthority || _statModule == null || Resources.IsNullOrEmpty()) return;
 
             _regenTickTimer += deltaTime;
             if (_regenTickTimer < RegenTickInterval) return;
@@ -159,7 +163,7 @@ namespace Kuantech.Core.Combat
 
         private void OnHit(HitInfo hitInfo)
         {
-            if (IsServer)
+            if (Actor.HasAuthority)
             {
                 if (IsInvulnerable()) return;
                 // A hit landing on an already-dead body (e.g. a follow-up basic attack yeeting a corpse) must
@@ -180,7 +184,8 @@ namespace Kuantech.Core.Combat
                 if (_remainingDamageToPlayHitAnim <= 0)
                 {
                     SetRemainingDamageToPlayHitAnim();
-                    if (IsSpawned) ObserversHitAnim_Rpc(hitInfo);
+                    PresentHitAnim(hitInfo);
+                    OnHitAnimBroadcast?.Invoke(hitInfo);
                 }
 
                 // Death check AFTER damage is applied — only for a hit that actually killed something still
@@ -221,14 +226,14 @@ namespace Kuantech.Core.Combat
         /// <param name="damageInfo"></param>
         public void DamageResource(DamageInfo damageInfo)
         {
-            if (!Actor.IsAlive() || !IsServer) return;
+            if (!Actor.IsAlive() || !Actor.HasAuthority) return;
             ResourceAsset resourceAsset = GetAffectedResource(damageInfo);
             // A damage type with no affected resource carries no damage at all — it is a pure signal
             // travelling with the hit (yeet power, stagger, ...) that reactions read via
             // OnDamageReceivedEvent. Without this it would fall through and corrupt a null resource.
             if (resourceAsset == null) return;
             ExecuteDamageResource(damageInfo);
-            if (IsSpawned) ObserverSyncResource_Rpc(resourceAsset.Id, GetCurrentResource(resourceAsset));
+            OnResourceValueBroadcast?.Invoke(resourceAsset, GetCurrentResource(resourceAsset));
         }
 
         private void ExecuteDamageResource(DamageInfo damageInfo)
@@ -242,7 +247,7 @@ namespace Kuantech.Core.Combat
             {
                 OnHealthChanged?.Invoke(this);
 
-                if (IsClient && ShowDamageText)
+                if (HasPresentation && ShowDamageText)
                 {
                     CombatManager.ShowDamageText(Actor, reducedDamage); 
                 }
@@ -259,9 +264,9 @@ namespace Kuantech.Core.Combat
         /// <param name="resource"></param>
         public void RefreshResource(ResourceAsset resource)
         {
-            if (!IsServer) return;
+            if (!Actor.HasAuthority) return;
             ExecuteRefreshResource(resource);
-            if (IsSpawned) ObserversRefreshResource_Rpc(resource.Id);
+            OnResourceRefreshBroadcast?.Invoke(resource);
         }
 
         private void ExecuteRefreshResource(ResourceAsset resource)
@@ -278,9 +283,9 @@ namespace Kuantech.Core.Combat
         /// <param name="amount"></param>
         public void RemoveResource(ResourceAsset resourceAsset, float amount)
         {
-            if (!IsServer || !Actor.IsAlive()) return;
+            if (!Actor.HasAuthority || !Actor.IsAlive()) return;
             ExecuteRemoveResource(resourceAsset, amount);
-            if (IsSpawned) ObserverSyncResource_Rpc(resourceAsset.Id, GetCurrentResource(resourceAsset));
+            OnResourceValueBroadcast?.Invoke(resourceAsset, GetCurrentResource(resourceAsset));
         }
 
         private void ExecuteRemoveResource(ResourceAsset resourceAsset, float amount)
@@ -298,9 +303,9 @@ namespace Kuantech.Core.Combat
         /// <param name="heal"></param>
         public void ReceiveResource(ResourceAsset resourceAsset, float amount, bool isFriendly)
         {
-            if (!IsServer || !Actor.IsAlive()) return;
+            if (!Actor.HasAuthority || !Actor.IsAlive()) return;
             ExecuteReceiveResource(resourceAsset, amount);
-            if (IsSpawned) ObserverSyncResource_Rpc(resourceAsset.Id, GetCurrentResource(resourceAsset));
+            OnResourceValueBroadcast?.Invoke(resourceAsset, GetCurrentResource(resourceAsset));
         }
 
         private void ExecuteReceiveResource(ResourceAsset resourceAsset, float amount)
@@ -324,9 +329,9 @@ namespace Kuantech.Core.Combat
 
         public void ReceiveHeal(float healAmount)
         {
-            if (!IsServer || !Actor.IsAlive()) return;
+            if (!Actor.HasAuthority || !Actor.IsAlive()) return;
             ExecuteReceiveHeal(healAmount);
-            if (IsSpawned) ObserverSyncResource_Rpc(HealthResourceAsset.Id, GetCurrentHealth());
+            OnResourceValueBroadcast?.Invoke(HealthResourceAsset, GetCurrentHealth());
         }
 
         private void ExecuteReceiveHeal(float healAmount)
@@ -337,9 +342,9 @@ namespace Kuantech.Core.Combat
 
         public void Refresh()
         {
-            if (!IsServer) return;
+            if (!Actor.HasAuthority) return;
             ExecuteRefresh();
-            if (IsSpawned) ObserversRefresh_Rpc();
+            OnRefreshBroadcast?.Invoke();
         }
 
         private void ExecuteRefresh()
@@ -372,9 +377,9 @@ namespace Kuantech.Core.Combat
         /// <param name="value"></param>
         public void SetResourceValue(ResourceAsset resourceAsset, float value)
         {
-            if (!IsServer) return;
+            if (!Actor.HasAuthority) return;
             ExecuteSetResourceValue(resourceAsset, value);
-            if (IsSpawned) ObserverSyncResource_Rpc(resourceAsset.Id, value);
+            OnResourceValueBroadcast?.Invoke(resourceAsset, value);
         }
 
         private void ExecuteSetResourceValue(ResourceAsset resourceAsset, float value)
@@ -393,13 +398,13 @@ namespace Kuantech.Core.Combat
 
         public void UpdateResourceBars()
         {
-            if (IsDedicatedServer) return;
+            if (!HasPresentation) return;
             foreach (var resource in Resources)
                 UpdateResourceBar(resource);
         }
         public void UpdateResourceBar(ResourceAsset resourceType)
         {
-            if (IsDedicatedServer) return;
+            if (!HasPresentation) return;
             ResourceBar resourceBar = GetResourceBar(resourceType);
             if (resourceBar == null) return;
             float currentValue = _statModule.GetResourceValue(resourceType);
@@ -408,14 +413,14 @@ namespace Kuantech.Core.Combat
 
         public void SetResourceBar(ResourceBar resourceBar)
         {
-            if (IsDedicatedServer || resourceBar == null) return;
+            if (!HasPresentation || resourceBar == null) return;
 
             SetResourceBar(resourceBar.ResourceAsset, resourceBar);
         }
 
         public void SetResourceBar(ResourceAsset resourceType, ResourceBar resourceBar)
         {
-            if (IsDedicatedServer || resourceType == null || resourceBar == null) return;
+            if (!HasPresentation || resourceType == null || resourceBar == null) return;
 
             if (_resourceBars == null) _resourceBars = new Dictionary<ResourceAsset, ResourceBar>();
             _resourceBars[resourceType] = resourceBar;
@@ -524,54 +529,44 @@ namespace Kuantech.Core.Combat
                 UpdateResourceBar(resource);
         }
 
-        #region Networking
+        #region Replication
 
-        // Refresh to max — deterministic, safe to re-run on clients
-#if NETWORKING_NGO
-        [Rpc(SendTo.NotServer)]
-#endif
-        private void ObserversRefreshResource_Rpc(string resourceId)
+        // Entry points for the network layer on a peer without authority. The matching outbound events are
+        // the On*Broadcast fields above.
+
+        /// <summary>Refresh to max — deterministic, safe to re-run on any peer.</summary>
+        public void ReceiveResourceRefresh(ResourceAsset resourceAsset)
         {
-            ResourceAsset resourceAsset = RpgManager.GetResourceAssetById(resourceId);
-            if (resourceAsset == null) return;
             ExecuteRefreshResource(resourceAsset);
         }
 
-#if NETWORKING_NGO
-        [Rpc(SendTo.NotServer)]
-#endif
-        private void ObserversRefresh_Rpc()
+        public void ReceiveRefresh()
         {
             ExecuteRefresh();
         }
 
-        // Authoritative value sync — server sends final value, clients just apply it
-#if NETWORKING_NGO
-        [Rpc(SendTo.NotServer)]
-#endif
-        private void ObserverSyncResource_Rpc(string resourceId, float resourceValue)
+        /// <summary>Authoritative value sync — the authority sends the final value, other peers just apply it.</summary>
+        public void ReceiveResourceValue(ResourceAsset resourceAsset, float resourceValue)
         {
-            ResourceAsset resourceAsset = RpgManager.GetResourceAssetById(resourceId);
-            if(resourceAsset == null) return;
             ExecuteSetResourceValue(resourceAsset, resourceValue);
         }
 
-        // Hit animation — server decides when threshold is crossed (see OnHit above); nothing else ever
-        // calls OnDamageReceive directly, so this has to reach everyone, host included, or the host never
-        // sees a hit reaction on its own screen either.
-#if NETWORKING_NGO
-        [Rpc(SendTo.Everyone)]
-#endif
-        private void ObserversHitAnim_Rpc(HitInfo hitInfo)
+        /// <summary>
+        /// Hit animation — the authority decides when the threshold is crossed (see OnHit above) and runs this
+        /// itself, then the network layer runs it on every other peer. Nothing else ever calls OnDamageReceive
+        /// directly, so it has to reach everyone, host included, or the host never sees a hit reaction on its
+        /// own screen either.
+        /// </summary>
+        public void PresentHitAnim(HitInfo hitInfo)
         {
             if (_animationModule != null) _animationModule.OnDamageReceive(hitInfo);
 
             // OnReceivedHitEvent already fires unconditionally at the end of OnHit above -- but OnHit only
-            // ever RUNS on whichever peer's Actor.OnHitEvent fired, which is server-only (ExecuteDamageHittable
-            // is server-gated). For the host that IS the local screen, so it already got it there. A remote
-            // owner never ran OnHit locally at all, so this is the only place their own subscribers (e.g.
-            // PlayerModule's local-only camera shake/vignette) ever hear about it.
-            if (IsOwner && !IsServerInitialized)
+            // ever RUNS on whichever peer's Actor.OnHitEvent fired, which is the authority only
+            // (ExecuteDamageHittable is authority-gated). For the host that IS the local screen, so it already
+            // got it there. A remote controller never ran OnHit locally at all, so this is the only place
+            // their own subscribers (e.g. PlayerModule's local-only camera shake/vignette) ever hear about it.
+            if (Actor.IsLocallyControlled && !Actor.HasAuthority)
                 OnReceivedHitEvent?.Invoke(hitInfo);
         }
 
