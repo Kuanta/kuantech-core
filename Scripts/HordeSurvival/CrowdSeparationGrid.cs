@@ -27,9 +27,21 @@ namespace Kuantech.HordeSurvival
                  "this system's previous fixed 1m behaviour.")]
         public float DefaultAgentRadius = 0.5f;
 
-        private readonly HashSet<Actor> _agents = new HashSet<Actor>();
+        // What a query needs about a neighbour, captured once per frame in LateUpdate. Reading it back from
+        // here instead of from the Actor means a query makes no Transform call and no radius lookup per
+        // neighbour — with hundreds of agents each asking every update, those native calls were the cost.
+        private struct Entry
+        {
+            public Actor Actor;
+            public float X, Z, Radius;
+        }
+
         private readonly Dictionary<Actor, float> _agentRadii = new Dictionary<Actor, float>();
-        private readonly Dictionary<long, List<Actor>> _buckets = new Dictionary<long, List<Actor>>();
+        private readonly Dictionary<long, List<Entry>> _buckets = new Dictionary<long, List<Entry>>();
+        // Lists of cells that emptied out. Cells are dropped from _buckets every frame rather than kept
+        // around empty: a vehicle covering ground visits an ever-growing set of 1m cells, and clearing all
+        // of them each frame made LateUpdate cost scale with distance travelled, not with agent count.
+        private readonly Stack<List<Entry>> _freeLists = new Stack<List<Entry>>();
 
         // Largest radius seen among registered agents. Grows as bulkier agents register so GetSeparation
         // knows how many neighbour cells it must search to never miss a valid push; only grows (never
@@ -64,7 +76,6 @@ namespace Kuantech.HordeSurvival
         {
             if (agent == null) return;
             float r = radius > 0f ? radius : DefaultAgentRadius;
-            _agents.Add(agent);
             _agentRadii[agent] = r;
             if (r > _maxAgentRadius) _maxAgentRadius = r;
         }
@@ -72,7 +83,6 @@ namespace Kuantech.HordeSurvival
         public void Unregister(Actor agent)
         {
             if (agent == null) return;
-            _agents.Remove(agent);
             _agentRadii.Remove(agent);
         }
 
@@ -84,20 +94,26 @@ namespace Kuantech.HordeSurvival
         // Rebuilt after everyone has moved; queries next frame read a one-frame-old grid (imperceptible).
         private void LateUpdate()
         {
-            foreach (var kv in _buckets) kv.Value.Clear();
+            foreach (var list in _buckets.Values)
+            {
+                list.Clear();
+                _freeLists.Push(list);
+            }
+            _buckets.Clear();
 
             float cs = CellSize;
-            foreach (var agent in _agents)
+            foreach (var kv in _agentRadii)
             {
+                Actor agent = kv.Key;
                 if (agent == null) continue;
                 Vector3 p = agent.transform.position;
                 long key = CellKey(Mathf.FloorToInt(p.x / cs), Mathf.FloorToInt(p.z / cs));
                 if (!_buckets.TryGetValue(key, out var list))
                 {
-                    list = new List<Actor>();
+                    list = _freeLists.Count > 0 ? _freeLists.Pop() : new List<Entry>();
                     _buckets[key] = list;
                 }
-                list.Add(agent);
+                list.Add(new Entry { Actor = agent, X = p.x, Z = p.z, Radius = kv.Value });
             }
         }
 
@@ -122,27 +138,29 @@ namespace Kuantech.HordeSurvival
             int cx = Mathf.FloorToInt(p.x / cs);
             int cz = Mathf.FloorToInt(p.z / cs);
 
-            Vector3 sum = Vector3.zero;
+            float sumX = 0f, sumZ = 0f;
             for (int dx = -range; dx <= range; dx++)
             for (int dz = -range; dz <= range; dz++)
             {
                 if (!_buckets.TryGetValue(CellKey(cx + dx, cz + dz), out var list)) continue;
                 for (int i = 0; i < list.Count; i++)
                 {
-                    Actor other = list[i];
-                    if (other == self || other == null) continue;
+                    Entry other = list[i];
+                    if (ReferenceEquals(other.Actor, self)) continue;
 
-                    float personalSpace = selfRadius + GetAgentRadius(other);
-                    Vector3 diff = p - other.transform.position;
-                    diff.y = 0f;
-                    float dSq = diff.sqrMagnitude;
+                    float personalSpace = selfRadius + other.Radius;
+                    float diffX = p.x - other.X;
+                    float diffZ = p.z - other.Z;
+                    float dSq = diffX * diffX + diffZ * diffZ;
                     if (dSq > personalSpace * personalSpace || dSq < 1e-6f) continue;
 
                     float d = Mathf.Sqrt(dSq);
-                    sum += (diff / d) * (1f - d / personalSpace); // stronger the closer they are
+                    float push = (1f - d / personalSpace) / d; // stronger the closer they are
+                    sumX += diffX * push;
+                    sumZ += diffZ * push;
                 }
             }
-            return sum;
+            return new Vector3(sumX, 0f, sumZ);
         }
 
         /// <summary>
@@ -167,11 +185,10 @@ namespace Kuantech.HordeSurvival
                 if (!_buckets.TryGetValue(CellKey(cx + dx, cz + dz), out var list)) continue;
                 for (int i = 0; i < list.Count; i++)
                 {
-                    Actor other = list[i];
-                    if (other == null) continue;
-                    Vector3 diff = other.transform.position - center;
-                    diff.y = 0f;
-                    if (diff.sqrMagnitude <= radiusSq) results.Add(other);
+                    Entry other = list[i];
+                    float diffX = other.X - center.x;
+                    float diffZ = other.Z - center.z;
+                    if (diffX * diffX + diffZ * diffZ <= radiusSq && other.Actor != null) results.Add(other.Actor);
                 }
             }
         }
@@ -196,15 +213,14 @@ namespace Kuantech.HordeSurvival
                 if (!_buckets.TryGetValue(CellKey(cx + dx, cz + dz), out var list)) continue;
                 for (int i = 0; i < list.Count; i++)
                 {
-                    Actor other = list[i];
-                    if (other == null) continue;
-                    Vector3 diff = other.transform.position - center;
-                    diff.y = 0f;
-                    float dSq = diff.sqrMagnitude;
-                    if (dSq <= bestSq)
+                    Entry other = list[i];
+                    float diffX = other.X - center.x;
+                    float diffZ = other.Z - center.z;
+                    float dSq = diffX * diffX + diffZ * diffZ;
+                    if (dSq <= bestSq && other.Actor != null)
                     {
                         bestSq = dSq;
-                        nearest = other;
+                        nearest = other.Actor;
                     }
                 }
             }

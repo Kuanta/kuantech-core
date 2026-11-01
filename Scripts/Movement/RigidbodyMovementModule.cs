@@ -11,6 +11,11 @@ namespace Kuantech.Core
     {
         [SerializeField] private Rigidbody Rigidbody;
 
+        [Tooltip("Moves the body by its transform instead of by velocity, and keeps it kinematic. For crowd " +
+                 "actors on flat ground: a kinematic body skips the solver and ground contacts, which is " +
+                 "most of the physics cost of a few hundred enemies. No gravity, so not for uneven terrain.")]
+        [SerializeField] private bool ForceKinematic;
+
         //Dodge
         [Header("Dodge")]
         public float DodgeEnergyCost;
@@ -37,7 +42,7 @@ namespace Kuantech.Core
             _movementModule = Actor.GetModule<MovementModule>();
             Actor.OnActorWarped += OnActorWarped;
 #if !NETWORKING_NGO
-            Rigidbody.isKinematic = !Actor.IsOwner;
+            Rigidbody.isKinematic = !Actor.IsOwner || ForceKinematic;
 #endif
         }
     
@@ -51,7 +56,7 @@ namespace Kuantech.Core
         {
             if (GameManager.IsGamePaused() || !Actor.IsAlive() || _movementModule == null)
             {
-                Rigidbody.linearVelocity = Vector3.zero;
+                if (!Rigidbody.isKinematic) Rigidbody.linearVelocity = Vector3.zero;
                 return;
             }
             if (Rigidbody == null || !_movementModule.IsGrounded()) return;
@@ -84,7 +89,9 @@ namespace Kuantech.Core
             vel.y = downSpeed;
 
             if (Rigidbody.isKinematic)
-                transform.position += vel * Time.deltaTime;
+                // MovePosition rather than the transform: a kinematic body is only interpolated when it is
+                // moved through the Rigidbody, a transform write makes it jump a full step each time.
+                Rigidbody.MovePosition(Rigidbody.position + vel * Time.deltaTime);
             else
                 Rigidbody.linearVelocity = vel;
         }
@@ -120,10 +127,13 @@ namespace Kuantech.Core
 
         public void Stop()
         {
-            Vector3 currentRbVelocity = Rigidbody.linearVelocity;
-            currentRbVelocity.x = 0;
-            currentRbVelocity.z = 0;
-            Rigidbody.linearVelocity = currentRbVelocity;
+            if (!Rigidbody.isKinematic)
+            {
+                Vector3 currentRbVelocity = Rigidbody.linearVelocity;
+                currentRbVelocity.x = 0;
+                currentRbVelocity.z = 0;
+                Rigidbody.linearVelocity = currentRbVelocity;
+            }
             _movementModule.SetMovementVector(Vector3.zero);
             
             _dodging = false;
@@ -171,8 +181,13 @@ namespace Kuantech.Core
         private void OnActorWarped(object sender, WorldPoint point)
         {
             if(Rigidbody == null) return;
+            // Switching interpolation off for the move and back on drops the body's pose history, so it
+            // appears at the new spot instead of blending there from the old one.
+            RigidbodyInterpolation interpolation = Rigidbody.interpolation;
+            Rigidbody.interpolation = RigidbodyInterpolation.None;
             Rigidbody.position = point.Position;
             Rigidbody.rotation = point.Rotation;
+            Rigidbody.interpolation = interpolation;
         }
         #endregion
 

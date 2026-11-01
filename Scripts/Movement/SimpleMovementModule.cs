@@ -20,7 +20,10 @@ namespace Kuantech.Core
         [Tooltip("How quickly knockback velocity bleeds off. Higher = snappier recovery, lower = longer slide.")]
         public float KnockbackDamping = 6f;
 
+        private const float MaxStep = 0.1f;
+
         private MovementModule _movementModule;
+        private Transform _transform;
         private Vector3 _velocity;
         private float _knockbackTimer;
 
@@ -28,6 +31,7 @@ namespace Kuantech.Core
         {
             base.OnModulesInitialized();
             _movementModule = Actor.GetModule<MovementModule>();
+            _transform = Actor.transform;
             Actor.OnHitEvent -= OnHit;
             Actor.OnHitEvent += OnHit;
         }
@@ -76,12 +80,19 @@ namespace Kuantech.Core
                 _velocity = Vector3.Lerp(_velocity, desiredVelocity, t);
             }
 
-            Actor.transform.position += _velocity * deltaTime;
+            _transform.position += _velocity * deltaTime;
         }
 
-        public override void ModuleUpdate(float deltaTime)
+        /// <summary>Current velocity, for whoever needs the closing speed against this actor (a vehicle hit).</summary>
+        public Vector3 Velocity => _velocity;
+
+        // Every frame rather than ModuleUpdate: a crowd actor's ModuleUpdate runs a few times a second, and
+        // moving only then makes it step. The heading is still decided at the throttled rate (the brain sets
+        // the movement vector); this only integrates it, which is why it is cheap enough for every frame.
+        public override void ModuleFrameUpdate(float deltaTime)
         {
-            HandleMovement(deltaTime);
+            // A hitch must not throw actors across the map in one step.
+            HandleMovement(Mathf.Min(deltaTime, MaxStep));
         }
     }
 }

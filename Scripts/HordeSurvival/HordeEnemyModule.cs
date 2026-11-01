@@ -166,7 +166,8 @@ namespace Kuantech.HordeSurvival
         /// </summary>
         public void Relocate(Vector3 position)
         {
-            Actor.transform.position = position;
+            // Warp, not a transform write: an interpolated Rigidbody would otherwise glide from the old spot.
+            Actor.WarpToPoint(position, Actor.transform.rotation);
             // RequestRelocation left us Idle; nothing else flips it back since this isn't a full
             // despawn/respawn through the actor lifecycle (OnActorStateChanged never fires here).
             SetState(EnemyState.Active);
@@ -184,7 +185,7 @@ namespace Kuantech.HordeSurvival
     
         private bool CanAttack()
         {
-            if(Time.time - _lastAttackTime < AttackCooldown) return false;
+            if(Time.time - _lastAttackTime < AttackCooldown || _combatModule == null) return false;
             return _combatModule.CanAttack();
         }
 

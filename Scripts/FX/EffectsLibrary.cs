@@ -96,11 +96,14 @@ namespace Kuantech.Core.FX
             EffectsLibrary context = GetContext<EffectsLibrary>();
             if (context == null) return null;
             
-            //Is this an existing effect on library
+            //Is this an existing effect on library. GetEffectById may already create (and pool-flag) an instance
+            //from EffectsPrefabs, so play that one; going through PlayEffect(id) would create a second instance
+            //and leave this one active and never despawned.
             Effect existingEffect = context.GetEffectById(effectPrefab.EffectId);
             if (existingEffect != null)
             {
-                return PlayEffect(effectPrefab.EffectId, settings);
+                existingEffect.Play(settings);
+                return existingEffect;
             }
 
             //Instantiate the fx

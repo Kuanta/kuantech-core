@@ -170,6 +170,11 @@ namespace Kuantech.Core.Utils
             List<Matrix4x4> frames = new List<Matrix4x4>();
             int frameCursor = 0;
 
+            // A clip's curve paths are relative to the object the Animator sits on, which is not necessarily the
+            // prefab root (a model nested under a wrapper is the usual case). Sampling anywhere else leaves every
+            // path unresolved and bakes the bind pose for every frame.
+            GameObject animationRoot = root.GetComponentInChildren<Animator>().gameObject;
+
             AnimationMode.StartAnimationMode();
             try
             {
@@ -197,7 +202,7 @@ namespace Kuantech.Core.Utils
                         root.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
 
                         AnimationMode.BeginSampling();
-                        AnimationMode.SampleAnimationClip(root, clip, phase * clip.length);
+                        AnimationMode.SampleAnimationClip(animationRoot, clip, phase * clip.length);
                         AnimationMode.EndSampling();
 
                         // Relative to the root, which drops root motion and leaves pure pose.

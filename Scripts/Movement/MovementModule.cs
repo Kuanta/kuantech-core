@@ -67,6 +67,7 @@ namespace Kuantech.Core
         [SerializeReference] [SubclassSelector] public JumpHandler JumpHandler;
         private AimHandler _aimHandler;
         private LockModule _lockModule;
+        private StatsModule _statsModule;
 
 
         public override void OnModulesInitialized()
@@ -112,7 +113,8 @@ namespace Kuantech.Core
         public virtual float GetSpeed()
         {
             if (IsMovementLocked()) return 0f;
-            StatsModule sm = Actor.GetModule<StatsModule>();
+            // Cached: this runs every frame per actor for anything moved by SimpleMovementModule.
+            StatsModule sm = _statsModule ??= Actor.GetModule<StatsModule>();
             if (sm == null || SpeedAttribute == null) return Speed * GetSpeedMultiplier();
             float speedVal = sm.GetAttributeValue(SpeedAttribute);
             return speedVal * GetSpeedMultiplier();

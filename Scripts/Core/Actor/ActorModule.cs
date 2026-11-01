@@ -99,7 +99,18 @@ namespace Kuantech.Core
 
         public virtual void ModuleLateUpdate(float deltaTime)
         {
-            
+
+        }
+
+        /// <summary>
+        /// Runs every rendered frame with that frame's own delta, whatever the actor's UpdateInterval is.
+        /// For the little work that must stay smooth while the decisions around it are throttled: a crowd
+        /// enemy picks its heading a few times a second (ModuleUpdate) but has to move on every frame, or it
+        /// visibly steps. Keep it to cheap integration; it is called for every actor, every frame.
+        /// </summary>
+        public virtual void ModuleFrameUpdate(float deltaTime)
+        {
+
         }
         public virtual void OnActorStateChanged(ActorState oldState, ActorState newState)
         {

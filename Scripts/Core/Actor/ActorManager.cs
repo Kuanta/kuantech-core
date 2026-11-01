@@ -82,7 +82,7 @@ namespace Kuantech.Core
             for (int i = 0; i < _iterationBuffer.Count; i++)
             {
                 Actor actor = _iterationBuffer[i];
-                if (actor != null && IsUpdatable(actor)) actor.ManagedFixedUpdate();
+                if (actor != null && actor.HasFixedUpdateModules && IsUpdatable(actor)) actor.ManagedFixedUpdate();
             }
         }
 
@@ -95,10 +95,19 @@ namespace Kuantech.Core
 
             RegisteredActors = _iterationBuffer.Count;
 
+            // Read once: Time.time is a native call and this loop asks it once per actor otherwise.
+            float now = Time.time;
+            float frameDelta = Time.deltaTime;
             for (int i = 0; i < _iterationBuffer.Count; i++)
             {
                 Actor actor = _iterationBuffer[i];
-                if (actor == null || !IsUpdatable(actor) || !actor.ShouldUpdate()) continue;
+                if (actor == null || !IsUpdatable(actor)) continue;
+
+                // Every frame, whatever the actor's interval: what has to stay smooth (movement) while the
+                // decisions in ManagedUpdate below are thinned out.
+                if (actor.HasFrameUpdateModules) actor.ManagedFrameUpdate(frameDelta);
+
+                if (!actor.ShouldUpdate(now)) continue;
 
                 _updatedThisFrame.Add(actor);
                 actor.ManagedUpdate();

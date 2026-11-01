@@ -61,6 +61,21 @@ namespace Kuantech.Core
             pm.PoolObjectAfterTime(objectToPool, delay);
         }
         
+        /// <summary>
+        /// Pools the object at the next LateUpdate instead of now. For callers that are in the middle of a
+        /// physics callback or an update loop, where deactivating the object on the spot is not safe.
+        /// </summary>
+        public static void PoolObjectDeferred(GameObject objectToPool)
+        {
+            PoolManager pm = GetContext<PoolManager>();
+            if (pm == null || pm.Pool == null)
+            {
+                Destroy(objectToPool);
+                return;
+            }
+            pm.Pool.PoolObjectDeferred(objectToPool);
+        }
+
         public void PoolObjectAfterTime(GameObject objToPool, float delay, UnityAction handler = null)
         {
             

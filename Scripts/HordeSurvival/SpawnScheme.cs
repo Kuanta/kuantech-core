@@ -114,6 +114,9 @@ namespace Kuantech.HordeSurvival
         public float MinRadius = 12f;
         [Tooltip("Outer radius of the spawn band.")]
         public float MaxRadius = 16f;
+        [Tooltip("Off: the radius is picked evenly between Min and Max, which packs enemies closer together near " +
+                 "the inner edge. On: evenly per area, so a wide band is filled with the same density throughout.")]
+        public bool UniformByArea = false;
 
         [Header("Direction Bias")]
         [Tooltip("Half-angle of the arc used when a spawn hint asks for a direction, at full hint weight. " +
@@ -144,7 +147,9 @@ namespace Kuantech.HordeSurvival
 
         private float SampleRadius()
         {
-            return UnityEngine.Random.Range(MinRadius, Mathf.Max(MinRadius, MaxRadius));
+            float max = Mathf.Max(MinRadius, MaxRadius);
+            if (!UniformByArea) return UnityEngine.Random.Range(MinRadius, max);
+            return Mathf.Sqrt(UnityEngine.Random.Range(MinRadius * MinRadius, max * max));
         }
     }
 }

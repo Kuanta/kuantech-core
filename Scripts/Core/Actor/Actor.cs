@@ -239,14 +239,19 @@ namespace Kuantech.Core
         // a dozen others were being called ~330 times a frame each only to run an empty base method. Working
         // out who implements what once, at initialisation, removes both those calls and any per-frame test
         // for them — the loops simply never see a module that has nothing to do.
-        private ActorModule[] _updateModules, _fixedUpdateModules, _lateUpdateModules;
-        private ProfilerMarker[] _updateMarkers, _fixedUpdateMarkers, _lateUpdateMarkers;
+        private ActorModule[] _updateModules, _fixedUpdateModules, _lateUpdateModules, _frameUpdateModules;
+        private ProfilerMarker[] _updateMarkers, _fixedUpdateMarkers, _lateUpdateMarkers, _frameUpdateMarkers;
+
+        /// <summary>Whether any module has fixed-step work, so the manager can skip actors with none.</summary>
+        public bool HasFixedUpdateModules => _fixedUpdateModules != null && _fixedUpdateModules.Length > 0;
+        /// <summary>Whether any module needs a call on every frame (see ActorModule.ModuleFrameUpdate).</summary>
+        public bool HasFrameUpdateModules => _frameUpdateModules != null && _frameUpdateModules.Length > 0;
 
         // Reflection is per module TYPE, not per instance: the first goblin pays for it and the other 109,
         // plus every one recycled from the pool afterwards, read the cached answer.
         private static readonly Dictionary<Type, bool[]> _implementedPhases = new Dictionary<Type, bool[]>();
 
-        private static readonly string[] PhaseNames = { "ModuleUpdate", "ModuleFixedUpdate", "ModuleLateUpdate" };
+        private static readonly string[] PhaseNames = { "ModuleUpdate", "ModuleFixedUpdate", "ModuleLateUpdate", "ModuleFrameUpdate" };
 
         private static bool[] GetImplementedPhases(Type moduleType)
         {
@@ -268,6 +273,7 @@ namespace Kuantech.Core
             var update = new List<ActorModule>();
             var fixedUpdate = new List<ActorModule>();
             var lateUpdate = new List<ActorModule>();
+            var frameUpdate = new List<ActorModule>();
 
             foreach (ActorModule module in ActorModulesList)
             {
@@ -276,22 +282,39 @@ namespace Kuantech.Core
                 if (phases[0]) update.Add(module);
                 if (phases[1]) fixedUpdate.Add(module);
                 if (phases[2]) lateUpdate.Add(module);
+                if (phases[3]) frameUpdate.Add(module);
             }
 
             _updateModules = update.ToArray();
             _fixedUpdateModules = fixedUpdate.ToArray();
             _lateUpdateModules = lateUpdate.ToArray();
+            _frameUpdateModules = frameUpdate.ToArray();
 
             _updateMarkers = BuildMarkers(_updateModules, PhaseNames[0]);
             _fixedUpdateMarkers = BuildMarkers(_fixedUpdateModules, PhaseNames[1]);
             _lateUpdateMarkers = BuildMarkers(_lateUpdateModules, PhaseNames[2]);
+            _frameUpdateMarkers = BuildMarkers(_frameUpdateModules, PhaseNames[3]);
         }
+
+        // One marker per module type and phase, shared by every actor. Building them per actor meant a string
+        // format and a native marker registration for every module of every spawn — garbage and CPU on the
+        // frames that spawn a batch of enemies, for names that never differ between actors.
+        private static readonly Dictionary<(Type, string), ProfilerMarker> _markerCache =
+            new Dictionary<(Type, string), ProfilerMarker>();
 
         private static ProfilerMarker[] BuildMarkers(ActorModule[] modules, string phase)
         {
             var markers = new ProfilerMarker[modules.Length];
             for (int i = 0; i < markers.Length; i++)
-                markers[i] = new ProfilerMarker($"{modules[i].GetType().Name}.{phase}");
+            {
+                Type type = modules[i].GetType();
+                if (!_markerCache.TryGetValue((type, phase), out ProfilerMarker marker))
+                {
+                    marker = new ProfilerMarker($"{type.Name}.{phase}");
+                    _markerCache[(type, phase)] = marker;
+                }
+                markers[i] = marker;
+            }
             return markers;
         }
 
@@ -315,10 +338,13 @@ namespace Kuantech.Core
         /// answers from its own <see cref="UpdateInterval"/>, so the scheduling policy stays with the thing
         /// it describes and the manager never needs to know what kind of actor this is.
         /// </summary>
-        public bool ShouldUpdate()
+        public bool ShouldUpdate() => ShouldUpdate(Time.time);
+
+        /// <summary>For a caller that already has the time, so it is not fetched once per actor.</summary>
+        public bool ShouldUpdate(float now)
         {
             if (UpdateInterval <= 0f) return true;
-            return Time.time - _lastUpdateTime >= UpdateInterval;
+            return now - _lastUpdateTime >= UpdateInterval;
         }
 
         public virtual void ManagedUpdate()
@@ -343,6 +369,19 @@ namespace Kuantech.Core
                 using (_updateMarkers[i].Auto())
 #endif
                 _updateModules[i].ModuleUpdate(_deltaTime);
+            }
+        }
+
+        /// <summary>Per-frame work of the modules that ask for it. Called by ActorManager for every live actor.</summary>
+        public void ManagedFrameUpdate(float deltaTime)
+        {
+            if (!Initialized || _frameUpdateModules == null) return;
+            for (int i = 0; i < _frameUpdateModules.Length; i++)
+            {
+#if ENABLE_PROFILER
+                using (_frameUpdateMarkers[i].Auto())
+#endif
+                _frameUpdateModules[i].ModuleFrameUpdate(deltaTime);
             }
         }
 
@@ -435,11 +474,46 @@ namespace Kuantech.Core
             ExecuteLocalDespawn();
         }
 
+        /// <summary>
+        /// Opt in for actors that are spawned from the PoolManager (PoolManager.GetObjectFromPool): on despawn
+        /// they go back to the pool instead of being destroyed, and the next Spawn() reuses them.
+        ///
+        /// Reuse keeps the actor initialized: its modules stay wired to it and to each other, and Spawn() puts
+        /// their state back through ResetModule. That is why this path calls each module's Cleanup but leaves
+        /// the actor's event delegates alone — a full Cleanup() nulls them, and nothing would subscribe again
+        /// since Initialize() does not run twice. The rule for a module on a pooled actor: Cleanup resets
+        /// runtime state (stops routines, clears effects), it does not unsubscribe from the actor.
+        /// </summary>
+        [Tooltip("Return to the PoolManager on despawn instead of being destroyed. Only for actors that were " +
+                 "taken from the pool, and whose modules' Cleanup only resets state.")]
+        public bool PoolOnDespawn;
+
+        private bool TryReleaseToPool()
+        {
+            if (!PoolOnDespawn || !TryGetComponent(out Kuantech.Utils.PoolableComponent _)) return false;
+
+            ActorManager.UnregisterActor(this);
+            foreach (var module in ActorModulesList)
+            {
+                module.Cleanup();
+            }
+            if (VisualHandler != null) VisualHandler.ClearCurrentVisual();
+
+            // Deferred: this can run inside a trigger callback (a vehicle hit that kills) or while the
+            // spawner is walking its own lists, and deactivating the object right there is not safe.
+            PoolManager.PoolObjectDeferred(gameObject);
+            return true;
+        }
+
         private void ExecuteLocalDespawn()
         {
+            // Already despawned (e.g. the spawner sent it back and a delayed despawn fires afterwards).
+            if (CurrentActorState == ActorState.Despawned) return;
+
             // Fire the Despawned state change (and OnDespawnedEvent) BEFORE Cleanup nulls the delegates,
             // otherwise external subscribers never get notified of the despawn.
             ExecuteChangeActorState(ActorState.Despawned);
+            if (TryReleaseToPool()) return;
             Cleanup();
             if (VisualHandler != null) VisualHandler.ClearCurrentVisual();
             Destroy(gameObject);
