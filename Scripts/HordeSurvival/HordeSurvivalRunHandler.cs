@@ -429,7 +429,7 @@ namespace Kuantech.HordeSurvival
             OnPerkSelectionAvailable?.Invoke();
 
             //Open perk panel
-            PerkSelectioPanel panel = Core.UI.UIManager.GetPanelById(PerkSelectionPanelId) as PerkSelectioPanel;
+            PerkSelectionPanel panel = Core.UI.UIManager.GetPanelById(PerkSelectionPanelId) as PerkSelectionPanel;
             if (panel == null) return;
 
             var selections = DrawPerks();

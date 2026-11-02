@@ -6,7 +6,7 @@ using UnityEngine.Events;
 
 namespace Kuantech.RogueLike
 {
-    public class PerkSelectioPanel : KtUIPanel
+    public class PerkSelectionPanel : KtUIPanel
     {
         [SerializeField] private PerkSelectionCard PerkCardPrefab;
 
@@ -29,9 +29,8 @@ namespace Kuantech.RogueLike
 
         private PerkSelectionCard CreatePerkCard(PerkSelectionData perkSelectionData)
         {
-            PerkSelectionCard card = Instantiate(PerkCardPrefab);
+            PerkSelectionCard card = Instantiate(PerkCardPrefab, PerkCardsParent, false);
             card.SetPerk(perkSelectionData);
-            card.transform.SetParent(PerkCardsParent);
             card.OnSelect += OnCardSelect;
             return card;
         }
