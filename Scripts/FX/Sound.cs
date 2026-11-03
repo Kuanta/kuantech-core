@@ -35,8 +35,11 @@ namespace Kuantech.Core.FX
         public float FireRate = 0;
         public int MaxSoundCount = -1;
 
-        [Header("Volumd")] 
+        [Header("Volumd")]
         public float Volume = 1;
+        [Tooltip("Seconds the volume takes to rise from 0 to Volume when the sound starts. 0 = starts at full volume. " +
+                 "Fading out is done by the Effect (Sfx Fade Out Duration). Not used while Fire Rate is set.")]
+        public float FadeInDuration = 0f;
         
         [Header("Pitch Adjustments")]
         public float BasePitch = 1f;
@@ -58,8 +61,9 @@ namespace Kuantech.Core.FX
 
         [NonSerialized] public int ComboFromEffect = 0;
         private IEnumerator _fadeOutRoutine = null;
+        private IEnumerator _fadeInRoutine = null;
 
-        
+
         private Coroutine _fireRoutine;
         private bool _isFiring;
 
@@ -77,6 +81,11 @@ namespace Kuantech.Core.FX
             {
                 StopCoroutine(_fadeOutRoutine);
                 _fadeOutRoutine = null;
+            }
+            if (_fadeInRoutine != null)
+            {
+                StopCoroutine(_fadeInRoutine);
+                _fadeInRoutine = null;
             }
 
             if (PlayWithAudioLibrary)
@@ -108,7 +117,15 @@ namespace Kuantech.Core.FX
             }
             else
             {
+                // Starts silent and rises, so a loop does not come in with a click.
+                bool fadeIn = FadeInDuration > 0f && gameObject.activeInHierarchy;
+                if (fadeIn) AudioSource.volume = 0f;
                 PlaySingleShot();
+                if (fadeIn)
+                {
+                    _fadeInRoutine = FadeInCoroutine(AudioSource, FadeInDuration);
+                    StartCoroutine(_fadeInRoutine);
+                }
             }
         }
 
@@ -194,6 +211,11 @@ namespace Kuantech.Core.FX
         public void Stop(float fadeOutDuraiton=0f)
         {
             StopFiring();
+            if (_fadeInRoutine != null)
+            {
+                StopCoroutine(_fadeInRoutine);
+                _fadeInRoutine = null;
+            }
             if(AudioSource == null || _fadeOutRoutine != null) return;
             if (gameObject.activeInHierarchy)
             {
@@ -216,6 +238,19 @@ namespace Kuantech.Core.FX
         }
 
         #region FadeInOut
+        private IEnumerator FadeInCoroutine(AudioSource audioSource, float fadeInSecs)
+        {
+            float elapsed = 0f;
+            while (elapsed < fadeInSecs)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                audioSource.volume = Volume * Mathf.Clamp01(elapsed / fadeInSecs);
+                yield return null;
+            }
+            audioSource.volume = Volume;
+            _fadeInRoutine = null;
+        }
+
         private IEnumerator FadeOutCoroutine(AudioSource audioSource, float fadeOutSecs)
         {
             float startVolume = Volume;
