@@ -129,6 +129,32 @@ void CrowdGetAgentEffect_float(UnityTexture2D AgentTexture, out float4 Effect)
 #endif
 }
 
+// -----------------------------------------------------------------------------------------------
+// Frost: lays a (transparent) frost texture over the agent's colour, as strongly as the agent is
+// frozen. The amount rides in the spare w channel of the agent's first texel (0 = not at all, 1 = solid);
+// the CPU side is BurstCrowdRenderer.SetFrost. Fragment stage only (it samples a texture).
+//
+//   AgentTexture  the _CrowdAgentTexture property
+//   BaseColor     the colour so far (after the hit flash)
+//   FrostTexture  RGBA, the alpha says where the frost is
+//   UV            the mesh's UV0
+//   FrostColor    HDR colour the texture is multiplied by; its alpha scales how opaque the frost gets
+//   Tiling        how many times the texture repeats across the UVs
+// -----------------------------------------------------------------------------------------------
+void CrowdFrost_float(UnityTexture2D AgentTexture, float3 BaseColor, UnityTexture2D FrostTexture, float2 UV,
+                      float4 FrostColor, float Tiling, out float3 Out)
+{
+#if defined(SHADERGRAPH_PREVIEW)
+    Out = BaseColor;
+#else
+    float frost = saturate(AgentTexture.tex.Load(int3(0, CrowdGetInstanceIndex(), 0)).w);
+    float4 noise = SAMPLE_TEXTURE2D(FrostTexture.tex, FrostTexture.samplerstate, UV * Tiling);
+    // Sparse at first, then more and more of the surface, solid when frozen.
+    float coverage = saturate(noise.a * frost * 1.5 + frost * frost * 0.35) * FrostColor.a;
+    Out = lerp(BaseColor, noise.rgb * FrostColor.rgb, coverage);
+#endif
+}
+
 // One bone's skin matrix at one frame: three consecutive texels starting at bone * 3.
 float3x4 CrowdLoadBoneMatrix(Texture2D animationTexture, int bone, int frame)
 {
