@@ -14,6 +14,8 @@ namespace Kuantech.Rpg.Skills
         
         //Runtime
         [NonSerialized] public int SkillRank;
+        /// <summary>What the variables marked Scales With Upgrade are multiplied by: set from the perk that gave the skill.</summary>
+        [NonSerialized] public float UpgradeMultiplier = 1f;
         [NonSerialized] public SpellBook ParentSpellBook;
         [NonSerialized] public ActionCastData CurrentSkillCastData;
         [NonSerialized] public int CurrentSkilLBehaviourIndex;

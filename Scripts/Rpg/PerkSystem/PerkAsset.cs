@@ -25,11 +25,56 @@ namespace Kuantech.Rpg
                  "(common pool, weapon pool, utility belt).")]
         public float PerkAppearChance = 1f;
 
+        [Header("Ownership")]
+        [Tooltip("The player has the perk from the start: it is offered in runs without being bought. Stat perks are always " +
+                 "owned. Off = it must be bought in the perks menu first (Unlock Price).")]
+        public bool StartsOwned = true;
+        [Tooltip("Gold to buy the perk, when it does not start owned.")]
+        public int UnlockPrice = 100;
+
+        [Header("Upgrades")]
+        [Tooltip("Each permanent upgrade level multiplies the perk's upgradable numbers by (1 + this) again: 0.1 = x1.1 " +
+                 "per level, compounding (level 10 = x2.6, level 20 = x6.7). Which numbers are upgradable is set on each variable (Scales With Upgrade); a stat perk's " +
+                 "own value always is.")]
+        public float UpgradeBonusPerLevel = 0.1f;
+        [Tooltip("Gold for the first upgrade (level 0 to 1).")]
+        public int UpgradeBasePrice = 100;
+        [Tooltip("Each level costs this many times the one before: 1.5 = +50% per level. 1 = every level costs the same. " +
+                 "Price of level L to L+1 = Base Price x Growth ^ L, rounded.")]
+        public float UpgradePriceGrowth = 1.5f;
+        [Tooltip("The top upgrade level. 0 = no top, the perk can be upgraded forever.")]
+        public int MaxUpgradeLevel = 0;
+
         [Header("Perk Dependencies")]
         [Tooltip("Perk required to get this perk")]
         public PerkAsset DependentPerk; 
         [Tooltip("Perks that depends on this")]
         public List<PerkAsset> SubPerks; //Perks that depend on this
+
+        public PerkCategory Category => PerkConfig != null ? PerkConfig.Category : PerkCategory.Stat;
+
+        /// <summary>Whether the level is the top one (never, when the perk has no top).</summary>
+        public bool IsMaxUpgradeLevel(int upgradeLevel) => MaxUpgradeLevel > 0 && upgradeLevel >= MaxUpgradeLevel;
+
+        /// <summary>Gold to go from this upgrade level to the next, or -1 at the top level.</summary>
+        public int GetUpgradePrice(int upgradeLevel)
+        {
+            if (IsMaxUpgradeLevel(upgradeLevel)) return -1;
+            double price = UpgradeBasePrice * System.Math.Pow(Mathf.Max(1f, UpgradePriceGrowth), Mathf.Max(0, upgradeLevel));
+            return (int)System.Math.Min(System.Math.Round(price), int.MaxValue);
+        }
+
+        /// <summary>The factor the upgradable numbers are multiplied by at this upgrade level.</summary>
+        public float GetUpgradeMultiplier(int upgradeLevel) =>
+            Mathf.Pow(1f + Mathf.Max(0f, UpgradeBonusPerLevel), Mathf.Max(0, upgradeLevel));
+
+        /// <summary>Whether the upgrade level changes this variable: the ones marked so, and the value of a stat perk.</summary>
+        public bool VariableScalesWithUpgrade(SkillVariableData variable)
+        {
+            if (variable == null) return false;
+            if (variable.ScalesWithUpgrade) return true;
+            return PerkConfig is StatModifierPerkConfig stat && stat.ValueVariableName == variable.VariableId;
+        }
 
         /// <summary>
         /// Finds a variable by id: <paramref name="externalOverride"/> first (if it matches), then the
@@ -70,7 +115,11 @@ namespace Kuantech.Rpg
         /// <param name="variableOverrides">See <see cref="GetPerkVariable"/> — substitutes one or more
         /// variables' numbers (e.g. a utility item's gem-rank-scaled values) without touching this asset.
         /// A utility can rescale several variables at once, so this is a collection, not a single value.</param>
-        public string BuildDescription(int rank, IEnumerable<SkillVariableData> variableOverrides = null)
+        /// <param name="upgradeLevel">The permanent upgrade level whose numbers are to be shown (upgradable variables only).</param>
+        /// <param name="attributeValues">The value of an attribute on the owner (the vehicle), so the numbers that scale with
+        /// an attribute (damage with the vehicle's damage) are shown as they would be played. Null = those are left out.</param>
+        public string BuildDescription(int rank, IEnumerable<SkillVariableData> variableOverrides = null, int upgradeLevel = 0,
+            Func<AttributeAsset, float> attributeValues = null, Func<string, string> placeholderSource = null)
         {
             string descriptionTemplate = GetDescription();
             var rx = new Regex(@"\{([A-Za-z_][A-Za-z0-9_]*)\s*(?::([^}]+))?\}", RegexOptions.Compiled);
@@ -78,6 +127,10 @@ namespace Kuantech.Rpg
             {
                 string varName = m.Groups[1].Value;
                 string fmt     = m.Groups[2].Success ? m.Groups[2].Value : null;
+
+                // Placeholders the caller knows (a weapon's damage lives on the weapon, not in a variable) win.
+                string given = placeholderSource?.Invoke(varName);
+                if (given != null) return given;
 
                 SkillVariableData externalOverride = null;
                 if (variableOverrides != null)
@@ -92,6 +145,9 @@ namespace Kuantech.Rpg
                 if (variable == null) return "";
 
                 float value = variable.GetDisplayValue(rank);
+                if (attributeValues != null && variable.AttributeToScaleWith != null)
+                    value += variable.AttributeScalingFactor * attributeValues(variable.AttributeToScaleWith);
+                if (upgradeLevel > 0 && VariableScalesWithUpgrade(variable)) value *= GetUpgradeMultiplier(upgradeLevel);
                 if (variable.IsPercentage) value *= 100f;
 
                 // Optional "{Name:format}" suffix — any standard numeric format string (F1, N0, ...).

@@ -61,15 +61,18 @@ namespace Kuantech.Rpg
                 return;
             }
 
+            // The permanent upgrade level scales the whole value, base and per rank alike.
+            float upgrade = GetUpgradeMultiplier();
+
             _modifier = new StatModifier
             {
                 AttributeAsset = config.Stat,
                 ModifierTag = config.ModifierTag,
                 ModifierType = config.ModifierType,
-                BaseValue = variable.BaseValue,
+                BaseValue = variable.BaseValue * upgrade,
                 // Mirror the variable's display rule exactly: a display-only-base variable shows the same
                 // number at every rank, so the modifier must not scale either.
-                LevelToValueFactor = variable.DisplayOnlyBaseValue ? 0f : variable.ValuePerRank,
+                LevelToValueFactor = (variable.DisplayOnlyBaseValue ? 0f : variable.ValuePerRank) * upgrade,
                 Level = CurrentRank,
             };
             stats.AddModifier(_modifier);

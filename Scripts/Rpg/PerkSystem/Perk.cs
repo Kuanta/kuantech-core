@@ -11,9 +11,23 @@ namespace Kuantech.Rpg
         public string PerkId;
     }
 
+    /// <summary>What a perk does, for sorting them in the menu.</summary>
+    public enum PerkCategory
+    {
+        /// <summary>Changes a stat of the owner.</summary>
+        Stat,
+        /// <summary>Gives the owner a skill and ranks it up.</summary>
+        Skill,
+        /// <summary>Switches on a weapon fixed to the vehicle.</summary>
+        Weapon,
+    }
+
     [Serializable]
     public abstract class PerkConfig
     {
+        /// <summary>The category the perk is shown under.</summary>
+        public virtual PerkCategory Category => PerkCategory.Stat;
+
         /// <summary>
         /// Lets a config expose variables it does not own, so the perk description can print numbers that
         /// live somewhere else — e.g. a skill-granting perk resolving them from the granted skill's own
@@ -35,6 +49,11 @@ namespace Kuantech.Rpg
         [NonSerialized] public int CurrentRank;
         [NonSerialized] public PerkAsset PerkAsset;
         [NonSerialized] protected Actor Owner;
+        /// <summary>The permanent upgrade level of the perk (bought in the menu), not the rank gained during the run.</summary>
+        [NonSerialized] public int UpgradeLevel;
+
+        /// <summary>What the perk's upgradable numbers are multiplied by: 1 at level 0.</summary>
+        public float GetUpgradeMultiplier() => PerkAsset != null ? PerkAsset.GetUpgradeMultiplier(UpgradeLevel) : 1f;
 
         public virtual void Initialize(PerkAsset parentAsset)
         {

@@ -53,6 +53,10 @@ namespace Kuantech.Rpg.Skills
         [KtDatabaseVariable("UsedForDPS")]
         public bool UsedForDPS; //To calculate dps
 
+        [Tooltip("The permanent upgrade level of the perk that gives this skill multiplies this number (damage, area...). " +
+                 "Leave off for what an upgrade must not change (cooldown, counts).")]
+        public bool ScalesWithUpgrade;
+
         [Header("Display")]
         public Color TextColor = Color.white;
         [Tooltip("Show as a percentage: the value is multiplied by 100 and suffixed with '%'.")]
@@ -85,6 +89,13 @@ namespace Kuantech.Rpg.Skills
         public static void RebuildBalancable(List<SkillVariableData> target, List<SkillVariableData> source)
         {
             if (target == null) return;
+
+            // The upgrade flag is authored on the asset, not in the sheet: it is kept across the rebuild.
+            var scalesWithUpgrade = new HashSet<string>();
+            foreach (var existing in target)
+                if (existing != null && existing.ScalesWithUpgrade && !string.IsNullOrEmpty(existing.VariableId))
+                    scalesWithUpgrade.Add(existing.VariableId);
+
             target.RemoveAll(v => v == null || v.Balancable);
             if (source == null) return;
 
@@ -103,6 +114,7 @@ namespace Kuantech.Rpg.Skills
                     UsedForDPS = incoming.UsedForDPS,
                     IsPercentage = incoming.IsPercentage,
                     DisplayOnlyBaseValue = incoming.DisplayOnlyBaseValue,
+                    ScalesWithUpgrade = incoming.ScalesWithUpgrade || scalesWithUpgrade.Contains(incoming.VariableId),
                 };
 
                 // AttributeToScaleWith is an asset reference -- JsonUtility can't carry it, only its id, so
@@ -137,8 +149,10 @@ namespace Kuantech.Rpg.Skills
         
         public float GetValueByRank(int rank)
         {
-            return SkillVariableData.GetValueByRank(rank)
-                   + SkillVariableData.AttributeScalingFactor * GetAttributeValue();
+            float value = SkillVariableData.GetValueByRank(rank)
+                          + SkillVariableData.AttributeScalingFactor * GetAttributeValue();
+            if (SkillVariableData.ScalesWithUpgrade && ParentSkill != null) value *= ParentSkill.UpgradeMultiplier;
+            return value;
         }
 
         public float GetAttributeValue()

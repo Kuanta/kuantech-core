@@ -6,6 +6,9 @@ namespace Kuantech.Rpg
     {
         private PerkHandler _perkHandler;
 
+        /// <summary>Tells a new perk its permanent upgrade level. Set by the game that keeps those levels; empty = all 0.</summary>
+        public System.Func<PerkAsset, int> UpgradeLevelSource;
+
         public override void Initialize()
         {
             base.Initialize();
@@ -20,6 +23,7 @@ namespace Kuantech.Rpg
         {
             Perk perk = _perkHandler.AddPerk(perkAsset);
             if (perk == null) return; // already owned → ranked up (already re-applied), or creation failed
+            perk.UpgradeLevel = UpgradeLevelSource != null ? UpgradeLevelSource(perkAsset) : 0;
             perk.Bind(Actor);
             perk.Apply();
         }
